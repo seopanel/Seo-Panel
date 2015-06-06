@@ -31,31 +31,31 @@ $controller->set('spDescription', 'Login to Seo Panel and utilise seo tools and 
 $controller->set('spKeywords', 'Seo Panel Login section');
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		case "login":
 			$controller->login();
 			break;
 
-		case "requestpass":			
+		case "requestpass":
 			$controller->set('spTitle', 'Seo panel forgot password');
 			$controller->requestPassword($_POST['email']);
             break;
-		
+
 		default:
 			$controller->index();
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "logout":
 			$controller->logout();
 			break;
-		
-		case "forgot":	
+
+		case "forgot":
 			$controller->set('spTitle', 'Seo Panel forgot password');
 			$controller->forgotPasswordForm();
 			break;

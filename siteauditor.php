@@ -32,121 +32,121 @@ $controller->spTextSA = $controller->getLanguageTexts('siteauditor', $_SESSION['
 $controller->set('spTextSA', $controller->spTextSA);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-	    
+
 		case "create":
 		    $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 			$controller->createProject($_POST);
 			break;
-			
+
 		case "update":
 		    $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 			$controller->updateProject($_POST);
 			break;
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 1);
     		    }
-		    }		    			
+		    }
 			$controller->showAuditorProjects($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 0);
     		    }
-		    }		    			
+		    }
 			$controller->showAuditorProjects($_POST);
 		    break;
-		    
-		case "deleteall":		    
+
+		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteProject($id);
     		    }
-		    }		    			
+		    }
 			$controller->showAuditorProjects($_POST);
 		    break;
-		    
+
 		case "showreport":
 		    $controller->showProjectReport($_POST);
 		    break;
-		    
+
 		case "importlinks":
 		    $controller->importLinks($_POST);
 		    break;
-		
+
 		default:
 			$controller->showAuditorProjects($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "Activate":
 			$controller->__changeStatus($_GET['project_id'], 1);
 			$controller->showAuditorProjects($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['project_id'], 0);
 			$controller->showAuditorProjects($_GET);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteProject($_GET['project_id']);
 			$controller->showAuditorProjects($_GET);
 			break;
-		
+
 	    case "new":
 	        $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 	        $controller->newProject($_GET);
 	        break;
-		
+
 		case "edit":
 	        $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 			$controller->editProject($_GET['project_id']);
 			break;
-		
+
 		case "showrunproject":
 			$controller->showRunProject($_GET['project_id']);
 			break;
-		
+
 		case "runproject":
 			$controller->runProject($_GET['project_id']);
 			break;
-			
+
 		case "viewreports":
 			$controller->viewReports($_GET);
 			break;
-	    
+
 	    case "pagedetails":
 			$controller->viewPageDetails($_GET);
 			break;
-			
+
 		case "recheckreport":
 			$controller->recheckReportPages($_GET['project_id']);
 			$controller->showRunProject($_GET['project_id']);
 			break;
-		    
+
 		case "showreport":
 		    $controller->showProjectReport($_GET);
 		    break;
-		    
+
         case "checkscore":
 			$controller->checkPageScore($_GET);
 			break;
-			
+
 		case "deletepage":
 			$controller->__deleteReportPage($_GET['report_id']);
 			$controller->loadReportsPage($_GET);
 			break;
-			
+
 		case "croncommand":
 			$controller->showCronCommand();
 			break;
@@ -159,7 +159,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             $settingCtrler->set('headLabel', $controller->spTextSA['Site Auditor Settings']);
 		    $settingCtrler->showSystemSettings('siteauditor');
 		    break;
-		
+
 		case "importlinks":
 		    $controller->showImportProjectLinks($_GET);
 		    break;

@@ -45,9 +45,9 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
 		<td class="leftid"><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>		
+		<td><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['common']['Website']?></td>
-		<?php if(!empty($isAdmin)){ ?>		
+		<?php if(!empty($isAdmin)){ ?>
 			<td><?php echo $spText['common']['User']?></td>
 		<?php } ?>
 		<td><?php echo $spText['common']['Url']?></td>
@@ -55,7 +55,7 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = empty($isAdmin) ? 6 : 7; 
+	$colCount = empty($isAdmin) ? 6 : 7;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -71,7 +71,7 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td class="td_br_right"><?php echo $listInfo['id']?></td>				
+				<td class="td_br_right"><?php echo $listInfo['id']?></td>
 				<td class="td_br_right left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
 					<td class="td_br_right left"><?php echo $listInfo['username']?></td>
@@ -86,7 +86,7 @@
 						}else{
 							$statVal = "Activate";
 							$statLabel = $spText['common']["Activate"];
-						} 
+						}
 					?>
 					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('websites.php', 'content', 'websiteId=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&userid=<?php echo $userId?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
@@ -98,9 +98,9 @@
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
@@ -114,7 +114,7 @@ if (SP_DEMO) {
     $actFun = "confirmSubmit('websites.php', 'listform', 'content', '&sec=activateall&pageno=$pageNo')";
     $inactFun = "confirmSubmit('websites.php', 'listform', 'content', '&sec=inactivateall&pageno=$pageNo')";
     $delFun = "confirmSubmit('websites.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
-}   
+}
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>

@@ -2,12 +2,12 @@
 <?php
 if(empty($projectId)) {
 	showErrorMsg($spTextSA['No active projects found'].'!');
-} 
+}
 $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport')";
 ?>
 <form id='search_form' onsubmit="<?php echo $submitJsFunc; ?>; return false;">
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+	<tr>
 		<th><?php echo $spText['label']['Project']?>: </th>
 		<td>
 			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" style="width: 180px;">
@@ -19,7 +19,7 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 					<?php }?>
 				<?php }?>
 			</select>
-		</td>						
+		</td>
 		<th><?php echo $spText['label']['Report Type']?>: </th>
 		<td width="200px;">
 			<select name="report_type" id="report_type" onchange="<?php echo $submitJsFunc?>">
@@ -29,9 +29,9 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 					<option value="<?php echo $type?>" <?php echo $selected?>><?php echo $label?></option>
 				<?php }?>
 			</select>
-		</td>						
+		</td>
 		<th><?php echo $spTextSA['Crawled']?>: </th>
-		<td>			
+		<td>
 			<select name="crawled" id="crawled" onchange="<?php echo $submitJsFunc?>">
 				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
 				<option value="0"><?php echo $spText['common']['No']?></option>
@@ -39,11 +39,11 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 			</select>
 		</td>
 	</tr>
-	<tr>						
+	<tr>
 		<th><?php echo $spTextSA['Page Link']?>: </th>
 		<td style="width: 50px;">
 			<input type="text" name="page_url" value="" onblur="<?php echo $submitJsFunc?>" style="width: 180px;">
-		</td>			
+		</td>
 		<th><?php echo $spText['common']['Google Pagerank']?>: </th>
 		<td>
 			<select name="google_pagerank" onchange="<?php echo $submitJsFunc?>">
@@ -51,7 +51,7 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 				<?php for($i=0;$i<=10;$i++) {?>
 					<option value="<?php echo $i?>">PR<?php echo $i?></option>
 				<?php }?>
-			</select>			
+			</select>
 		</td>
 		<td colspan="2">
 			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="actionbut"><?php echo $spText['button']['Show Records']?></a>

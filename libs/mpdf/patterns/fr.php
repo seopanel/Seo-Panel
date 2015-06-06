@@ -2,7 +2,7 @@
 /*
 	Adapted from Hyphenator 1.0.2
 	http://code.google.com/p/hyphenator/
-	
+
 	Retrieved from http://extensions.services.openoffice.org/project/french-dictionary-reform1990
 	License: LGPL
 */

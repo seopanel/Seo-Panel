@@ -32,78 +32,78 @@ $controller->spTextWeb = $controller->getLanguageTexts('website', $_SESSION['lan
 $controller->set('spTextWeb', $controller->spTextWeb);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-	
+
 	switch($_POST['sec']) {
-		
+
 		case "create":
 			$controller->createUserType($_POST);
 			break;
-			
+
 		case "update":
 			$controller->updateUserType($_POST);
 			break;
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 1);
     		    }
-		    }		    			
+		    }
 			$controller->listUserTypes($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 0);
     		    }
-		    }		    			
+		    }
 			$controller->listUserTypes($_POST);
 		    break;
-		    
-		case "deleteall":		    
+
+		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteUserType($id);
     		    }
-		    }		    			
+		    }
 			$controller->listUserTypes($_POST);
 		    break;
-		
+
 	}
 } else {
-	
+
 	switch($_GET['sec']) {
-		
+
 		case "new":
 			$controller->newUserType($_GET);
 			break;
-		
+
 		case "edit":
 			$controller->editUserType($_GET['userTypeId']);
-			break;	
-		
+			break;
+
 		case "Activate":
-			$controller->__changeStatus($_GET['userTypeId'], 1);			
+			$controller->__changeStatus($_GET['userTypeId'], 1);
 			$controller->listUserTypes($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['userTypeId'], 0);
 			$controller->listUserTypes($_GET);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteUserType($_GET['userTypeId']);
 			$controller->listUserTypes($_GET);
 			break;
-			
+
 		default:
 			$controller->listUserTypes($_GET);
 			break;
-		
-		
+
+
 	}
-	
+
 }
 ?>

@@ -29,12 +29,12 @@
                 		</td>
                 	</tr>
                 </table>
-                
+
                 <script>
                 window.onload = function() {
                   document.getElementById("userName").focus();
                 }
-                </script>                
+                </script>
                 </form>
             </div>
         </div>

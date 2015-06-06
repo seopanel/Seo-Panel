@@ -1,9 +1,9 @@
 <script>
 	var menuList = new Array();
-	var buttonList = new Array();	
+	var buttonList = new Array();
 </script>
 <ul id="menu">
-<?php 
+<?php
 foreach($menuList as $i => $menuInfo){
 	if($menuSelected == $menuInfo['id']){
 			$imgSrc = "hide";

@@ -42,41 +42,41 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "create":
 			$controller->createKeyword($_POST);
 			break;
-			
+
 		case "update":
 			$controller->updateKeyword($_POST);
 			break;
-			
+
 		case "import":
 			$controller->createImportedKeywords($_POST);
 			break;
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 1);
     		    }
-		    }		    			
+		    }
 			$controller->listKeywords($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 0);
     		    }
-		    }		    			
+		    }
 			$controller->listKeywords($_POST);
 		    break;
-		    
+
 		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteKeyword($id);
     		    }
-		    }		    			
+		    }
 			$controller->listKeywords($_POST);
-		    break;	    
+		    break;
 
 		default:
 			$controller->listKeywords($_POST);
@@ -85,40 +85,40 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
-		
+
 		case "Activate":
-			$controller->__changeStatus($_GET['keywordId'], 1);			
+			$controller->__changeStatus($_GET['keywordId'], 1);
 			$controller->listKeywords($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['keywordId'], 0);
 			$controller->listKeywords($_GET);
 			break;
-		
+
 		case "reports":
 			$controller->showKeywordReports($_GET['keywordId']);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteKeyword($_GET['keywordId']);
 			$controller->listKeywords($_GET);
 			break;
-		
+
 		case "edit":
 			$controller->editKeyword($_GET['keywordId']);
-			break;		
-		
+			break;
+
 		case "new":
 			$controller->set('post', $_GET);
 			$controller->newKeyword();
-			break;		
-		
+			break;
+
 		case "import":
 			$controller->set('post', $_GET);
 			$controller->importKeywords();
 			break;
-			
+
 		case "keywordbox":
 			$controller->set('keyNull', $_GET['keyNull']);
 			$controller->showKeywordSelectBox($userId, $_GET['website_id']);

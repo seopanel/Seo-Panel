@@ -1,7 +1,7 @@
 <?php echo showSectionHead($spTextTools['sitemap-generator']); ?>
 <form id='search_form'>
 <table width="98%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+	<tr>
 		<th><?php echo $spText['label']['Project']?>: </th>
 		<td>
 			<select id="project_id" name="project_id" style="width: 150px;">
@@ -10,7 +10,7 @@
 				<?php }?>
 			</select>
 		</td>
-	</tr>	
+	</tr>
 	<tr>
 		<th><?php echo $spTextSitemap['Sitemap Type']?>: </th>
 		<td>
@@ -45,7 +45,7 @@
 				<option value="auto">Automatic Priority</option>
 			</select>
 		</td>
-	</tr>		
+	</tr>
 	<tr>
 		<th style="vertical-align: text-top;padding-top: 10px;"><?php echo $spTextSitemap['Exclude Url']?>: </th>
 		<td>

@@ -8,7 +8,7 @@
 		<td class="left" width='30%'><?php echo $spTextWeb['Edit Website']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php if(!empty($isAdmin)){ ?>	
+	<?php if(!empty($isAdmin)){ ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
 			<td class="td_right_col">
@@ -18,7 +18,7 @@
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
 						<?php }else{?>
 							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
-						<?php }?>						
+						<?php }?>
 					<?php }?>
 				</select>
 			</td>
@@ -48,7 +48,7 @@
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['label']['Keywords']?>:</td>
 		<td class="td_right_col"><textarea name="keywords" id="webkeywords"><?php echo $post['keywords']?></textarea><?php echo $errMsg['keywords']?></td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>
@@ -64,7 +64,7 @@
     		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Cancel']?>
          	</a> &nbsp;
-         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('websites.php', 'editWebsite', 'content')"; ?>         		
+         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('websites.php', 'editWebsite', 'content')"; ?>
          	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Proceed']?>
          	</a>

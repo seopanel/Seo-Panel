@@ -10,7 +10,7 @@
                 		<td>&nbsp;</td>
                 		<th class="main_header"><?php echo $spText['login']['Create New Account']?></th>
                 	</tr>
-                	
+
                 	<?php
                 	// if subscription plugin is active
                 	if ($subscriptionActive & !empty($userTypeList)){
@@ -56,7 +56,7 @@
 						<?php
 					}
                 	?>
-                	
+
                 	<tr>
                 		<th width="28%"><?php echo $spText['login']['Username']?>:*</th>
                 		<td><input type="text" name="userName" value="<?php echo $post['userName']?>"><?php echo $errMsg['userName']?></td>
@@ -91,7 +91,7 @@
                         	    <input type="text" name="code" value="<?php echo $post['code']?>"><?php echo $errMsg['code']?>
                             </div>
                         </td>
-                    </tr>    	
+                    </tr>
                 	<tr>
                 		<td>&nbsp;</td>
                 		<td colspan="0" class="actionsBox">

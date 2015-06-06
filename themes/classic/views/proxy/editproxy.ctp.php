@@ -36,7 +36,7 @@
 		<td class="td_left_col"><?php echo $spText['common']['Status']?>:</td>
 		<td class="td_right_col">
 			<select name="status" onchange="<?php echo $searchFun?>">
-				<?php				
+				<?php
 				$inactCheck = $actCheck = "";
 				if ($post['status']) {
 				    $actCheck = "selected";
@@ -56,7 +56,7 @@
 	<tr class="listBot">
 		<td class="left" colspan="1"></td>
 		<td class="right"></td>
-	</tr>	
+	</tr>
 </table>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>

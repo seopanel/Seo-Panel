@@ -22,30 +22,30 @@
 
 /**
  * Class defines all functions for managing keyword API
- * 
+ *
  * @author Seo panel
  *
  */
 class KeywordAPI extends Seopanel{
-	
+
 	/**
 	 * the main controller to get details for api
 	 * @var Object
 	 */
 	var $ctrler;
-	
+
 	/**
-	 * The report controller to get details of keyword reports 
+	 * The report controller to get details of keyword reports
 	 * @var Object
 	 */
 	var $reportCtrler;
-	
+
 	/**
 	 * The list contains search engine details
 	 * @var Array
 	 */
 	var $seList;
-	
+
 	/**
 	 * The constructor of API
 	 */
@@ -57,12 +57,12 @@ class KeywordAPI extends Seopanel{
 		$seController = New SearchEngineController();
 		$list = $seController->__getAllSearchEngines();
 		$this->seList = array();
-		
+
 		// loop through the search engine and assign id as key
 		foreach ($list as $listInfo) {
 			$this->seList[$listInfo['id']] = $listInfo;
 		}
-	}	
+	}
 
 	/**
 	 * function to get keyword report and format it
@@ -73,17 +73,17 @@ class KeywordAPI extends Seopanel{
 	 */
 	function getFormattedReport($keywordInfo, $fromTime, $toTime) {
 		$positionInfo = $this->reportCtrler->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
-				
+
 		// loop through and add search engine name
 		foreach ($positionInfo as $seId => $info) {
 			$positionInfo[$seId]['search_engine'] = $this->seList[$seId]['domain'];
 			$positionInfo[$seId]['date'] = date('Y-m-d', $toTime);
 		}
-		
+
 		$keywordInfo['position_info'] = $positionInfo;
-		return $keywordInfo; 
-	}	
-	
+		return $keywordInfo;
+	}
+
 	/**
 	 * function to get keyword report using keyword id
 	 * @param Array $info			The input details to process the api
@@ -93,12 +93,12 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains informations about keyword reports
 	 */
 	function getReportById($info) {
-		
+
 		$fromTime = getFromTime($info);
 		$toTime = getToTime($info);
 		$keywordInfo = $this->ctrler->__getKeywordInfo($info['id']);
 		$positionInfo = $this->getFormattedReport($keywordInfo, $fromTime, $toTime);
-				
+
 		// if position information is not empty
 		if (empty($positionInfo)) {
 			$returnInfo['response'] = 'Error';;
@@ -107,11 +107,11 @@ class KeywordAPI extends Seopanel{
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $positionInfo;
 		}
-		
+
 		return 	$returnInfo;
-		
+
 	}
-	
+
 	/**
 	 * function to get keyword report using website id
 	 * @param Array $info			The input details to process the api
@@ -121,15 +121,15 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains informations about keyword reports
 	 */
 	function getReportByWebsiteId($info) {
-		
+
 		$websiteId = intval($info['id']);
 		if (empty($websiteId)) {
 			return array(
 				'response' => 'Error',
 				'result' => 'Invalid website id'
 			);
-		}		
-		
+		}
+
 		$fromTime = getFromTime($info);
 		$toTime = getToTime($info);
 		$list = $this->ctrler->__getAllKeywords('', $websiteId);
@@ -148,11 +148,11 @@ class KeywordAPI extends Seopanel{
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $keywordList;
 		}
-		
+
 		return 	$returnInfo;
-		
-	}	
-	
+
+	}
+
 	/**
 	 * function to get keyword report using user id
 	 * @param Array $info			The input details to process the api
@@ -162,28 +162,28 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains informations about keyword reports
 	 */
 	function getReportByUserId($info) {
-		
+
 		$userId = intval($info['id']);
 		if (empty($userId)) {
 			return array(
 				'response' => 'Error',
 				'result' => 'Invalid user id'
 			);
-		}		
-		
+		}
+
 		$fromTime = getFromTime($info);
 		$toTime = getToTime($info);
-		
+
 		// get all active websites
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsitesWithActiveKeywords($userId, true);
-		
+
 		// loop through websites
 		$keywordList = array();
 		foreach ($websiteList as $websiteInfo) {
 			$websiteId = $websiteInfo['id'];
 			$list = $this->ctrler->__getAllKeywords('', $websiteId);
-			
+
 			// loop through keywords
 			foreach ($list as $keywordInfo) {
 				$keywordList[$keywordInfo['id']] = $this->getFormattedReport($keywordInfo, $fromTime, $toTime);
@@ -198,9 +198,9 @@ class KeywordAPI extends Seopanel{
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $keywordList;
 		}
-		
+
 		return 	$returnInfo;
-		
+
 	}
 
 	/**
@@ -212,7 +212,7 @@ class KeywordAPI extends Seopanel{
 	function getKeywordInfo($info) {
 		$keywordId = intval($info['id']);
 		$returnInfo = array();
-	
+
 		// validate the keyword ifd and keyword info
 		if (!empty($keywordId)) {
 			if ($keywordInfo = $this->ctrler->__getKeywordInfo($keywordId)) {
@@ -221,12 +221,12 @@ class KeywordAPI extends Seopanel{
 				return $returnInfo;
 			}
 		}
-	
+
 		$returnInfo['response'] = 'Error';
 		$returnInfo['error_msg'] = "The invalid keyword id provided";
 		return 	$returnInfo;
 	}
-	
+
 	/**
 	 * function to create keyword
 	 * @param Array $info				The input details to process the api
@@ -239,7 +239,7 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains details about the operation succes or not
 	 */
 	function createKeyword($info) {
-		
+
 		// if empty website id provided
 		if (empty($info['website_id'])) {
 			$returnInfo['response'] = 'Error';
@@ -250,9 +250,9 @@ class KeywordAPI extends Seopanel{
 		$keywordInfo = $info;
 		$keywordInfo['userid'] = $info['user_id'];
 		$this->ctrler->spTextKeyword = $this->ctrler->getLanguageTexts('keyword', SP_API_LANG_CODE);
-		$keywordInfo['searchengines'] = explode(':', $keywordInfo['searchengines']); 
+		$keywordInfo['searchengines'] = explode(':', $keywordInfo['searchengines']);
 		$return = $this->ctrler->createKeyword($keywordInfo, true);
-	
+
 		// if keyword creation is success
 		if ($return[0] == 'success') {
 			$returnInfo['response'] = 'success';
@@ -262,11 +262,11 @@ class KeywordAPI extends Seopanel{
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = $return[1];
 		}
-	
+
 		return 	$returnInfo;
-	
+
 	}
-	
+
 	/**
 	 * function to update keyword
 	 * @param Array $info				The input details to process the api
@@ -280,24 +280,24 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains details about the operation succes or not
 	 */
 	function updateKeyword($info) {
-	
+
 		$keywordId = intval($info['id']);
-	
+
 		// if keyword exists
 		if ($keywordInfo = $this->ctrler->__getKeywordInfo($keywordId)) {
-			
+
 			$keywordInfo['oldName'] = $keywordInfo['name'];
-			
+
 			// loop through inputs
 			foreach ($info as $key => $val) {
 				$keywordInfo[$key] = $val;
 			}
-	
+
 			// update keyword call as api call
-			$keywordInfo['searchengines'] = explode(':', $keywordInfo['searchengines']); 
+			$keywordInfo['searchengines'] = explode(':', $keywordInfo['searchengines']);
 			$this->ctrler->spTextKeyword = $this->ctrler->getLanguageTexts('keyword', SP_API_LANG_CODE);
 			$return = $this->ctrler->updateKeyword($keywordInfo, true);
-	
+
 			// if keyword creation is success
 			if ($return[0] == 'success') {
 				$returnInfo['response'] = 'success';
@@ -306,17 +306,17 @@ class KeywordAPI extends Seopanel{
 				$returnInfo['response'] = 'Error';
 				$returnInfo['error_msg'] = $return[1];
 			}
-	
+
 		} else {
-	
+
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = "The invalid keyword id provided";
 		}
-	
+
 		return 	$returnInfo;
-	
+
 	}
-	
+
 	/**
 	 * function to delete keyword
 	 * @param Array $info				The input details to process the api
@@ -324,26 +324,26 @@ class KeywordAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains details about the operation succes or not
 	 */
 	function deleteKeyword($info) {
-		
+
 		$keywordId = intval($info['id']);
-		
+
 		// if keyword exists
 		if ($keywordInfo = $this->ctrler->__getKeywordInfo($keywordId)) {
-			
+
 			// update keyword call as api call
 			$this->ctrler->__deleteKeyword($keywordId);
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = "Successfully deleted keyword";
-			
+
 		} else {
-	
+
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = "The invalid keyword id provided";
 		}
-	
+
 		return 	$returnInfo;
-		
+
 	}
-	
+
 }
 ?>

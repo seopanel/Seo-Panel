@@ -6,11 +6,11 @@
         .search a:focus {outline: none;}
         .search th {text-align: right; padding-right: 5px; padding-bottom: 5px; font-size: 11px;}
         .search td {text-align: left; padding-left: 5px; padding-bottom: 5px;}
-        .list {	margin-top: 10px;}        
-        .listHead {background-color: #DAE5EE;border-bottom: 1px solid #B0C2CC;}        
+        .list {	margin-top: 10px;}
+        .listHead {background-color: #DAE5EE;border-bottom: 1px solid #B0C2CC;}
         .listHead td {text-align: center;  height: 25px; font-weight: bold; color: #343333; font-family: Tahoma, verdana, arial, sans-serif;
-    	font-size: 11px; margin: 0; padding: 0 3px 0 4px; vertical-align: middle;border-right: 1px solid #B0C2CC;border-bottom: 1px solid #B0C2CC;border-top: 1px solid #B0C2CC;}        
-        .listHead td.left {border-left: 1px solid #B0C2CC;}		
+    	font-size: 11px; margin: 0; padding: 0 3px 0 4px; vertical-align: middle;border-right: 1px solid #B0C2CC;border-bottom: 1px solid #B0C2CC;border-top: 1px solid #B0C2CC;}
+        .listHead td.left {border-left: 1px solid #B0C2CC;}
 		#sortLink {color: black; text-decoration: none;}
 		#sortLink:HOVER { text-decoration: underline;background-color: #DBE6EE;}
 		.sort_asc{background:transparent url(<?php echo SP_IMGPATH?>/sort_asc.gif) no-repeat scroll right center;padding-right: 18px;}

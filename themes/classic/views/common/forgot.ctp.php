@@ -24,7 +24,7 @@
                         	    <input type="text" name="code" value="<?php echo $post['code']?>"><?php echo $errMsg['code']?>
                             </div>
                         </td>
-                    </tr>  
+                    </tr>
                 	<tr>
                 		<th>&nbsp;</th>
                 		<td class="actionsBox">
@@ -33,7 +33,7 @@
                 			<?php }?>
                 		</td>
                 	</tr>
-                </table>               
+                </table>
                 </form>
             </div>
         </div>

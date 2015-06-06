@@ -7,12 +7,12 @@
 		<td class="right" colspan="2"><?php echo $spText['common']['Details']?></td>
 	</tr>
 	<?php
-	$colCount = 2; 
+	$colCount = 2;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
 		foreach($list as $listInfo){
-			
+
 			$class = ($i % 2) ? "blue_row" : "white_row";
             if($catCount == ($i + 1)){
                 $leftBotClass = "tab_left_bot";
@@ -21,7 +21,7 @@
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            $foundStyle = empty($listInfo['found']) ? "" : "background-color: #ffff00;";            
+            $foundStyle = empty($listInfo['found']) ? "" : "background-color: #ffff00;";
 			?>
 			<tr class="<?php echo $class?>" style="<?php echo $foundStyle?>">
 				<td class="<?php echo $leftBotClass?>" width='100px;'><b><?php echo $listInfo['rank']; ?></b></td>
@@ -35,13 +35,13 @@
 			$i++;
 		}
 	}else{
-		?>				
+		?>
 		<tr class="blue_row">
 			<td class="tab_left_bot_noborder"></td>
 			<td class="tab_right_bot" colspan="2" style="text-align: left;"><?php echo $spText['common']['No Records Found']?>!</td>
 		</tr>
-		<?		
-	} 
+		<?
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

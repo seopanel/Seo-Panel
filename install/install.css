@@ -13,7 +13,7 @@ body {
 	margin:10px auto;
 	width: 600px;
 	padding: 10px;
-	text-align:center;	
+	text-align:center;
 	background:none repeat scroll 0 0 #FFFFFF;
 	border:1px solid #B0C2CC;
 	display:block;
@@ -46,7 +46,7 @@ h1.BlockHeader {
 
 .formtab{
 	font-size: 12px;
-	margin: 10 10 18px 10px;	
+	margin: 10 10 18px 10px;
 }
 
 .formtab th.header{
@@ -77,7 +77,7 @@ h1.BlockHeader {
 }
 
 .formtab td{
-	font-size: 11px;	
+	font-size: 11px;
 	border-left:1px solid #B0C2CC;
 	padding: 5px;
 	font-weight: bold;

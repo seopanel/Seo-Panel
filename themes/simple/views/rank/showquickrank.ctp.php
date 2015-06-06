@@ -1,7 +1,7 @@
 <?php echo showSectionHead($spTextTools['Quick Rank Checker']); ?>
 <form id='search_form'>
 <table width="60%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<textarea name="website_urls" cols="150" rows="8"></textarea>

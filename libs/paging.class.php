@@ -22,8 +22,8 @@ class Paging {
 		$this->per_page = $per_page;
 	}
 
-	function printPaging($scriptArgs='') {		
-		
+	function printPaging($scriptArgs='') {
+
 		$tmp = '';
 		if(empty($this->current_page)) {
 			$this->setCurrentPage(1);
@@ -58,7 +58,7 @@ class Paging {
 		if($start_page>1) {
 			if(!empty($this->action_path)) {
 				$this->scriptArgs = $scriptArgs . "&pageno=1";
-				$page_line .= $this->createPagingLink('&laquo;', '', '&nbsp;&nbsp;');				
+				$page_line .= $this->createPagingLink('&laquo;', '', '&nbsp;&nbsp;');
 			}
 		}
 
@@ -66,7 +66,7 @@ class Paging {
 		for($i=$start_page; $i<=$end_page; $i++) {
 			if($i>$end_page) { break; }
 			if($this->current_page!=$i) {
-				if(!empty($this->action_path)) {					
+				if(!empty($this->action_path)) {
 					$this->scriptArgs = $scriptArgs . "&pageno=$i";
 					$page_line .= $this->createPagingLink($i, '', '&nbsp; | &nbsp;');
 				}
@@ -91,16 +91,16 @@ class Paging {
 
 	# func to create paging link
 	function createPagingLink($linkText='', $linkBefore='', $linkAfter=''){
-				
+
 		if(!empty($this->link_class)) { $linkClass=' class="'.$this->link_class.'"'; }
 		if($this->scriptFunction == 'scriptDoLoadPost'){
-			$link = "$linkBefore<a href='javascript:void(0);' $linkClass onclick=\"scriptDoLoadPost('$this->scriptPath', '$this->scriptForm', '$this->showArea', '$this->scriptArgs')\">$linkText</a>$linkAfter";	
-		}else{			
+			$link = "$linkBefore<a href='javascript:void(0);' $linkClass onclick=\"scriptDoLoadPost('$this->scriptPath', '$this->scriptForm', '$this->showArea', '$this->scriptArgs')\">$linkText</a>$linkAfter";
+		}else{
 			$link = "$linkBefore<a href='javascript:void(0);' $linkClass onclick=\"$this->scriptFunction('$this->scriptPath', '$this->showArea', '$this->scriptArgs')\">$linkText</a>$linkAfter";
 		}
-		return $link;		
+		return $link;
 	}
-	
+
 
 	# mutators
 	function setActionPath($path) {
@@ -123,13 +123,13 @@ class Paging {
 
 	# func to print pages
 	function printPages($scriptPath, $scriptForm='', $scriptfunction='scriptDoLoad', $showArea='content', $scriptArgs=''){
-		
+
 		$this->scriptPath = $scriptPath;
 		$this->scriptFunction = $scriptfunction;
 		$this->showArea = $showArea;
 		$this->scriptForm = $scriptForm;
 		$this->scriptArgs = $scriptArgs;
-		
+
 		$this->setActionPath(1);
 
 		# determine current page number
@@ -137,7 +137,7 @@ class Paging {
 		if(isset($_POST["pageno"])){
 			$pageNo = $_POST["pageno"];
 		}elseif(isset($_GET["pageno"])){
-			$pageNo = $_GET["pageno"];			
+			$pageNo = $_GET["pageno"];
 		}
 		if(!empty($pageNo)) {
 			$this->start = ($pageNo - 1) * $this->per_page;
@@ -147,7 +147,7 @@ class Paging {
 			$this->start = 0;
 		}
 		return $this->printPaging($scriptArgs);
-		
+
 	}
 
 }

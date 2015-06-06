@@ -25,10 +25,10 @@ class RankController extends Controller{
 
 	# func to show quick rank checker
 	function showQuickRankChecker() {
-		
+
 		$this->render('rank/showquickrank');
 	}
-	
+
 	function findQuickRank($searchInfo) {
 		$urlList = explode("\n", $searchInfo['website_urls']);
 		$list = array();
@@ -39,9 +39,9 @@ class RankController extends Controller{
 			if (SP_DEMO) {
 			    if ($i++ > 10) break;
 			}
-			
+
 			if(!stristr($url, 'http://')) $url = "http://".$url;
-			
+
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 
@@ -62,12 +62,12 @@ class RankController extends Controller{
 
 	function __getGooglePageRank ($url) {
 
-	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
-	    $websiteUrl =  $url;   
+	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
+	    $websiteUrl =  $url;
 		$url = "http://toolbarqueries.google.com/tbr?client=navclient-auto&ch=".$this->CheckHash($this->hashURL($url))."&features=Rank&q=info:".$url."&num=100&filter=0";
 		$ret = $this->spider->getContent($url);
 		$rank = 0;
-		
+
 		// parse rank from the page
 		if (!empty($ret['page'])) {
 			if (preg_match('/Rank_([0-9]+):([0-9]+):([0-9]+)/si', $ret['page'], $matches) ) {
@@ -77,14 +77,14 @@ class RankController extends Controller{
 				$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($ret['page']) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
 			}
 		}
-		
+
 		// update crawl log
 		$crawlLogCtrl = new CrawlLogController();
 		$crawlInfo['crawl_type'] = 'rank';
 		$crawlInfo['ref_id'] = $websiteUrl;
 		$crawlInfo['subject'] = "google";
 		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-		
+
 		return $rank;
 	}
 
@@ -97,7 +97,7 @@ class RankController extends Controller{
 
 	function printAlexaRankImg($alexaRank) {
 		$rankImage = SP_IMGPATH."/alexa-rank.jpeg";
-		
+
 		$im = imagecreatefromjpeg ($rankImage);
 		$textColor = imagecolorallocate($im, 0, 0, 255);
 		$width = imagesx($im);
@@ -113,30 +113,30 @@ class RankController extends Controller{
 
 	# alexa_rank
 	function __getAlexaRank ($url) {
-	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
+	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
 	    $websiteUrl =  $url;
 		$url = 'http://data.alexa.com/data?cli=10&dat=snbamz&url=' . urlencode($url);
 		$ret = $this->spider->getContent($url);
 		$rank = 0;
-		
+
 		// parse rank from teh page
 		if(!empty($ret['page'])){
 			if (preg_match('/\<popularity url\="(.*?)" TEXT\="([0-9]+)"/si', $ret['page'], $matches) ) {
-				$rank = empty($matches[2]) ? 0 : $matches[2];	
+				$rank = empty($matches[2]) ? 0 : $matches[2];
 			} else {
 				$crawlInfo['crawl_status'] = 0;
 				$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($ret['page']) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
 			}
-			
+
 		}
-		
+
 		// update crawl log
 		$crawlLogCtrl = new CrawlLogController();
 		$crawlInfo['crawl_type'] = 'rank';
 		$crawlInfo['ref_id'] = $websiteUrl;
 		$crawlInfo['subject'] = "alexa";
 		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-		
+
 		return $rank;
 	}
 
@@ -197,70 +197,70 @@ class RankController extends Controller{
 
 		return '7'.$CheckByte.$HashStr;
 	}
-	
+
 	# func to show genearte reports interface
 	function showGenerateReports($searchInfo = '') {
-		
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-						
+
 		$this->render('rank/generatereport');
 	}
-	
+
 	# func to generate reports
 	function generateReports( $searchInfo='' ) {
-				
-		$userId = isLoggedIn();		
+
+		$userId = isLoggedIn();
 		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
-		
+
 		$sql = "select id,url from websites where status=1";
 		if(!empty($userId) && !isAdmin()) $sql .= " and user_id=$userId";
 		if(!empty($websiteId)) $sql .= " and id=$websiteId";
 		$sql .= " order by name";
-		$websiteList = $this->db->select($sql);		
-		
+		$websiteList = $this->db->select($sql);
+
 		if(count($websiteList) <= 0){
 			echo "<p class='note'>".$_SESSION['text']['common']['nowebsites']."!</p>";
 			exit;
 		}
-		
-		# loop through each websites			
+
+		# loop through each websites
 		foreach ( $websiteList as $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 			$websiteInfo['googlePagerank'] = $this->__getGooglePageRank($websiteUrl);
 			$websiteInfo['alexaRank'] = $this->__getAlexaRank($websiteUrl);
-			
-			$this->saveRankResults($websiteInfo, true);			
+
+			$this->saveRankResults($websiteInfo, true);
 			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
-		}	
+		}
 	}
-	
+
 	# function to save rank details
 	function saveRankResults($matchInfo, $remove=false) {
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-		
-		if($remove){				
+
+		if($remove){
 			$sql = "delete from rankresults where website_id={$matchInfo['id']} and result_time=$time";
 			$this->db->query($sql);
 		}
-		
+
 		$sql = "insert into rankresults(website_id,google_pagerank,alexa_rank,result_time)
 				values({$matchInfo['id']},{$matchInfo['googlePagerank']},{$matchInfo['alexaRank']},$time)";
 		$this->db->query($sql);
 	}
-	
+
 	# function check whether reports already saved
 	function isReportsExists($websiteId, $time) {
 	    $sql = "select website_id from rankresults where website_id=$websiteId and result_time=$time";
 	    $info = $this->db->select($sql, true);
 	    return empty($info['website_id']) ? false : true;
 	}
-	
+
 	# func to show reports
 	function showReports($searchInfo = '') {
-		
+
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
@@ -280,33 +280,33 @@ class RankController extends Controller{
 		$this->set('websiteList', $websiteList);
 		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name
-								from rankresults s,websites w 
-								where s.website_id=w.id 
-								and result_time>= $fromTime and result_time<=$toTime $conditions  
+								from rankresults s,websites w
+								where s.website_id=w.id
+								and result_time>= $fromTime and result_time<=$toTime $conditions
 								order by result_time";
 		$reportList = $this->db->select($sql);
-		
+
 		$i = 0;
 		$colList = array('google' => 'google_pagerank', 'alexa' => 'alexa_rank');
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
 					$signVal = -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					if($col == 'alexa'){						
+					if($col == 'alexa'){
 						$signVal = 1;
 						$greaterClass = 'green';
 						$lessClass = 'red';
@@ -320,52 +320,52 @@ class RankController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
 
 		$this->set('list', array_reverse($reportList, true));
 		$this->render('rank/rankreport');
 	}
-	
-	
+
+
 	# func to show reports for a particular website
 	function __getWebsiteRankReport($websiteId, $fromTime, $toTime) {
 
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		$sql = "select s.* ,w.name
-				from rankresults s,websites w 
-				where s.website_id=w.id 
+				from rankresults s,websites w
+				where s.website_id=w.id
 				and s.website_id=$websiteId
 				and (FROM_UNIXTIME(result_time, '%Y-%m-%d')='$fromTimeLabel' or FROM_UNIXTIME(result_time, '%Y-%m-%d')='$toTimeLabel')
 				order by result_time DESC
 				Limit 0, 2";
 		$reportList = $this->db->select($sql);
 		$reportList = array_reverse($reportList);
-		
+
 		$i = 0;
 		$colList = array('google' => 'google_pagerank', 'alexa' => 'alexa_rank');
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
 					$signVal = -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					if($col == 'alexa'){						
+					if($col == 'alexa'){
 						$signVal = 1;
 						$greaterClass = 'green';
 						$lessClass = 'red';
@@ -379,17 +379,17 @@ class RankController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
 
 		$reportList = array_reverse(array_slice($reportList, count($reportList) - 1));
 		return $reportList;
 	}
-	
+
 }
 ?>

@@ -43,7 +43,7 @@
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Search Engine']?>:</td>
 		<td class="td_right_col">
-			<select name="searchengines[]" class="multi" multiple="multiple" id="searchengines">				
+			<select name="searchengines[]" class="multi" multiple="multiple" id="searchengines">
 				<?php foreach($seList as $seInfo){?>
 					<?php $selected = in_array($seInfo['id'], $post['searchengines']) ? "selected" : ""?>
 					<option value="<?php echo $seInfo['id']?>" <?php echo $selected?>><?php echo $seInfo['domain']?></option>
@@ -55,7 +55,7 @@
 			&nbsp;&nbsp;
 			<input type="checkbox" id="clear_all" onclick="selectAllOptions('searchengines', false); $('select_all').checked=false;"> <?php echo $spText['label']['Clear All']?>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

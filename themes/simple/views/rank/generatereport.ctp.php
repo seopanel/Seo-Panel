@@ -15,7 +15,7 @@
 				<?php }?>
 			</select>
 		</td>
-		<td><a href="javascript:void(0);" onclick="scriptDoLoadPost('rank.php', 'search_form', 'subcontent', '&sec=generate')" class="actionbut"><?php echo $spText['button']['Proceed']?></a></td>		
+		<td><a href="javascript:void(0);" onclick="scriptDoLoadPost('rank.php', 'search_form', 'subcontent', '&sec=generate')" class="actionbut"><?php echo $spText['button']['Proceed']?></a></td>
 	</tr>
 </table>
 </form>

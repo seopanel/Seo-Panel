@@ -91,7 +91,7 @@ class Validation{
 		if(strlen($entry) == 0){
 			$msg = $_SESSION['text']['common']['Entry cannot be blank'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -109,7 +109,7 @@ class Validation{
 		if(strlen($entry) == 0){
 			$msg = $_SESSION['text']['common']['Entry cannot be blank'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -133,7 +133,7 @@ class Validation{
 		if($pass1!= $pass2){
 			$msg = $_SESSION['text']['common']['passwordnotmatch'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -162,7 +162,7 @@ class Validation{
 		if(!preg_match($this->Filters['alpha'],$entry)){
 			$msg = $_SESSION['text']['common']['Invalid characters'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -182,7 +182,7 @@ class Validation{
 		if(strlen($entry) == 0){
 			$msg = $_SESSION['text']['common']['Entry cannot be blank'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -195,7 +195,7 @@ class Validation{
 		if(strlen($entry) == 0){
 			$msg = $_SESSION['text']['common']['Entry cannot be blank'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -208,7 +208,7 @@ class Validation{
 		if(strlen($entry) == 0){
 			$msg = $_SESSION['text']['common']['Entry cannot be blank'];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 
@@ -222,17 +222,17 @@ class Validation{
 		}elseif(!preg_match('/[a-zA-Z]+/',$name)){
 			$msg = "The username string should have a atleast a letter";
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
-	
+
 	# func to check captcha
 	function checkCaptcha($code) {
 		$msg = '';
 		if(!PhpCaptcha::Validate($_POST['code'])){
 			$msg = $_SESSION['text']['common']["Invalid code entered"];
 			$this->flagErr = true;
-		}		
+		}
 		return $msg;
 	}
 }

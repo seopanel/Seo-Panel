@@ -41,40 +41,40 @@ class XMLParser{
     * @var array
     */
    var $output = array();
-   
+
    /**
     * the XML file character set
     *
     * @var array
     */
    var $char_set = 'UTF-8';
-  
+
     /**#@-*/
     /**
      * The class constructor.
      */
    function XMLParser(){ }
-  
-  
+
+
     /**
      * parse the XML file (or URL)
      *
      * @param string $path the XML file path, or URL
      */
    function parse($path){
-      
+
        $this->output = array();
-      
+
        $this->xml_obj = xml_parser_create($this->char_set);
        xml_set_object($this->xml_obj,$this);
-       xml_set_character_data_handler($this->xml_obj, 'dataHandler');   
+       xml_set_character_data_handler($this->xml_obj, 'dataHandler');
        xml_set_element_handler($this->xml_obj, "startHandler", "endHandler");
-        
+
        if (!($fp = fopen($path, "r"))) {
            die("Cannot open XML data file: $path");
            return false;
        }
-      
+
        while ($data = fread($fp, 4096)) {
            if (!xml_parse($this->xml_obj, $data, feof($fp))) {
                die(sprintf("XML error: %s at line %d",
@@ -83,10 +83,10 @@ class XMLParser{
                xml_parser_free($this->xml_obj);
            }
        }
-      
+
        return $this->output;
    }
-   
+
     /**
      * define the start tag handler
      *
@@ -111,7 +111,7 @@ class XMLParser{
        if(!empty($data)) {
            $_output_idx = count($this->output) - 1;
            if(!isset($this->output[$_output_idx]['content']))
-             $this->output[$_output_idx]['content'] = $data;             
+             $this->output[$_output_idx]['content'] = $data;
            else
              $this->output[$_output_idx]['content'] .= $data;
        }

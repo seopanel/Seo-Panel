@@ -17,4 +17,3 @@ if (count($proxyList)) {
 	showSuccessMsg($spTextSA['Completed project execution'], false);
 }
 ?>
-	

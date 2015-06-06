@@ -33,8 +33,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
 
-} else {    
-    ?>	
+} else {
+    ?>
 	<td align="right" valign="bottom">
 		<a href="<?php echo $mainLink?>&sec=showreport&report_type=rp_links&doc_type=pdf"><img src="<?php echo SP_IMGPATH?>/icon_pdf.png"></a> &nbsp;
 		<a href="<?php echo $mainLink?>&sec=showreport&report_type=rp_links&doc_type=export"><img src="<?php echo SP_IMGPATH?>/icoExport.gif"></a> &nbsp;
@@ -62,7 +62,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		<?php }?>
 	</tr>
 	<?php
-	$colCount = 11; 
+	$colCount = 11;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -71,8 +71,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
-            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));             
+
+            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));
             $pageLink = !empty($pdfVersion) ? str_replace("href='javascript:void(0);'", "", $pageLink) : $pageLink;
             ?>
 			<tr class="<?php echo $class?>">
@@ -89,18 +89,18 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				    	if ($pdfVersion) {
 							echo "<b>{$listInfo['score']}</b>";
 						} else {
-				    
+
 					        if ($listInfo['score'] < 0) {
 					            $scoreClass = 'minus';
 					            $listInfo['score'] = $listInfo['score'] * -1;
 					        } else {
 					            $scoreClass = 'plus';
 					        }
-					        
+
 					        for($b = 0; $b <= $listInfo['score']; $b++) {
 								echo "<span class='$scoreClass'>&nbsp;</span>";
 							}
-							
+
 				        }
 				    ?>
 				</td>
@@ -120,9 +120,9 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2, '', true);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2, '', true);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

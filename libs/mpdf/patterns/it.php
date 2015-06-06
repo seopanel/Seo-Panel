@@ -2,7 +2,7 @@
 /*
 	Adapted from Hyphenator 1.0.2
 	http://code.google.com/p/hyphenator/
-	
+
 	Retrieved from http://www.ctan.org/tex-archive/language/hyphenation/ithyph.tex
 */
 

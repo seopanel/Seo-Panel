@@ -1,4 +1,4 @@
-<?php 
+<?php
 echo showSectionHead($spTextPanel["Crawl Log Manager"]);
 $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 ?>
@@ -11,13 +11,13 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="crawl_type" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
+				<?php
 				foreach ($crawlTypeList as $cInfo) {
 					$selectType = ($cInfo['crawl_type'] == $crawlType) ? "selected" : "";
 					?>
 					<option value="<?php echo $cInfo['crawl_type']; ?>" <?php echo $selectType; ?> ><?php echo $cInfo['crawl_type']; ?></option>
 					<?php
-				}	
+				}
 				?>
 			</select>
 		</td>
@@ -25,11 +25,11 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 	<tr>
 		<th width="100px;"><?php echo $spText['common']['Period']?>:</th>
     	<td width="236px">
-    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/> 
-    		<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/> 
-    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/> 
+    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/>
+    		<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
+    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/>
     		<img align="bottom" onclick="displayDatePicker('to_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
-    	</td>	
+    	</td>
 		<th><?php echo $spText['common']['Search Engine']?>: </th>
 		<td>
 			<?php
@@ -44,7 +44,7 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="status" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
+				<?php
 				$inactCheck = $actCheck = "";
 				if ($statVal == 'success') {
 				    $actCheck = "selected";
@@ -60,13 +60,13 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="proxy_id" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
+				<?php
 				foreach ($proxyList as $proxyInfo) {
 					$selectType = ($proxyInfo['proxy_id'] == $proxyId) ? "selected" : "";
 					?>
 					<option value="<?php echo $proxyInfo['proxy_id']; ?>" <?php echo $selectType; ?> ><?php echo $proxyInfo['proxy'].":".$proxyInfo['port']; ?></option>
 					<?php
-				}	
+				}
 				?>
 			</select>
 			&nbsp;&nbsp;&nbsp;&nbsp;
@@ -78,9 +78,9 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
 		<td class="leftid"><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>		
-		<td width="80px"><?php echo $spText['label']['Report Type']?></td>		
-		<td><?php echo $spText['label']['Reference']?></td>	
+		<td><?php echo $spText['common']['Id']?></td>
+		<td width="80px"><?php echo $spText['label']['Report Type']?></td>
+		<td><?php echo $spText['label']['Reference']?></td>
 		<td><?php echo $spText['label']['Subject']?></td>
 		<td><?php echo $spText['common']['Details']?></td>
 		<td><?php echo $spText['common']['Status']?></td>
@@ -88,7 +88,7 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 9; 
+	$colCount = 9;
 	if (count($list) > 0) {
 		$catCount = count($list);
 		foreach ($list as $i => $listInfo) {
@@ -100,22 +100,22 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             // if from popup
 			if ($fromPopUp) {
             	$logLink = scriptAJAXLinkHref('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
             } else {
 				$logLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
 			}
-            
+
             // crawl log is for keyword
             if ($listInfo['crawl_type'] == 'keyword') {
-				
+
 				// if ref is is integer find keyword name
 				if (!empty($listInfo['keyword'])) {
 					$listInfo['ref_id'] = $listInfo['keyword'];
 				}
-				
+
 				// find search engine info
 				if (preg_match("/^\d+$/", $listInfo['subject'])) {
 					$seCtrler = new SearchEngineController();
@@ -124,7 +124,7 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 				}
 
 			}
-            
+
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
@@ -134,7 +134,7 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 				<td class="td_br_right left"><?php echo $listInfo['subject']?></td>
 				<td class="td_br_right left"><?php echo $listInfo['log_message']?></td>
 				<td class="td_br_right">
-					<?php 
+					<?php
 					if ($listInfo['crawl_status']) {
 						echo "<b class='success'>{$spText['label']['Success']}</b>";
 					} else {
@@ -152,9 +152,9 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
@@ -167,7 +167,7 @@ if (SP_DEMO) {
 } else {
     $delFun = "confirmSubmit('log.php', 'listform', 'content', '&sec=delete_all_crawl_log&pageno=$pageNo')";
     $clearAllFun = "confirmLoad('log.php', 'content', '&sec=clear_all_log')";
-}   
+}
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>

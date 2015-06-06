@@ -25,7 +25,7 @@ class DB{
 
 	var $connectionId = false; 	# db connectio id
 	var $error = false;   		# error while databse operations
-	
+
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
 		$this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
 		if (!$this->connectionId){
@@ -37,7 +37,7 @@ class DB{
 	# func to select database
 	function selectDatabase($dbName){
 		$res = @mysql_select_db($dbName, $this->connectionId);
-		if(@mysql_errno() != 0){			
+		if(@mysql_errno() != 0){
 			return $this->getError();
 		}
 	}
@@ -51,7 +51,7 @@ class DB{
 		}
 		return $res;
 	}
-	
+
     #func to execute a select query
 	function select($query, $fetchFirst = false){
 		$res = @mysql_query($query, $this->connectionId);
@@ -71,41 +71,41 @@ class DB{
 
 	# func to Display the Mysql error
 	function getError(){
-		if (@mysql_errno() != 0) {			
+		if (@mysql_errno() != 0) {
 			$this->error = true;
 			$error =  "Mysql Error: " . @mysql_error();
 		}
 		return $error;
 	}
-	
+
 	function importDatabaseFile($filename, $block=true){
-		
+
 		# temporary variable, used to store current query
 		$tmpline = '';
-		
+
 		# read in entire file
 		$lines = file($filename);
-		
+
 		# loop through each line
 		foreach ($lines as $line){
-			
+
 			# skip it if it's a comment
 			if (substr($line, 0, 2) == '--' || $line == '')
 				continue;
-		 
+
 			# add this line to the current segment
 			$tmpline .= $line;
-			
+
 			# if it has a semicolon at the end, it's the end of the query
 			if (substr(trim($line), -1, 1) == ';'){
-				
+
 				if(!empty($tmpline)){
 					$errMsg = $this->query($tmpline);
 					if($block && $this->error) return $errMsg;
 				}
 				$tmpline = '';
 			}
-		}		
+		}
 	}
 }
 ?>

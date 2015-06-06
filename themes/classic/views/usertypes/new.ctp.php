@@ -4,7 +4,7 @@
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
 	</p>
-	<? 
+	<?
 	}
 ?>
 <?php $post['url'] = empty($post['url']) ? "http://" : $post['url']; ?>
@@ -44,7 +44,7 @@
 					<option value="0">Inactive</option>
 			</select>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

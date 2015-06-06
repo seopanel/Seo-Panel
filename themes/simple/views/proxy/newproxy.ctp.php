@@ -29,7 +29,7 @@
 		<td class="td_right_col">
 			<input type="password" name="proxy_password" value="<?php echo $post['proxy_password']?>"><?php echo $errMsg['proxy_password']?>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

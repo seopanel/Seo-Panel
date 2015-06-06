@@ -38,20 +38,20 @@ $controller->spTextUser = $controller->getLanguageTexts('user', $_SESSION['lang_
 $controller->set('spTextUser', $controller->spTextUser);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
 		case "create":
 			$controller->createUser($_POST);
 			break;
-			
+
 		case "update":
 			$controller->updateUser($_POST);
 			break;
-			
+
 		case "updatemyprofile":
 			$controller->updateMyProfile($_POST);
 			break;
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -60,7 +60,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    }
 		    $controller->listUsers($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -69,8 +69,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    }
 		    $controller->listUsers($_POST);
 		    break;
-		    
-		case "deleteall":		    
+
+		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteUser($id);
@@ -83,33 +83,33 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->listUsers($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "Activate":
-			$controller->__changeStatus($_GET['userId'], 1);			
+			$controller->__changeStatus($_GET['userId'], 1);
 			$controller->listUsers($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['userId'], 0);
 			$controller->listUsers($_GET);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteUser($_GET['userId']);
 			$controller->listUsers($_GET);
 			break;
-		
+
 		case "edit":
 			$controller->editUser($_GET['userId']);
-			break;		
-		
+			break;
+
 		case "new":
 			$controller->newUser();
 			break;
-			
+
 		case "my-profile":
 			$controller->showMyProfile();
 			break;

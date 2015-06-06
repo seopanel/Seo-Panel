@@ -1,4 +1,4 @@
-<?php 
+<?php
 echo showSectionHead($spTextLog['Crawl Log Details']);
 
 // crawl log is for keyword
@@ -66,7 +66,7 @@ if ($logInfo['crawl_type'] == 'keyword') {
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Status']?>:</td>
 		<td class="td_right_col">
-			<?php 
+			<?php
 			if ($logInfo['crawl_status']) {
 				echo "<b class='success'>{$spText['label']['Success']}</b>";
 			} else {

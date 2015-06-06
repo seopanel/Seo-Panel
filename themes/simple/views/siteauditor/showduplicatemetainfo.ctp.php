@@ -34,9 +34,9 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	} else {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
-    	
-} else {    
-    ?>	
+
+} else {
+    ?>
 	<td align="right" valign="bottom">
 		<a href="<?php echo $mainLink?>&doc_type=pdf"><img src="<?php echo SP_IMGPATH?>/icon_pdf.png"></a> &nbsp;
 		<a href="<?php echo $mainLink?>&doc_type=export"><img src="<?php echo SP_IMGPATH?>/icoExport.gif"></a> &nbsp;
@@ -55,7 +55,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		<td class="right"><?php echo $countLink?></td>
 	</tr>
 	<?php
-	$colCount = 4; 
+	$colCount = 4;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -64,11 +64,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             $pageUrls = "";
 			foreach($listInfo['page_urls'] as $urlInfo) {
 				$pageUrls .= "<a target='_blank' href='{$urlInfo['page_url']}'>{$urlInfo['page_url']}</a><br>";
-			}              
+			}
             ?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?> left"><?php echo $i+1?></td>
@@ -78,9 +78,9 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2, '', true);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2, '', true);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

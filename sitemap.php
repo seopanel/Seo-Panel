@@ -32,17 +32,17 @@ $controller->set('spTextSitemap', $controller->spTextSitemap);
 $controller->set('spTextSA', $controller->getLanguageTexts('siteauditor', $_SESSION['lang_code']));
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		default:
 			$controller->generateSitemapFile($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "showlog":
 			$controller->readSitemapLog();
 			break;

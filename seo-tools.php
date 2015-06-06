@@ -35,10 +35,10 @@ $controller->set('spTextKeyword', $controller->getLanguageTexts('keyword', $_SES
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 

@@ -24,11 +24,11 @@
 class KeywordController extends Controller{
 
 	# func to show keywords
-	function listKeywords($info=''){		
-		
+	function listKeywords($info=''){
+
 	    $userId = isLoggedIn();
 		$websiteController = New WebsiteController();
-		
+
 		$urlParams = "";
 		$websiteId = empty($info['website_id']) ? "" : intval($info['website_id']);
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
@@ -37,41 +37,41 @@ class KeywordController extends Controller{
 		     $conditions = " and k.website_id=$websiteId";
 		     $urlParams = "website_id=$websiteId";
 		} else {
-		    $conditions = "";   
+		    $conditions = "";
 		}
-		
+
 		if (isset($info['status'])) {
 		    if (($info['status']== 'active') || ($info['status']== 'inactive')) {
 		        $statVal = ($info['status']=='active') ? 1 : 0;
 		        $conditions .= " and k.status=$statVal";
 		        $urlParams .= "&status=".$info['status'];
-		    }    
+		    }
 		} else {
 		    $info['status'] = '';
 		}
 		$this->set('statVal', $info['status']);
-		
+
 		if (empty($info['keyword'])) {
 		    $info['keyword'] =  '';
 		} else {
 		    $info['keyword'] = urldecode($info['keyword']);
 		    $conditions .= " and k.name like '%".addslashes($info['keyword'])."%'";
-		    $urlParams .= "&keyword=".urlencode($info['keyword']);    
-		}		
+		    $urlParams .= "&keyword=".urlencode($info['keyword']);
+		}
 		$this->set('keyword', $info['keyword']);
-		
+
 		$sql = "select k.*,w.name website,w.status webstatus from keywords k,websites w where k.website_id=w.id and w.status=1";
 		$sql .= isAdmin() ? "" : " and w.user_id=$userId";
 		$sql .= " $conditions order by k.name";
-		
-		# pagination setup		
+
+		# pagination setup
 		$this->db->query($sql, true);
 		$this->paging->setDivClass('pagingdiv');
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
-		$pagingDiv = $this->paging->printPages('keywords.php', '', 'scriptDoLoad', 'content', $urlParams);		
+		$pagingDiv = $this->paging->printPages('keywords.php', '', 'scriptDoLoad', 'content', $urlParams);
 		$this->set('pagingDiv', $pagingDiv);
 		$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-		
+
 		# set keywords list
 		$keywordList = $this->db->select($sql);
 		$this->set('pageNo', $info['pageno']);
@@ -80,7 +80,7 @@ class KeywordController extends Controller{
 		foreach ($keywordList as $i => $keyInfo) {
 			$info = $langCtrler->__getLanguageInfo($keyInfo['lang_code']);
 			$keywordList[$i]['lang_name'] = $info['lang_name'];
-			$info = $countryCtrler->__getCountryInfo($keyInfo['country_code']); 
+			$info = $countryCtrler->__getCountryInfo($keyInfo['country_code']);
 			$keywordList[$i]['country_name'] = $info['country_name'];
 		}
 		$this->set('list', $keywordList);
@@ -93,10 +93,10 @@ class KeywordController extends Controller{
 		$this->set('wkeywordId', $keywordId);
 		$this->render('keyword/keywordselectbox');
 	}
-	
+
 	# func to change status
 	function __changeStatus($keywordId, $status){
-		
+
 		$keywordId = intval($keywordId);
 		$sql = "update keywords set status=$status where id=$keywordId";
 		$this->db->query($sql);
@@ -104,18 +104,18 @@ class KeywordController extends Controller{
 
 	# func to change status
 	function __deleteKeyword($keywordId){
-		
+
 		$keywordId = intval($keywordId);
 		$sql = "delete from keywords where id=$keywordId";
 		$this->db->query($sql);
-		
+
 		// delete related data
 		$sql = "delete sd.*, s.* from searchresults s, searchresultdetails sd where s.id=sd.searchresult_id and s.keyword_id=$keywordId";
 		$this->db->query($sql);
 	}
 
-	function newKeyword(){		
-		
+	function newKeyword(){
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
@@ -129,44 +129,44 @@ class KeywordController extends Controller{
 		$this->set('seList', $seController->__getAllSearchEngines());
 		$this->render('keyword/new');
 	}
-	
+
 	# function to import keywords
-	function importKeywords(){		
-		
+	function importKeywords(){
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		
+
 		if (empty($_POST['website_id'])) {
 		    $listInfo['website_id'] = $websiteList[0]['id'];
 		    $this->set('post', $listInfo);
 		}
-		
+
 		$langController = New LanguageController();
 		$this->set('langList', $langController->__getAllLanguages());
 		$this->set('langNull', true);
-		
+
 		$countryController = New CountryController();
 		$this->set('countryList', $countryController->__getAllCountries());
 		$this->set('countryNull', true);
-		
+
 		$seController = New SearchEngineController();
 		$this->set('seList', $seController->__getAllSearchEngines());
-		
+
 		$this->render('keyword/importkeywords');
 	}
 
 	function createKeyword($listInfo, $apiCall = false){
-		
+
 		$userId = isLoggedIn();
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
-		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array(); 		
+		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array();
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$statusVal = isset($listInfo['status']) ? intval($listInfo['status']) : 1;
-		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];		
-		
+		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];
+
 		// verify the form elements
 		if(!$this->validate->flagErr){
 			$keyword = addslashes(trim($listInfo['name']));
@@ -176,7 +176,7 @@ class KeywordController extends Controller{
 				values('$keyword', '".addslashes($listInfo['lang_code'])."', '".addslashes($listInfo['country_code'])."',
 				".intval($listInfo['website_id']).", '".addslashes($seStr)."', $statusVal)";
 				$this->db->query($sql);
-				
+
 				// if api call
 				if ($apiCall) {
 					return array('success', 'Successfully created keyword');
@@ -184,12 +184,12 @@ class KeywordController extends Controller{
 					$this->listKeywords();
 					exit;
 				}
-				
+
 			}else{
 				$errMsg['name'] = formatErrorMsg($this->spTextKeyword['Keyword already exist']);
 			}
 		}
-		
+
 		// if api call
 		if ($apiCall) {
 			return array('error', $errMsg);
@@ -197,20 +197,20 @@ class KeywordController extends Controller{
 			$this->set('errMsg', $errMsg);
 			$this->newKeyword();
 		}
-		
+
 	}
-	
+
 	# function to import keywords to the seo panel
 	function createImportedKeywords($listInfo){
-		
+
 		$userId = isLoggedIn();
 		$this->set('post', $listInfo);
 		$errMsg['keywords'] = formatErrorMsg($this->validate->checkBlank($listInfo['keywords']));
-		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array(); 		
+		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array();
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
-		
+
 		if(!$this->validate->flagErr){
-			
+
 			$listInfo['website_id'] = intval($listInfo['website_id']);
 			$keywords = explode(",", $listInfo['keywords']);
 			$keyExist = false;
@@ -222,33 +222,33 @@ class KeywordController extends Controller{
 					$keyExist = true;
 					break;
 				}
-				
+
 				// if keyword is not empty
 				if (!empty($keyword)) {
 					$keywordList[$i] = $keyword;
 				}
-			}			
-			
+			}
+
 			if (!$keyExist) {
-				
+
 				$listInfo['searchengines'] = is_array($listInfo['searchengines']) ? $listInfo['searchengines'] : array();
-				foreach ($keywordList as $keyword) {				
+				foreach ($keywordList as $keyword) {
 					$sql = "insert into keywords(name,lang_code,country_code,website_id,searchengines,status)
 								values('$keyword','".$listInfo['lang_code']."','".$listInfo['country_code']."',".$listInfo['website_id'].",'".implode(':', $listInfo['searchengines'])."',1)";
 					$this->db->query($sql);
 				}
-				
+
 				$this->listKeywords($listInfo);
 				exit;
-			}			
-			
+			}
+
 		}
 		$this->set('errMsg', $errMsg);
 		$this->importKeywords();
 	}
 
 	function __checkName($name, $websiteId){
-		
+
 		$sql = "select id from keywords where name='$name' and website_id=$websiteId";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
@@ -256,32 +256,32 @@ class KeywordController extends Controller{
 
 	# func to get all keywords
 	function __getAllKeywords($userId='', $websiteId='', $isAdminCheck=false, $orderByWeb=false, $orderByValue='ASC', $searchName = ''){
-		$sql = "select k.*,w.name website,w.url weburl from keywords k,websites w where k.website_id=w.id and k.status=1";		
+		$sql = "select k.*,w.name website,w.url weburl from keywords k,websites w where k.website_id=w.id and k.status=1";
 		if(!$isAdminCheck || !isAdmin() ){
 			if(!empty($userId)) $sql .= " and w.user_id=$userId";
 		}
-		
+
 		if(!empty($websiteId)) $sql .= " and k.website_id=$websiteId";
-		
+
 		if (!empty($searchName)) {
 			$sql .= " and k.name like '%".addslashes($searchName)."%'";
 		}
-		
+
 		$sql .= $orderByWeb ? " order by w.id, k.name $orderByValue" : " order by k.name $orderByValue";
 		$keywordList = $this->db->select($sql);
 		return $keywordList;
 	}
 
 	function __getKeywordInfo($keywordId){
-		
+
 		$keywordId = intval($keywordId);
 		$sql = "select * from keywords where id=$keywordId";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo;
 	}
 
-	function editKeyword($keywordId, $listInfo=''){	
-					
+	function editKeyword($keywordId, $listInfo=''){
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
@@ -312,22 +312,22 @@ class KeywordController extends Controller{
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];
-		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";	
-				
+		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";
+
 		//validate form
 		if(!$this->validate->flagErr){
 
 			$listInfo['website_id'] = intval($listInfo['website_id']);
 			$listInfo['id'] = intval($listInfo['id']);
 			$keyword = addslashes(trim($listInfo['name']));
-			if($listInfo['name'] != $listInfo['oldName']){				
+			if($listInfo['name'] != $listInfo['oldName']){
 				if ($this->__checkName($keyword, $listInfo['website_id'])) {
 					$errMsg['name'] = formatErrorMsg($this->spTextKeyword['Keyword already exist']);
 					$this->validate->flagErr = true;
 				}
 			}
 
-			if (!$this->validate->flagErr) {				
+			if (!$this->validate->flagErr) {
 				$listInfo['searchengines'] = is_array($listInfo['searchengines']) ? $listInfo['searchengines'] : array();
 				$sql = "update keywords set
 						name = '$keyword',
@@ -338,15 +338,15 @@ class KeywordController extends Controller{
 						searchengines = '".addslashes($seStr)."'
 						where id={$listInfo['id']}";
 				$this->db->query($sql);
-				
+
 				// if api call
 				if ($apiCall) {
 					return array('success', 'Successfully updated keyword');
 				} else {
 					$this->listKeywords();
 					exit;
-				}	
-					
+				}
+
 			}
 		}
 
@@ -358,12 +358,12 @@ class KeywordController extends Controller{
 			$this->editKeyword($listInfo['id'], $listInfo);
 		}
 	}
-	
+
 	function showKeywordReports($keywordId) {
 	    $keywordId = intval($keywordId);
 		$this->checkUserIsObjectOwner($keywordId, 'keyword');
 		echo "<script>scriptDoLoad('reports.php', 'content', 'keyword_id=$keywordId&rep=1')</script>";
 	}
-	
+
 }
 ?>

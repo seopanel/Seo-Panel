@@ -1,4 +1,4 @@
-<?php 
+<?php
 $headLabel = empty($headLabel) ? $spTextPanel['Report Settings'] : $headLabel;
 echo showSectionHead($headLabel);
 
@@ -15,25 +15,25 @@ if (!empty($saved)) {
 		<td class="left" width='35%'><?php echo $headLabel?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php 
-	foreach( $list as $i => $listInfo){ 
+	<?php
+	foreach( $list as $i => $listInfo){
 		$class = ($i % 2) ? "blue_row" : "white_row";
 		switch($listInfo['set_type']){
-			
+
 			case "small":
 				$width = 40;
 				break;
 
 			case "bool":
 				if(empty($listInfo['set_val'])){
-					$selectYes = "";					
+					$selectYes = "";
 					$selectNo = "selected";
-				}else{					
-					$selectYes = "selected";					
+				}else{
+					$selectYes = "selected";
 					$selectNo = "";
 				}
 				break;
-				
+
 			case "medium":
 				$width = 200;
 				break;
@@ -59,7 +59,7 @@ if (!empty($saved)) {
 								<?php
 								foreach ($scheduleList as $interval => $label) {
 									$selected = ($interval == $listInfo['set_val']) ? "selected" : "";
-									?>			
+									?>
 									<option value="<?php echo $interval?>" <?php echo $selected?>><?php echo $label?></option>
 									<?php
 								}
@@ -77,9 +77,9 @@ if (!empty($saved)) {
 				<?php }?>
 			</td>
 		</tr>
-		<?php 
+		<?php
 	}
-	?>		
+	?>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

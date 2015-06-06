@@ -33,22 +33,22 @@ $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lan
 $controller->set('spTextPanel', $controller->spTextPanel);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 		case "newweb":
 			$info['start_script'] = 'websites.php?sec=new&check=1';
 			$controller->index($info);
 			break;
-		
+
 		case "myprofile":
 			$info['menu_selected'] = 'my-profile';
 			$info['start_script'] = 'users.php?sec=my-profile';
 			$controller->index($info);
-			break;		
+			break;
 
 		default:
 			$controller->index($_GET);

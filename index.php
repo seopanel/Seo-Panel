@@ -29,7 +29,7 @@ $controller->view->menu = 'home';
 if($_SERVER['REQUEST_METHOD'] == 'GET'){
 
 	switch($_GET['sec']){
-		
+
 		case "news":
 			include_once(SP_CTRLPATH."/information.ctrl.php");
 			$infoCtrler = new InformationController();
@@ -43,7 +43,7 @@ if($_SERVER['REQUEST_METHOD'] == 'GET'){
 }elseif($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 	switch($_POST['sec']){
-	    
+
 	    default:
 			$controller->index($_POST);
 			break;

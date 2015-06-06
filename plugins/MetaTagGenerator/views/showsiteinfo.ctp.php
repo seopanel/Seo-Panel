@@ -40,20 +40,20 @@
 			<input type="text" name="copyright" value="<?php echo stripslashes($websiteInfo['copyright'])?>" style="width:200px;">
 			<p>Copyright YourCompany - 2008</p>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col">Email:</td>
 		<td class="td_right_col">
 			<input type="text" name="owner_email" value="<?php echo stripslashes($websiteInfo['owner_email'])?>" style="width:200px;">
 			<p>suppport@yoursite.com</p>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="white_row">
 		<td class="td_left_col">Language:</td>
 		<td class="td_right_col">
 			<?php echo $this->render('language/languageselectbox', 'ajax'); ?>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col">Charset:</td>
 		<td class="td_right_col">
@@ -70,7 +70,7 @@
   				<option value="Restricted">Restricted</option>
   			</select>
 		</td>
-	</tr>				
+	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col">Distribution:</td>
 		<td class="td_right_col">
@@ -80,7 +80,7 @@
   				<option value="Local">Local</option>
   			</select>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="white_row">
 		<td class="td_left_col">Robots:</td>
 		<td class="td_right_col">
@@ -92,7 +92,7 @@
 	  			<option value="NOINDEX,NOFOLLOW">NOINDEX,NOFOLLOW</option>
 	  		</select>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col">Revisit-after:</td>
 		<td class="td_right_col">
@@ -105,13 +105,13 @@
 	  			<option value="365 Days">365 Days</option>
 	  		</select>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="white_row">
 		<td class="td_left_col">Expires:</td>
 		<td class="td_right_col">
 			<input type="text" name="expires" value="<?php echo stripslashes($websiteInfo['expires'])?>" style="width:200px;">
 		</td>
-	</tr>			
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

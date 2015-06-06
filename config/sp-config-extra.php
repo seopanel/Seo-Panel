@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 /*
- * the extra config variable of seo panel  
+ * the extra config variable of seo panel
  */
 
 # The seo panel plugin directory

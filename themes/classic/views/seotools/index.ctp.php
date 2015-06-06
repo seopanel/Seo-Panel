@@ -6,10 +6,10 @@
             		<td class="leftmenu" valign="top">
             			<div class="selectmenu">
                             <?php echo getRoundTabTop(); ?>
-                            <div id="round_content">            				
+                            <div id="round_content">
             				    <?php include_once(SP_VIEWPATH."/seotools/leftmenu.ctp.php");?>
             				</div>
-            				<?php echo getRoundTabBot(); ?>	
+            				<?php echo getRoundTabBot(); ?>
             			</div>
             		</td>
             		<td width="10px">&nbsp;</td>
@@ -22,10 +22,10 @@
                 				</script>
                 			<?php }?>
         				</div>
-        				<?php echo getRoundTabBot(); ?>	
+        				<?php echo getRoundTabBot(); ?>
             		</td>
             	</tr>
-            </table>            
+            </table>
         </div>
     </div>
 </div>

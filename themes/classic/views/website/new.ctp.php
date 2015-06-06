@@ -4,7 +4,7 @@
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
 	</p>
-	<? 
+	<?
 	}
 ?>
 <?php $post['url'] = empty($post['url']) ? "http://" : $post['url']; ?>
@@ -15,7 +15,7 @@
 		<td class="left" width='30%'><?php echo $spTextPanel['New Website']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php if(!empty($isAdmin)){ ?>	
+	<?php if(!empty($isAdmin)){ ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
 			<td class="td_right_col">
@@ -25,7 +25,7 @@
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
 						<?php }else{?>
 							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
-						<?php }?>						
+						<?php }?>
 					<?php }?>
 				</select>
 			</td>
@@ -55,7 +55,7 @@
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['label']['Keywords']?>:</td>
 		<td class="td_right_col"><textarea name="keywords" id="webkeywords"><?php echo $post['keywords']?></textarea><?php echo $errMsg['keywords']?></td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

@@ -134,9 +134,9 @@ function scriptAJAXLinkHref($file, $area, $args='', $linkText='Click', $class=''
 	if ($file == 'demo') {
 		$link = ' '.$trigger.'="alertDemoMsg()"';
 	} else {
-		$link = ' '.$trigger.'="scriptDoLoad('."'$file', '$area', '$args')".'"';		
+		$link = ' '.$trigger.'="scriptDoLoad('."'$file', '$area', '$args')".'"';
 	}
-	
+
 	$link = "<a href='javascript:void(0);' class='$class' $link>$linkText</a>";
 	return $link;
 }
@@ -145,9 +145,9 @@ function scriptAJAXLinkHrefDialog($file, $area, $args='', $linkText='Click', $cl
 	if ($file == 'demo') {
 		$link = ' '.$trigger.'="alertDemoMsg()"';
 	} else {
-		$link = ' '.$trigger.'="scriptDoLoadDialog('."'$file', '$area', '$args', $widthVal, $heightVal)".'"';		
+		$link = ' '.$trigger.'="scriptDoLoadDialog('."'$file', '$area', '$args', $widthVal, $heightVal)".'"';
 	}
-	
+
 	$link = "<a href='javascript:void(0);' class='$class' $link>$linkText</a>";
 	return $link;
 }
@@ -224,7 +224,7 @@ function isHavingWebsite() {
 
 # function to create plugin ajax get method
 function pluginGETMethod($args='', $area='content'){
-	$script = "seo-plugins.php?pid=".PLUGIN_ID;	
+	$script = "seo-plugins.php?pid=".PLUGIN_ID;
 	$request = "scriptDoLoad('$script', '$area', '$args')";
 	return $request;
 }
@@ -238,7 +238,7 @@ function pluginPOSTMethod($formName, $area='content', $args=''){
 
 # function to create plugin ajax confirm get method
 function pluginConfirmGETMethod($args='', $area='content'){
-	$script = "seo-plugins.php?pid=".PLUGIN_ID;	
+	$script = "seo-plugins.php?pid=".PLUGIN_ID;
 	$request = "confirmLoad('$script', '$area', '$args')";
 	return $request;
 }
@@ -253,7 +253,7 @@ function pluginConfirmPOSTMethod($formName, $area='content', $args=''){
 # func to create plugin menu
 function pluginMenu($args='', $area='content') {
 	$pluginId = Session::readSession('plugin_id');
-	$script = "seo-plugins.php?pid=".$pluginId;	
+	$script = "seo-plugins.php?pid=".$pluginId;
 	$request = "scriptDoLoad('$script', '$area', '$args')";
 	return $request;
 }
@@ -267,7 +267,7 @@ function removeNewLines($value) {
 
 # func to get current url
 function getCurrentUrl() {
-    
+
     // to fix the issues with IIS
     if (!isset($_SERVER['REQUEST_URI'])) {
         $_SERVER['REQUEST_URI'] = substr($_SERVER['PHP_SELF'],1 );
@@ -275,7 +275,7 @@ function getCurrentUrl() {
             $_SERVER['REQUEST_URI'].='?'.$_SERVER['QUERY_STRING'];
         }
     }
-    
+
 	$reqUrl = $_SERVER['REQUEST_URI'];
 	$protocol = empty($_SERVER['HTTPS']) ? "http://" : "https://";
 	$port = empty($_SERVER['SERVER_PORT']) ?  "" : (int) $_SERVER['SERVER_PORT'];
@@ -289,30 +289,30 @@ function getCurrentUrl() {
 
 # function to check whether refferer is from same site
 function isValidReferer($referer) {
-	
+
 	if(stristr($referer, SP_WEBPATH)) {
 		if (!stristr($referer, 'install')) {
 			$referer = str_ireplace("&lang_code=", "&", $referer);
 			return $referer;
-		}		
+		}
 	}
 	return '';
 }
 
 # func to create export content
 function createExportContent($list) {
-	return '"'.implode('","',$list)."\"\r\n"; 
+	return '"'.implode('","',$list)."\"\r\n";
 }
 
 # func to export data to csv file
 function exportToCsv($fileName, $content) {
-	
+
 	$fileName = $fileName."_".date("Y-m-d",time());
 	header("Content-type: application/vnd.ms-excel");
 	header("Content-disposition: csv" . date("Y-m-d") . ".csv");
 	header( "Content-disposition: filename=".$fileName.".csv");
 	print $content;
-	exit; 
+	exit;
 }
 
 # func to show printer hearder
@@ -327,7 +327,7 @@ function showPrintHeader($headMsg='', $doPrint=true) {
 			window.print();
 		<?php }?>
 		loadJsCssFile("<?php echo SP_CSSPATH?>/screen.css", "css");
-	</script>	
+	</script>
     <style>BODY{background-color:white;padding:50px 10px;}</style>
 	<?php
 	if (!empty($headMsg)) echo showSectionHead($headMsg);
@@ -343,21 +343,21 @@ function showPrintFooter($spText) {
 # func to debug the variables
 function debugVar($value, $exitFlag = true) {
     echo "<pre>";print_r($value);echo "</pre>";
-    
+
     // if exit flag set terminate execution
     if ($exitFlag) {
 		exit;
 	}
-    
+
 }
 
 # func to send mail
 function sendMail($from, $fromName, $to ,$subject,$content, $attachment = ''){
 	$mail = new PHPMailer();
-	
+
 	# check whether the mail send by smtp or not
 	if(SP_SMTP_MAIL){
-		$mail->IsSMTP();	
+		$mail->IsSMTP();
 		$mail->SMTPAuth = true;
 		$mail->Host = SP_SMTP_HOST;
 		$mail->Username = SP_SMTP_USERNAME;
@@ -368,17 +368,17 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = ''){
 	$mail->From = $from;
 	$mail->FromName = $fromName;
 	$mail->AddAddress($to, "");
-	$mail->WordWrap = 70;                              
+	$mail->WordWrap = 70;
 	$mail->IsHTML(true);
 
 	$mail->Subject = $subject;
 	$mail->Body = $content;
-	
+
 	// if attachments are there
 	if (!empty($attachment)) {
 		$mail->AddAttachment($attachment);
 	}
-	
+
 	if(!$mail->Send()){
 		return 0;
 	}else{
@@ -388,29 +388,29 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = ''){
 
 # func to sanitize data to prevent attacks
 function sanitizeData($data, $stripTags=true, $addSlashes=false) {
-    
+
     if (is_array($data)) {
         foreach ($data as $col => $val) {
 
             if ( ($col == 'password') ||  ($col== 'confirmPassword') ) {
                 continue;
             }
-            
+
             if ($stripTags) {
                 $val = strip_tags($val);
-            } 
-            
+            }
+
             if ($addSlashes) {
                 $val = addslashes($val);
             }
-            
+
             $data[$col] = $val;
         }
     } else {
         if ($stripTags) {
             $data = strip_tags($data);
-        } 
-        
+        }
+
         if ($addSlashes) {
             $data = addslashes($data);
         }
@@ -420,7 +420,7 @@ function sanitizeData($data, $stripTags=true, $addSlashes=false) {
 
 # func to get rounded tab top
 function getRoundTabTop(){
-	
+
 	$content = '
 		<b class="round_border">
 			<b class="round_border_layer3"></b>
@@ -433,7 +433,7 @@ function getRoundTabTop(){
 
 # func to get rounded tab bottom
 function getRoundTabBot(){
-	
+
 	$content = '
 		<b class="round_border">
 			<b class="round_border_layer1"></b>
@@ -446,7 +446,7 @@ function getRoundTabBot(){
 
 # function to convert to pdf  from view file
 function exportToPdf($content, $fileName = "reports.pdf") {
-	
+
 	include_once(SP_LIBPATH . "/mpdf/mpdf.php");
 	$mpdf = new mPDF();
 	$mpdf->useAdobeCJK = true;

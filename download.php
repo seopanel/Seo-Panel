@@ -26,7 +26,7 @@ include_once(SP_CTRLPATH."/download.ctrl.php");
 $controller = New DownloadController();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
 
 	}

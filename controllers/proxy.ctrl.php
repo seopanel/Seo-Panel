@@ -25,10 +25,10 @@ class ProxyController extends Controller{
 
 	# func to show proxy list
 	function listProxy($info=''){
-		
+
 		$userId = isLoggedIn();
-		$sql = "select * from proxylist where 1=1";		
-		
+		$sql = "select * from proxylist where 1=1";
+
 		if (isset($info['status'])) {
 			if (($info['status']== 'active') || ($info['status']== 'inactive')) {
 				$statVal = ($info['status']=='active') ? 1 : 0;
@@ -39,7 +39,7 @@ class ProxyController extends Controller{
 			$info['status'] = '';
 		}
 		$this->set('statVal', $info['status']);
-		
+
 		if (empty($info['keyword'])) {
 			$info['keyword'] =  '';
 		} else {
@@ -48,29 +48,29 @@ class ProxyController extends Controller{
 			$urlParams .= "&keyword=".urlencode($info['keyword']);
 		}
 		$this->set('keyword', $info['keyword']);
-		
+
 		$sql .= " $conditions order by id";
-		
-		# pagination setup		
+
+		# pagination setup
 		$this->db->query($sql, true);
 		$this->paging->setDivClass('pagingdiv');
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
-		$pagingDiv = $this->paging->printPages('proxy.php', '', 'scriptDoLoad', 'content', $urlParams);		
+		$pagingDiv = $this->paging->printPages('proxy.php', '', 'scriptDoLoad', 'content', $urlParams);
 		$this->set('pagingDiv', $pagingDiv);
 		$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-				
-		$proxyList = $this->db->select($sql);	
-		$this->set('pageNo', $info['pageno']);		
+
+		$proxyList = $this->db->select($sql);
+		$this->set('pageNo', $info['pageno']);
 		$this->set('list', $proxyList);
 		$this->set('urlParams', $urlParams);
 		$this->render('proxy/proxylist');
 	}
-	
+
 	# func to show import proxy form
 	function showImportProxy($info = ''){
 		$this->render('proxy/importproxy');
 	}
-	
+
 	#funvtion to import proxy
 	function importProxy($data = "") {
 		$errMsg['proxy_list'] = formatErrorMsg($this->validate->checkBlank($data['proxy_list']));
@@ -94,10 +94,10 @@ class ProxyController extends Controller{
 						$this->insertProxy($proxyInfo);
 						$resInfo['valid']++;
 					}
-					
+
 				}
 			}
-			
+
 			// if imported proxies needs to be checked
 			$proxyList = array();
 			if (!empty($data['check_status'])) {
@@ -111,17 +111,17 @@ class ProxyController extends Controller{
 			$this->set('resInfo', $resInfo);
 			$this->set('proxyMaxId', $proxyMaxId);
 			$this->render('proxy/importresult');
-			
+
 		} else {
 			showErrorMsg("Please enter valid proxy list.");
 		}
 	}
-	
+
 	# func to check status of all proxy list
 	function showcheckAllStatus($info=''){
 		$this->render('proxy/showcheckallstatus');
 	}
-	
+
 	# function to check all proxy status
 	function checkAllProxyStatus($info = '') {
 		$isStatusCheck = false;
@@ -131,15 +131,15 @@ class ProxyController extends Controller{
 			$status = ($info['status'] == 'active') ? 1 : 0;
 			$this->set('status', $status);
 		}
-		
+
 		$proxyList = $this->__getAllProxys($isStatusCheck, $status);
 		$this->set('activeCount', $this->__getProxyCount(" where status=1 and checked=1"));
 		$this->set('inActiveCount', $this->__getProxyCount(" where status=0 and checked=1"));
 		$this->set('proxyList', $proxyList);
 		$this->render('proxy/checkallstatus');
-				
+
 	}
-	
+
 	# func to check status of all proxy list
 	function runCheckStatus($info = '') {
 		$proxyId = intval($info['id']);
@@ -152,13 +152,13 @@ class ProxyController extends Controller{
 			$where = " and status=$status";
 			$this->set('status', $status);
 		}
-		
+
 		// if max id is set
 		if (isset($info['proxy_max_id'])) {
 			$where = " and id > ".intval($info['proxy_max_id']);
 			$this->set('proxyMaxId', $info['proxy_max_id']);
 		}
-		
+
 		$sql = "select * from proxylist where checked=0 $where order by id";
 		$proxyList = $this->db->select($sql);
 		$this->set('activeCount', $this->__getProxyCount(" where status=1 and checked=1"));
@@ -167,14 +167,14 @@ class ProxyController extends Controller{
 		$this->set('proxyList', $proxyList);
 		$this->render('proxy/runcheckstatus');
 	}
-	
-	# function to update checked status of the proxy list 
+
+	# function to update checked status of the proxy list
 	function updateProxyCheckedStatus($checkedVal = 0, $where = "") {
 		$sql = "update proxylist set checked=".intval($checkedVal);
 		$sql .= empty($where) ? "" : $where;
 		$this->db->query($sql);
 	}
-	
+
 	# function to get proxy count
 	function __getProxyCount($where = '') {
 		$sql = "select count(*) as count from proxylist $where";
@@ -187,7 +187,7 @@ class ProxyController extends Controller{
 		$sql = "select * from proxylist where 1=1";
 		if($isStatusCheck){
 			$sql .= " and status=".intval($status);
-		} 
+		}
 		$sql .= " order by id";
 		$proxyList = $this->db->select($sql);
 		return $proxyList;
@@ -210,19 +210,19 @@ class ProxyController extends Controller{
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
 	}
-	
-	
+
+
 	function newProxy($listInfo=''){
 		if (!isset($listInfo['port'])) {
 			$listInfo['port'] = 80;
 		}
-				
-		$this->set('post', $listInfo);		
+
+		$this->set('post', $listInfo);
 		$this->render('proxy/newproxy');
 	}
 
 	function createProxy($listInfo){
-				
+
 		$errMsg['proxy'] = formatErrorMsg($this->validate->checkBlank($listInfo['proxy']));
 		$errMsg['port'] = formatErrorMsg($this->validate->checkNumber($listInfo['port']));
 		if (!empty($listInfo['proxy_auth'])) {
@@ -241,7 +241,7 @@ class ProxyController extends Controller{
 		$this->set('errMsg', $errMsg);
 		$this->newProxy($listInfo);
 	}
-	
+
 	function insertProxy($listInfo) {
 		$proxyAuth = empty($listInfo['proxy_auth']) ? 0 : 1;
 		$sql = "insert into proxylist(proxy,port,proxy_auth,proxy_username,proxy_password,status)
@@ -258,14 +258,14 @@ class ProxyController extends Controller{
 	}
 
 	function editProxy($proxyId, $listInfo=''){
-		
+
 		if(!empty($proxyId)){
 			if(empty($listInfo)){
 				$listInfo = $this->__getProxyInfo($proxyId);
 				$listInfo['oldProxy'] = $listInfo['proxy'];
 			}
 			$this->set('post', $listInfo);
-			
+
 			$this->render('proxy/editproxy');
 			exit;
 		}
@@ -273,7 +273,7 @@ class ProxyController extends Controller{
 	}
 
 	function updateProxy($listInfo){
-		
+
 		$this->set('post', $listInfo);
 		$errMsg['proxy'] = formatErrorMsg($this->validate->checkBlank($listInfo['proxy']));
 		$errMsg['port'] = formatErrorMsg($this->validate->checkNumber($listInfo['port']));
@@ -308,21 +308,21 @@ class ProxyController extends Controller{
 		$this->set('errMsg', $errMsg);
 		$this->editProxy($listInfo['id'], $listInfo);
 	}
-	
+
 	# func to check whether proxy is active or not
 	function __isProxyActive($proxyId) {
-		
+
 		$proxyInfo = $this->__getProxyInfo($proxyId);
-		$ret = $this->spider->checkProxy($proxyInfo);		
-		return empty($ret['error']) ? 1 : 0; 
-		
+		$ret = $this->spider->checkProxy($proxyInfo);
+		return empty($ret['error']) ? 1 : 0;
+
 	}
-	
+
 	function checkStatus($proxyId) {
 		$status = $this->__isProxyActive($proxyId);
 		$this->__changeStatus($proxyId, $status);
 	}
-	
+
 	function getRandomProxy() {
 		$sql = "SELECT * FROM proxylist where status=1 ORDER BY RAND() LIMIT 1";
 		$listInfo = $this->db->select($sql, true);
@@ -333,7 +333,7 @@ class ProxyController extends Controller{
 
 	// function to show cron command
 	function showCronCommand(){
-	
+
 		$this->render('proxy/croncommand');
 	}
 	/**
@@ -341,10 +341,10 @@ class ProxyController extends Controller{
 	 * @param Array $info	Contains all search info details
 	 */
 	function showProxyPerfomance($info = '') {
-		
+
 		$sql = "select p.id as proxy_id, p.proxy, p.port, count(*) count, sum(crawl_status) success, avg(crawl_status) avg_score,
 		count(*) - sum(crawl_status) fail from crawl_log t join proxylist p on p.id=t.proxy_id where 1=1";
-		
+
 		$conditions = "";
 		if (empty($info['keyword'])) {
 			$info['keyword'] =  '';
@@ -354,35 +354,35 @@ class ProxyController extends Controller{
 			$conditions .= " and p.proxy like '%$searchKeyword%'";
 			$urlParams .= "&keyword=".urlencode($info['keyword']);
 		}
-		
+
 		$this->set('keyword', $info['keyword']);
-		
+
 		if (!empty ($info['from_time'])) {
 			$fromTime = strtotime($info['from_time'] . ' 00:00:00');
 		} else {
 			$fromTime = mktime(0, 0, 0, date('m'), date('d') - 90, date('Y'));
 		}
-		
+
 		if (!empty ($info['to_time'])) {
 			$toTime = strtotime($info['to_time'] . ' 00:00:00');
 		} else {
 			$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		}
-		
+
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		$this->set('fromTime', $fromTimeLabel);
 		$this->set('toTime', $toTimeLabel);
 		$urlParams .= "&from_time=$fromTimeLabel&to_time=$toTimeLabel";
-		
+
 		// set status
 		$urlParams .= "&order_by=".$info['order_by'];
-		$this->set('statVal', $info['order_by']);		
-		
+		$this->set('statVal', $info['order_by']);
+
 		// sql created using param
 		$sql .= " $conditions and crawl_time >='$fromTimeLabel 00:00:00' and crawl_time<='$toTimeLabel 23:59:59' group by proxy_id order by avg_score";
 		$sql .= ($info['order_by'] == 'fail') ? " ASC" : " DESC";
-		
+
 		// pagination setup
 		$this->db->query($sql, true);
 		$this->paging->setDivClass('pagingdiv');
@@ -390,12 +390,12 @@ class ProxyController extends Controller{
 		$pagingDiv = $this->paging->printPages('proxy.php?sec=perfomance', '', 'scriptDoLoad', 'content', $urlParams);
 		$this->set('pagingDiv', $pagingDiv);
 		$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-		
+
 		$logList = $this->db->select($sql);
 		$this->set('pageNo', $info['pageno']);
 		$this->set('list', $logList);
 		$this->set('urlParams', $urlParams);
-		
+
 		$this->render('proxy/proxyperfomance');
 	}
 }

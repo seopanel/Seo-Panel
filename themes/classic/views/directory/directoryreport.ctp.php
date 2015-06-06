@@ -14,22 +14,22 @@
 		<td>
 			<select name="active" style="width:150px;" onchange="<?php echo $onChange?>">
 				<option value="">-- Select --</option>
-				<?php 
+				<?php
 				$activeList = array('pending', 'approved');
 				foreach($activeList as $val){
 					if($val == $activeVal){
 						?>
 						<option value="<?php echo $val?>" selected><?php echo ucfirst($val)?></option>
 						<?php
-					}else{						
+					}else{
 						?>
 						<option value="<?php echo $val?>"><?php echo ucfirst($val)?></option>
-						<?php	
+						<?php
 					}
-				} 
+				}
 				?>
 			</select>
-		</td>		
+		</td>
 		<td colspan="2">
 			<a href="javascript:void(0);" onclick="<?php echo $onChange?>" class="actionbut"><?php echo $spText['button']['Search']?></a>
 		</td>
@@ -43,7 +43,7 @@
 		<p class='note error'><?php echo $spText['common']['No Records Found']?>!</p>
 		<?php
 		exit;
-	} 
+	}
 ?>
 
 <div id='subcontent'>
@@ -61,12 +61,12 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 6; 
+	$colCount = 6;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
 		foreach($list as $listInfo){
-			
+
 			$class = ($i % 2) ? "blue_row" : "white_row";
             if($catCount == ($i + 1)){
                 $leftBotClass = "tab_left_bot";
@@ -78,8 +78,8 @@
             $confirm = empty($listInfo['status']) ? $spText['common']["No"] : $spText['common']["Yes"];
             $confirmId = "confirm_".$listInfo['id'];
             $confirmLink = "<a href='javascript:void(0);' onclick=\"scriptDoLoad('directories.php', '$confirmId', 'sec=changeconfirm&id={$listInfo['id']}&confirm=$confirm')\">$confirm</a>";
-            
-            $status = empty($listInfo['active']) ? $spTextDir["Pending"] : $spTextDir["Approved"];            
+
+            $status = empty($listInfo['active']) ? $spTextDir["Pending"] : $spTextDir["Approved"];
             $statusId = "status_".$listInfo['id'];
 			?>
 			<tr class="<?php echo $class?>">
@@ -102,8 +102,8 @@
 			$i++;
 		}
 	}else{
-		echo showNoRecordsList($colCount-2);		
-	} 
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

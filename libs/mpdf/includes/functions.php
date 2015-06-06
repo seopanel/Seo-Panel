@@ -15,7 +15,7 @@ function array_insert(&$array, $value, $offset) {
 		$offset = intval($offset);
 		if ($offset < 0 || $offset >= count($array)) { array_push($array, $value); }
 		else if ($offset == 0) { array_unshift($array, $value); }
-		else { 
+		else {
 			$temp  = array_slice($array, 0, $offset);
 			array_push($temp, $value);
 			$array = array_slice($array, $offset);
@@ -58,10 +58,10 @@ function _strcspn($str1, $str2, $start=null, $length=null) {
 	$numargs = func_num_args();
 	if ($numargs == 2) {
 		return strcspn($str1, $str2);
-	} 
+	}
 	else if ($numargs == 3) {
 		return strcspn($str1, $str2, $start);
-	} 
+	}
 	else {
 		return strcspn($str1, $str2, $start, $length);
 	}
@@ -82,7 +82,7 @@ function _fgets (&$h, $force=false) {
 if(!function_exists('str_ireplace')) {
   function str_ireplace($search,$replace,$subject) {
 	$search = preg_quote($search, "/");
-	return preg_replace("/".$search."/i", $replace, $subject); 
+	return preg_replace("/".$search."/i", $replace, $subject);
   }
 }
 if(!function_exists('htmlspecialchars_decode')) {
@@ -97,7 +97,7 @@ function PreparePreText($text,$ff='//FF//') {
 	return ('<pre>'.$text.'</pre>');
 }
 
-if(!function_exists('strcode2utf')){ 
+if(!function_exists('strcode2utf')){
   function strcode2utf($str,$lo=true) {
 	//converts all the &#nnn; and &#xhhh; in a string to Unicode
 	// mPDF 5.7
@@ -125,7 +125,7 @@ function codeHex2utf_lo_callback($matches) {
 	return codeHex2utf($matches[1], 1);
 }
 
-if(!function_exists('code2utf')){ 
+if(!function_exists('code2utf')){
   function code2utf($num,$lo=true){
 	//Returns the utf string corresponding to the unicode value
 	if ($num<128) {
@@ -140,7 +140,7 @@ if(!function_exists('code2utf')){
 }
 
 
-if(!function_exists('codeHex2utf')){ 
+if(!function_exists('codeHex2utf')){
   function codeHex2utf($hex,$lo=true){
 	$num = hexdec($hex);
 	if (($num<128) && !$lo) return '&#x'.$hex.';';

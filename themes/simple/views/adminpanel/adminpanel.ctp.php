@@ -9,7 +9,7 @@
                             <div id="round_content">
             				    <?php include_once(SP_VIEWPATH."/adminpanel/adminleftmenu.ctp.php");?>
             				</div>
-            				<?php echo getRoundTabBot(); ?>	
+            				<?php echo getRoundTabBot(); ?>
             			</div>
             		</td>
             		<td width="10px">&nbsp;</td>
@@ -20,10 +20,10 @@
                 				<?php echo $startFunction?>
                 			</script>
         				</div>
-        				<?php echo getRoundTabBot(); ?>	
+        				<?php echo getRoundTabBot(); ?>
             		</td>
             	</tr>
-            </table>        
+            </table>
         </div>
     </div>
 </div>

@@ -24,7 +24,7 @@
  * Class defines all details about managing time zones
  */
 class TimeZoneController extends Controller {
-	
+
 	/**
 	 * function to get all timezones used in the system
 	 * @param string $where		The condition to filter the timezones
@@ -37,8 +37,8 @@ class TimeZoneController extends Controller {
 		$timezoneList = $this->db->select($sql);
 		return $timezoneList;
 	}
-	
-	
+
+
 	/**
 	 * function to get timezone information
 	 * @param int $timezoneVal	The value of the timezone

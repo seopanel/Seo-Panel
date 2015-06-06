@@ -39,7 +39,7 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 7; 
+	$colCount = 7;
 	if(count($seList) > 0){
 		$catCount = count($seList);
 		foreach($seList as $i => $seInfo){
@@ -52,7 +52,7 @@
                 $rightBotClass = "td_br_right";
             }
 			?>
-			<tr class="<?php echo $class?>">				
+			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $seInfo['id']?>"></td>
 				<td class="td_br_right"><?php echo $seInfo['id']?></td>
 				<td class="td_br_right left"><?php echo $seInfo['domain']?></td>
@@ -67,7 +67,7 @@
 						}else{
 							$statVal = "Activate";
 							$statLabel = $spText['common']["Activate"];
-						} 
+						}
 					?>
 					<select name="action" id="action<?php echo $seInfo['id']?>" onchange="doAction('searchengine.php', 'content', 'seId=<?php echo $seInfo['id']?>&pageno=<?php echo $pageNo?>', 'action<?php echo $seInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
@@ -78,9 +78,9 @@
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
@@ -94,7 +94,7 @@ if (SP_DEMO) {
     $actFun = "confirmSubmit('searchengine.php', 'listform', 'content', '&sec=activateall&pageno=$pageNo')";
     $inactFun = "confirmSubmit('searchengine.php', 'listform', 'content', '&sec=inactivateall&pageno=$pageNo')";
     $delFun = "confirmSubmit('searchengine.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
-}   
+}
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>

@@ -2,11 +2,11 @@
 <table width="80%" cellspacing="0" cellpadding="0" class="summary">
 	<tr><td class="topheader" colspan="2"><?php echo $spText['label']['Developers']?></td></tr>
 	<tr>
-		<td class="content" style="border-left: none;width: 30%">PHP, MYSQL, AJAX, HTML</td>					
+		<td class="content" style="border-left: none;width: 30%">PHP, MYSQL, AJAX, HTML</td>
 		<td class="contentmid" style="text-align: left;padding-left: 10px">Geo Varghese</td>
 	</tr>
 	<tr>
-		<td class="content" style="border-left: none;width: 30%">PHP, MYSQL, JQUERY</td>					
+		<td class="content" style="border-left: none;width: 30%">PHP, MYSQL, JQUERY</td>
 		<td class="contentmid" style="text-align: left;padding-left: 10px">Deepthy Rao</td>
 	</tr>
 </table>
@@ -31,7 +31,7 @@
 	<tr><td class="topheader" colspan="2"><?php echo $spText['label']['Translators']?></td></tr>
 	<?php foreach($transList as $transInfo) {?>
 		<tr>
-			<td class="content" style="border-left: none;width: 30%"><?php echo $transInfo['lang_name']?></td>					
+			<td class="content" style="border-left: none;width: 30%"><?php echo $transInfo['lang_name']?></td>
 			<td class="contentmid" style="text-align: left;padding-left: 10px"><?php echo $transInfo['trans_name']?>, <a href="<?php echo $transInfo['trans_website']?>" target="_blank"><?php echo $transInfo['trans_company']?></a></td>
 		</tr>
 	<?php }?>

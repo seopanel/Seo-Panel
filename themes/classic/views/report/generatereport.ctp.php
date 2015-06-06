@@ -23,8 +23,8 @@
 	<tr>
 		<th><?php echo $spText['common']['Search Engine']?>: </th>
 		<td>
-			<?php 
-				echo $this->render('searchengine/seselectbox', 'ajax'); 
+			<?php
+				echo $this->render('searchengine/seselectbox', 'ajax');
 			?>
 		</td>
 		<td><a href="javascript:void(0);" onclick="scriptDoLoadPost('generate-reports.php', 'search_form', 'subcontent')" class="actionbut"><?php echo $spText['button']['Proceed']?></a></td>

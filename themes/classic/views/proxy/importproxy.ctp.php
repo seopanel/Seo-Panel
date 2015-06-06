@@ -22,7 +22,7 @@
 	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['button']["Check Status"]?>:</td>
 		<td class="td_right_col"><input type="checkbox" name="check_status" value="1" checked="checked"></td>
-	</tr>			
+	</tr>
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

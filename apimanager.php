@@ -33,19 +33,19 @@ $controller->spTextAPI = $controller->getLanguageTexts('api', $_SESSION['lang_co
 $controller->set('spTextAPI', $controller->spTextAPI);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-	
+
 	switch ($_POST['sec']) {
-		
+
 		default:
 			$controller->showAPIConnectionManager($_POST);
-			break;	
-		    
+			break;
+
 	}
 
 } else {
-	
+
 	switch($_GET['sec']) {
-		
+
 		default:
 			$controller->showAPIConnectionManager($_GET);
 			break;

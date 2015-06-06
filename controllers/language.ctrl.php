@@ -22,7 +22,7 @@
 
 # class defines all language controller functions
 class LanguageController extends Controller{
-	
+
 	# func to get all Languages
 	function __getAllLanguages($where=''){
 		$sql = "select * from languages";
@@ -38,11 +38,11 @@ class LanguageController extends Controller{
 		if (!stristr($currUrl, '?')) {
 			$currUrl .= "?";
 		}
-		
+
 		$currUrl = preg_replace('/&lang_code=\w{2}$|&lang_code=\w{2}&/i', '', $currUrl, 1, $count);
 		return $currUrl;
 	}
-	
+
 	# func to get language info
 	function __getLanguageInfo($langCode) {
 		$sql = "select * from languages where lang_code='$langCode'";

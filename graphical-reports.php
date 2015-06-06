@@ -35,9 +35,9 @@ $controller->set('spTextKeyword', $controller->spTextKeyword);
 $controller->layout = 'ajax';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		default:
 			$controller->showGraphicalReports($_POST);
 			break;
@@ -45,7 +45,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
-		
+
 		case "graph":
 			$controller->showGraph($_GET);
 			break;

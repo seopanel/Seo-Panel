@@ -34,21 +34,21 @@ $controller->set('spDescription', 'Its an open source software and also you can 
 $controller->set('spKeywords', 'seo panel plugins,latest seo plugins,download seo plugins,install seo plugins,develop seo plugins');
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-			
+
 		default:
 			$controller->manageSeoPlugins($_POST, 'post');
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 
 		case "show":
 			$controller->showSeoPlugins($_GET);
 			break;
-			
+
 		default:
 			$controller->manageSeoPlugins($_GET, 'get');
 			break;

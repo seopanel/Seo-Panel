@@ -29,17 +29,17 @@
 					<?php }?>
 				<?php }?>
 			</select>
-		</td>		
+		</td>
 	</tr>
-	<tr>		
+	<tr>
 		<th><?php echo $spText['common']['Google Pagerank']?>: </th>
 		<td>
 			<select name="google_pagerank" onchange="<?php echo $submitLink?>">
-				<option value="">-- <?php echo $spText['common']['Select']?> --</option>				
+				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php
 				for ($i=0; $i<=10; $i++) {
-					$selected = (($info['google_pagerank'] != '') && ($i == $info['google_pagerank'])) ? "selected" : "";					
-					?>			
+					$selected = (($info['google_pagerank'] != '') && ($i == $info['google_pagerank'])) ? "selected" : "";
+					?>
 					<option value="<?php echo $i?>" <?php echo $selected?>>PR <?php echo $i?></option>
 					<?php
 				}
@@ -53,7 +53,7 @@
 				<?php
 				foreach ($langList as $langInfo) {
 					$selected = ($langInfo['lang_code'] == $info['lang_code']) ? "selected" : "";
-					?>			
+					?>
 					<option value="<?php echo $langInfo['lang_code']?>" <?php echo $selected?>><?php echo $langInfo['lang_name']?></option>
 					<?php
 				}
@@ -72,7 +72,7 @@
 <?php echo $pagingDiv?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
-		<td class="left"><?php echo $spText['common']['Id']?></td>		
+		<td class="left"><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['common']['Website']?></td>
 		<td>PR</td>
 		<td><?php echo $spTextDir['Captcha']?></td>
@@ -81,7 +81,7 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 7; 
+	$colCount = 7;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -93,13 +93,13 @@
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             $statusLink = $ctrler->getStatusLink($listInfo['id'], $listInfo['working']);
-            $checkLink = scriptAJAXLinkHref('directories.php', "status_{$listInfo['id']}", "sec=checkdir&dir_id={$listInfo['id']}&nodebug=1&checkpr=1", $spText['button']["Check Status"]); 
+            $checkLink = scriptAJAXLinkHref('directories.php', "status_{$listInfo['id']}", "sec=checkdir&dir_id={$listInfo['id']}&nodebug=1&checkpr=1", $spText['button']["Check Status"]);
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['id']?></td>
-				
+
 				<td class="td_br_right left"><a target="_blank" href="<?php echo $listInfo['submit_url']?>"><?php echo str_replace('http://', '', $listInfo['domain']); ?></a></td>
 				<td class="td_br_right" id="pr_<?php echo $listInfo['id']?>"><?php echo $listInfo['google_pagerank']?></td>
 				<td class="td_br_right" id="captcha_<?php echo $listInfo['id']?>"><?php echo $listInfo['is_captcha'] ? $spText['common']["Yes"] : $spText['common']["No"];	?></td>
@@ -109,9 +109,9 @@
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

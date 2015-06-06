@@ -4,7 +4,7 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
 		<td class="leftid"><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>			
+		<td><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['common']['User Type']?></td>
 		<td><?php echo $spText['label']['Description']?></td>
 		<td><?php echo $spText['common']['Keywords Count']?></td>
@@ -14,7 +14,7 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 9; 
+	$colCount = 9;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -26,15 +26,15 @@
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             $userTypeLink = scriptAJAXLinkHref('user-types-manager.php', 'content', "sec=edit&userTypeId={$listInfo['id']}", "{$listInfo['user_type']}")
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td class="td_br_right"><?php echo $listInfo['id']?></td>								
-				<td class="td_br_right left"><?php echo $userTypeLink?></td>		
-				<td class="td_br_right left"><?php echo $listInfo['description']?></td>		
-				<td class="td_br_right left"><?php echo $listInfo['num_keywords']?></td>	
+				<td class="td_br_right"><?php echo $listInfo['id']?></td>
+				<td class="td_br_right left"><?php echo $userTypeLink?></td>
+				<td class="td_br_right left"><?php echo $listInfo['description']?></td>
+				<td class="td_br_right left"><?php echo $listInfo['num_keywords']?></td>
 				<td class="td_br_right left"><?php echo $listInfo['num_websites']?></td>
 				<td class="td_br_right left"><?php echo $listInfo['price']?></td>
 				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
@@ -46,7 +46,7 @@
 						}else{
 							$statVal = "Activate";
 							$statLabel = $spText['common']["Activate"];
-						} 
+						}
 					?>
 					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('user-types-manager.php', 'content', 'userTypeId=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
@@ -58,9 +58,9 @@
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

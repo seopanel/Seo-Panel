@@ -8,12 +8,12 @@
 		<td class="right">&nbsp;</td>
 	</tr>
 	<?php
-	$colCount = 3; 
+	$colCount = 3;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
-		foreach($list as $listInfo){			
-			
+		foreach($list as $listInfo){
+
 			$class = ($i % 2) ? "blue_row" : "white_row";
             if($catCount == ($i + 1)){
                 $leftBotClass = "tab_left_bot";
@@ -42,8 +42,8 @@
 		    <td class="td_bottom_border" colspan="1">No Records Found!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
-	} 
+		<?
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

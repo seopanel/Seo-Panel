@@ -18,7 +18,7 @@
 //
 
 class FilterLZW {
-    
+
     var $sTable = array();
     var $data = null;
     var $dataLength = 0;
@@ -33,7 +33,7 @@ class FilterLZW {
     function error($msg) {
         die($msg);
     }
-    
+
     /**
      * Method to decode LZW compressed data.
      *
@@ -92,7 +92,7 @@ class FilterLZW {
                 }
             }
         }
-        
+
         return $uncompData;
     }
 
@@ -147,7 +147,7 @@ class FilterLZW {
 
         return $code;
     }
-    
+
     function encode($in) {
         $this->error("LZW encoding not implemented.");
     }

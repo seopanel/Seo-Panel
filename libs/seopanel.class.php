@@ -22,12 +22,12 @@
 
 # super class defines all seo panel functions
 class Seopanel{
-	
+
 	var $data;
-	
+
 	# function load seo panel
 	function loadSeoPanel() {
-		
+
 		# include main classes
 		include_once(SP_LIBPATH.'/session.class.php');
 		include_once(SP_LIBPATH.'/controller.class.php');
@@ -37,14 +37,14 @@ class Seopanel{
 		include_once(SP_LIBPATH.'/paging.class.php');
 		include_once(SP_LIBPATH.'/pchart.class.php');
 		include_once(SP_LIBPATH.'/pdata.class.php');
-		include_once(SP_LIBPATH.'/xmlparser.class.php');		
-		include_once(SP_LIBPATH.'/captcha.class.php');		
+		include_once(SP_LIBPATH.'/xmlparser.class.php');
+		include_once(SP_LIBPATH.'/captcha.class.php');
 		include_once(SP_LIBPATH.'/phpmailer.class.php');
 		@Session::startSession();
-		
-		# include common functions		
+
+		# include common functions
 		include_once(SP_INCPATH.'/sp-common.php');
-		
+
 		# include coomon controllers classes
 		include_once(SP_CTRLPATH.'/country.ctrl.php');
 		include_once(SP_CTRLPATH.'/language.ctrl.php');
@@ -54,13 +54,13 @@ class Seopanel{
 		include_once(SP_CTRLPATH."/crawllog.ctrl.php");
 		include_once(SP_CTRLPATH.'/timezone.ctrl.php');
 		include_once(SP_CTRLPATH.'/searchengine.ctrl.php');
-		
-	}	
-	
+
+	}
+
 	# to set variable to render
 	function set($varName, $varValue){
 		$this->controller->set($varName, $varValue);
 	}
-	
+
 }
 ?>

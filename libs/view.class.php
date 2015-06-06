@@ -24,7 +24,7 @@
 class View extends Seopanel{
 
 	function render($viewFile, $layout='default', $printContent=true){
-		
+
 		$spText = $_SESSION['text'];
 		if(count($this->data) > 0){
 			foreach ($this->data as $varName => $varValue){
@@ -35,7 +35,7 @@ class View extends Seopanel{
 		include_once(SP_VIEWPATH."/".$viewFile.".ctp.php");
 		$viewContent = ob_get_contents();
 		ob_end_clean();
-		
+
 		ob_start();
 		if($layout == 'ajax'){
 			if($printContent){
@@ -44,18 +44,18 @@ class View extends Seopanel{
 				return $viewContent;
 			}
 		}else{
-			
+
 			$langCtrler = New LanguageController();
 			$langList = $langCtrler->__getAllLanguages(" where translated=1");
 			$userLang = empty($_SESSION['lang_code']) ? SP_DEFAULTLANG : $_SESSION['lang_code'];
-			$redirectUrl = $langCtrler->getRedirectUrl();			
-			
+			$redirectUrl = $langCtrler->getRedirectUrl();
+
 			include_once(SP_VIEWPATH."/layout/".$layout.".ctp.php");
 		}
 	}
 
 	function getViewContent($viewFile){
-		
+
 		$spText = $_SESSION['text'];
 		if(count($this->data) > 0){
 			foreach ($this->data as $varName => $varValue){
@@ -72,7 +72,7 @@ class View extends Seopanel{
 
 	#func to fetch the ctp file content
 	function fetchViewFile($viewFile, $data=array()) {
-		
+
 		$spText = $_SESSION['text'];
 		if(count($data) > 0){
 			foreach ($data as $varName => $varValue){
@@ -86,10 +86,10 @@ class View extends Seopanel{
 		ob_end_clean();
 		return $viewContent;
 	}
-	
+
 	# plugin render functions
 	function pluginRender($viewFile, $layout='default', $printContent=true){
-		
+
 		$spText = $_SESSION['text'];
 		$viewContent = $this->getPluginViewContent($viewFile);
 		ob_start();
@@ -105,7 +105,7 @@ class View extends Seopanel{
 	}
 
 	function getPluginViewContent($viewFile){
-		
+
 		$spText = $_SESSION['text'];
 		if(count($this->data) > 0){
 			foreach ($this->data as $varName => $varValue){
@@ -119,10 +119,10 @@ class View extends Seopanel{
 		ob_end_clean();
 		return $viewContent;
 	}
-	
-	#func to fetch the ctp file 
+
+	#func to fetch the ctp file
 	function fetchFile($viewFile, $data=array()) {
-		
+
 		$spText = $_SESSION['text'];
 		if(count($data) > 0){
 			foreach ($data as $varName => $varValue){

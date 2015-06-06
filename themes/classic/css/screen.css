@@ -500,7 +500,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 }
 #menu a {
 	font-family: Arial;
-	text-decoration: none;	
+	text-decoration: none;
 	background-color:#DAE5EE;
 }
 #menu a:focus {	outline: none;}
@@ -535,8 +535,8 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 }
 #subui li {
 	padding-left: 11px;
-	margin: 1px 0px 2px 0px;	
-	background-color:#F4F7FA;	
+	margin: 1px 0px 2px 0px;
+	background-color:#F4F7FA;
 	border: 1px solid #B0C2CC;
 }
 #subui a {
@@ -645,7 +645,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	padding: 6px 4px 4px 4px;
 }
 
-.note A:HOVER{	
+.note A:HOVER{
 	color:#000000;
 }
 
@@ -673,7 +673,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	padding: 2px 2px 2px 4px;
 }
 
-.dirmsg .error{	
+.dirmsg .error{
 	color: #da3838;
 }
 
@@ -723,7 +723,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	margin: 50px;
 	border: 1px solid #B0C2CC;
 	text-align: left;
-	padding:10px;	
+	padding:10px;
 }
 
 #readme h1{
@@ -765,11 +765,11 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	border:1px solid #FFBB00;
 	-moz-border-radius:5px 5px 5px 5px;
 	margin:15px 0px 0px 0px;
-	text-align:left;	
+	text-align:left;
 	background:none repeat scroll 0 0 #FDFEB8;
 	font-size: 12px;
-	height:auto !important;		
-	float: left;	
+	height:auto !important;
+	float: left;
 	padding: 5px 10px 5px 10px;
 	width:98%;
 }
@@ -781,7 +781,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	padding-top: 3px;
 }
 
-#hidenews A{	
+#hidenews A{
 	font-family: Arial;
 	text-decoration: none;
 }
@@ -849,7 +849,7 @@ div.Left .SectionHeader,div.Full .SectionHeader { text-align: center;}
 	border-top: 1px solid #B0C2CC;
 }
 
-fieldset {	
+fieldset {
 	border:1px solid #B0C2CC;
 	margin: 12px 6px;
 	padding: 10px;
@@ -910,7 +910,7 @@ A.actionbut{
 .infobox b{
 	color: #0044AA;
 	text-decoration: none;
-	font-weight: normal;	
+	font-weight: normal;
 }
 
 .infobox A{
@@ -1017,4 +1017,4 @@ A.graphicon{
 #powered {margin-top: 6px;}
 #powered A {color: #0033CC; font-size: 12px; text-decoration: underline;}
 
-input.long{width: 280px;} 
+input.long{width: 280px;}

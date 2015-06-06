@@ -31,57 +31,57 @@ $controller->spTextRank = $controller->getLanguageTexts('rank', $_SESSION['lang_
 $controller->set('spTextRank', $controller->spTextRank);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		case "quickrank":
 			$controller->findQuickRank($_POST);
 			break;
-			
+
 		case "generate":
 			$controller->generateReports($_POST);
 			break;
-			
+
 		case "reports":
 			$controller->showReports($_POST);
 			break;
-			
+
 		case "showpr":
 			$controller->printGooglePageRank(urldecode($_POST['url']));
 			break;
-		
+
 		case "showalexa":
 			$controller->printAlexaRank(urldecode($_POST['url']));
 			break;
-		
+
 		default:
 			$controller->findQuickRank($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "quickrank":
 			$controller->showQuickRankChecker();
 			break;
-			
+
 		case "showpr":
 			$controller->printGooglePageRank(urldecode($_GET['url']));
 			break;
-		
+
 		case "showalexa":
 			$controller->printAlexaRank(urldecode($_GET['url']));
 			break;
-			
+
 		case "alexaimg":
 			$controller->printAlexaRankImg($_GET['rank']);
 			break;
-			
+
 		case "generate":
 			$controller->showGenerateReports($_GET);
 			break;
-			
+
 		case "reports":
 			$controller->showReports($_GET);
 			break;

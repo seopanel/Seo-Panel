@@ -1,4 +1,4 @@
-<?php 
+<?php
 $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno={$post['pageno']}&order_col={$post['order_col']}&order_val={$post['order_val']}')";
 ?>
 <br>
@@ -13,7 +13,7 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         		<th class="leftcell" width="20%"><?php echo $spTextSA['Page Link']?>:</th>
         		<td width="40%" style="text-align: left;"><a href="<?php echo $reportInfo['page_url']?>" target="_blank"><?php echo $reportInfo['page_url']?></a></td>
         		<th width="20%">Google Pagerank:</th>
-        		<td><?php echo $reportInfo['pagerank']?></td>        		
+        		<td><?php echo $reportInfo['pagerank']?></td>
         	</tr>
         	<tr>
         		<th class="leftcell"><?php echo $spText['label']['Title']?>:</th>
@@ -64,21 +64,21 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         	</tr>
         </table>
 	</div>
-	
+
 	<br><br>
 	<?php echo showSectionHead($spTextSA['Page Links']); ?>
-	<div>		
+	<div>
 		<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
         	<tr class="listHead">
-        		<td class="leftid"><?php echo $spText['common']['No']?></td>		
-        		<td><?php echo $spText['common']['Url']?></td>		
-        		<td><?php echo $spTextSA['Anchor']?></td>		
-        		<td><?php echo $spTextSA['Link Title']?></td>		
+        		<td class="leftid"><?php echo $spText['common']['No']?></td>
+        		<td><?php echo $spText['common']['Url']?></td>
+        		<td><?php echo $spTextSA['Anchor']?></td>
+        		<td><?php echo $spTextSA['Link Title']?></td>
         		<td><?php echo $spTextSA['Nofollow']?></td>
         		<td class="right"><?php echo $spTextSA['External']?></td>
         	</tr>
         	<?php
-        	$colCount = 6; 
+        	$colCount = 6;
         	if(count($linkList) > 0){
         		$catCount = count($list);
         		foreach($linkList as $i => $listInfo){
@@ -92,7 +92,7 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
                     }
         			?>
         			<tr class="<?php echo $class?>">
-        				<td class="<?php echo $leftBotClass?>"><?php echo $i+1?></td>				
+        				<td class="<?php echo $leftBotClass?>"><?php echo $i+1?></td>
         				<td class="td_br_right left">
         				    <a href="<?php echo $listInfo['link_url']?>" target="_blank"><?php echo $listInfo['link_url']?></a>
         				</td>
@@ -107,9 +107,9 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         			</tr>
         			<?php
         		}
-        	}else{	 
-        		echo showNoRecordsList($colCount-2);		
-        	} 
+        	}else{
+        		echo showNoRecordsList($colCount-2);
+        	}
         	?>
         	<tr class="listBot">
         		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

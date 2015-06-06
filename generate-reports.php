@@ -35,9 +35,9 @@ $controller->spTextKeyword = $controller->getLanguageTexts('keyword', $_SESSION[
 $controller->set('spTextKeyword', $controller->spTextKeyword);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		default:
 			$controller->generateReports($_POST);
 			break;

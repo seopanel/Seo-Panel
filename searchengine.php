@@ -32,9 +32,9 @@ $controller->spTextUser = $controller->getLanguageTexts('searchengine', $_SESSIO
 $controller->set('spTextSE', $controller->spTextUser);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -43,7 +43,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    }
 		    $controller->listSE($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -52,8 +52,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    }
 		    $controller->listSE($_POST);
 		    break;
-		    
-		case "deleteall":		    
+
+		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteSearchEngine($id);
@@ -66,20 +66,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->listSE($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "Activate":
-			$controller->__changeStatus($_GET['seId'], 1);			
+			$controller->__changeStatus($_GET['seId'], 1);
 			$controller->listSE($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['seId'], 0);
 			$controller->listSE($_GET);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteSearchEngine($_GET['seId']);
 			$controller->listSE($_GET);

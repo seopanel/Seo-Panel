@@ -1,21 +1,21 @@
 <?php echo showSectionHead($spTextPanel['Themes Manager']); ?>
-<?php 
-if(!empty($msg)){ 
-	echo $error ? showErrorMsg($msg, false) : showSuccessMsg($msg, false); 
-} 
+<?php
+if(!empty($msg)){
+	echo $error ? showErrorMsg($msg, false) : showSuccessMsg($msg, false);
+}
 ?>
 <?php echo $pagingDiv?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
-		<td class="left"><?php echo $spText['label']['Theme']?></td>		
-		<td><?php echo $spText['label']['Author']?></td>		
+		<td class="left"><?php echo $spText['label']['Theme']?></td>
+		<td><?php echo $spText['label']['Author']?></td>
 		<td><?php echo $spText['common']['Website']?></td>
-		<td><?php echo $spText['common']['Status']?></td>		
+		<td><?php echo $spText['common']['Status']?></td>
 		<td><?php echo $spText['label']['Installation']?></td>
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 6; 
+	$colCount = 6;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -27,19 +27,19 @@ if(!empty($msg)){
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-		
+
             $activateLink = SP_WEBPATH."/admin-panel.php?menu_selected=themes-manager&start_script=themes-manager&sec=activate&theme_id={$listInfo['id']}&pageno=$pageNo";
 			if($listInfo['status']){
 				$statLabel = "<font class='green'><b>".$spText['label']["Current"]."</b></font>";
 			}else{
 				$statLabel = '<a href="'.$activateLink.'">'.$spText['common']["Activate"].'</a>';;
 			}
-            
+
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>">
 					<a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php?sec=listinfo&pid=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>', 'content')"><?php echo $listInfo['name']?> <?php echo $listInfo['version']?></a>
-				</td>				
+				</td>
 				<td class="td_br_right left"><?php echo $listInfo['author']?></td>
 				<td class="td_br_right left"><a href="<?php echo $listInfo['website']?>" target="_blank"><?php echo $listInfo['website']?></a></td>
 				<td class="td_br_right"><?php echo $statLabel; ?></td>
@@ -54,9 +54,9 @@ if(!empty($msg)){
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

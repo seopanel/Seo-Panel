@@ -10,7 +10,7 @@
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spTextPlugin['Plugin Name']?>:</td>
 		<td class="td_right_col"><input type="text" name="plugin_name" value="<?php echo $post['label']?>"><?php echo $errMsg['plugin_name']?></td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

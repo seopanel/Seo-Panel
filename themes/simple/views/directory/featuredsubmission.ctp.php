@@ -1,7 +1,7 @@
 <?php echo showSectionHead($spTextTools['Featured Submission']); ?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
-		<td class="left"><?php echo $spText['common']['Id']?></td>		
+		<td class="left"><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['common']['Name']?></td>
 		<td><?php echo $spText['common']['Google Pagerank']?></td>
 		<!--
@@ -11,7 +11,7 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 4; 
+	$colCount = 4;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){
@@ -23,11 +23,11 @@
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             ?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['id']?></td>    				
-				<td class="td_br_right left"><a target="_blank" href="<?php echo addHttpToUrl($listInfo['directory_name']); ?>"><?php echo $listInfo['directory_name']?></a></td>    				
+				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['id']?></td>
+				<td class="td_br_right left"><a target="_blank" href="<?php echo addHttpToUrl($listInfo['directory_name']); ?>"><?php echo $listInfo['directory_name']?></a></td>
 				<td class="td_br_right"><img src="<?php echo SP_IMGPATH?>/pr/pr<?php echo $listInfo['google_pagerank']?>.gif"></td>
 				<!--
 				<td class="td_br_right" style="color: red;"><?php echo $listInfo['coupon_code']?></td>
@@ -41,9 +41,9 @@
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	}else{
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

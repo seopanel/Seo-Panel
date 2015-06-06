@@ -6,7 +6,7 @@
 		<td class="left" width='30%'><?php echo $spTextSA['Import Project Links']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<tr class="blue_row">				
+	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['label']['Project']?>: </td>
 		<td class="td_right_col">
 			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" style="width: 180px;">
@@ -19,7 +19,7 @@
 				<?php }?>
 			</select>
 		</td>
-	</tr>	
+	</tr>
 	<tr class="white_row">
 		<td class="td_left_col">Links:</td>
 		<td class="td_right_col">
@@ -28,7 +28,7 @@
 			<p style="font-size: 12px;"><?php echo $spTextSA['Insert links separated with comma']?>.</p>
 			<P><b>Eg:</b> http://www.seopanel.in/plugin/l/, http://www.seopanel.in/plugin/d/</P>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

@@ -22,62 +22,62 @@
 
 # class defines all seo tools controller functions
 class SeoToolsController extends Controller{
-	var $layout = 'ajax';	
-	
+	var $layout = 'ajax';
+
 	# index function
 	function index($info=''){
 		$this->layout = "default";
 		if(isAdmin()){
-			$sql = "select * from seotools where status=1";	
+			$sql = "select * from seotools where status=1";
 		}else{
-			$sql = "select * from seotools where status=1 and user_access=1";			
+			$sql = "select * from seotools where status=1 and user_access=1";
 		}
 		$sql .= " order by id";
-		
+
 		$menuList = $this->db->select($sql);
 		if(count($menuList) <= 0){
 			$this->set('msg', $_SESSION['text']['common']['noactivetools']);
 			$this->render('common/notfound');
 			exit;
 		}
-		
+
 		$this->set('menuList', $menuList);
 		$defaultArgs = empty($info['default_args']) ? "" : urldecode($info['default_args']);
 		switch($info['menu_sec']){
-			
+
 			case "sitemap-generator":
 				$defaultScript = "sitemap.php";
 				break;
-				
+
 		    case "site-auditor":
 				$defaultScript = "siteauditor.php";
 				break;
-				
+
 			case "rank-checker":
 				$defaultScript = "rank.php";
 				break;
-				
+
 			case "backlink-checker":
 				$defaultScript = "backlinks.php";
 				break;
-				
+
 			case "directory-submission":
 				$defaultScript = "directories.php";
 				break;
-				
+
 			case "saturation-checker":
 				$defaultScript = "saturationchecker.php";
 				break;
 
 			default:
 				$seoToolInfo = $this->__getSeoToolInfo('keyword-position-checker', 'url_section');
-				if($seoToolInfo['status'] == 1){					
+				if($seoToolInfo['status'] == 1){
 					$info['menu_sec'] = 'keyword-position-checker';
 					$defaultScript = "reports.php";
-					$defaultArgs = empty($defaultArgs) ? "sec=reportsum" : $defaultArgs;	
+					$defaultArgs = empty($defaultArgs) ? "sec=reportsum" : $defaultArgs;
 				}
-		}	
-		
+		}
+
 		$this->set('menuSelected', $info['menu_sec']);
 		$this->set('defaultScript', $defaultScript);
 		$this->set('defaultArgs', $defaultArgs);
@@ -97,19 +97,19 @@ class SeoToolsController extends Controller{
 		$seoToolInfo = $this->db->select($sql, true);
 		return $seoToolInfo;
 	}
-	
+
 	# func to list seo tools
 	function listSeoTools(){
-		
+
 		$userId = isLoggedIn();
 		$seoToolList = $this->__getAllSeoTools();
 		$this->set('list', $seoToolList);
-		$this->render('seotools/listseotools');	
+		$this->render('seotools/listseotools');
 	}
-	
+
 	#function to change status of seo tools
 	function changeStatus($seoToolId, $status, $col='status'){
-		
+
 		$seoToolId = intval($seoToolId);
 		$sql = "update seotools set $col=$status where id=$seoToolId";
 		$this->db->query($sql);

@@ -1,21 +1,21 @@
 <?php
 	$homeClass = "";
 	$supportClass = "";
-	$loginClass = "";	
+	$loginClass = "";
 	$registerClass = "";
 	switch($this->menu){
 		case "support":
 			$supportClass = "current";
-			break;			
-		
+			break;
+
 		case "register":
 			$registerClass = "current";
 			break;
-			
+
 		case "login":
 			$loginClass = "current";
 			break;
-			
+
 		case "home":
 		default:
 			$homeClass = "current";
@@ -32,7 +32,7 @@
 	    </style>
 	    <?php
 	}
-	
+
 ?>
 <li><a class="<?php echo $homeClass?>" href="<?php echo SP_WEBPATH?>/"><?php echo $spText['common']['Home']?></a></li>
 <li><a class="" href="<?php echo SP_WEBPATH?>/seo-tools.php"><?php echo $spText['common']['Seo Tools']?></a></li>

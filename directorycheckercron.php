@@ -23,20 +23,20 @@
 include_once("includes/sp-load.php");
 if(empty($_SERVER['REQUEST_METHOD'])){
 
-	# the section for generate reports using system cron job	
+	# the section for generate reports using system cron job
 	include_once(SP_CTRLPATH."/cron.ctrl.php");
 	$controller = New CronController();
-		
+
 	include_once(SP_CTRLPATH."/directory.ctrl.php");
 	$dirCtrler = New DirectoryController();
-		
+
 	$searchInfo = array(
 		//'working' => 1,   # to check active directories
 		//'working' => 0,	# to check inactive directories
 		'checked' => 0,   # to check unchecked directories
-	);	
+	);
 	$dirList = $dirCtrler->getAllDirectories($searchInfo);
-	
+
 	$dirCtrler->checkPR = 1; // check pagerank of directory or not
 	foreach($dirList as $dirInfo){
 		$dirCtrler->checkDirectoryStatus($dirInfo['id']);
@@ -44,6 +44,6 @@ if(empty($_SERVER['REQUEST_METHOD'])){
 		sleep(SP_CRAWL_DELAY);
 	}
 }else{
-	showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");	
+	showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");
 }
 ?>

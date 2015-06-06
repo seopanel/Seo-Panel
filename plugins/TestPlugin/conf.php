@@ -1,6 +1,6 @@
 <?php
 /*
- * plugin specific configuration variables 
+ * plugin specific configuration variables
  */
 
 define('TEST_HEAD', 'Seo Panel Test Plugin');

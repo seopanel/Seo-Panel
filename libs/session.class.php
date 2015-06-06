@@ -30,7 +30,7 @@ class Session extends Seopanel{
 		ini_set("session.gc_maxlifetime", SP_TIMEOUT);
 		session_start();
 	}
-	
+
 	# to set session
 	function setSession($varName, $varValue){
 		$_SESSION[$varName] = $varValue;
@@ -42,11 +42,11 @@ class Session extends Seopanel{
 	}
 
 	# fucntion to destroy session
-	function destroySession() {	    
+	function destroySession() {
 		@Session::setSession('userInfo', "");
 		@Session::setSession('lang_code', "");
 		@Session::setSession('text', "");
-        session_destroy();	    
+        session_destroy();
 	}
 }
 ?>

@@ -48,9 +48,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			</td>
 			<th width="100px;"><?php echo $spText['common']['Period']?>:</th>
     		<td width="236px">
-    			<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/> 
-    			<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/> 
-    			<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/> 
+    			<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/>
+    			<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
+    			<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/>
     			<img align="bottom" onclick="displayDatePicker('to_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
     		</td>
 			<td><a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="actionbut"><?php echo $spText['button']['Search']?></a></td>
@@ -93,11 +93,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
         } else {
             $oVal = 'ASC';
         }
-        
+
         $hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
-        
-		$linkName = "<a id='sortLink' class='$linkClass' $hrefAttr onclick=\"scriptDoLoad('$mainLink&order_col=keyword&order_val=$oVal', 'content')\">{$spText['common']['Keyword']}</a>"; 
-		?>		
+
+		$linkName = "<a id='sortLink' class='$linkClass' $hrefAttr onclick=\"scriptDoLoad('$mainLink&order_col=keyword&order_val=$oVal', 'content')\">{$spText['common']['Keyword']}</a>";
+		?>
 		<?php if (empty($websiteId)) {?>
 			<td class="left"><?php echo $spText['common']['Website']?></td>
 			<td><?php echo $linkName?></td>
@@ -107,7 +107,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		<?php
 		$seCount = count($seList);
 		foreach ($seList as $i => $seInfo){
-		    
+
 		    $linkClass = "";
             if ($seInfo['id'] == $orderCol) {
                 $oVal = ($orderVal == 'DESC') ? "ASC" : "DESC";
@@ -116,22 +116,22 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
                 $oVal = 'ASC';
             }
             $linkName = "<a id='sortLink' class='$linkClass' $hrefAttr onclick=\"scriptDoLoad('$mainLink&order_col={$seInfo['id']}&order_val=$oVal', 'content')\">{$seInfo['domain']}</a>";
-		    
-			if( ($i+1) == $seCount){			
+
+			if( ($i+1) == $seCount){
 				?>
 				<td class="right"><?php echo $linkName; ?></td>
-				<?php	
+				<?php
 			}else{
 				?>
 				<td><?php echo $linkName; ?></td>
 				<?php
 			}
-			
+
 		}
-		?>		
+		?>
 	</tr>
 	<?php
-	$colCount = empty($websiteId) ? $seCount + 2 : $seCount + 1; 
+	$colCount = empty($websiteId) ? $seCount + 2 : $seCount + 1;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
@@ -146,15 +146,15 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            $scriptLink = "website_id={$listInfo['website_id']}&keyword_id={$listInfo['id']}&rep=1&from_time=$fromTime&to_time=$toTime";          
+            $scriptLink = "website_id={$listInfo['website_id']}&keyword_id={$listInfo['id']}&rep=1&from_time=$fromTime&to_time=$toTime";
 			?>
-			<tr class="<?php echo $class?>">				
+			<tr class="<?php echo $class?>">
 				<?php if (empty($websiteId)) {?>
 					<td class="<?php echo $leftBotClass?> left" width='250px;'><?php echo $listInfo['weburl']; ?></td>
 					<td class='td_br_right left'><?php echo $listInfo['name'] ?></td>
 				<?php } else { ?>
 					<td class="<?php echo $leftBotClass?> left" width='100px;'><?php echo $listInfo['name']; ?></td>
-				<?php }?>				
+				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
 				    $rank = empty($positionInfo[$seInfo['id']]['rank']) ? '-' : $positionInfo[$seInfo['id']]['rank'];
@@ -165,28 +165,28 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				        $graphLink = scriptAJAXLinkHrefDialog('graphical-reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], '&nbsp;', 'graphicon');
 					    $rankPadding = empty($rankDiff) ? "" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 					    $rankLink = $rankPadding . $rankLink;
-					    
+
 					    // if pdf report remove links
 					    if ($pdfVersion) {
 							$rankLink = str_replace("href='javascript:void(0);'", "", $rankLink);
 							$graphLink = str_replace("href='javascript:void(0);'", "", $graphLink);
 						}
-					    
+
 				    } else {
 				        $rankDiff = $graphLink = "";
 				        $rankLink = $rank;
-				    }					
-					if( ($index+1) == $seCount){			
+				    }
+					if( ($index+1) == $seCount){
 						?>
-						<td class="<?php echo $rightBotClass?>" style='width:100px' nowrap><?php echo "$rankLink $graphLink $rankDiff"; ?></td>	
-						<?php	
+						<td class="<?php echo $rightBotClass?>" style='width:100px' nowrap><?php echo "$rankLink $graphLink $rankDiff"; ?></td>
+						<?php
 					}else{
 						?>
 						<td class='td_br_right' style='width:100px' nowrap><?php echo "$rankLink $graphLink $rankDiff"; ?></td>
 						<?php
-					}					
+					}
 				}
-				?>				
+				?>
 			</tr>
 			<?php
 			$i++;
@@ -198,8 +198,8 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		    <td class="td_bottom_border" colspan="<?php echo ($colCount-2)?>"><?php echo $spText['common']['No Records Found']?>!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
-	} 
+		<?
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

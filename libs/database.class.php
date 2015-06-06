@@ -22,14 +22,14 @@
 
 # class defines all database functions
 class Database{
-	
+
 	var $dbEngine;
-	
+
     # constructor
     function database($dbEngine='mysql'){
     	$this->dbEngine = $dbEngine;
     }
-    
+
 	# func to connect db enine
     function dbConnect(){
     	include_once(SP_LIBPATH."/".$this->dbEngine."/".$this->dbEngine.".class.php");

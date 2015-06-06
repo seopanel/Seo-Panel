@@ -42,7 +42,7 @@
 				<?php } ?>
 			</select>
 		</td>
-	</tr>		
+	</tr>
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>
@@ -58,7 +58,7 @@
     		<a onclick="scriptDoLoad('user-types-manager.php', 'content')" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Cancel']?>
          	</a> &nbsp;
-         	<?php $actFun = "confirmSubmit('user-types-manager.php', 'editUserType', 'content')"; ?>         		
+         	<?php $actFun = "confirmSubmit('user-types-manager.php', 'editUserType', 'content')"; ?>
          	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Proceed']?>
          	</a>

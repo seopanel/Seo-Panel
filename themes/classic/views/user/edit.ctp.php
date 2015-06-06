@@ -32,7 +32,7 @@
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['login']['Email']?>:</td>
 		<td class="td_right_col"><input type="text" name="email" value="<?php echo $post['email']?>"><?php echo $errMsg['email']?></td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

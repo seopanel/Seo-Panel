@@ -29,31 +29,31 @@ $controller->spTextTheme = $controller->getLanguageTexts('theme', $_SESSION['lan
 $controller->set('spTextTheme', $controller->spTextTheme);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
 
 		default:
 			$controller->listThemes();
-			break;	    
+			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "activate":
 			$controller->activateTheme($_GET['theme_id']);
 			$redirectUrl = SP_WEBPATH."/admin-panel.php?menu_selected=themes-manager&start_script=themes-manager&pageno=".$_GET['pageno'];
 			redirectUrlByScript($redirectUrl);
 			break;
-			
+
 		case "listinfo":
 			$controller->listThemeInfo($_GET['pid']);
 			break;
-			
+
 		case "upgrade":
 			$controller->upgradeTheme($_GET['pid']);
 			break;
-			
+
 		case "reinstall":
 			$controller->reInstallTheme($_GET['pid']);
 			break;

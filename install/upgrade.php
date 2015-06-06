@@ -40,16 +40,16 @@ define("SP_INSTALL_CONFIG_FILE", SP_INSTALL_DIR."/../".SP_CONFIG_FILE);
 $install->showDefaultHeader();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		case "proceedupgrade":
 			$install->proceedUpgrade($_POST);
-			break;			
+			break;
 	}
-	
+
 }else{
-	
+
 	switch($_GET['sec']){
 
 		default:

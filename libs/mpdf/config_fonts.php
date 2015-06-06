@@ -20,7 +20,7 @@ $this->backupSubsFont = array('dejavusanscondensed');
 
 
 // Optionally set a font (name as defined below in $this->fontdata) to use for CJK characters
-// in Plane 2 Unicode (> U+20000) when using useSubstitutions. 
+// in Plane 2 Unicode (> U+20000) when using useSubstitutions.
 // Use a font like hannomb or sun-extb if available
 // only works using subsets (otherwise would add very large file)
 // Leave undefined or blank if not not required
@@ -30,7 +30,7 @@ $this->backupSubsFont = array('dejavusanscondensed');
 
 /*
 This array defines translations from font-family in CSS or HTML
-to the internal font-family name used in mPDF. 
+to the internal font-family name used in mPDF.
 Can include as many as want, regardless of which fonts are installed.
 By default mPDF will take a CSS/HTML font-family and remove spaces
 and change to lowercase e.g. "Arial Unicode MS" will be recognised as
@@ -38,7 +38,7 @@ and change to lowercase e.g. "Arial Unicode MS" will be recognised as
 You only need to define additional translations.
 You can also use it to define specific substitutions e.g.
 'frutiger55roman' => 'arial'
-Generic substitutions (i.e. to a sans-serif or serif font) are set 
+Generic substitutions (i.e. to a sans-serif or serif font) are set
 by including the font-family in $this->sans_fonts below
 To aid backwards compatability some are included:
 */
@@ -65,14 +65,14 @@ for each variant of the (internal mPDF) font-family name.
 Each entry must contain an ['R'] entry, but others are optional.
 Only the font (files) entered here will be available to use in mPDF.
 Put preferred default first in order.
-This will be used if a named font cannot be found in any of 
+This will be used if a named font cannot be found in any of
 $this->sans_fonts, $this->serif_fonts or $this->mono_fonts
 
 ['indic'] = true; for special mPDF fonts containing Indic characters
 ['sip-ext'] = 'hannomb'; name a related font file containing SIP characters
 
 If a .ttc TrueType collection file is referenced, the number of the font
-within the collection is required. Fonts in the collection are numbered 
+within the collection is required. Fonts in the collection are numbered
 starting at 1, as they appear in the .ttc file e.g.
 	"cambria" => array(
 		'R' => "cambria.ttc",
@@ -80,13 +80,13 @@ starting at 1, as they appear in the .ttc file e.g.
 		'I' => "cambriai.ttf",
 		'BI' => "cambriaz.ttf",
 		'TTCfontID' => array(
-			'R' => 1,	
+			'R' => 1,
 			),
 		),
 	"cambriamath" => array(
 		'R' => "cambria.ttc",
 		'TTCfontID' => array(
-			'R' => 2,	
+			'R' => 2,
 			),
 		),
 */
@@ -216,7 +216,7 @@ $this->fontdata = array(
 		),
 	"hannoma" => array(
 		'R' => "HAN NOM A.ttf",
-		'sip-ext' => 'hannomb',	
+		'sip-ext' => 'hannomb',
 		),
 	"hannomb" => array(
 		'R' => "HAN NOM B.ttf",
@@ -284,7 +284,7 @@ $this->BMPonly = array(
 //     (Otherwise the order is irrelevant)
 // Use the mPDF font-family names i.e. lowercase and no spaces (after any translations in $fonttrans)
 // Always include "sans-serif", "serif" and "monospace" etc.
-$this->sans_fonts = array('dejavusanscondensed','dejavusans','freesans','liberationsans','sans','sans-serif','cursive','fantasy', 
+$this->sans_fonts = array('dejavusanscondensed','dejavusans','freesans','liberationsans','sans','sans-serif','cursive','fantasy',
 				'arial','helvetica','verdana','geneva','lucida','arialnarrow','arialblack','arialunicodems',
 				'franklin','franklingothicbook','tahoma','garuda','calibri','trebuchet','lucidagrande','microsoftsansserif',
 				'trebuchetms','lucidasansunicode','franklingothicmedium','albertusmedium','xbriyaz','albasuper','quillscript'

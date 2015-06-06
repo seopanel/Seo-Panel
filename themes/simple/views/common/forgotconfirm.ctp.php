@@ -13,13 +13,13 @@
                     			<?php showErrorMsg($error, false); ?>
                     		</div>
                     	<?php }else {?>
-                    		<h1 class="head"><?php echo $spText['login']['Your Password Reset Successfully']?></h1>		
+                    		<h1 class="head"><?php echo $spText['login']['Your Password Reset Successfully']?></h1>
                     		<div class="acc_confirm">
                     		<?php echo showSuccessMsg($spText['login']['password_reset_success_message'], false); ?>
                     		</div>
                     	<?php }?></td>
                 	</tr>
-                </table>               
+                </table>
                 </form>
             </div>
         </div>

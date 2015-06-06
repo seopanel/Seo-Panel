@@ -22,24 +22,24 @@
 
 /**
  * Class defines all functions for managing website API
- * 
+ *
  * @author Seo panel
  *
  */
 class WebsiteAPI extends Seopanel{
-	
+
 	/**
 	 * the main controller to get details for api
 	 * @var Object
 	 */
 	var $ctrler;
-	
+
 	/**
 	 * The list contains search engine details
 	 * @var Array
 	 */
 	var $seList;
-	
+
 	/**
 	 * The constructor of API
 	 */
@@ -48,12 +48,12 @@ class WebsiteAPI extends Seopanel{
 		$seController = New SearchEngineController();
 		$list = $seController->__getAllSearchEngines();
 		$this->seList = array();
-		
+
 		// loop through the search engine and assign id as key
 		foreach ($list as $listInfo) {
 			$this->seList[$listInfo['id']] = $listInfo;
 		}
-		
+
 		include_once(SP_CTRLPATH."/saturationchecker.ctrl.php");
 		include_once(SP_CTRLPATH."/rank.ctrl.php");
 		include_once(SP_CTRLPATH."/backlink.ctrl.php");
@@ -69,24 +69,24 @@ class WebsiteAPI extends Seopanel{
 	 * @return $websiteInfo			The formatted website info with position details
 	 */
 	function getFormattedReport($websiteInfo, $fromTime, $toTime) {
-		
+
 		// create required controllers
 		$rankCtrler = New RankController();
 		$backlinlCtrler = New BacklinkController();
 		$saturationCtrler = New SaturationCheckerController();
 		$dirCtrler = New DirectoryController();
-		
+
 		// rank reports
 		$report = $rankCtrler->__getWebsiteRankReport($websiteInfo['id'], $fromTime, $toTime);
 		$report = $report[0];
 		$toTimeDate =  date('Y-m-d', $toTime);
 		$websiteInfo['alexa']['alexarank']['rank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank'];
 		$websiteInfo['alexa']['alexarank']['diff'] = removeBraces($report['rank_diff_alexa']);
-		$websiteInfo['alexa']['alexarank']['date'] = $toTimeDate; 
+		$websiteInfo['alexa']['alexarank']['date'] = $toTimeDate;
 		$websiteInfo['google']['pagerank']['rank'] = empty($report['google_pagerank']) ? "-" : $report['google_pagerank'];
 		$websiteInfo['google']['pagerank']['diff'] = removeBraces($report['rank_diff_google']);
 		$websiteInfo['google']['pagerank']['date'] = $toTimeDate;
-		
+
 		// back links reports
 		$report = $backlinlCtrler->__getWebsitebacklinkReport($websiteInfo['id'], $fromTime, $toTime);
 		$report = $report[0];
@@ -99,7 +99,7 @@ class WebsiteAPI extends Seopanel{
 		$websiteInfo['bing']['backlinks']['rank'] = empty($report['msn']) ? "-" : $report['msn'];
 		$websiteInfo['bing']['backlinks']['diff'] = $report['rank_diff_msn'];
 		$websiteInfo['bing']['backlinks']['date'] = $toTimeDate;
-			
+
 		// saturaton rank reports
 		$report = $saturationCtrler->__getWebsiteSaturationReport($websiteInfo['id'], $fromTime, $toTime);
 		$report = $report[0];
@@ -109,15 +109,15 @@ class WebsiteAPI extends Seopanel{
 		$websiteInfo['bing']['indexed']['rank'] = empty($report['msn']) ? "-" : $report['msn'];
 		$websiteInfo['bing']['indexed']['diff'] = $report['rank_diff_msn'];
 		$websiteInfo['bing']['indexed']['date'] = $toTimeDate;
-			
+
 		// directory submission stats
 		$websiteInfo['dirsub']['total'] = $dirCtrler->__getTotalSubmitInfo($websiteInfo['id']);
 		$websiteInfo['dirsub']['active'] = $dirCtrler->__getTotalSubmitInfo($websiteInfo['id'], true);
 		$websiteInfo['dirsub']['date'] = $toTimeDate;
-		
-		return $websiteInfo; 
-	}	
-	
+
+		return $websiteInfo;
+	}
+
 	/**
 	 * function to get website report using website id
 	 * @param Array $info			The input details to process the api
@@ -127,11 +127,11 @@ class WebsiteAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains informations about website reports
 	 */
 	function getReportById($info) {
-		
+
 		$fromTime = getFromTime($info);
 		$toTime = getToTime($info);
 		$websiteInfo = $this->ctrler->__getWebsiteInfo($info['id']);
-		
+
 		// if website not exists
 		if (empty($websiteInfo['id'])) {
 			$returnInfo['response'] = 'Error';
@@ -140,12 +140,12 @@ class WebsiteAPI extends Seopanel{
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $this->getFormattedReport($websiteInfo, $fromTime, $toTime);
 		}
-			
+
 		return 	$returnInfo;
-		
+
 	}
-	
-	
+
+
 	/**
 	 * function to get website report using user id
 	 * @param Array $info			The input details to process the api
@@ -155,7 +155,7 @@ class WebsiteAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains informations about website reports
 	 */
 	function getReportByUserId($info) {
-		
+
 		// if not valid user
 		$userId = intval($info['id']);
 		if (empty($userId)) {
@@ -163,13 +163,13 @@ class WebsiteAPI extends Seopanel{
 				'response' => 'Error',
 				'result' => 'Invalid user id'
 			);
-		}		
-		
+		}
+
 		// get all active websites
 		$wbList = $this->ctrler->__getAllWebsites($userId);
 		$fromTime = getFromTime($info);
 		$toTime = getToTime($info);
-				
+
 		// loop through websites
 		$websiteList = array();
 		foreach ($wbList as $websiteInfo) {
@@ -184,12 +184,12 @@ class WebsiteAPI extends Seopanel{
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $websiteList;
 		}
-		
+
 		return 	$returnInfo;
-		
+
 	}
-	
-	
+
+
 	/**
 	 * function to get website information
 	 * @param Array $info			The input details to process the api
@@ -199,7 +199,7 @@ class WebsiteAPI extends Seopanel{
 	function getWebsiteInfo($info) {
 		$websiteId = intval($info['id']);
 		$returnInfo = array();
-	
+
 		// validate the website ifd and website info
 		if (!empty($websiteId)) {
 			if ($websiteInfo = $this->ctrler->__getWebsiteInfo($websiteId)) {
@@ -208,12 +208,12 @@ class WebsiteAPI extends Seopanel{
 				return $returnInfo;
 			}
 		}
-	
+
 		$returnInfo['response'] = 'Error';
 		$returnInfo['error_msg'] = "The invalid website id provided";
 		return 	$returnInfo;
 	}
-	
+
 	/**
 	 * function to create website
 	 * @param Array $info				The input details to process the api
@@ -228,18 +228,18 @@ class WebsiteAPI extends Seopanel{
 	 */
 	function createWebsite($info) {
 		$websiteInfo = $info;
-		
+
 		// check for user id
 		if (empty($info['user_id'])) {
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = 'Invalid user id';
 			return $returnInfo;
 		}
-		
+
 		$websiteInfo['userid'] = $info['user_id'];
 		$this->ctrler->spTextWeb = $this->ctrler->getLanguageTexts('website', SP_API_LANG_CODE);
 		$return = $this->ctrler->createWebsite($websiteInfo, true);
-	
+
 		// if website creation is success
 		if ($return[0] == 'success') {
 			$returnInfo['response'] = 'success';
@@ -249,11 +249,11 @@ class WebsiteAPI extends Seopanel{
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = $return[1];
 		}
-	
+
 		return 	$returnInfo;
-	
+
 	}
-	
+
 	/**
 	 * function to update website
 	 * @param Array $info				The input details to process the api
@@ -268,23 +268,23 @@ class WebsiteAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains details about the operation succes or not
 	 */
 	function updateWebsite($info) {
-	
+
 		$websiteId = intval($info['id']);
-	
+
 		// if website exists
 		if ($websiteInfo = $this->ctrler->__getWebsiteInfo($websiteId)) {
-			
+
 			$websiteInfo['oldName'] = $websiteInfo['name'];
-			
+
 			// loop through inputs
 			foreach ($info as $key => $val) {
 				$websiteInfo[$key] = $val;
 			}
-			
+
 			// update website call as api call
 			$this->ctrler->spTextWeb = $this->ctrler->getLanguageTexts('website', SP_API_LANG_CODE);
 			$return = $this->ctrler->updateWebsite($websiteInfo, true);
-				
+
 			// if website creation is success
 			if ($return[0] == 'success') {
 				$returnInfo['response'] = 'success';
@@ -293,17 +293,17 @@ class WebsiteAPI extends Seopanel{
 				$returnInfo['response'] = 'Error';
 				$returnInfo['error_msg'] = $return[1];
 			}
-				
+
 		} else {
-	
+
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = "The invalid website id provided";
 		}
-	
+
 		return 	$returnInfo;
-	
+
 	}
-	
+
 	/**
 	 * function to delete website
 	 * @param Array $info				The input details to process the api
@@ -311,24 +311,24 @@ class WebsiteAPI extends Seopanel{
 	 * @return Array $returnInfo  	Contains details about the operation success or not
 	 */
 	function deleteWebsite($info) {
-	
+
 		$websiteId = intval($info['id']);
-	
+
 		// if website exists
 		if ($websiteInfo = $this->ctrler->__getWebsiteInfo($websiteId)) {
-			
-			
+
+
 			$this->ctrler->__deleteWebsite($websiteId);
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = "Successfully deleted website and related data.";
-			
-		} else {	
+
+		} else {
 			$returnInfo['response'] = 'Error';
 			$returnInfo['error_msg'] = "The invalid website id provided";
 		}
-	
+
 		return 	$returnInfo;
 	}
-	
+
 }
 ?>

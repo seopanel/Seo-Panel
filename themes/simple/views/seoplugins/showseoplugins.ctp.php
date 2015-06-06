@@ -9,7 +9,7 @@
                     		<div id="round_content">
             				    <?php include_once(SP_VIEWPATH."/seoplugins/seopluginleftmenu.ctp.php");?>
             				</div>
-            				<?php echo getRoundTabBot(); ?>	
+            				<?php echo getRoundTabBot(); ?>
             			</div>
             		</td>
             		<td width="10px">&nbsp;</td>
@@ -22,17 +22,17 @@
                 				$argString = "";
                 				foreach ($_GET as $name => $value) {
                 				    if (!in_array($name, array('sec', 'menu_selected'))) {
-                				        $argString .= "&$name=$value";    
+                				        $argString .= "&$name=$value";
                 				    }
-                				} 
+                				}
                 				?>
                 				scriptDoLoad('seo-plugins.php?pid=<?php echo $menuSelected?><?php echo $argString?>', 'content', '');
                 			</script>
         				</div>
-        				<?php echo getRoundTabBot(); ?>	
+        				<?php echo getRoundTabBot(); ?>
             		</td>
             	</tr>
-            </table>        
+            </table>
         </div>
     </div>
 </div>

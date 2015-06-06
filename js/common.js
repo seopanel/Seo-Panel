@@ -8,15 +8,15 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 		scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading);
 		return;
 	}
-	
+
 	if(!scriptArgs){ var scriptArgs = ''; }
-	
+
 	scriptArgs = jQuery('#'+scriptForm).serialize() + scriptArgs;
 	showLoadingIcon(scriptPos, noLoading);
 	jQuery.ajax({
 		type: "POST",
 		url:scriptUrl,
-		data: scriptArgs, 
+		data: scriptArgs,
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -27,17 +27,17 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 }
 
 function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
-	
+
 	if(needPopup) {
 		scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading);
 		return;
 	}
-	
+
 	showLoadingIcon(scriptPos, noLoading);
     jQuery.ajax({
          type: "get",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -73,7 +73,7 @@ function eraseCookie(name) {
 }
 
 function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading) {
-	
+
 	hideDiv('proceed');
 	showDiv('message');
 	if(!scriptArgs){ var scriptArgs = ''; }
@@ -82,7 +82,7 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
     jQuery.ajax({
          type: "POST",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -95,46 +95,46 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
 function showLoadingIcon(scriptPos,noLoading){
 	loading = 0;
   	contentDiv = "";
-	switch (scriptPos){		
-		
+	switch (scriptPos){
+
 		case "content":
 			contentDiv = '<div id="loading_content"></div>';
 			loading = 1;
 			break;
-		
+
 		case "subcontent":
 			contentDiv = '<div id="loading_subcontent"></div>';
 			loading = 1;
 			break;
-		
+
 		case "ContentFrame":
 			contentDiv = '<div id="loading_content_frame"></div>';
 			loading = 1;
 			break;
-		
+
 		case "subcontmed":
 			contentDiv = '<div id="loading_subcontmed"></div>';
 			loading = 1;
 			break;
-			
+
 		case "newsalert":
 			contentDiv = '<div id="loading_longthin"></div>';
 			loading = 1;
 			break;
-		
+
 		default :
 			contentDiv = '<div id="loading_rankarea"></div>';
 			loading = 1;
 			break;
 	}
-	
+
 	if((loading == 1) && (noLoading != 1)){
 		if(needPopup) {
 			return contentDiv;
 		} else {
 			document.getElementById(scriptPos).innerHTML = contentDiv;
 		}
-		
+
 	}
 }
 
@@ -143,7 +143,7 @@ function confirmLoad(scriptUrl, scriptPos, scriptArgs) {
 	if (chkObject('wantproceed')) {
 		wantproceed = "Do you really want to proceed?";
 	}
-	
+
 	var agree = confirm(wantproceed);
 	if (agree)
 		return scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
@@ -168,9 +168,9 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 	actVal = document.getElementById(actionDiv).value;
 	scriptArgs += "&sec=" + actVal;
 	switch (actVal) {
-		case "select":		
+		case "select":
 			break;
-		
+
 		case "checkstatus":
 		case "edit":
 		case "reports":
@@ -178,10 +178,10 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 		case "pagedetails":
 			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 			break;
-	
+
 		default:
 			if(spdemo){
-				if((actVal == 'delete') || (actVal == 'Activate') || (actVal == 'Inactivate') || (actVal == 'recheckreport') 
+				if((actVal == 'delete') || (actVal == 'Activate') || (actVal == 'Inactivate') || (actVal == 'recheckreport')
 					|| (actVal == 'showrunproject') || (actVal == 'checkscore') || (actVal == 'deletepage') || (actVal == 'upgrade') || (actVal == 'reinstall') ){
 					alertDemoMsg();
 				}
@@ -191,12 +191,12 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 	}
 }
 
-function doLoad(argVal, scriptUrl, scriptPos, scriptArgs) {	
+function doLoad(argVal, scriptUrl, scriptPos, scriptArgs) {
 	if(needPopup) {
 		actVal = $("#dialogContent #" + argVal).val();
 	} else {
 		actVal = document.getElementById(argVal).value;
-	}	
+	}
 	scriptArgs += "&"+ argVal +"=" + actVal;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
@@ -207,7 +207,7 @@ function doLoadUrl(argVal, scriptUrl) {
 }
 
 function showMenu(button, scriptPos){
-	
+
 	for (var i=0; i<menuList.length; i++) {
 		if(menuList[i] == scriptPos){
 			var but = document.getElementById(button).src;
@@ -215,15 +215,15 @@ function showMenu(button, scriptPos){
 		        but = but.replace(/more/,"hide");
 		        document.getElementById(scriptPos).style.display = '';
 		        document.getElementById(button).src = but;
-		        
+
 		        if(typeof(scriptList[i]) != "undefined") {
 		        	scriptDoLoad(scriptList[i], 'content')
 		        }
 		    }else{
 		        but = but.replace(/hide/,"more");
 		        document.getElementById(scriptPos).style.display = 'none';
-		        document.getElementById(button).src = but;		        	
-		    }			
+		        document.getElementById(button).src = but;
+		    }
 		}else{
 			var butClose = document.getElementById(buttonList[i]).src;
 			if(butClose.match("hide") == "hide"){
@@ -231,8 +231,8 @@ function showMenu(button, scriptPos){
 				document.getElementById(menuList[i]).style.display = 'none';
 				document.getElementById(buttonList[i]).src = butClose;
 			}
-		}	
-	}    
+		}
+	}
 }
 
 function updateArea(scriptPos, content) {
@@ -260,14 +260,14 @@ function checkSubmitInfo(scriptUrl, scriptForm, scriptPos, catCol) {
 			return false;
 		}
 	}
-	
+
 	var obj = document.getElementsByName(catCol).item(0);
 	value = obj.value;
 	if (value==null||value==""||value==0){
 		alert('Please select a category');
 		return false;
 	}
-	
+
 	scriptDoLoadPost(scriptUrl, scriptForm, scriptPos);
 }
 
@@ -322,7 +322,7 @@ function checkDirectoryFilter(checkId, scriptUrl, scriptPos){
 	if(document.getElementById(checkId).checked){
 		noFilter = 1;
 	}
-	
+
 	scriptUrl = scriptUrl + "&" + checkId + "=" + noFilter;
 	scriptDoLoad(scriptUrl, scriptPos);
 }
@@ -343,8 +343,8 @@ function selectAllOptions(selectBoxId, selectAll) {
     	document.getElementById("select_all").checked=false;
     }
 	selectBox = document.getElementById(selectBoxId);
-	for (var i = 0; i < selectBox.options.length; i++) { 
-		selectBox.options[i].selected = selectAll; 
+	for (var i = 0; i < selectBox.options.length; i++) {
+		selectBox.options[i].selected = selectAll;
 	}
 }
 

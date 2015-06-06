@@ -4,28 +4,28 @@ $adminClass = "";
 $seoToolsClass = "";
 $seoPluginsClass = "";
 switch($this->menu){
-	
+
 	case "support":
 		$supportClass = "current";
 		break;
-		
+
 	case "adminpanel":
 		$adminClass = "current";
-		break;		
-		
+		break;
+
 	case "seotools":
 		$seoToolsClass = "current";
 		break;
-		
+
 	case "seoplugins":
 		$seoPluginsClass = "current";
 		break;
-		
+
 	case "home":
 	default:
 		$homeClass = "current";
 		break;
-} 
+}
 ?>
 <li><a class="<?php echo $homeClass?>" href="<?php echo SP_WEBPATH?>/"><?php echo $spText['common']['Dashboard']?></a></li>
 <li><a class="<?php echo $seoToolsClass?>" href="<?php echo SP_WEBPATH?>/seo-tools.php"><?php echo $spText['common']['Seo Tools']?></a></li>

@@ -17,14 +17,14 @@ $controller->set('spDescription', 'Seo Tools: User Registration');
 $controller->set('spKeywords', 'Seo tools User Registration');
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		case "register":
 			$controller->startRegistration();
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 

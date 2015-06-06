@@ -6,7 +6,7 @@
     $spTitle = empty($spTitle) ? SP_TITLE : $spTitle;
     $spDescription = empty($spDescription) ? SP_DESCRIPTION : $spDescription;
     $spKeywords = empty($spKeywords) ? SP_KEYWORDS : $spKeywords;
-    $spKey = "v" . substr(SP_INSTALLED, 2);  
+    $spKey = "v" . substr(SP_INSTALLED, 2);
     ?>
     <title><?php echo stripslashes($spTitle)?></title>
     <meta name="description" content="<?php echo $spDescription?>" />
@@ -33,15 +33,15 @@ var wantproceed = '<?php  echo $spText['label']['wantproceed']; ?>';
 <div class="main_container">
 
     <div id="Header">
-    
+
     	<div id="round_content_header">
-    
+
             <?php include_once(SP_VIEWPATH."/menu/topmenu.ctp.php");?>
-            
+
             <div style="width:300px;">
             	<a href="<?php echo SP_WEBPATH; ?>" style="text-decoration: none; padding: 0px;"><h1 style="width:200px;">Seo Panel</h1></a>
             </div>
-        
+
             <!-- TABS -->
             <div id="Tabs">
                 <ul id="MainTabs">
@@ -53,10 +53,10 @@ var wantproceed = '<?php  echo $spText['label']['wantproceed']; ?>';
                 </ul>
             </div>
         </div>
-        
+
         <?php echo getRoundTabBot(); ?>
     </div>
-    
+
     <div id="Wrapper">
         <table width="100%" cellspacing="0px" cellpadding="0px">
         	<tr><td id="newsalert"></td></tr>

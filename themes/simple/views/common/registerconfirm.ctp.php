@@ -21,6 +21,6 @@
             	</table>
             </div>
 		</div>
-		<?php echo getRoundTabBot(); ?>           
+		<?php echo getRoundTabBot(); ?>
     </div>
 </div>

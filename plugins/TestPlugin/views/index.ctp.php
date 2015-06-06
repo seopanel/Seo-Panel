@@ -1,7 +1,7 @@
 <?php echo showSectionHead($sectionHead); ?>
 <form id='search_form'>
 <table width="45%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+	<tr>
 		<th>Test Plugin Type: </th>
 		<td>
 			<select name="tp_type">

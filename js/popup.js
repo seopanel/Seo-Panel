@@ -14,7 +14,7 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	    	changeDateInputField('parent_to_time', 'to_time');
 	    	$(this).dialog("destroy");
 	    },
-	    open : function() {  
+	    open : function() {
 	    	var dataVals = {
 	                "method" : "get",
 	                "dataType" : "html",

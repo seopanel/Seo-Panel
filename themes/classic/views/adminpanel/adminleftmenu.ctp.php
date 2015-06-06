@@ -1,10 +1,10 @@
 <script>
 	var menuList = new Array();
 	var buttonList = new Array();
-	var scriptList = new Array();	
+	var scriptList = new Array();
 </script>
 <ul id="menu">
-<?php 
+<?php
 foreach($menuList as $i => $menuInfo){
 	if($menuSelected == $menuInfo['url_section']){
 			$imgSrc = "hide";
@@ -26,41 +26,41 @@ foreach($menuList as $i => $menuInfo){
 	<li id="<?php echo $subMenuId?>" class="subtab" style="display:<?php echo $style?>;padding-left:0px;">
 	<?php
 	switch($menuInfo['url_section']){
-		
+
 		case "websites":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'websites.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'websites.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('websites.php', 'content')"><?php echo $spTextPanel['Website Manager']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('websites.php', 'content', 'sec=new')"><?php echo $spTextPanel['New Website']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "users":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'users.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'users.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('users.php', 'content')"><?php echo $spTextPanel['User Manager']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('users.php', 'content', 'sec=new')"><?php echo $spTextPanel['New User']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "se-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'searchengine.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'searchengine.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('searchengine.php', 'content')"><?php echo $spTextPanel['Search Engine Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "report-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'archive.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'archive.php';</script>
 			<ul id='subui'>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('archive.php', 'content')"><?php echo $spTextPanel['Archived Reports']?></a></li>				
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('archive.php', 'content')"><?php echo $spTextPanel['Archived Reports']?></a></li>
 				<?php if (isAdmin() || SP_ALLOW_USER_SCHEDULE_REPORT) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('reports.php?sec=schedule', 'content')"><?php echo $spTextPanel['Schedule Reports']?></a></li>
 				<?php }?>
@@ -72,47 +72,47 @@ foreach($menuList as $i => $menuInfo){
 			</ul>
 			<?php
 			break;
-			
+
 		case "seo-tools-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-tools-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-tools-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('seo-tools-manager.php', 'content')"><?php echo $spTextPanel['Seo Tools Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "themes-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'themes-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'themes-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php', 'content')"><?php echo $spTextPanel['Themes Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "seo-plugin-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-plugins-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-plugins-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('seo-plugins-manager.php', 'content')"><?php echo $spTextPanel['Seo Plugins Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "directory-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'directories.php?sec=directorymgr';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'directories.php?sec=directorymgr';</script>
 			<ul id='subui'>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('directories.php?sec=directorymgr', 'content')"><?php echo $spTextPanel['Directory Manager']?></a></li>				
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('directories.php?sec=directorymgr', 'content')"><?php echo $spTextPanel['Directory Manager']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('directories.php?sec=showcheckdir', 'content')"><?php echo $spTextPanel['Check Directory']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "proxy-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'proxy.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'proxy.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('proxy.php', 'content')"><?php echo $spTextPanel['Proxy Manager']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('proxy.php', 'content', 'sec=new')"><?php echo $spTextPanel['New Proxy']?></a></li>
@@ -124,19 +124,19 @@ foreach($menuList as $i => $menuInfo){
 			</ul>
 			<?php
 			break;
-			
+
 		case "log-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'log.php?sec=crawl';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'log.php?sec=crawl';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('log.php?sec=crawl', 'content')"><?php echo $spTextPanel['Crawl Log Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "api-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'apimanager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'apimanager.php';</script>
 			<ul id='subui'>
 				<?php if (isAdmin()) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('apimanager.php?sec=showconnect', 'content')"><?php echo $spTextPanel['API Connection']?></a></li>
@@ -145,28 +145,28 @@ foreach($menuList as $i => $menuInfo){
 			</ul>
 			<?php
 			break;
-			
+
 		case "settings":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php', 'content')"><?php echo $spTextPanel['System Settings']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "my-profile":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'users.php?sec=my-profile';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'users.php?sec=my-profile';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('users.php?sec=my-profile', 'content')"><?php echo $spTextPanel['Edit My Profile']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "about-us":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php?sec=aboutus';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php?sec=aboutus';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=aboutus', 'content')"><?php echo $spTextPanel['About Us']?></a></li>
 				<?php if (isAdmin()) {?>
@@ -175,17 +175,17 @@ foreach($menuList as $i => $menuInfo){
 			</ul>
 			<?php
 			break;
-			
+
 		case "user-types-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'user-types-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'user-types-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('user-types-manager.php', 'content')"><?php echo $spTextPanel['User Type Manager']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('user-types-manager.php', 'content', 'sec=new')"><?php echo $spTextPanel['New User Type']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 	}
 	?>
 	</li>

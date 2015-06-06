@@ -31,41 +31,41 @@ $controller->spTextSat = $controller->getLanguageTexts('saturation', $_SESSION['
 $controller->set('spTextSat', $controller->spTextSat);
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){		
-			
+
+	switch($_POST['sec']){
+
 		case "generate":
 			$controller->generateReports($_POST);
 			break;
-			
+
 		case "reports":
 			$controller->showReports($_POST);
 			break;
-		
+
 		case "saturation":
 			$controller->printSearchEngineSaturation($_POST);
 			break;
-			
+
 		default:
 			$controller->findSearchEngineSaturation($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "saturation":
 			$controller->printSearchEngineSaturation($_GET);
-			break;		
-			
+			break;
+
 		case "generate":
 			$controller->showGenerateReports($_GET);
 			break;
-			
+
 		case "reports":
 			$controller->showReports($_GET);
 			break;
-		
+
 		default:
 			$controller->showSaturationChecker();
 			break;

@@ -38,43 +38,43 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "create":
 			$controller->createWebsite($_POST);
 			break;
-			
+
 		case "update":
 			$controller->updateWebsite($_POST);
 			break;
-			
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 1);
     		    }
-		    }		    			
+		    }
 			$controller->listWebsites($_POST);
 		    break;
-			
+
 		case "inactivateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__changeStatus($id, 0);
     		    }
-		    }		    			
+		    }
 			$controller->listWebsites($_POST);
 		    break;
-		    
-		case "deleteall":		    
+
+		case "deleteall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteWebsite($id);
     		    }
-		    }		    			
+		    }
 			$controller->listWebsites($_POST);
 		    break;
-		
+
 		case "crawlmeta":
-		    $keyInput = empty($_POST['keyinput']) ? "" : $_POST['keyinput']; 
+		    $keyInput = empty($_POST['keyinput']) ? "" : $_POST['keyinput'];
 			$controller->crawlMetaData(urldecode($_POST['url']), $keyInput);
 			break;
-			
+
 		default:
 			$controller->listWebsites($_POST);
 			break;
@@ -82,32 +82,32 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
-		
+
 		case "Activate":
-			$controller->__changeStatus($_GET['websiteId'], 1);			
+			$controller->__changeStatus($_GET['websiteId'], 1);
 			$controller->listWebsites($_GET);
 			break;
-		
+
 		case "Inactivate":
 			$controller->__changeStatus($_GET['websiteId'], 0);
 			$controller->listWebsites($_GET);
 			break;
-		
+
 		case "delete":
 			$controller->__deleteWebsite($_GET['websiteId']);
 			$controller->listWebsites($_GET);
 			break;
-		
+
 		case "edit":
 			$controller->editWebsite($_GET['websiteId']);
-			break;		
-		
+			break;
+
 		case "new":
 			$controller->newWebsite($_GET);
 			break;
-		
+
 		case "crawlmeta":
-		    $keyInput = empty($_GET['keyinput']) ? "" : $_GET['keyinput']; 
+		    $keyInput = empty($_GET['keyinput']) ? "" : $_GET['keyinput'];
 			$controller->crawlMetaData(urldecode($_GET['url']), $keyInput);
 			break;
 
@@ -116,7 +116,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    $websiteInfo = $controller->__getWebsiteInfo($websiteId);
 		    print '<input type="hidden" name="weburl" id="weburl" value="'.$websiteInfo['url'].'">';
 		    break;
-			
+
 		default:
 			$controller->listWebsites($_GET);
 			break;

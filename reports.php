@@ -40,21 +40,21 @@ $controller->set('spTextReport', $controller->spTextReport);
 $controller->layout = 'ajax';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
+
 	switch($_POST['sec']){
-		
+
 		case "kwchecker":
 			$controller->showQuickRankChecker($_POST);
 			break;
-		
+
 		case "reportsum":
 			$controller->showKeywordReportSummary($_POST);
 			break;
 
 		case "schedule":
 			$controller->saveReportSchedule($_POST);
-			break;	
-			
+			break;
+
 		default:
 			$controller->showReports($_POST);
 			break;
@@ -62,15 +62,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
-		
+
 		case "show-info":
 			$controller->showTimeReport($_GET);
 			break;
-			
+
 		case "kwchecker":
 			$controller->quickRankChecker($_GET);
 			break;
-			
+
 		case "reportsum":
 			$controller->showKeywordReportSummary($_GET);
 			break;
@@ -78,7 +78,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "schedule":
 			$controller->showReportsScheduler(false, $_GET);
 			break;
-						
+
 		default:
 			$controller->showReports($_GET);
 			break;

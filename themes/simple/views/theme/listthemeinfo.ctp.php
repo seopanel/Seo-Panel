@@ -20,11 +20,11 @@
 	<tr class="blue_row">
 		<td class="td_left_col bold"><?php echo $spText['common']['Website']?>:</td>
 		<td class="td_right_col"><a href="<?php echo $themeInfo['website']?>" target="_blank"><?php echo $themeInfo['website']?></a></td>
-	</tr>	
+	</tr>
 	<tr class="white_row">
 		<td class="td_left_col bold"><?php echo $spText['label']['Description']?>:</td>
 		<td class="td_right_col"><?php echo $themeInfo['description']?></td>
-	</tr>		
+	</tr>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

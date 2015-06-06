@@ -1,7 +1,7 @@
 <?php echo showSectionHead($spTextDir['Check Directory Submission Status']); ?>
 <form id='search_form'>
 <table width="45%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<?php echo $this->render('website/websiteselectbox', 'ajax'); ?>

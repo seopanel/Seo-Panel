@@ -3,7 +3,7 @@ $borderCollapseVal = $lastTdStyle = "";
 $hrefAction = 'href="javascript:void(0)"';
 
 if(!empty($pdfVersion) || !empty($printVersion)) {
-	
+
 	// if pdf report to be generated
 	if ($pdfVersion) {
 		showPdfHeader($spTextTools['Auditor Reports']);
@@ -13,8 +13,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	} else {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
-		
-} else {  
+
+} else {
 ?>
     <div style="float:right;margin-right: 10px;margin-top: -38px;">
 		<a href="<?php echo $mainLink?>&doc_type=pdf"><img src="<?php echo SP_IMGPATH?>/icon_pdf.png"></a> &nbsp;
@@ -62,14 +62,14 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
             	$i = 1;
         	    foreach ($metaArr as $col => $label) {
     		        $class = ($col == "page_title") ? "leftcell" : "";
-    		        $tdStyle = ($i++ == count($metaArr)) ? $lastTdStyle : ""; 
+    		        $tdStyle = ($i++ == count($metaArr)) ? $lastTdStyle : "";
     		        ?>
     		        <th class="<?php echo $class?>"><?php echo $label?>:</th>
         			<td style="<?php echo $tdStyle; ?>">
         				<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo $projectInfo["duplicate_".$col]?></a>
         			</td>
-    		        <?php	        
-        	    } 
+    		        <?php
+        	    }
             	?>
         	</tr>
         	<tr>
@@ -104,7 +104,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
         		<th><?php echo $spText['label']['Brocken']?>:</th>
         		<td style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['brocken']?></td>
         	</tr>
-        	
+
         	<tr>
             	<?php
         	    foreach ($seArr as $i => $se) {
@@ -112,8 +112,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     		        ?>
     		        <th class="<?php echo $class?>"><?php echo ucfirst($se)?> <?php echo $spTextHome['Backlinks']?>:</th>
         			<td><?php echo $projectInfo[$se."_backlinks"]?></td>
-    		        <?php	        
-        	    } 
+    		        <?php
+        	    }
             	?>
         		<th>&nbsp;</th>
         		<td style="<?php echo $lastTdStyle; ?>">&nbsp;</td>
@@ -125,8 +125,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     		        ?>
     		        <th class="<?php echo $class?>"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?>:</th>
         			<td><?php echo $projectInfo[$se."_indexed"]?></td>
-    		        <?php	        
-        	    } 
+    		        <?php
+        	    }
             	?>
         		<th>&nbsp;</th>
         		<td style="<?php echo $lastTdStyle; ?>">&nbsp;</td>

@@ -32,29 +32,29 @@ class Mysql extends Database{
 	# constructor
 	function Mysql($dbServer, $dbUser, $dbPassword, $dbName, $debug){
 		$this->setDebugMode($debug);
-		
+
 		// check connection id existing and it is a resource
 		if (defined('SP_DB_CONN_ID') && is_resource(SP_DB_CONN_ID) ) {
 		    $this->connectionId =  SP_DB_CONN_ID;
 		} else {
-		    
+
     		// if mysql persistent connection enabled
     		if (SP_DB_PERSISTENT_CONNECTION) {
     		    $this->connectionId = @mysql_pconnect($dbServer, $dbUser, $dbPassword, true);
     		} else {
     		    $this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
     		}
-    		
+
     		if (!$this->connectionId){
-    			$this->showError();			
+    			$this->showError();
     			showErrorMsg("<p style='color:red'>Database connection failed!<br>Please check your database settings!</p>");
     		} else {
-    		    $this->selectDatabase($dbName);				
+    		    $this->selectDatabase($dbName);
     		    $this->query( "SET NAMES utf8");
     		    define('SP_DB_CONN_ID', $this->connectionId);
     		}
-		}		
-		
+		}
+
 	}
 
 	# func to select database
@@ -132,35 +132,35 @@ class Mysql extends Database{
 		$res = @mysql_close($this->connectionId);
 		return $res;
 	}
-	
+
 	function importDatabaseFile($filename){
-		
+
 		# temporary variable, used to store current query
 		$tmpline = '';
-		
+
 		# read in entire file
 		$lines = file($filename);
-		
+
 		# loop through each line
 		foreach ($lines as $line){
-			
+
 			# skip it if it's a comment
 			if (substr($line, 0, 2) == '--' || $line == '')
 				continue;
-		 
+
 			# add this line to the current segment
 			$tmpline .= $line;
-			
+
 			# if it has a semicolon at the end, it's the end of the query
 			if (substr(trim($line), -1, 1) == ';'){
-				
+
 				if(!empty($tmpline)){
 					$this->query($tmpline);
 				}
 				$tmpline = '';
 			}
 		}
-		
+
 	}
 }
 ?>

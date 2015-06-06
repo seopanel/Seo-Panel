@@ -9,13 +9,13 @@
 		</p>
 		</td>
 	</tr>
-	
+
 	<?php if(!empty($msgButton)) {?>
 		<tr>
 			<td align="center"><br><?php echo $msgButton?></td>
 		</tr>
 	<?php }?>
-	
+
 </table>
 
 </div>

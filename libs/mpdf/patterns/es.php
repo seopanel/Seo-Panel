@@ -2,7 +2,7 @@
 /*
 	Adapted from Hyphenator 1.0.2
 	http://code.google.com/p/hyphenator/
-	
+
 	Created by Luis Pabon (lpabon at metagrama dot es)
 */
 

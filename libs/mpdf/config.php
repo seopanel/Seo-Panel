@@ -69,7 +69,7 @@ $this->useAdobeCJK = false;		// Uses Adobe CJK fonts for CJK languages
 // May improve function with some PostScript printers (GhostScript/GSView)
 // Does not work with TTC font collections
 // Slightly smaller file; increased processing time
-$this->repackageTTF = false; 
+$this->repackageTTF = false;
 
 // Allows automatic character set conversion if "charset=xxx" detected in html header (WriteHTML() )
 $this->allow_charset_conversion = true;
@@ -183,8 +183,8 @@ $this->header_line_spacing = 0.25;	// spacing between bottom of header and line 
 $this->footer_line_spacing = 0.25;	// spacing between bottom of header and line (if present) - function of fontsize
 // If 'pad' margin-top sets fixed distance in mm (padding) between bottom of header and top of text.
 // If 'stretch' margin-top sets a minimum distance in mm between top of page and top of text, which expands if header is too large to fit.
-$this->setAutoTopMargin = false;	
-$this->setAutoBottomMargin = false;	
+$this->setAutoTopMargin = false;
+$this->setAutoBottomMargin = false;
 $this->autoMarginPadding = 2;		// distance in mm used as padding if 'stretch' mode is used
 
 
@@ -192,7 +192,7 @@ $this->autoMarginPadding = 2;		// distance in mm used as padding if 'stretch' mo
 // TABLES
 $this->simpleTables = false; // Forces all cells to have same border, background etc. Improves performance
 $this->packTableData = false; // Reduce memory usage processing tables (but with increased processing time)
-// Using disk to cache table data can reduce memory usage dramatically, but at a cost of increased 
+// Using disk to cache table data can reduce memory usage dramatically, but at a cost of increased
 // executon time and disk access (read and write)
 $this->cacheTables = false;
 
@@ -203,7 +203,7 @@ $this->keep_table_proportions = false;	// If table width set > page width, force
 $this->shrink_tables_to_fit = 1.4;	// automatically reduce fontsize in table if words would have to split ( not in CJK)
 						// 0 or false to disable; value (if set) gives maximum factor to reduce fontsize
 
-$this->tableMinSizePriority = false;	// If page-break-inside:avoid but cannot fit on full page without 
+$this->tableMinSizePriority = false;	// If page-break-inside:avoid but cannot fit on full page without
 							// exceeding autosize; setting this value to true will force respsect for
 							// autosize, and disable the page-break-inside:avoid
 
@@ -271,7 +271,7 @@ $this->watermark_font = '';
 $this->watermarkTextAlpha = 0.2;
 $this->watermarkImageAlpha = 0.2;
 $this->watermarkImgAlphaBlend = 'Normal';
-	// Accepts any PDF spec. value: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn, 
+	// Accepts any PDF spec. value: Normal, Multiply, Screen, Overlay, Darken, Lighten, ColorDodge, ColorBurn,
 	// HardLight, SoftLight, Difference, Exclusion
 	// "Multiply" works well for watermark image on top
 
@@ -498,18 +498,18 @@ $this->pdf_version = '1.4';
 // Hyphenation
 $this->SHYlanguages = array('en','de','es','fi','fr','it','nl','pl','ru','sv');	// existing defined patterns
 
-$this->default_lineheight_correction=1.2;	// Value 1 sets lineheight=fontsize height; 
+$this->default_lineheight_correction=1.2;	// Value 1 sets lineheight=fontsize height;
 							// Value used if line-height not set by CSS (usuallly is)
 
 $this->fontsizes = array('XX-SMALL'=>0.7, 'X-SMALL'=>0.77, 'SMALL'=>0.86, 'MEDIUM'=>1, 'LARGE'=>1.2, 'X-LARGE'=>1.5, 'XX-LARGE'=>2);
 
 // CHARACTER PATTERN MATCHES TO DETECT LANGUAGES
 	// pattern used to detect RTL characters -> force RTL
-	$this->pregRTLchars = "\x{0590}-\x{06FF}\x{0700}-\x{083E}\x{FB00}-\x{FDFD}\x{FE70}-\x{FEFF}";	
+	$this->pregRTLchars = "\x{0590}-\x{06FF}\x{0700}-\x{083E}\x{FB00}-\x{FDFD}\x{FE70}-\x{FEFF}";
 
 	// CJK Chars which require changing and are distinctive of specific charset
 	$this->pregUHCchars = "\x{1100}-\x{11FF}\x{3130}-\x{318F}\x{AC00}-\x{D7AF}";
-	$this->pregSJISchars = "\x{3040}-\x{309F}\x{30A0}-\x{30FF}\x{3190}-\x{319F}\x{31F0}-\x{31FF}";	
+	$this->pregSJISchars = "\x{3040}-\x{309F}\x{30A0}-\x{30FF}\x{3190}-\x{319F}\x{31F0}-\x{31FF}";
 
 	// Chars which distinguish CJK but not between different
 	$this->pregCJKchars = "\x{1100}-\x{11FF}\x{2E80}-\x{A4CF}\x{A800}-\x{D7AF}\x{F900}-\x{FAFF}\x{FE30}-\x{FE6F}\x{FF00}-\x{FFEF}\x{20000}-\x{2FA1F}";
@@ -532,8 +532,8 @@ $this->fontsizes = array('XX-SMALL'=>0.7, 'X-SMALL'=>0.77, 'SMALL'=>0.86, 'MEDIU
 	// Use for chunks > words
 	$this->pregASCIIchars3 = "\x{0000}-\x{002E}\x{0030}-\x{003B}\x{003F}-\x{007E}";	// all except <>
 	// Vietnamese - specific
-	$this->pregVIETchars = "\x{01A0}\x{01A1}\x{01AF}\x{01B0}\x{1EA0}-\x{1EF1}";	
-	// Vietnamese -  Chars which shouldn't break string 
+	$this->pregVIETchars = "\x{01A0}\x{01A1}\x{01AF}\x{01B0}\x{1EA0}-\x{1EF1}";
+	// Vietnamese -  Chars which shouldn't break string
 	$this->pregVIETPluschars = "\x{0000}-\x{003B}\x{003F}-\x{00FF}\x{0300}-\x{036F}\x{0102}\x{0103}\x{0110}\x{0111}\x{0128}\x{0129}\x{0168}\x{0169}\x{1EF1}-\x{1EF9}";	// omits < >
 
 	// Arabic
@@ -545,15 +545,15 @@ $this->fontsizes = array('XX-SMALL'=>0.7, 'X-SMALL'=>0.77, 'SMALL'=>0.86, 'MEDIU
 
 	// INDIC
 	$this->pregHIchars = "\x{0900}-\x{0963}\x{0966}-\x{097F}";	// Devanagari (Hindi) minus the common indic punctuation 0964,0965
-	$this->pregBNchars = "\x{0980}-\x{09FF}";	// Bengali 
+	$this->pregBNchars = "\x{0980}-\x{09FF}";	// Bengali
 	$this->pregPAchars = "\x{0A00}-\x{0A7F}";	// Gurmukhi (Punjabi)
 	$this->pregGUchars = "\x{0A80}-\x{0AFF}";	// Gujarati
-	$this->pregORchars = "\x{0B00}-\x{0B7F}";	// Oriya 
-	$this->pregTAchars = "\x{0B80}-\x{0BFF}";	// Tamil 
-	$this->pregTEchars = "\x{0C00}-\x{0C7F}";	// Telugu 
-	$this->pregKNchars = "\x{0C80}-\x{0CFF}";	// Kannada 
-	$this->pregMLchars = "\x{0D00}-\x{0D7F}";	// Malayalam 
-	$this->pregSHchars = "\x{0D80}-\x{0DFF}";	// Sinhala 
+	$this->pregORchars = "\x{0B00}-\x{0B7F}";	// Oriya
+	$this->pregTAchars = "\x{0B80}-\x{0BFF}";	// Tamil
+	$this->pregTEchars = "\x{0C00}-\x{0C7F}";	// Telugu
+	$this->pregKNchars = "\x{0C80}-\x{0CFF}";	// Kannada
+	$this->pregMLchars = "\x{0D00}-\x{0D7F}";	// Malayalam
+	$this->pregSHchars = "\x{0D80}-\x{0DFF}";	// Sinhala
 
 	$this->pregINDextra = "\x{200B}-\x{200D}\x{0964}\x{0965}\x{0020}-\x{0022}\x{0024}-\x{002E}\x{003A}-\x{003F}\x{005B}-\x{0060}\x{007B}-\x{007E}\x{00A0}";
 	// 200B-D=Zero-width joiners; 0964,0965=Generic Indic punctuation; NBSP & general punctuation (excludes # and / so can use in autoFont() )

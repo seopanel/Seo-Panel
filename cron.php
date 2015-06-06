@@ -21,7 +21,7 @@
  ***************************************************************************/
 
 if(!empty($_SERVER['REQUEST_METHOD'])){
-	
+
 	# to section to generate report from admin area
 	include_once("includes/sp-load.php");
 	checkAdminLoggedIn();
@@ -32,35 +32,35 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 	$controller->spTextKeyword = $controller->getLanguageTexts('keyword', $_SESSION['lang_code']);
 	$controller->set('spTextKeyword', $controller->spTextKeyword);
-	
+
 	if($_SERVER['REQUEST_METHOD'] == 'POST'){
-		
+
 		switch($_POST['sec']){
-			
+
 			case "generate":
 				$controller->executeReportGenerationScript($_POST);
 				break;
 		}
-		
+
 	}else{
 		switch($_GET['sec']){
-			
+
 			case "generate":
 				$controller->routeCronJob($_GET['website_id'], $_GET['repTools']);
 				break;
-			
+
 			case "croncommand":
 				$controller->showCronCommand();
-				break;				
-	
+				break;
+
 			default:
 				$controller->showReportGenerationManager();
 				break;
 		}
-	}	
-	
+	}
+
 }else{
-	
+
 	# the section for generate reports using system cron job
 	include_once("includes/sp-load.php");
 	include_once(SP_CTRLPATH."/cron.ctrl.php");
@@ -69,15 +69,15 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
     include_once(SP_CTRLPATH."/keyword.ctrl.php");
 	$controller = New CronController();
 	$controller->timeStamp = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-	
-	$includeList = array();   // the only included seo tools id 
+
+	$includeList = array();   // the only included seo tools id
 	$controller->executeCron($includeList);
-	
+
 	// delete crawl logs before 2 months
 	include_once(SP_CTRLPATH."/crawllog.ctrl.php");
 	$crawlLog = new CrawlLogController();
 	$crawlLog->clearCrawlLog(SP_CRAWL_LOG_CLEAR_TIME);
 	echo "Clearing crawl logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days";
-	
+
 }
 ?>

@@ -1,4 +1,4 @@
-<?php 
+<?php
 echo showSectionHead($spTextPanel["Proxy Perfomance"]);
 $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 ?>
@@ -10,15 +10,15 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 		<td><input type="text" name="keyword" value="<?php echo htmlentities($keyword, ENT_QUOTES)?>" onblur="<?php echo $searchFun?>"></td>
 		<th><?php echo $spText['common']['Period']?>:</th>
     	<td width="236px">
-    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/> 
-    		<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/> 
-    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/> 
+    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $fromTime?>" name="from_time"/>
+    		<img align="bottom" onclick="displayDatePicker('from_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
+    		<input type="text" style="width: 80px;margin-right:0px;" value="<?php echo $toTime?>" name="to_time"/>
     		<img align="bottom" onclick="displayDatePicker('to_time', false, 'ymd', '-');" src="<?php echo SP_IMGPATH?>/cal.gif"/>
     	</td>
 		<th><?php echo $spText['label']['Order By']?>: </th>
 		<td>
 			<select name="order_by" onchange="<?php echo $searchFun?>">
-				<?php				
+				<?php
 				$inactCheck = $actCheck = "";
 				if ($statVal == 'success') {
 				    $actCheck = "selected";
@@ -46,7 +46,7 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 		<td class="right"><?php echo $spText['label']['Fail']?></td>
 	</tr>
 	<?php
-	$colCount = 6; 
+	$colCount = 6;
 	if (count($list) > 0) {
 		$catCount = count($list);
 		foreach ($list as $i => $listInfo) {
@@ -58,7 +58,7 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
-            
+
             $logLink = scriptAJAXLinkHrefDialog('proxy.php', 'content', "sec=edit&proxyId=".$listInfo['proxy_id'], $listInfo['proxy'].":".$listInfo['port']);
             $countLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log"."$urlParams&status=&proxy_id=".$listInfo['proxy_id'], $listInfo['count'], '', 'OnClick', 1000);
 			$successLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log"."$urlParams&status=success&proxy_id=".$listInfo['proxy_id'], $listInfo['success'], '', 'OnClick', 1000);
@@ -74,9 +74,9 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 			</tr>
 			<?php
 		}
-	} else {	 
-		echo showNoRecordsList($colCount-2);		
-	} 
+	} else {
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
