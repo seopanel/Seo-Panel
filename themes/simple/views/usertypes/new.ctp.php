@@ -1,5 +1,5 @@
 <?php echo showSectionHead($spTextPanel['New User Type']); ?>
-<? if(!empty($msg)){
+<?php if(!empty($msg)){
 	?>
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
