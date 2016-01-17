@@ -22,19 +22,16 @@
 
 include_once("includes/sp-load.php");
 include_once(SP_CTRLPATH."/index.ctrl.php");
-$controller = New IndexController();
+$controller = new IndexController();
 $controller->view->menu = 'support';
 $controller->set('spTitle', 'Seo Panel: Support System provides latest seo services');
 $controller->set('spDescription', 'Seo Panel support system will provides 1000 Directory Package,New Search Engines,New Seo Tools,New Seo Plugins,New Skin,Customization,Report Bugs,Support Tickets');
 $controller->set('spKeywords', 'seo panel support,1000 Directory Package,New Search Engines,New Seo Tools,New Seo Plugins,New Skin,Customization,Report Bugs,Support Tickets');
-if($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    switch ($_GET['sec']) {
 
-	switch($_GET['sec']){
-
-		default:
-			$controller->showSupport();
-			break;
-	}
+        default:
+            $controller->showSupport();
+            break;
+    }
 }
-
-?>

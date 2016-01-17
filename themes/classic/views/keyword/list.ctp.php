@@ -11,27 +11,34 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 		<td>
 			<select name="website_id" id="website_id" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $websiteId){?>
+				<?php foreach ($websiteList as $websiteInfo) {
+    ?>
+					<?php if ($websiteInfo['id'] == $websiteId) {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
-					<?php }else{?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 		</td>
 		<th><?php echo $spText['common']['Status']?>: </th>
 		<td>
 			<select name="status" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
-				$inactCheck = $actCheck = "";
-				if ($statVal == 'active') {
-				    $actCheck = "selected";
-				} elseif($statVal == 'inactive') {
-				    $inactCheck = "selected";
-				}
-				?>
+				<?php	
+                $inactCheck = $actCheck = "";
+                if ($statVal == 'active') {
+                    $actCheck = "selected";
+                } elseif ($statVal == 'inactive') {
+                    $inactCheck = "selected";
+                }
+                ?>
 				<option value="active" <?php echo $actCheck?> ><?php echo $spText['common']["Active"]?></option>
 				<option value="inactive" <?php echo $inactCheck?> ><?php echo $spText['common']["Inactive"]?></option>
 			</select>
@@ -54,43 +61,49 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 8; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		foreach($list as $i => $listInfo){
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
+    $colCount = 8;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        foreach ($list as $i => $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
-            }else{
+            } else {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
             $keywordLink = scriptAJAXLinkHref('keywords.php', 'content', "sec=edit&keywordId={$listInfo['id']}", "{$listInfo['name']}")
-			?>
+            ?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td class="td_br_right"><?php echo $listInfo['id']?></td>
 				<td class="td_br_right left"><?php echo $keywordLink?></td>
 				<td class="td_br_right left"><?php echo $listInfo['website']?></td>
-				<td class="td_br_right"><? echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
-				<td class="td_br_right"><? echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>
-				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
+				<td class="td_br_right"><?php echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name'];
+            ?></td>
+				<td class="td_br_right"><?php echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name'];
+            ?></td>
+				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];
+            ?></td>
 				<td class="<?php echo $rightBotClass?>" width="100px">
 					<?php
-						if($listInfo['status']){
-							$statVal = "Inactivate";
-							$statLabel = $spText['common']["Inactivate"];
-						}else{
-							$statVal = "Activate";
-							$statLabel = $spText['common']["Activate"];
-						} 
-					?>
+                        if ($listInfo['status']) {
+                            $statVal = "Inactivate";
+                            $statLabel = $spText['common']["Inactivate"];
+                        } else {
+                            $statVal = "Activate";
+                            $statLabel = $spText['common']["Activate"];
+                        }
+            ?>
 					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('keywords.php', 'content', 'keywordId=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&website_id=<?php echo $websiteId?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
-						<?if($listInfo['webstatus'] && $listInfo['status']){?>
+						<?if ($listInfo['webstatus'] && $listInfo['status']) {
+    ?>
 							<option value="reports"><?php echo $spText['common']['Reports']?></option>
-						<?php }?>
+						<?php 
+}
+            ?>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>
 						<option value="edit"><?php echo $spText['common']['Edit']?></option>
 						<option value="delete"><?php echo $spText['common']['Delete']?></option>
@@ -98,13 +111,14 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 				</td>
 			</tr>
 			<?php
-		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
-	?>
+
+        }
+    } else {
+        echo showNoRecordsList($colCount-2);
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 </table>
@@ -115,7 +129,7 @@ if (SP_DEMO) {
     $actFun = "confirmSubmit('keywords.php', 'listform', 'content', '&sec=activateall&pageno=$pageNo')";
     $inactFun = "confirmSubmit('keywords.php', 'listform', 'content', '&sec=inactivateall&pageno=$pageNo')";
     $delFun = "confirmSubmit('keywords.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
-}   
+}
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>

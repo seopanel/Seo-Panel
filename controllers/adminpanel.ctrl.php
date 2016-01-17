@@ -21,127 +21,127 @@
  ***************************************************************************/
 
 # class defines all seo tools controller functions
-class AdminPanelController extends Controller{	
-	
-	# index function
-	function index($info = ""){
-		
-		$menuList[] = array(
-						'id' => 1,
-            			'name' => $this->spTextPanel['Website Manager'],
-            			'url_section' => 'websites'						
-						);		
-		if(isAdmin()){
-			$menuList[] = array(
-						'id' => 2,
-            			'name' => $this->spTextPanel['User Manager'],
-            			'url_section' => 'users'						
-						);
-		}		
-		
-		// user type manager
-		if (isAdmin()) {
-			$menuList[] = array(
-				'id' => 15,
-				'name' => $this->spTextPanel['User Type Manager'],
-            	'url_section' => 'user-types-manager'						
-			);
-		}
-		
-		if (isLoggedIn()) {
-			$menuList[] = array(
-						'id' => 3,
-            			'name' => $this->spTextPanel['Reports Manager'],
-            			'url_section' => 'report-manager'						
-						);
-		}			
+class AdminPanelController extends Controller
+{
+    
+    # index function
+    public function index($info = "")
+    {
+        $menuList[] = array(
+                        'id' => 1,
+                        'name' => $this->spTextPanel['Website Manager'],
+                        'url_section' => 'websites'
+                        );
+        if (isAdmin()) {
+            $menuList[] = array(
+                        'id' => 2,
+                        'name' => $this->spTextPanel['User Manager'],
+                        'url_section' => 'users'
+                        );
+        }
+        
+        // user type manager
+        if (isAdmin()) {
+            $menuList[] = array(
+                'id' => 15,
+                'name' => $this->spTextPanel['User Type Manager'],
+                'url_section' => 'user-types-manager'
+            );
+        }
+        
+        if (isLoggedIn()) {
+            $menuList[] = array(
+                        'id' => 3,
+                        'name' => $this->spTextPanel['Reports Manager'],
+                        'url_section' => 'report-manager'
+                        );
+        }
 
-		if (isAdmin()) {
-			$menuList[] = array(
-						'id' => 4,
-            			'name' => $this->spTextPanel['Seo Tools Manager'],
-            			'url_section' => 'seo-tools-manager'						
-						);
-			
-			$menuList[] = array(
-						'id' => 5,
-            			'name' => $this->spTextPanel['Seo Plugins Manager'],
-            			'url_section' => 'seo-plugin-manager'						
-						);
-			
-			$menuList[] = array(
-						'id' => 6,
-            			'name' => $this->spTextPanel['Themes Manager'],
-            			'url_section' => 'themes-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 7,
-            			'name' => $this->spTextPanel['Directory Manager'],
-            			'url_section' => 'directory-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 8,
-            			'name' => $this->spTextPanel['Proxy Manager'],
-            			'url_section' => 'proxy-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 9,
-            			'name' => $this->spTextPanel['Search Engine Manager'],
-            			'url_section' => 'se-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 10,
-            			'name' => $this->spTextPanel['Log Manager'],
-            			'url_section' => 'log-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 11,
-            			'name' => $this->spTextPanel['API Manager'],
-            			'url_section' => 'api-manager'						
-						);
-						
-			$menuList[] = array(
-						'id' => 12,
-            			'name' => $this->spTextPanel['System Settings'],
-            			'url_section' => 'settings'						
-						);
-		}
+        if (isAdmin()) {
+            $menuList[] = array(
+                        'id' => 4,
+                        'name' => $this->spTextPanel['Seo Tools Manager'],
+                        'url_section' => 'seo-tools-manager'
+                        );
+            
+            $menuList[] = array(
+                        'id' => 5,
+                        'name' => $this->spTextPanel['Seo Plugins Manager'],
+                        'url_section' => 'seo-plugin-manager'
+                        );
+            
+            $menuList[] = array(
+                        'id' => 6,
+                        'name' => $this->spTextPanel['Themes Manager'],
+                        'url_section' => 'themes-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 7,
+                        'name' => $this->spTextPanel['Directory Manager'],
+                        'url_section' => 'directory-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 8,
+                        'name' => $this->spTextPanel['Proxy Manager'],
+                        'url_section' => 'proxy-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 9,
+                        'name' => $this->spTextPanel['Search Engine Manager'],
+                        'url_section' => 'se-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 10,
+                        'name' => $this->spTextPanel['Log Manager'],
+                        'url_section' => 'log-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 11,
+                        'name' => $this->spTextPanel['API Manager'],
+                        'url_section' => 'api-manager'
+                        );
+                        
+            $menuList[] = array(
+                        'id' => 12,
+                        'name' => $this->spTextPanel['System Settings'],
+                        'url_section' => 'settings'
+                        );
+        }
 
-		$menuList[] = array(
-				'id' => 13,
-				'name' => $this->spTextPanel['My Profile'],
-				'url_section' => 'my-profile'
-		);
-		
-		$menuList[] = array(
-						'id' => 14,
-            			'name' => $this->spTextPanel['About Us'],
-            			'url_section' => 'about-us'						
-						);
-		
-		$menuSelected = empty($info['menu_selected']) ? 'websites' : urldecode($info['menu_selected']); 
-		$this->set('menuList', $menuList);
-		$this->set('menuSelected', $menuSelected);
-		$startScript = empty($info['start_script']) ? "websites.php" : urldecode($info['start_script']);
-		if (!stristr($startScript, '.php')) {
-		    $startScript .= ".php";    
-		}
-		
-		$arguments = "";
-		foreach ($info as $key => $value) {
-		    if (!in_array($key, array('menu_selected', 'start_script'))) {
-		        $arguments .= "&$key=".urldecode($value);    
-		    }
-		}
-		
-		$this->set('startFunction', "scriptDoLoad('$startScript', 'content', '$arguments')");
-		
-		$this->render('adminpanel/adminpanel');
-	}
+        $menuList[] = array(
+                'id' => 13,
+                'name' => $this->spTextPanel['My Profile'],
+                'url_section' => 'my-profile'
+        );
+        
+        $menuList[] = array(
+                        'id' => 14,
+                        'name' => $this->spTextPanel['About Us'],
+                        'url_section' => 'about-us'
+                        );
+        
+        $menuSelected = empty($info['menu_selected']) ? 'websites' : urldecode($info['menu_selected']);
+        $this->set('menuList', $menuList);
+        $this->set('menuSelected', $menuSelected);
+        $startScript = empty($info['start_script']) ? "websites.php" : urldecode($info['start_script']);
+        if (!stristr($startScript, '.php')) {
+            $startScript .= ".php";
+        }
+        
+        $arguments = "";
+        foreach ($info as $key => $value) {
+            if (!in_array($key, array('menu_selected', 'start_script'))) {
+                $arguments .= "&$key=".urldecode($value);
+            }
+        }
+        
+        $this->set('startFunction', "scriptDoLoad('$startScript', 'content', '$arguments')");
+        
+        $this->render('adminpanel/adminpanel');
+    }
 }
-?>

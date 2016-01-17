@@ -20,14 +20,15 @@
         </table>
 	</div>
 	<?php if (count($proxyList)) {
-		$proxyInfo = $proxyList[0];
-		$scriptUrl = "proxy.php?sec=runcheckstatus&id=".$proxyInfo['id']."&proxy_max_id=".$proxyMaxId;
-		?>
+    $proxyInfo = $proxyList[0];
+    $scriptUrl = "proxy.php?sec=runcheckstatus&id=".$proxyInfo['id']."&proxy_max_id=".$proxyMaxId;
+    ?>
 		<p class='note'>
 			<?php echo $spTextSA['pressescapetostopexecution']?>.
 		</p>
 		<div id="subcontmed">
 			<script>scriptDoLoad('<?php echo $scriptUrl?>', 'subcontmed');</script>
 		</div>
-	<?php }?>
+	<?php 
+}?>
 </div>

@@ -16,10 +16,10 @@
         </table>
 	</div>
 	<?php if (count($proxyList)) {
-		$proxyInfo = $proxyList[0];
-		$statusVar = isset($status) ? "&status=$status" : "";
-		$scriptUrl = "proxy.php?sec=runcheckstatus&id=".$proxyInfo['id'].$statusVar;
-		?>
+    $proxyInfo = $proxyList[0];
+    $statusVar = isset($status) ? "&status=$status" : "";
+    $scriptUrl = "proxy.php?sec=runcheckstatus&id=".$proxyInfo['id'].$statusVar;
+    ?>
 		<p class='note'>
 			<?php echo $spTextSA['pressescapetostopexecution']?>.
 			<a <?php echo scriptPostAJAXLink('proxy.php', 'listform', 'subcontent')?> href='javascript:void(0);'>
@@ -30,5 +30,6 @@
 		<div id="subcontmed">
 			<script>scriptDoLoad('<?php echo $scriptUrl?>', 'subcontmed');</script>
 		</div>
-	<?php }?>
+	<?php 
+}?>
 </div>

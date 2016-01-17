@@ -7,7 +7,9 @@
 </table>
 </form>
 <div id='subcontent'>
-	<?php if($showGraph){?>
+	<?php if ($showGraph) {
+    ?>
 		<img src="<?php echo PLUGIN_IMGPATH?>/graph.gif"></img>
-	<?php }?>
+	<?php 
+}?>
 </div>

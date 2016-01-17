@@ -24,7 +24,7 @@ include_once("includes/sp-load.php");
 checkLoggedIn();
 isHavingWebsite();
 include_once(SP_CTRLPATH."/seoplugins.ctrl.php");
-$controller = New SeoPluginsController();
+$controller = new SeoPluginsController();
 $controller->view->menu = 'seoplugins';
 $controller->spTextPlugin = $controller->getLanguageTexts('plugin', $_SESSION['lang_code']);
 $controller->set('spTextPlugin', $controller->spTextPlugin);
@@ -33,26 +33,22 @@ $controller->set('spTitle', 'Seo Panel: Provides latest seo plugins to increase 
 $controller->set('spDescription', 'Its an open source software and also you can develop your own seo plugins for seo panel. Download new seo plugins and install into your seo panel software and increase your site perfomance.');
 $controller->set('spKeywords', 'seo panel plugins,latest seo plugins,download seo plugins,install seo plugins,develop seo plugins');
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-			
-		default:
-			$controller->manageSeoPlugins($_POST, 'post');
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+            
+        default:
+            $controller->manageSeoPlugins($_POST, 'post');
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
 
-		case "show":
-			$controller->showSeoPlugins($_GET);
-			break;
-			
-		default:
-			$controller->manageSeoPlugins($_GET, 'get');
-			break;
-	}
+        case "show":
+            $controller->showSeoPlugins($_GET);
+            break;
+            
+        default:
+            $controller->manageSeoPlugins($_GET, 'get');
+            break;
+    }
 }
-
-?>

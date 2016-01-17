@@ -12,9 +12,11 @@
 	<tr>
 		<th nowrap="nowrap"><?php echo $spText['common']['Seo Tools']?>: </th>
 		<td colspan="2" style="font-size: 12px;">
-			<?php foreach($repTools as $i => $repInfo){ ?>
+			<?php foreach ($repTools as $i => $repInfo) {
+    ?>
 				<input type="checkbox" name="repTools[]" value="<?php echo $repInfo['id']?>" checked="checked"> <?php echo $spTextTools[$repInfo['url_section']]?><br>				
-			<?php }?>			
+			<?php 
+}?>			
 		</td>		
 	</tr>
 </table>

@@ -23,32 +23,36 @@
 /**
  * Class defines all details about managing time zones
  */
-class TimeZoneController extends Controller {
-	
-	/**
-	 * function to get all timezones used in the system
-	 * @param string $where		The condition to filter the timezones
-	 * @return Array 			Array contains details about timezone
-	 */
-	function __getAllTimezones($where=''){
-		$sql = "select * from timezone";
-		if (!empty($where)) $sql .= $where;
-		$sql .= " order by id";
-		$timezoneList = $this->db->select($sql);
-		return $timezoneList;
-	}
-	
-	
-	/**
-	 * function to get timezone information
-	 * @param int $timezoneVal	The value of the timezone
-	 * @param int $timezoneCol	The col name of the timezone
-	 * @return Array		Contains all details about the  timezone
-	 */
-	function __getTimezoneInfo($timezoneVal, $timezoneCol = 'timezone_name') {
-		$sql = "select * from timezone where $timezoneCol='".addslashes($timezoneVal)."'";
-		$timezoneInfo = $this->db->select($sql, true);
-		return $timezoneInfo;
-	}
+class TimeZoneController extends Controller
+{
+    
+    /**
+     * function to get all timezones used in the system
+     * @param string $where		The condition to filter the timezones
+     * @return Array 			Array contains details about timezone
+     */
+    public function __getAllTimezones($where='')
+    {
+        $sql = "select * from timezone";
+        if (!empty($where)) {
+            $sql .= $where;
+        }
+        $sql .= " order by id";
+        $timezoneList = $this->db->select($sql);
+        return $timezoneList;
+    }
+    
+    
+    /**
+     * function to get timezone information
+     * @param int $timezoneVal	The value of the timezone
+     * @param int $timezoneCol	The col name of the timezone
+     * @return Array		Contains all details about the  timezone
+     */
+    public function __getTimezoneInfo($timezoneVal, $timezoneCol = 'timezone_name')
+    {
+        $sql = "select * from timezone where $timezoneCol='".addslashes($timezoneVal)."'";
+        $timezoneInfo = $this->db->select($sql, true);
+        return $timezoneInfo;
+    }
 }
-?>

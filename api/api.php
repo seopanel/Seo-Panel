@@ -24,56 +24,51 @@ include_once("../includes/sp-load.php");
 include_once(SP_CTRLPATH."/api.ctrl.php");
 include_once(SP_CTRLPATH."/settings.ctrl.php");
 include(SP_ABSPATH . "/api/api.functions.php");
-$controller = New APIController();
+$controller = new APIController();
 
 $inputInfo = ($_SERVER['REQUEST_METHOD'] == 'POST') ? $_POST : $_GET;
 
 // sp demo enabled
 if (SP_DEMO) {
-	$returnInfo['response'] = 'Error';
-	$returnInfo['error_msg'] = "API will not work in demo mode!";	
-} else if ($controller->verifyAPICredentials($inputInfo)) {
-	
-	$category = strtolower($inputInfo['category']);
-	$action = $inputInfo['action'];
-	
-	// check for category and action values
-	if (!empty($category) && !empty($action)) {
-		
-		// call api class with the action
-		if (include(SP_ABSPATH . "/api/" . $category . ".api.php")) {
-			$categortClassName = ucfirst($category) . "API";
-			
-			// check for class exists or not
-			if (class_exists($categortClassName)) {
-				$apiObj = new $categortClassName();
-				
-				// check action exists or not
-				if (method_exists($apiObj, $action)) {
-					$returnInfo = $apiObj->$action($inputInfo);
-				} else {
-					$returnInfo['response'] = 'Error';
-					$returnInfo['error_msg'] = "Action is not supported!";
-				}
-				
-			} else {
-				$returnInfo['response'] = 'Error';
-				$returnInfo['error_msg'] = "Category is not supported!";
-			}
-			
-		} else {
-			$returnInfo['response'] = 'Error';
-			$returnInfo['error_msg'] = "Invalid category passed!";
-		}
-		
-	} else {
-		$returnInfo['response'] = 'Error';
-		$returnInfo['error_msg'] = "Invalid category or action!";
-	}
-	
+    $returnInfo['response'] = 'Error';
+    $returnInfo['error_msg'] = "API will not work in demo mode!";
+} elseif ($controller->verifyAPICredentials($inputInfo)) {
+    $category = strtolower($inputInfo['category']);
+    $action = $inputInfo['action'];
+    
+    // check for category and action values
+    if (!empty($category) && !empty($action)) {
+        
+        // call api class with the action
+        if (include(SP_ABSPATH . "/api/" . $category . ".api.php")) {
+            $categortClassName = ucfirst($category) . "API";
+            
+            // check for class exists or not
+            if (class_exists($categortClassName)) {
+                $apiObj = new $categortClassName();
+                
+                // check action exists or not
+                if (method_exists($apiObj, $action)) {
+                    $returnInfo = $apiObj->$action($inputInfo);
+                } else {
+                    $returnInfo['response'] = 'Error';
+                    $returnInfo['error_msg'] = "Action is not supported!";
+                }
+            } else {
+                $returnInfo['response'] = 'Error';
+                $returnInfo['error_msg'] = "Category is not supported!";
+            }
+        } else {
+            $returnInfo['response'] = 'Error';
+            $returnInfo['error_msg'] = "Invalid category passed!";
+        }
+    } else {
+        $returnInfo['response'] = 'Error';
+        $returnInfo['error_msg'] = "Invalid category or action!";
+    }
 } else {
-	$returnInfo['response'] = 'Error';
-	$returnInfo['error_msg'] = "API Authentication failed. Please provide valid API key and secret!";
+    $returnInfo['response'] = 'Error';
+    $returnInfo['error_msg'] = "API Authentication failed. Please provide valid API key and secret!";
 }
 
 // for debugging added below line
@@ -82,4 +77,3 @@ if (SP_DEMO) {
 // encode as json and print 
 $out = json_encode($returnInfo);
 print $out;
-?>

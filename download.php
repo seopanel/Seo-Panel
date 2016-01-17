@@ -23,21 +23,17 @@
 include_once("includes/sp-load.php");
 checkLoggedIn();
 include_once(SP_CTRLPATH."/download.ctrl.php");
-$controller = New DownloadController();
+$controller = new DownloadController();
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
 
-	}
+    }
+} else {
+    switch ($_GET['sec']) {
 
-}else{
-	switch($_GET['sec']){
-
-		default:
-			$controller->downloadFile($_GET);
-			break;
-	}
+        default:
+            $controller->downloadFile($_GET);
+            break;
+    }
 }
-
-?>

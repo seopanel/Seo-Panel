@@ -25,94 +25,91 @@
  * @author Seo Panel
  *
  */
-class InformationController extends Controller {
+class InformationController extends Controller
+{
 
-	/**
-	 * function to show news boxes
-	 */
-	function showNews($secInfo='') {
-		
-		// switch trhough sections
-		switch($secInfo['sec_name']){
-				
-			default:
-				
-				// get today's information
-				$ret = $this->__getTodayInformation();
-				
-				// if empty fetch directly from website
-				if (!isset($ret['page'])) {
-					
-					// get content directly from website
-					$ret = $this->spider->getContent(SP_NEWS_PAGE . "?lang=". $_SESSION['lang_code'], true, false);
-					
-					// update in db
-					$this->updateTodayInformation($ret['page']);
-					
-				}
-	
-				// check whether it contains required data
-				if (!empty($ret['page']) && stristr($ret['page'], "id='news_info'")) {					
-					$this->set('newsContent', stripslashes($ret['page']));
-					$this->render('common/topnewsbox', 'ajax');
-				}
-		}
-	
-	}
+    /**
+     * function to show news boxes
+     */
+    public function showNews($secInfo='')
+    {
+        
+        // switch trhough sections
+        switch ($secInfo['sec_name']) {
+                
+            default:
+                
+                // get today's information
+                $ret = $this->__getTodayInformation();
+                
+                // if empty fetch directly from website
+                if (!isset($ret['page'])) {
+                    
+                    // get content directly from website
+                    $ret = $this->spider->getContent(SP_NEWS_PAGE . "?lang=". $_SESSION['lang_code'], true, false);
+                    
+                    // update in db
+                    $this->updateTodayInformation($ret['page']);
+                }
+    
+                // check whether it contains required data
+                if (!empty($ret['page']) && stristr($ret['page'], "id='news_info'")) {
+                    $this->set('newsContent', stripslashes($ret['page']));
+                    $this->render('common/topnewsbox', 'ajax');
+                }
+        }
+    }
 
-	
-	/**
-	 * function to get sponsors
-	 */
-	function getSponsors() {
-		
-		// get today's information
-		$ret = $this->__getTodayInformation('sponsors');
-		
-		// if empty fetch directly from website
-		if (!isset($ret['page'])) {
-			
-			// get content directly from website
-			$ret = $this->spider->getContent(SP_SPONSOR_PAGE . "?lang=". $_SESSION['lang_code'], true, false);
-				
-			// update in db
-			$this->updateTodayInformation($ret['page'], 'sponsors');
-				
-		}
-		
-		// check whether it contains required data
-		if (!empty($ret['page']) && stristr($ret['page'], 'class="contentmid"')) {
-			return 	$ret['page'];
-		} else {
-			return false;
-		}
-		
-	}
-	
-	/**
-	 * function to update news in database
-	 */
-	function updateTodayInformation($content, $secName = 'news') {
-		
-		$todayDate = date('Y-m-d');
-		$sql = "delete from information_list where info_type='" . addslashes($secName) . "'";
-		$this->db->query($sql);
-		
-		$sql = "insert into information_list(info_type, content, update_date) 
+    
+    /**
+     * function to get sponsors
+     */
+    public function getSponsors()
+    {
+        
+        // get today's information
+        $ret = $this->__getTodayInformation('sponsors');
+        
+        // if empty fetch directly from website
+        if (!isset($ret['page'])) {
+            
+            // get content directly from website
+            $ret = $this->spider->getContent(SP_SPONSOR_PAGE . "?lang=". $_SESSION['lang_code'], true, false);
+                
+            // update in db
+            $this->updateTodayInformation($ret['page'], 'sponsors');
+        }
+        
+        // check whether it contains required data
+        if (!empty($ret['page']) && stristr($ret['page'], 'class="contentmid"')) {
+            return    $ret['page'];
+        } else {
+            return false;
+        }
+    }
+    
+    /**
+     * function to update news in database
+     */
+    public function updateTodayInformation($content, $secName = 'news')
+    {
+        $todayDate = date('Y-m-d');
+        $sql = "delete from information_list where info_type='" . addslashes($secName) . "'";
+        $this->db->query($sql);
+        
+        $sql = "insert into information_list(info_type, content, update_date) 
 		values('" . addslashes($secName) . "', '" . addslashes($content) . "', '{$todayDate}')";
-		$this->db->query($sql);
-		
-	}
-	
-	/**
-	 * function to get todays information
-	 */
-	function __getTodayInformation($secName = 'news') {
-		$sql = "select info_type, content as page from information_list where info_type='" . addslashes($secName) . "'
+        $this->db->query($sql);
+    }
+    
+    /**
+     * function to get todays information
+     */
+    public function __getTodayInformation($secName = 'news')
+    {
+        $sql = "select info_type, content as page from information_list where info_type='" . addslashes($secName) . "'
 		and update_date='" . date('Y-m-d') . "'";
-		$info = $this->db->select($sql, true);
-		return $info;
-	}
-	
+        $info = $this->db->select($sql, true);
+        return $info;
+    }
 }
-?>

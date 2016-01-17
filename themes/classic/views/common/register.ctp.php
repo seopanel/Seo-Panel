@@ -10,43 +10,52 @@
                 		<td>&nbsp;</td>
                 		<th class="main_header"><?php echo $spText['login']['Create New Account']?></th>
                 	</tr>
-                	<?php if (!empty($_GET['failed'])) {?>
+                	<?php if (!empty($_GET['failed'])) {
+    ?>
 	                	<tr>
-	                		<td colspan="2"><?php showErrorMsg($spTextSubscription['internal-error-payment'], false);?></td>
+	                		<td colspan="2"><?php showErrorMsg($spTextSubscription['internal-error-payment'], false);
+    ?></td>
 	                	<tr>
-                	<?php }?>
-                	<?php if (!empty($_GET['cancel'])) {?>
+                	<?php 
+}?>
+                	<?php if (!empty($_GET['cancel'])) {
+    ?>
 	                	<tr>
-	                		<td colspan="2"><?php showErrorMsg($spTextSubscription["Your transaction cancelled"], false);?></td>
+	                		<td colspan="2"><?php showErrorMsg($spTextSubscription["Your transaction cancelled"], false);
+    ?></td>
 	                	<tr>
-                	<?php }?>
+                	<?php 
+}?>
                 	
                 	<?php
-                	// if subscription plugin is active
-                	if ($subscriptionActive & !empty($userTypeList)){
-						?>
+                    // if subscription plugin is active
+                    if ($subscriptionActive & !empty($userTypeList)) {
+                        ?>
 						<tr>
 							<th width="28%"><?php echo $spTextSubscription['Subscription']?>:*</th>
 							<td>
 								<select name="utype_id">
 									<?php
-									foreach ($userTypeList as $userTypeInfo) {
-										$selected = ($post['utype_id'] == $userTypeInfo['id']) ? "selected" : "";
-										$typeLabel = ucfirst($userTypeInfo['user_type']) . " - ";
-										
-										// if user type have price
-										if ($userTypeInfo['price'] > 0) {
-											$typeLabel .= $currencyList[SP_PAYMENT_CURRENCY]['symbol'] . $userTypeInfo['price'] . "/" . $spText['label']['Monthly'];
-										} else {
-											$typeLabel .= $spText['label']['Free'];
-										}										
-										?>
-										<option value="<?php echo $userTypeInfo['id']?>" <?php echo $selected;?>><?php echo $typeLabel?></option>
+                                    foreach ($userTypeList as $userTypeInfo) {
+                                        $selected = ($post['utype_id'] == $userTypeInfo['id']) ? "selected" : "";
+                                        $typeLabel = ucfirst($userTypeInfo['user_type']) . " - ";
+                                        
+                                        // if user type have price
+                                        if ($userTypeInfo['price'] > 0) {
+                                            $typeLabel .= $currencyList[SP_PAYMENT_CURRENCY]['symbol'] . $userTypeInfo['price'] . "/" . $spText['label']['Monthly'];
+                                        } else {
+                                            $typeLabel .= $spText['label']['Free'];
+                                        }
+                                        ?>
+										<option value="<?php echo $userTypeInfo['id']?>" <?php echo $selected;
+                                        ?>><?php echo $typeLabel?></option>
 										<?php
-									}
-									?>
+
+                                    }
+                        ?>
 								</select>
-								<a class="bold_link" href="<?php echo SP_WEBPATH . "/register.php?sec=pricing"; ?>"><?php echo $spTextSubscription['Plans and Pricing']?> &gt;&gt;</a>
+								<a class="bold_link" href="<?php echo SP_WEBPATH . "/register.php?sec=pricing";
+                        ?>"><?php echo $spTextSubscription['Plans and Pricing']?> &gt;&gt;</a>
 								<br>
 								<?php echo $errMsg['utype_id']?>
 							</td>
@@ -56,12 +65,15 @@
 							<td>
 								<select name="quantity">
 									<?php
-									for ($i = 1; $i <= 24; $i++) {
-										?>
-										<option value="<?php echo $i;?>"><?php echo $i;?></option>
+                                    for ($i = 1; $i <= 24; $i++) {
+                                        ?>
+										<option value="<?php echo $i;
+                                        ?>"><?php echo $i;
+                                        ?></option>
 										<?php
-									} 
-									?>
+
+                                    }
+                        ?>
 								</select>
 							</td>
 						</tr>
@@ -70,25 +82,31 @@
 							<td>
 								<select name="pg_id">
 									<?php
-									// loop through the payment types
-									foreach ($pgList as $pgInfo) {
-										$checked = ($defaultPgId == $pgInfo['id']) ? "selected" : ""
-										?>
-										<option value="<?php echo $pgInfo['id']?>" <?php echo $checked; ?> ><?php echo $pgInfo['name']; ?></option>
+                                    // loop through the payment types
+                                    foreach ($pgList as $pgInfo) {
+                                        $checked = ($defaultPgId == $pgInfo['id']) ? "selected" : ""
+                                        ?>
+										<option value="<?php echo $pgInfo['id']?>" <?php echo $checked;
+                                        ?> ><?php echo $pgInfo['name'];
+                                        ?></option>
 										<?php
-									}
-									?>
+
+                                    }
+                        ?>
 								</select>
 								<?php echo $errMsg['pg_id']?>
 							</td>
 						</tr>
 						<?php
-					} else {
-						?>
-						<input type="hidden" name="utype_id" value="<?php echo $defaultUserTypeId; ?>">
+
+                    } else {
+                        ?>
+						<input type="hidden" name="utype_id" value="<?php echo $defaultUserTypeId;
+                        ?>">
 						<?php
-					}
-                	?>
+
+                    }
+                    ?>
                 	
                 	<tr>
                 		<th width="28%"><?php echo $spText['login']['Username']?>:*</th>

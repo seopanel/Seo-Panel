@@ -25,7 +25,7 @@ checkAdminLoggedIn();
 include_once(SP_CTRLPATH."/crawllog.ctrl.php");
 include_once(SP_CTRLPATH."/keyword.ctrl.php");
 include_once(SP_CTRLPATH."/searchengine.ctrl.php");
-$controller = New CrawlLogController();
+$controller = new CrawlLogController();
 $controller->view->menu = 'adminpanel';
 $controller->layout = 'ajax';
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
@@ -33,46 +33,43 @@ $controller->spTextLog = $controller->getLanguageTexts('log', $_SESSION['lang_co
 $controller->set('spTextLog', $controller->spTextLog);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-	
-	switch ($_POST['sec']) {
-		    
-		case "delete_all_crawl_log":		    
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->deleteCrawlLog($id);
-    		    }
-		    }
-		    
-			$controller->listCrawlLog($_POST);
-		    break;
-		
-		default:
-			$controller->listCrawlLog($_POST);
-			break;
-		
-		    
-	}
-
+    switch ($_POST['sec']) {
+            
+        case "delete_all_crawl_log":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->deleteCrawlLog($id);
+                }
+            }
+            
+            $controller->listCrawlLog($_POST);
+            break;
+        
+        default:
+            $controller->listCrawlLog($_POST);
+            break;
+        
+            
+    }
 } else {
-	switch($_GET['sec']) {
-		
-		case "clear_all_log":
-			$controller->clearAllLog();
-			$controller->listCrawlLog($_GET);
-			break;
-		
-		case "delete_crawl_log":
-			$controller->deleteCrawlLog($_GET['id']);
-			$controller->listCrawlLog($_GET);
-			break;
-		
-		case "crawl_log_details":
-			$controller->showCrawlLogDetails($_GET['id']);
-			break;
-		
-		default:
-			$controller->listCrawlLog($_GET);
-			break;
-	}
+    switch ($_GET['sec']) {
+        
+        case "clear_all_log":
+            $controller->clearAllLog();
+            $controller->listCrawlLog($_GET);
+            break;
+        
+        case "delete_crawl_log":
+            $controller->deleteCrawlLog($_GET['id']);
+            $controller->listCrawlLog($_GET);
+            break;
+        
+        case "crawl_log_details":
+            $controller->showCrawlLogDetails($_GET['id']);
+            break;
+        
+        default:
+            $controller->listCrawlLog($_GET);
+            break;
+    }
 }
-?>

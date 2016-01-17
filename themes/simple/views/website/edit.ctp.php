@@ -1,8 +1,8 @@
 <?php 
 echo showSectionHead($spTextWeb['Edit Website']);
 
-if(!empty($validationMsg)){
-	?>
+if (!empty($validationMsg)) {
+    ?>
 	<p class="dirmsg">
 		<font class="error"><?php echo $validationMsg?></font>
 	</p>
@@ -18,22 +18,32 @@ if(!empty($validationMsg)){
 		<td class="left" width='30%'><?php echo $spTextWeb['Edit Website']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php if(!empty($isAdmin)){ ?>	
+	<?php if (!empty($isAdmin)) {
+    ?>	
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
 			<td class="td_right_col">
 				<select name="user_id" style="width:150px;">
-					<?php foreach($userList as $userInfo){?>
-						<?php if($userInfo['id'] == $post['user_id']){?>
+					<?php foreach ($userList as $userInfo) {
+    ?>
+						<?php if ($userInfo['id'] == $post['user_id']) {
+    ?>
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
-						<?php }else{?>
+						<?php 
+} else {
+    ?>
 							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
-						<?php }?>						
-					<?php }?>
+						<?php 
+}
+    ?>						
+					<?php 
+}
+    ?>
 				</select>
 			</td>
 		</tr>
-	<?php }?>
+	<?php 
+}?>
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
 		<td class="td_right_col"><input type="text" name="name" value="<?php echo $post['name']?>"><?php echo $errMsg['name']?></td>

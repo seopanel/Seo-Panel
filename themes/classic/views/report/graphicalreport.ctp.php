@@ -5,13 +5,20 @@
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<select name="website_id" style='width:190px;' id="website_id" onchange="doLoad('website_id', 'keywords.php', 'keyword_area', 'sec=keywordbox')">
-				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $websiteId){?>
+				<?php foreach ($websiteList as $websiteInfo) {
+    ?>
+					<?php if ($websiteInfo['id'] == $websiteId) {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
-					<?php }else{?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 		</td>
 		<th><?php echo $spText['common']['Keyword']?>: </th>
@@ -30,8 +37,8 @@
 		<th><?php echo $spText['common']['Search Engine']?>: </th>
 		<td>
 			<?php 
-				echo $this->render('searchengine/seselectbox', 'ajax'); 
-			?>
+                echo $this->render('searchengine/seselectbox', 'ajax');
+            ?>
 		</td>
 		<td colspan="2"><a href="javascript:void(0);" onclick="scriptDoLoadPost('graphical-reports.php', 'search_form', 'content')" class="actionbut"><?php echo $spText['button']['Show Records']?></a></td>
 	</tr>
@@ -39,12 +46,12 @@
 </form>
 
 <?php
-	if(empty($keywordId)){
-		?>
+    if (empty($keywordId)) {
+        ?>
 		<p class='note error'><?php echo $spText['common']['No Keywords Found']?>!</p>
 		<?php
-		exit;
-	} 
+        exit;
+    }
 ?>
 
 <div id='subcontent'>

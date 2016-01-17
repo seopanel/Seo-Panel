@@ -16,11 +16,13 @@
             		<td valign="top">
                         <?php echo getRoundTabTop(); ?>
                         <div id="content">
-                			<?php if(!empty($defaultScript)) {?>
+                			<?php if (!empty($defaultScript)) {
+    ?>
                 				<script type="text/javascript">
                 					scriptDoLoad('<?php echo $defaultScript?>', 'content', '<?php echo $defaultArgs?>');
                 				</script>
-                			<?php }?>
+                			<?php 
+}?>
         				</div>
         				<?php echo getRoundTabBot(); ?>	
             		</td>

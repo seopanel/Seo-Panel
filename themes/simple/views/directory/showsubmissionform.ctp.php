@@ -1,11 +1,12 @@
-<? if(!empty($msg)){
-	$msgClass = empty($error) ? "success" : "error"; 
-	?>
+<?php if (!empty($msg)) {
+    $msgClass = empty($error) ? "success" : "error";
+    ?>
 		<p class="dirmsg">
 			<font class="<?php echo $msgClass?>"><?php echo $msg?></font>
 		</p>
-	<? 
-	}
+	<?php
+
+}
 ?>
 <form id="submissionForm" name="submissionForm">
 <input type="hidden" name="sec" value="submitsite"/>
@@ -13,9 +14,11 @@
 <input type="hidden" name="dir_id" value="<?php echo $dirInfo['id']?>"/>
 <input type="hidden" name="add_params" value="<?php echo $addParams?>">
 
-<?php if(!empty($phpsessid)){?>
+<?php if (!empty($phpsessid)) {
+    ?>
     <input type="hidden" name="phpsessid" value="<?php echo $phpsessid?>">
-<?php }?>
+<?php 
+}?>
 
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
@@ -34,26 +37,33 @@
 		<td class="td_left_col"><?php echo $spText['common']['Category']?>:</td>
 		<td class="td_right_col"><?php echo $categorySel?></td>
 	</tr>
-	<? if (!empty($reciprocalDir)) { ?>
+	<?php if (!empty($reciprocalDir)) {
+    ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Reciprocal Link']?>:</td>
 			<td class="td_right_col">
 				<input type="text" name="reciprocal_url" value="<?php echo $reciprocalUrl?>" style="width: 300px;">
 			</td>
 		</tr>
-	<? } ?>	
-	<? if(!empty($captchaUrl)){ ?>
+	<?php 
+} ?>	
+	<?php if (!empty($captchaUrl)) {
+    ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Enter the code shown']?>:</td>
 			<td class="td_right_col">
-				<?php if(!empty($imageHash)){?>
+				<?php if (!empty($imageHash)) {
+    ?>
 					<input type="hidden" name="<?php echo $dirInfo['imagehash_col']?>" value="<?php echo $imageHash?>">
-				<?php }?>
+				<?php 
+}
+    ?>
 				<input type="text" name="<?php echo $dirInfo['cptcha_col']?>" value="" id='captcha'>
 				<p><img src='<?php echo $captchaUrl?>'></p>
 			</td>
 		</tr>
-	<? } ?>		
+	<?php 
+} ?>		
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

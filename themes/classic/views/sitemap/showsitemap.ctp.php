@@ -5,9 +5,11 @@
 		<th><?php echo $spText['label']['Project']?>: </th>
 		<td>
 			<select id="project_id" name="project_id" style="width: 150px;">
-				<?php foreach($projectList as $list) {?>
+				<?php foreach ($projectList as $list) {
+    ?>
 					<option value="<?php echo $list['id']?>"><?php echo $list['name']?></option>
-				<?php }?>
+				<?php 
+}?>
 			</select>
 		</td>
 	</tr>	

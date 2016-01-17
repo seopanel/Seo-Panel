@@ -7,17 +7,23 @@
                 <input type="hidden" name="sec" value="requestpass">
                 <table width="500px" cellpadding="0" cellspacing="0" class="actionForm" style="margin-top: 20px;">
                 	<tr>
-                		<td><?php if(!empty($error)) {?>
+                		<td><?php if (!empty($error)) {
+    ?>
                     		<h1 class="head"><?php echo $spText['login']['Your Password Reset Failed']?></h1>
                     		<div class="acc_confirm">
-                    			<?php showErrorMsg($error, false); ?>
+                    			<?php showErrorMsg($error, false);
+    ?>
                     		</div>
-                    	<?php }else {?>
+                    	<?php 
+} else {
+    ?>
                     		<h1 class="head"><?php echo $spText['login']['Your Password Reset Successfully']?></h1>		
                     		<div class="acc_confirm">
-                    		<?php echo showSuccessMsg($spText['login']['password_reset_success_message'], false); ?>
+                    		<?php echo showSuccessMsg($spText['login']['password_reset_success_message'], false);
+    ?>
                     		</div>
-                    	<?php }?></td>
+                    	<?php 
+}?></td>
                 	</tr>
                 </table>               
                 </form>

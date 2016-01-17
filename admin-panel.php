@@ -23,7 +23,7 @@
 include_once("includes/sp-load.php");
 checkLoggedIn();
 include_once(SP_CTRLPATH."/adminpanel.ctrl.php");
-$controller = New AdminPanelController();
+$controller = new AdminPanelController();
 $controller->view->menu = 'adminpanel';
 
 $controller->set('spTitle', 'Seo Panel: User control panel for manage settings');
@@ -33,28 +33,24 @@ $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lan
 $controller->set('spTextPanel', $controller->spTextPanel);
 $info = $_REQUEST;
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-	}
-	
-}else{
-	switch($_GET['sec']){
-		case "newweb":
-			$info['start_script'] = 'websites.php?sec=new&check=1';
-			$controller->index($info);
-			break;
-		
-		case "myprofile":
-			$info['menu_selected'] = 'my-profile';
-			$info['start_script'] = 'users.php?sec=my-profile';
-			$controller->index($info);
-			break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+    }
+} else {
+    switch ($_GET['sec']) {
+        case "newweb":
+            $info['start_script'] = 'websites.php?sec=new&check=1';
+            $controller->index($info);
+            break;
+        
+        case "myprofile":
+            $info['menu_selected'] = 'my-profile';
+            $info['start_script'] = 'users.php?sec=my-profile';
+            $controller->index($info);
+            break;
 
-		default:
-			$controller->index($_GET);
-			break;
-	}
+        default:
+            $controller->index($_GET);
+            break;
+    }
 }
-
-?>

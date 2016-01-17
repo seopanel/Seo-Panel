@@ -47,5 +47,3 @@ define('SP_DEBUG', 0);
 
 # The seo panel seconds for session timeout
 define('SP_TIMEOUT', 18000);
-
-?>

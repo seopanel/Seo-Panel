@@ -26,7 +26,7 @@ include_once 'db.class.php';
 @ini_set("display_startup_errors", "Off");
 error_reporting(0);
 
-$install = New Install();
+$install = new Install();
 
 # installation configiration
 define("SP_INSTALL_DIR", getcwd());
@@ -40,27 +40,23 @@ define("SP_ADMIN_PASS", "spadmin");
 
 $install->showDefaultHeader();
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		case "startinstall":
-			$install->startInstallation($_POST);
-			break;
-		
-		case "proceedinstall":
-			$install->proceedInstallation($_POST);
-			break;			
-	}
-	
-}else{
-	
-	switch($_GET['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        case "startinstall":
+            $install->startInstallation($_POST);
+            break;
+        
+        case "proceedinstall":
+            $install->proceedInstallation($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
 
-		default:
-			$install->checkRequirements();
-			break;
-	}
+        default:
+            $install->checkRequirements();
+            break;
+    }
 }
 $install->showDefaultFooter();
-?>

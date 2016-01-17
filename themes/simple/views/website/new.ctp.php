@@ -1,15 +1,15 @@
 <?php echo showSectionHead($spTextPanel['New Website']); ?>
 <?php 
-if(!empty($msg)){
-	?>
+if (!empty($msg)) {
+    ?>
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
 	</p>
 	<?php 
 }
 
-if(!empty($validationMsg)){
-	?>
+if (!empty($validationMsg)) {
+    ?>
 	<p class="dirmsg">
 		<font class="error"><?php echo $validationMsg?></font>
 	</p>
@@ -25,22 +25,32 @@ $post['url'] = empty($post['url']) ? "http://" : $post['url'];
 		<td class="left" width='30%'><?php echo $spTextPanel['New Website']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php if(!empty($isAdmin)){ ?>	
+	<?php if (!empty($isAdmin)) {
+    ?>	
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
 			<td class="td_right_col">
 				<select name="userid" style="width:150px;">
-					<?php foreach($userList as $userInfo){?>
-						<?php if($userInfo['id'] == $userSelected){?>
+					<?php foreach ($userList as $userInfo) {
+    ?>
+						<?php if ($userInfo['id'] == $userSelected) {
+    ?>
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
-						<?php }else{?>
+						<?php 
+} else {
+    ?>
 							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
-						<?php }?>						
-					<?php }?>
+						<?php 
+}
+    ?>						
+					<?php 
+}
+    ?>
 				</select>
 			</td>
 		</tr>
-	<?php }?>
+	<?php 
+}?>
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
 		<td class="td_right_col"><input type="text" name="name" value="<?php echo $post['name']?>"><?php echo $errMsg['name']?></td>

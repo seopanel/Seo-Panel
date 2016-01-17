@@ -22,61 +22,57 @@
 
 include_once("includes/sp-load.php");
 
-if( $_GET['sec'] == 'aboutus'){
-	isLoggedIn();
-}else{
-	checkAdminLoggedIn();
+if ($_GET['sec'] == 'aboutus') {
+    isLoggedIn();
+} else {
+    checkAdminLoggedIn();
 }
 
 include_once(SP_CTRLPATH."/settings.ctrl.php");
-$controller = New SettingsController();
+$controller = new SettingsController();
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 $controller->spTextSettings = $controller->getLanguageTexts('settings', $_SESSION['lang_code']);
 $controller->set('spTextSettings', $controller->spTextSettings);
 $controller->spTextSubscription = $controller->getLanguageTexts('subscription', $_SESSION['lang_code']);
 $controller->set('spTextSubscription', $controller->spTextSubscription);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		case "update":
-			$controller->updateSystemSettings($_POST);
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "reportsettings":
-			$controller->showSystemSettings('report');
-			break;
-		
-		case "apisettings":
-			$controller->showSystemSettings('api');
-			break;
-		
-		case "proxysettings":
-			$controller->showSystemSettings('proxy');
-			break;
-		
-		case "aboutus":
-			$controller->showAboutUs();
-			break;
-		
-		case "version":
-			$controller->showVersion();
-			break;
-		
-		case "checkversion":
-			$controller->checkVersion();
-			break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        case "update":
+            $controller->updateSystemSettings($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "reportsettings":
+            $controller->showSystemSettings('report');
+            break;
+        
+        case "apisettings":
+            $controller->showSystemSettings('api');
+            break;
+        
+        case "proxysettings":
+            $controller->showSystemSettings('proxy');
+            break;
+        
+        case "aboutus":
+            $controller->showAboutUs();
+            break;
+        
+        case "version":
+            $controller->showVersion();
+            break;
+        
+        case "checkversion":
+            $controller->checkVersion();
+            break;
 
-		default:
-		    $category = empty($_GET['category']) ? 'system' : $_GET['category']; 
-			$controller->showSystemSettings($category);
-			break;
-	}
+        default:
+            $category = empty($_GET['category']) ? 'system' : $_GET['category'];
+            $controller->showSystemSettings($category);
+            break;
+    }
 }
-
-?>

@@ -23,9 +23,11 @@
                 		<th>&nbsp;</th>
                 		<td class="actionsBox">
                 			<input class="button" type="submit" name="login" value="<?php echo ucwords($spText['common']['signin'])?> >>"/>
-                			<?php if(!isLoggedIn() && SP_USER_REGISTRATION){ ?>
+                			<?php if (!isLoggedIn() && SP_USER_REGISTRATION) {
+    ?>
                 				&nbsp;<a href="<?php echo SP_WEBPATH?>/register.php" style="font-size: 13px;"><?php echo $spText['login']['Register']?></a>
-                			<?php }?>
+                			<?php 
+}?>
                 		</td>
                 	</tr>
                 </table>

@@ -21,48 +21,50 @@
  ***************************************************************************/
 
 // class defines all api controller functions
-class APIController extends Controller {
-	
-	// function to show api connection details
-	function showAPIConnectionManager($info) {
-		$settingCtrler = new SettingsController();
-		$stnList = $settingCtrler->__getAllSettings(true, 1, 'api');
-		
-		// loop through settings
-		$apiInfo = array();
-		foreach ($stnList as $settingInfo) {
-			$apiInfo[$settingInfo['set_name']] = $settingInfo['set_val'];
-		}
-		
-		$apiInfo['api_url'] = SP_WEBPATH . "/" . SP_API_FILE;
-		$this->set('apiInfo', $apiInfo);
-		$this->render('api/showapiconnect');
-	}
-	
-	// get api credentails of the system
-	function getAPICredentials() {
-		$apiCredInfo =  array();
-		$settingCtrler = new SettingsController();
-		$stList = $settingCtrler->__getAllSettings(true, 1, 'api');
-		
-		// loop through settings values
-		foreach ($stList as $stInfo) {
-			$apiCredInfo[$stInfo['set_name']] = $stInfo['set_val'];
-		}
-		
-		return $apiCredInfo;
-	}
-	
-	// function to verify api credentials passed
-	function verifyAPICredentials($info) {
-		$apiCredInfo = $this->getAPICredentials();
-		
-		if ( ($apiCredInfo['SP_API_KEY'] == $info['SP_API_KEY']) && ($apiCredInfo['API_SECRET'] == $info['API_SECRET']) ) {
-			return true;
-		}
-		
-		return false;
-	}
-	
+class APIController extends Controller
+{
+    
+    // function to show api connection details
+    public function showAPIConnectionManager($info)
+    {
+        $settingCtrler = new SettingsController();
+        $stnList = $settingCtrler->__getAllSettings(true, 1, 'api');
+        
+        // loop through settings
+        $apiInfo = array();
+        foreach ($stnList as $settingInfo) {
+            $apiInfo[$settingInfo['set_name']] = $settingInfo['set_val'];
+        }
+        
+        $apiInfo['api_url'] = SP_WEBPATH . "/" . SP_API_FILE;
+        $this->set('apiInfo', $apiInfo);
+        $this->render('api/showapiconnect');
+    }
+    
+    // get api credentails of the system
+    public function getAPICredentials()
+    {
+        $apiCredInfo =  array();
+        $settingCtrler = new SettingsController();
+        $stList = $settingCtrler->__getAllSettings(true, 1, 'api');
+        
+        // loop through settings values
+        foreach ($stList as $stInfo) {
+            $apiCredInfo[$stInfo['set_name']] = $stInfo['set_val'];
+        }
+        
+        return $apiCredInfo;
+    }
+    
+    // function to verify api credentials passed
+    public function verifyAPICredentials($info)
+    {
+        $apiCredInfo = $this->getAPICredentials();
+        
+        if (($apiCredInfo['SP_API_KEY'] == $info['SP_API_KEY']) && ($apiCredInfo['API_SECRET'] == $info['API_SECRET'])) {
+            return true;
+        }
+        
+        return false;
+    }
 }
-?>

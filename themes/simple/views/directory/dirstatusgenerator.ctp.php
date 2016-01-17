@@ -2,7 +2,8 @@
 <div class="col" style="border: none;padding-left:8px;">
 <div class="Block">
 <table width="100%" border="0" cellspacing="5px" cellpadding="0">
-	<?php foreach($dirList as $i => $dirInfo){ ?>
+	<?php foreach ($dirList as $i => $dirInfo) {
+    ?>
 	<tr>
 		<td style="border: 1px solid #b0c2cc;padding:3px;font-size: 12px;" id="rep<?php echo $i?>">			
 			<script type="text/javascript">
@@ -10,7 +11,8 @@
 			</script>
 		</td>
 	</tr>
-	<?php }?>
+	<?php 
+}?>
 </table>
 
 </div>

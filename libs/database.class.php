@@ -21,20 +21,21 @@
  ***************************************************************************/
 
 # class defines all database functions
-class Database{
-	
-	var $dbEngine;
-	
+class Database
+{
+    
+    public $dbEngine;
+    
     # constructor
-    function database($dbEngine='mysql'){
-    	$this->dbEngine = $dbEngine;
+    public function database($dbEngine='mysql')
+    {
+        $this->dbEngine = $dbEngine;
     }
     
-	# func to connect db enine
-    function dbConnect(){
-    	include_once(SP_LIBPATH."/".$this->dbEngine."/".$this->dbEngine.".class.php");
-    	return New $this->dbEngine(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, SP_DEBUG);
+    # func to connect db enine
+    public function dbConnect()
+    {
+        include_once(SP_LIBPATH."/".$this->dbEngine."/".$this->dbEngine.".class.php");
+        return new $this->dbEngine(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, SP_DEBUG);
     }
-
 }
-?>

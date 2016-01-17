@@ -1,11 +1,12 @@
 <?php echo showSectionHead($spTextPanel['New User Type']); ?>
-<? if(!empty($msg)){
-	?>
+<?php if (!empty($msg)) {
+    ?>
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
 	</p>
-	<? 
-	}
+	<?php
+
+}
 ?>
 <?php $post['url'] = empty($post['url']) ? "http://" : $post['url']; ?>
 <form id="newUserType">
@@ -31,12 +32,15 @@
 		<td class="td_left_col"><?php echo $spText['common']['Websites Count']?>:</td>
 		<td class="td_right_col"><input type="text" name="websitecount" id="websitecount" value="<?php echo $post['websitecount']?>"><?php echo $errMsg['websitecount']?></td>
 	</tr>
-	<?php if ($isPluginSubsActive) {?>
+	<?php if ($isPluginSubsActive) {
+    ?>
 		<tr class="white_row">
 			<td class="td_left_col"><?php echo $spText['common']['Price']?>:</td>
-			<td class="td_right_col"><?php echo $currencyList[SP_PAYMENT_CURRENCY]['symbol']; ?><input type="text" name="price" id="price" value="<?php echo $post['price']?>"><?php echo $errMsg['price']?></td>
+			<td class="td_right_col"><?php echo $currencyList[SP_PAYMENT_CURRENCY]['symbol'];
+    ?><input type="text" name="price" id="price" value="<?php echo $post['price']?>"><?php echo $errMsg['price']?></td>
 		</tr>
-	<?php }?>
+	<?php 
+}?>
 	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['common']['Status']?>:</td>
 		<td class="td_right_col">

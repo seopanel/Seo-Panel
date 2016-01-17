@@ -11,14 +11,18 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="crawl_type" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
-				foreach ($crawlTypeList as $cInfo) {
-					$selectType = ($cInfo['crawl_type'] == $crawlType) ? "selected" : "";
-					?>
-					<option value="<?php echo $cInfo['crawl_type']; ?>" <?php echo $selectType; ?> ><?php echo $cInfo['crawl_type']; ?></option>
+				<?php	
+                foreach ($crawlTypeList as $cInfo) {
+                    $selectType = ($cInfo['crawl_type'] == $crawlType) ? "selected" : "";
+                    ?>
+					<option value="<?php echo $cInfo['crawl_type'];
+                    ?>" <?php echo $selectType;
+                    ?> ><?php echo $cInfo['crawl_type'];
+                    ?></option>
 					<?php
-				}	
-				?>
+
+                }
+                ?>
 			</select>
 		</td>
 	</tr>
@@ -33,10 +37,10 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<th><?php echo $spText['common']['Search Engine']?>: </th>
 		<td>
 			<?php
-			$this->data['onChange'] = $searchFun;
-			$this->data['seNull'] = true;
-			echo $this->render('searchengine/seselectbox', 'ajax');
-			?>
+            $this->data['onChange'] = $searchFun;
+            $this->data['seNull'] = true;
+            echo $this->render('searchengine/seselectbox', 'ajax');
+            ?>
 		</td>
 	</tr>
 	<tr>
@@ -44,14 +48,14 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="status" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
-				$inactCheck = $actCheck = "";
-				if ($statVal == 'success') {
-				    $actCheck = "selected";
-				} elseif($statVal == 'fail') {
-				    $inactCheck = "selected";
-				}
-				?>
+				<?php	
+                $inactCheck = $actCheck = "";
+                if ($statVal == 'success') {
+                    $actCheck = "selected";
+                } elseif ($statVal == 'fail') {
+                    $inactCheck = "selected";
+                }
+                ?>
 				<option value="success" <?php echo $actCheck?> ><?php echo $spText['label']["Success"]?></option>
 				<option value="fail" <?php echo $inactCheck?> ><?php echo $spText['label']["Fail"]?></option>
 			</select>
@@ -60,14 +64,18 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td>
 			<select name="proxy_id" onchange="<?php echo $searchFun?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
-				foreach ($proxyList as $proxyInfo) {
-					$selectType = ($proxyInfo['proxy_id'] == $proxyId) ? "selected" : "";
-					?>
-					<option value="<?php echo $proxyInfo['proxy_id']; ?>" <?php echo $selectType; ?> ><?php echo $proxyInfo['proxy'].":".$proxyInfo['port']; ?></option>
+				<?php	
+                foreach ($proxyList as $proxyInfo) {
+                    $selectType = ($proxyInfo['proxy_id'] == $proxyId) ? "selected" : "";
+                    ?>
+					<option value="<?php echo $proxyInfo['proxy_id'];
+                    ?>" <?php echo $selectType;
+                    ?> ><?php echo $proxyInfo['proxy'].":".$proxyInfo['port'];
+                    ?></option>
 					<?php
-				}	
-				?>
+
+                }
+                ?>
 			</select>
 			&nbsp;&nbsp;&nbsp;&nbsp;
 			<a href="javascript:void(0);" onclick="<?php echo $searchFun?>" class="actionbut"><?php echo $spText['button']['Show Records']?></a>
@@ -88,11 +96,11 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 9; 
-	if (count($list) > 0) {
-		$catCount = count($list);
-		foreach ($list as $i => $listInfo) {
-			$class = ($i % 2) ? "blue_row" : "white_row";
+    $colCount = 9;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        foreach ($list as $i => $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
             if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
@@ -102,30 +110,29 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
             }
             
             // if from popup
-			if ($fromPopUp) {
-            	$logLink = scriptAJAXLinkHref('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
+            if ($fromPopUp) {
+                $logLink = scriptAJAXLinkHref('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
             } else {
-				$logLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
-			}
+                $logLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log_details&id=".$listInfo['id'], $listInfo['id']);
+            }
             
             // crawl log is for keyword
             if ($listInfo['crawl_type'] == 'keyword') {
-				
-				// if ref is is integer find keyword name
-				if (!empty($listInfo['keyword'])) {
-					$listInfo['ref_id'] = $listInfo['keyword'];
-				}
-				
-				// find search engine info
-				if (preg_match("/^\d+$/", $listInfo['subject'])) {
-					$seCtrler = new SearchEngineController();
-					$seInfo = $seCtrler->__getsearchEngineInfo($listInfo['subject']);
-					$listInfo['subject'] = $seInfo['domain'];
-				}
-
-			}
+                
+                // if ref is is integer find keyword name
+                if (!empty($listInfo['keyword'])) {
+                    $listInfo['ref_id'] = $listInfo['keyword'];
+                }
+                
+                // find search engine info
+                if (preg_match("/^\d+$/", $listInfo['subject'])) {
+                    $seCtrler = new SearchEngineController();
+                    $seInfo = $seCtrler->__getsearchEngineInfo($listInfo['subject']);
+                    $listInfo['subject'] = $seInfo['domain'];
+                }
+            }
             
-			?>
+            ?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td class="td_br_right"><?php echo $logLink?></td>
@@ -135,12 +142,12 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 				<td class="td_br_right left"><?php echo $listInfo['log_message']?></td>
 				<td class="td_br_right">
 					<?php 
-					if ($listInfo['crawl_status']) {
-						echo "<b class='success'>{$spText['label']['Success']}</b>";
-					} else {
-						echo "<b class='error'>{$spText['label']['Fail']}</b>";
-					}
-					?>
+                    if ($listInfo['crawl_status']) {
+                        echo "<b class='success'>{$spText['label']['Success']}</b>";
+                    } else {
+                        echo "<b class='error'>{$spText['label']['Fail']}</b>";
+                    }
+            ?>
 				</td>
 				<td class="td_br_right"><?php echo $listInfo['crawl_time']?></td>
 				<td class="<?php echo $rightBotClass?>" width="100px">
@@ -151,13 +158,14 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 				</td>
 			</tr>
 			<?php
-		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
-	?>
+
+        }
+    } else {
+        echo showNoRecordsList($colCount-2);
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 </table>
@@ -167,7 +175,7 @@ if (SP_DEMO) {
 } else {
     $delFun = "confirmSubmit('log.php', 'listform', 'content', '&sec=delete_all_crawl_log&pageno=$pageNo')";
     $clearAllFun = "confirmLoad('log.php', 'content', '&sec=clear_all_log')";
-}   
+}
 ?>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>
@@ -175,11 +183,13 @@ if (SP_DEMO) {
          	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['common']['Delete']?>
          	</a>&nbsp;&nbsp;
-         	<?php if (empty($fromPopUp)) {?>
+         	<?php if (empty($fromPopUp)) {
+    ?>
 	         	<a onclick="<?php echo $clearAllFun?>" href="javascript:void(0);" class="actionbut">
 	         		<?php echo $spTextLog['Clear All Logs']?>
 	         	</a>
-	         <?php }?>
+	         <?php 
+}?>
     	</td>
 	</tr>
 </table>

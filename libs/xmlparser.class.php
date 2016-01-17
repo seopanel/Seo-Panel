@@ -26,34 +26,37 @@
  */
 
 
-class XMLParser{
+class XMLParser
+{
 
-   /**
+    /**
     * holds the expat object
     *
     * @var obj
     */
-   var $xml_obj = null;
+   public $xml_obj = null;
 
    /**
     * holds the output array
     *
     * @var array
     */
-   var $output = array();
+   public $output = array();
    
    /**
     * the XML file character set
     *
     * @var array
     */
-   var $char_set = 'UTF-8';
+   public $char_set = 'UTF-8';
   
     /**#@-*/
     /**
      * The class constructor.
      */
-   function XMLParser(){ }
+   public function XMLParser()
+   {
+   }
   
   
     /**
@@ -61,13 +64,13 @@ class XMLParser{
      *
      * @param string $path the XML file path, or URL
      */
-   function parse($path){
-      
+   public function parse($path)
+   {
        $this->output = array();
       
        $this->xml_obj = xml_parser_create($this->char_set);
-       xml_set_object($this->xml_obj,$this);
-       xml_set_character_data_handler($this->xml_obj, 'dataHandler');   
+       xml_set_object($this->xml_obj, $this);
+       xml_set_character_data_handler($this->xml_obj, 'dataHandler');
        xml_set_element_handler($this->xml_obj, "startHandler", "endHandler");
         
        if (!($fp = fopen($path, "r"))) {
@@ -94,10 +97,12 @@ class XMLParser{
      * @param string $name the XML tag name
      * @param array $attribs the XML tag attributes
      */
-   function startHandler($parser, $name, $attribs){
+   public function startHandler($parser, $name, $attribs)
+   {
        $_content = array('name' => $name);
-       if(!empty($attribs))
-         $_content['attrs'] = $attribs;
+       if (!empty($attribs)) {
+           $_content['attrs'] = $attribs;
+       }
        array_push($this->output, $_content);
    }
 
@@ -107,13 +112,15 @@ class XMLParser{
      * @param obj $parser the expat parser object
      * @param string $data the XML data
      */
-   function dataHandler($parser, $data){
-       if(!empty($data)) {
+   public function dataHandler($parser, $data)
+   {
+       if (!empty($data)) {
            $_output_idx = count($this->output) - 1;
-           if(!isset($this->output[$_output_idx]['content']))
-             $this->output[$_output_idx]['content'] = $data;             
-           else
-             $this->output[$_output_idx]['content'] .= $data;
+           if (!isset($this->output[$_output_idx]['content'])) {
+               $this->output[$_output_idx]['content'] = $data;
+           } else {
+               $this->output[$_output_idx]['content'] .= $data;
+           }
        }
    }
 
@@ -123,15 +130,12 @@ class XMLParser{
      * @param obj $parser the expat parser object
      * @param string $name the XML tag name
      */
-   function endHandler($parser, $name){
-       if(count($this->output) > 1) {
+   public function endHandler($parser, $name)
+   {
+       if (count($this->output) > 1) {
            $_data = array_pop($this->output);
            $_output_idx = count($this->output) - 1;
            $this->output[$_output_idx]['child'][] = $_data;
        }
    }
-
 }
-
-
-?>

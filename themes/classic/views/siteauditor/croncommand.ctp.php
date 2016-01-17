@@ -8,9 +8,9 @@
 		<td valign="middle">
 			<p class="note" style="padding-top: 6px;font-size: 15px;width: 600px;">
 			<?php
-			$command = "*/15 * * * * php ".SP_ABSPATH."/siteauditorcron.php";
-			highlight_string($command); 
-			?>
+            $command = "*/15 * * * * php ".SP_ABSPATH."/siteauditorcron.php";
+            highlight_string($command);
+            ?>
 			</p>
 		</td>
 	</tr>
