@@ -23,53 +23,49 @@
 include_once("includes/sp-load.php");
 checkLoggedIn();
 include_once(SP_CTRLPATH."/backlink.ctrl.php");
-$controller = New BacklinkController();
+$controller = new BacklinkController();
 $controller->view->menu = 'seotools';
 $controller->layout = 'ajax';
 $controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
 $controller->spTextBack = $controller->getLanguageTexts('backlink', $_SESSION['lang_code']);
 $controller->set('spTextBack', $controller->spTextBack);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){		
-			
-		case "generate":
-			$controller->generateReports($_POST);
-			break;
-			
-		case "reports":
-			$controller->showReports($_POST);
-			break;
-		
-		case "backlink":
-			$controller->printBacklink($_POST);
-			break;
-			
-		default:
-			$controller->findBacklink($_POST);
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "backlink":
-			$controller->printBacklink($_GET);
-			break;		
-			
-		case "generate":
-			$controller->showGenerateReports($_GET);
-			break;
-			
-		case "reports":
-			$controller->showReports($_GET);
-			break;
-		
-		default:
-			$controller->showBacklink();
-			break;
-	}
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+            
+        case "generate":
+            $controller->generateReports($_POST);
+            break;
+            
+        case "reports":
+            $controller->showReports($_POST);
+            break;
+        
+        case "backlink":
+            $controller->printBacklink($_POST);
+            break;
+            
+        default:
+            $controller->findBacklink($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "backlink":
+            $controller->printBacklink($_GET);
+            break;
+            
+        case "generate":
+            $controller->showGenerateReports($_GET);
+            break;
+            
+        case "reports":
+            $controller->showReports($_GET);
+            break;
+        
+        default:
+            $controller->showBacklink();
+            break;
+    }
 }
-
-?>

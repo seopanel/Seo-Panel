@@ -27,7 +27,7 @@ session_start();
 @ini_set("display_startup_errors", "Off");
 error_reporting(0);
 
-$install = New Install();
+$install = new Install();
 
 # installation configiration
 define("SP_UPGRADE_VERSION", '2.0.0');
@@ -39,23 +39,19 @@ define("SP_INSTALL_CONFIG_FILE", SP_INSTALL_DIR."/../".SP_CONFIG_FILE);
 
 $install->showDefaultHeader();
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		case "proceedupgrade":
-			$install->proceedUpgrade($_POST);
-			break;			
-	}
-	
-}else{
-	
-	switch($_GET['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        case "proceedupgrade":
+            $install->proceedUpgrade($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
 
-		default:
-			$install->checkUpgradeRequirements();
-			break;
-	}
+        default:
+            $install->checkUpgradeRequirements();
+            break;
+    }
 }
 $install->showDefaultFooter();
-?>

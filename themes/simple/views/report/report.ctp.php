@@ -5,13 +5,20 @@
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<select name="website_id" id="website_id" style='width:190px;' onchange="doLoad('website_id', 'keywords.php', 'keyword_area', 'sec=keywordbox')">
-				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $websiteId){?>
+				<?php foreach ($websiteList as $websiteInfo) {
+    ?>
+					<?php if ($websiteInfo['id'] == $websiteId) {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
-					<?php }else{?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 		</td>
 		<th><?php echo $spText['common']['Keyword']?>: </th>
@@ -37,12 +44,12 @@
 </form>
 
 <?php
-	if(empty($keywordId)){
-		?>
+    if (empty($keywordId)) {
+        ?>
 		<p class='note error'><?php echo $spText['common']['No Keywords Found']?>!</p>
 		<?php
-		exit;
-	} 
+        exit;
+    }
 ?>
 
 <div id='subcontent'>
@@ -56,47 +63,50 @@
 		<td class="right"><?php echo $spText['common']['Rank']?></td>
 	</tr>
 	<?php
-	$colCount = 3; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $listInfo){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
+    $colCount = 3;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        $i = 0;
+        foreach ($list as $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
-            }else{
+            } else {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
             $scriptLink = "sec=show-info&keyId={$listInfo['keyword_id']}&time={$listInfo['time']}&seId=$seId";
-            $dateLink = scriptAJAXLinkHref('reports.php', 'subcontent', $scriptLink, date('Y-m-d', $listInfo['time']) );
-			?>
+            $dateLink = scriptAJAXLinkHref('reports.php', 'subcontent', $scriptLink, date('Y-m-d', $listInfo['time']));
+            ?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>" width='100px;'><?php echo $dateLink; ?></td>
+				<td class="<?php echo $leftBotClass?>" width='100px;'><?php echo $dateLink;
+            ?></td>
 				<td class='td_br_right' id='seresult'>
-					<a href='<?php echo $listInfo['url']?>' target='_blank'><? echo stripslashes($listInfo['title']);?></a>
-					<p><? echo stripslashes($listInfo['description']);?><p>
+					<a href='<?php echo $listInfo['url']?>' target='_blank'><?php echo stripslashes($listInfo['title']);
+            ?></a>
+					<p><?php echo stripslashes($listInfo['description']);
+            ?><p>
 					<label><?php echo $listInfo['url']?></label>
 				</td>
 				<td class="<?php echo $rightBotClass?>" width="100px" style='text-align:left;'><b><?php echo $listInfo['rank'].'</b> '. $listInfo['rank_diff']?></td>
 			</tr>
 			<?php
-			$i++;
-		}
-	}else{
-		?>
+            $i++;
+        }
+    } else {
+        ?>
 		<tr class="blue_row">
 		    <td class="tab_left_bot_noborder">&nbsp;</td>
 		    <td class="td_bottom_border" colspan="1"><?php echo $spText['common']['No Records Found']?>!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
-	} 
-	?>
+		<?php
+
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 	</table>

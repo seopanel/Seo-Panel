@@ -24,10 +24,10 @@ include_once("includes/sp-load.php");
 
 // check the sections can accessed by user
 $userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription");
-if ( in_array($_GET['sec'], $userIncludeList) || in_array($_POST['sec'], $userIncludeList) ) {
-	isLoggedIn();
+if (in_array($_GET['sec'], $userIncludeList) || in_array($_POST['sec'], $userIncludeList)) {
+    isLoggedIn();
 } else {
-	checkAdminLoggedIn();
+    checkAdminLoggedIn();
 }
 
 include_once(SP_CTRLPATH."/user.ctrl.php");
@@ -35,7 +35,7 @@ include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/keyword.ctrl.php");
 include_once(SP_CTRLPATH."/user-type.ctrl.php");
 include_once(SP_CTRLPATH."/seoplugins.ctrl.php");
-$controller = New UserController();
+$controller = new UserController();
 $controller->view->menu = 'users';
 $controller->layout = 'ajax';
 $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lang_code']);
@@ -43,100 +43,96 @@ $controller->set('spTextPanel', $controller->spTextPanel);
 $controller->spTextUser = $controller->getLanguageTexts('user', $_SESSION['lang_code']);
 $controller->set('spTextUser', $controller->spTextUser);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		case "create":
-			$controller->createUser($_POST);
-			break;
-			
-		case "update":
-			$controller->updateUser($_POST);
-			break;
-			
-		case "updatemyprofile":
-			$controller->updateMyProfile($_POST);
-			break;
-			
-		case "update-subscription":
-			$controller->updateSubscription($_POST);
-			break;
-			
-		case "activateall":
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__changeStatus($id, 1);
-    		    }
-		    }
-		    $controller->listUsers($_POST);
-		    break;
-			
-		case "inactivateall":
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__changeStatus($id, 0);
-    		    }
-		    }
-		    $controller->listUsers($_POST);
-		    break;
-		    
-		case "deleteall":		    
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__deleteUser($id);
-    		    }
-		    }
-		    $controller->listUsers($_POST);
-		    break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        case "create":
+            $controller->createUser($_POST);
+            break;
+            
+        case "update":
+            $controller->updateUser($_POST);
+            break;
+            
+        case "updatemyprofile":
+            $controller->updateMyProfile($_POST);
+            break;
+            
+        case "update-subscription":
+            $controller->updateSubscription($_POST);
+            break;
+            
+        case "activateall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__changeStatus($id, 1);
+                }
+            }
+            $controller->listUsers($_POST);
+            break;
+            
+        case "inactivateall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__changeStatus($id, 0);
+                }
+            }
+            $controller->listUsers($_POST);
+            break;
+            
+        case "deleteall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__deleteUser($id);
+                }
+            }
+            $controller->listUsers($_POST);
+            break;
 
-		default:
-			$controller->listUsers($_POST);
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['userId'], 1);			
-			$controller->listUsers($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['userId'], 0);
-			$controller->listUsers($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteUser($_GET['userId']);
-			$controller->listUsers($_GET);
-			break;
-		
-		case "edit":
-			$controller->editUser($_GET['userId']);
-			break;		
-		
-		case "new":
-			$controller->newUser();
-			break;
-			
-		case "my-profile":
-		case "myprofile":
-			$controller->showMyProfile($_GET);
-			break;
-			
-		case "edit-profile":
-			$controller->editMyProfile();
-			break;
-			
-		case "renew-profile":
-			$controller->renewMyProfile();
-			break;
+        default:
+            $controller->listUsers($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "Activate":
+            $controller->__changeStatus($_GET['userId'], 1);
+            $controller->listUsers($_GET);
+            break;
+        
+        case "Inactivate":
+            $controller->__changeStatus($_GET['userId'], 0);
+            $controller->listUsers($_GET);
+            break;
+        
+        case "delete":
+            $controller->__deleteUser($_GET['userId']);
+            $controller->listUsers($_GET);
+            break;
+        
+        case "edit":
+            $controller->editUser($_GET['userId']);
+            break;
+        
+        case "new":
+            $controller->newUser();
+            break;
+            
+        case "my-profile":
+        case "myprofile":
+            $controller->showMyProfile($_GET);
+            break;
+            
+        case "edit-profile":
+            $controller->editMyProfile();
+            break;
+            
+        case "renew-profile":
+            $controller->renewMyProfile();
+            break;
 
-		default:
-			$controller->listUsers($_GET);
-			break;
-	}
+        default:
+            $controller->listUsers($_GET);
+            break;
+    }
 }
-
-?>

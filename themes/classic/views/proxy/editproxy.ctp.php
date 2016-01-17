@@ -36,14 +36,14 @@
 		<td class="td_left_col"><?php echo $spText['common']['Status']?>:</td>
 		<td class="td_right_col">
 			<select name="status" onchange="<?php echo $searchFun?>">
-				<?php				
-				$inactCheck = $actCheck = "";
-				if ($post['status']) {
-				    $actCheck = "selected";
-				} else {
-				    $inactCheck = "selected";
-				}
-				?>
+				<?php	
+                $inactCheck = $actCheck = "";
+                if ($post['status']) {
+                    $actCheck = "selected";
+                } else {
+                    $inactCheck = "selected";
+                }
+                ?>
 				<option value="1" <?php echo $actCheck?> ><?php echo $spText['common']["Active"]?></option>
 				<option value="0" <?php echo $inactCheck?> ><?php echo $spText['common']["Inactive"]?></option>
 			</select>

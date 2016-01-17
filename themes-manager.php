@@ -23,45 +23,41 @@
 include_once("includes/sp-load.php");
 checkAdminLoggedIn();
 include_once(SP_CTRLPATH."/themes.ctrl.php");
-$controller = New ThemesController();
+$controller = new ThemesController();
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 $controller->spTextTheme = $controller->getLanguageTexts('theme', $_SESSION['lang_code']);
 $controller->set('spTextTheme', $controller->spTextTheme);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
 
-		default:
-			$controller->listThemes();
-			break;	    
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "activate":
-			$controller->activateTheme($_GET['theme_id']);
-			$redirectUrl = SP_WEBPATH."/admin-panel.php?menu_selected=themes-manager&start_script=themes-manager&pageno=".$_GET['pageno'];
-			redirectUrlByScript($redirectUrl);
-			break;
-			
-		case "listinfo":
-			$controller->listThemeInfo($_GET['pid']);
-			break;
-			
-		case "upgrade":
-			$controller->upgradeTheme($_GET['pid']);
-			break;
-			
-		case "reinstall":
-			$controller->reInstallTheme($_GET['pid']);
-			break;
+        default:
+            $controller->listThemes();
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "activate":
+            $controller->activateTheme($_GET['theme_id']);
+            $redirectUrl = SP_WEBPATH."/admin-panel.php?menu_selected=themes-manager&start_script=themes-manager&pageno=".$_GET['pageno'];
+            redirectUrlByScript($redirectUrl);
+            break;
+            
+        case "listinfo":
+            $controller->listThemeInfo($_GET['pid']);
+            break;
+            
+        case "upgrade":
+            $controller->upgradeTheme($_GET['pid']);
+            break;
+            
+        case "reinstall":
+            $controller->reInstallTheme($_GET['pid']);
+            break;
 
-		default:
-			$controller->listThemes();
-			break;
-	}
+        default:
+            $controller->listThemes();
+            break;
+    }
 }
-
-?>

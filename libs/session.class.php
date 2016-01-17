@@ -21,32 +21,36 @@
  ***************************************************************************/
 
 # class defines all session functions
-class Session extends Seopanel{
+class Session extends Seopanel
+{
 
-	# starts session
-	function startSession(){
-		ini_set("session.gc_probability", 100);
-		ini_set("session.gc_divisor", 100);
-		ini_set("session.gc_maxlifetime", SP_TIMEOUT);
-		session_start();
-	}
-	
-	# to set session
-	function setSession($varName, $varValue){
-		$_SESSION[$varName] = $varValue;
-	}
+    # starts session
+    public function startSession()
+    {
+        ini_set("session.gc_probability", 100);
+        ini_set("session.gc_divisor", 100);
+        ini_set("session.gc_maxlifetime", SP_TIMEOUT);
+        session_start();
+    }
+    
+    # to set session
+    public function setSession($varName, $varValue)
+    {
+        $_SESSION[$varName] = $varValue;
+    }
 
-	# function read session
-	function readSession($varName) {
-		return $_SESSION[$varName];
-	}
+    # function read session
+    public function readSession($varName)
+    {
+        return $_SESSION[$varName];
+    }
 
-	# fucntion to destroy session
-	function destroySession() {	    
-		@Session::setSession('userInfo', "");
-		@Session::setSession('lang_code', "");
-		@Session::setSession('text', "");
-        session_destroy();	    
-	}
+    # fucntion to destroy session
+    public function destroySession()
+    {
+        @Session::setSession('userInfo', "");
+        @Session::setSession('lang_code', "");
+        @Session::setSession('text', "");
+        session_destroy();
+    }
 }
-?>

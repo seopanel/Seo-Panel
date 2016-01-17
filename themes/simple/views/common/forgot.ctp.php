@@ -28,9 +28,11 @@
                 	<tr>
                 		<th>&nbsp;</th>
                 		<td class="actionsBox">
-                			<?php if(!isLoggedIn()){ ?>
+                			<?php if (!isLoggedIn()) {
+    ?>
                 				&nbsp;<input class="button" type="submit" name="login" value="<?php echo $spText['login']['Request Password']?> &gt;&gt"/>
-                			<?php }?>
+                			<?php 
+}?>
                 		</td>
                 	</tr>
                 </table>               

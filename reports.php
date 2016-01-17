@@ -26,7 +26,7 @@ include_once(SP_CTRLPATH."/keyword.ctrl.php");
 include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/searchengine.ctrl.php");
 include_once(SP_CTRLPATH."/report.ctrl.php");
-$controller = New ReportController();
+$controller = new ReportController();
 $controller->view->menu = 'seotools';
 $controller->spTextTools = $controller->getLanguageTexts('seotools', $_SESSION['lang_code']);
 $controller->set('spTextTools', $controller->spTextTools);
@@ -39,50 +39,46 @@ $controller->set('spTextReport', $controller->spTextReport);
 
 $controller->layout = 'ajax';
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		case "kwchecker":
-			$controller->showQuickRankChecker($_POST);
-			break;
-		
-		case "reportsum":
-			$controller->showKeywordReportSummary($_POST);
-			break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        case "kwchecker":
+            $controller->showQuickRankChecker($_POST);
+            break;
+        
+        case "reportsum":
+            $controller->showKeywordReportSummary($_POST);
+            break;
 
-		case "schedule":
-			$controller->saveReportSchedule($_POST);
-			break;	
-			
-		default:
-			$controller->showReports($_POST);
-			break;
-	}
+        case "schedule":
+            $controller->saveReportSchedule($_POST);
+            break;
+            
+        default:
+            $controller->showReports($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "show-info":
+            $controller->showTimeReport($_GET);
+            break;
+            
+        case "kwchecker":
+            $controller->quickRankChecker($_GET);
+            break;
+            
+        case "reportsum":
+            $controller->showKeywordReportSummary($_GET);
+            break;
 
-}else{
-	switch($_GET['sec']){
-		
-		case "show-info":
-			$controller->showTimeReport($_GET);
-			break;
-			
-		case "kwchecker":
-			$controller->quickRankChecker($_GET);
-			break;
-			
-		case "reportsum":
-			$controller->showKeywordReportSummary($_GET);
-			break;
-
-		case "schedule":
-			$controller->showReportsScheduler(false, $_GET);
-			break;
-						
-		default:
-			$controller->showReports($_GET);
-			break;
-	}
+        case "schedule":
+            $controller->showReportsScheduler(false, $_GET);
+            break;
+                        
+        default:
+            $controller->showReports($_GET);
+            break;
+    }
 }
-
-?>

@@ -23,7 +23,7 @@
 include_once("includes/sp-load.php");
 checkLoggedIn();
 include_once(SP_CTRLPATH."/sitemap.ctrl.php");
-$controller = New SitemapController();
+$controller = new SitemapController();
 $controller->view->menu = 'seotools';
 $controller->layout = 'ajax';
 $controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
@@ -31,26 +31,22 @@ $controller->spTextSitemap = $controller->getLanguageTexts('sitemap', $_SESSION[
 $controller->set('spTextSitemap', $controller->spTextSitemap);
 $controller->set('spTextSA', $controller->getLanguageTexts('siteauditor', $_SESSION['lang_code']));
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		default:
-			$controller->generateSitemapFile($_POST);
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "showlog":
-			$controller->readSitemapLog();
-			break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        default:
+            $controller->generateSitemapFile($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "showlog":
+            $controller->readSitemapLog();
+            break;
 
-		default:
-			$controller->showSitemapGenerator();
-			break;
-	}
+        default:
+            $controller->showSitemapGenerator();
+            break;
+    }
 }
-
-?>

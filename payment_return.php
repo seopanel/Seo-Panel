@@ -25,27 +25,25 @@ include_once("includes/sp-load.php");
 
 switch ($_GET['sec']) {
 
-	case "subscription":
-		include_once(SP_CTRLPATH."/seoplugins.ctrl.php");
-		$seopluginCtrler = New SeoPluginsController();
-		
-		if ($seopluginCtrler->isPluginActive("Subscription")) {
-			
-			// verify the payment plugin id and invoice id in the session
-			if (!empty($_SESSION['payment_plugin_id']) && !empty($_SESSION['invoice_id'])) {
-				$pluginCtrler = $seopluginCtrler->createPluginObject("Subscription");
-				$pluginCtrler->pgCtrler->processTransaction($_SESSION['payment_plugin_id'], $_SESSION['invoice_id'], $_GET, $_POST);
-			} else {
-				redirectUrl(SP_WEBPATH."/register.php?failed=1");
-			}
-			
-		} else {
-			showErrorMsg("Not authorized to access this page!");	
-		}
-		
-		break;
-	
-	default:
-		showErrorMsg("Not authorized to access this page!");
+    case "subscription":
+        include_once(SP_CTRLPATH."/seoplugins.ctrl.php");
+        $seopluginCtrler = new SeoPluginsController();
+        
+        if ($seopluginCtrler->isPluginActive("Subscription")) {
+            
+            // verify the payment plugin id and invoice id in the session
+            if (!empty($_SESSION['payment_plugin_id']) && !empty($_SESSION['invoice_id'])) {
+                $pluginCtrler = $seopluginCtrler->createPluginObject("Subscription");
+                $pluginCtrler->pgCtrler->processTransaction($_SESSION['payment_plugin_id'], $_SESSION['invoice_id'], $_GET, $_POST);
+            } else {
+                redirectUrl(SP_WEBPATH."/register.php?failed=1");
+            }
+        } else {
+            showErrorMsg("Not authorized to access this page!");
+        }
+        
+        break;
+    
+    default:
+        showErrorMsg("Not authorized to access this page!");
 }
-?>

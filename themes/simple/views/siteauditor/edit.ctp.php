@@ -11,13 +11,20 @@
 		<td class="td_left_col"><?php echo $spText['common']['Website']?>:*</td>
 		<td class="td_right_col">
 			<select name="website_id" id="website_id">
-				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $post['website_id']){?>
+				<?php foreach ($websiteList as $websiteInfo) {
+    ?>
+					<?php if ($websiteInfo['id'] == $post['website_id']) {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
-					<?php }else{?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 			<?php echo $errMsg['website_id']?>
 		</td>

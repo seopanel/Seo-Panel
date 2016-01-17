@@ -111,4 +111,3 @@ define('SP_THEMESITE', 'http://www.seopanel.in/themes/');
 # payment related variables
 define('SP_PAYMENT_CANCEL_LINK', SP_WEBPATH."/payment_cancel.php");
 define('SP_PAYMENT_RETURN_LINK', SP_WEBPATH."/payment_return.php");
-?>

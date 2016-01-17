@@ -4,17 +4,17 @@
 </script>
 <ul id="menu">
 <?php 
-foreach($menuList as $i => $menuInfo){
-	if($menuSelected == $menuInfo['id']){
-			$imgSrc = "hide";
-			$style = "";
-	}else{
-		$imgSrc = "more";
-		$style = 'none';
-	}
-	$button = "img".$menuInfo['id'];
-	$subMenuId = "sub".$menuInfo['id'];
-	?>
+foreach ($menuList as $i => $menuInfo) {
+    if ($menuSelected == $menuInfo['id']) {
+        $imgSrc = "hide";
+        $style = "";
+    } else {
+        $imgSrc = "more";
+        $style = 'none';
+    }
+    $button = "img".$menuInfo['id'];
+    $subMenuId = "sub".$menuInfo['id'];
+    ?>
 	<script type="text/javascript">
 		menuList[<?php echo $i?>] = '<?php echo $subMenuId?>';
 		buttonList[<?php echo $i?>] = '<?php echo $button?>';
@@ -24,6 +24,7 @@ foreach($menuList as $i => $menuInfo){
 	</li>
 	<li id="<?php echo $subMenuId?>" class="subtab" style="display:<?php echo $style?>;padding-left:0px;"><?php echo $menuInfo['menu']?></li>
 	<?php
+
 }
 ?>
 </ul>

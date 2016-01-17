@@ -6,7 +6,7 @@
     $spTitle = empty($spTitle) ? SP_TITLE : $spTitle;
     $spDescription = empty($spDescription) ? SP_DESCRIPTION : $spDescription;
     $spKeywords = empty($spKeywords) ? SP_KEYWORDS : $spKeywords;
-    $spKey = "v" . substr(SP_INSTALLED, 2);  
+    $spKey = "v" . substr(SP_INSTALLED, 2);
     ?>
     <title><?php echo stripslashes($spTitle)?></title>
     <meta name="description" content="<?php echo $spDescription?>" />
@@ -14,9 +14,11 @@
     <link type="text/css" href="<?php echo SP_WEBPATH?>/jquery-ui-custom/css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet" />
     <link rel="stylesheet" type="text/css" href="<?php echo SP_CSSPATH?>/screen.css?<?php echo $spKey?>" media="all" />
     <link rel="stylesheet" type="text/css" href="<?php echo SP_CSSPATH?>/datepicker.css?<?php echo $spKey?>" media="all" />
-    <?php if (in_array($_SESSION['lang_code'], array('ar', 'he', 'fa'))) {?>
+    <?php if (in_array($_SESSION['lang_code'], array('ar', 'he', 'fa'))) {
+    ?>
     	<link rel="stylesheet" type="text/css" href="<?php echo SP_CSSPATH?>/screen_rtl.css?<?php echo $spKey?>" media="all" />
-    <?php }?>
+    <?php 
+}?>
     <link rel="shortcut icon" href="<?php echo SP_IMGPATH?>/favicon.ico" />
     <script type="text/javascript" src="<?php echo SP_JSPATH?>/jquery-1.10.1.min.js?<?php echo $spKey?>"></script>
     <script type="text/javascript" src="<?php echo SP_JSPATH?>/common.js?<?php echo $spKey?>"></script>
@@ -77,8 +79,10 @@ var wantproceed = '<?php  echo $spText['label']['wantproceed']; ?>';
 </div>
 <div id="tmp"><form name="tmp" id="tmp"></form></div>
 <div id="dialogContent" style="display:none;"></div>
-<?php if(empty($_COOKIE['hidenews'])){ ?>
+<?php if (empty($_COOKIE['hidenews'])) {
+    ?>
 	<script>scriptDoLoad('<?php echo SP_WEBPATH?>/index.php?sec=news', 'newsalert');</script>
-<?php }?>
+<?php 
+}?>
 </body>
 </html>

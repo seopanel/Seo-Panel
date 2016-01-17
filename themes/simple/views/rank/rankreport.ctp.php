@@ -5,13 +5,20 @@
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<select name="website_id" id="website_id" style='width:190px;' onchange="scriptDoLoadPost('rank.php', 'search_form', 'content', '&sec=reports')">
-				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $websiteId){?>
+				<?php foreach ($websiteList as $websiteInfo) {
+    ?>
+					<?php if ($websiteInfo['id'] == $websiteId) {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
-					<?php }else{?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 		</td>
 		<th><?php echo $spText['common']['Period']?>:</th>
@@ -27,12 +34,12 @@
 </form>
 
 <?php
-	if(empty($websiteId)){
-		?>
+    if (empty($websiteId)) {
+        ?>
 		<p class='note error'><?php echo $spText['common']['No Records Found']?>!</p>
 		<?php
-		exit;
-	} 
+        exit;
+    }
 ?>
 
 <div id='subcontent'>
@@ -46,41 +53,42 @@
 		<td class="right"><?php echo $spText['common']['Alexa Rank']?></td>
 	</tr>
 	<?php
-	$colCount = 3; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $listInfo){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
+    $colCount = 3;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        $i = 0;
+        foreach ($list as $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
-            }else{
+            } else {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
-            }            
-			?>
+            }
+            ?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>"><?php echo date('Y-m-d', $listInfo['result_time']); ?></td>
+				<td class="<?php echo $leftBotClass?>"><?php echo date('Y-m-d', $listInfo['result_time']);
+            ?></td>
 				<td class='td_br_right' style='text-align:left;padding-left:120px;'><b><?php echo $listInfo['google_pagerank'].'</b> '. $listInfo['rank_diff_google']?></td>
 				<td class="<?php echo $rightBotClass?>" style='text-align:left;padding-left:160px;'><b><?php echo $listInfo['alexa_rank'].'</b> '. $listInfo['rank_diff_alexa']?></td>
 			</tr>
 			<?php
-			$i++;
-		}
-	}else{
-		?>
+            $i++;
+        }
+    } else {
+        ?>
 		<tr class="blue_row">
 		    <td class="tab_left_bot_noborder">&nbsp;</td>
 		    <td class="td_bottom_border" colspan="1"><?php echo $spText['common']['No Records Found']?>!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
-	} 
-	?>
+		<?php
+
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 	</table>

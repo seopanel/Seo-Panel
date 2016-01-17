@@ -23,49 +23,45 @@
 include_once("includes/sp-load.php");
 checkAdminLoggedIn();
 include_once(SP_CTRLPATH."/seoplugins.ctrl.php");
-$controller = New SeoPluginsController();
+$controller = new SeoPluginsController();
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 $controller->spTextPlugin = $controller->getLanguageTexts('plugin', $_SESSION['lang_code']);
 $controller->set('spTextPlugin', $controller->spTextPlugin);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-		
-		case "update":
-			$controller->updateSeoPlugin($_POST);
-			break;
-	}
-	
-}else{
-	switch($_GET['sec']){
-		
-		case "changestatus":
-			$status = empty($_GET['status']) ? 1 : 0;
-			$controller->changeStatus($_GET['seoplugin_id'], $status);			
-			$controller->listSeoPlugins();
-			break;
-			
-		case "edit":
-			$controller->editSeoPlugin($_GET);
-			break;
-			
-		case "listinfo":
-			$controller->listPluginInfo($_GET['pid']);
-			break;
-			
-		case "upgrade":
-			$controller->upgradeSeoPlugin($_GET['pid']);
-			break;
-			
-		case "reinstall":
-			$controller->reInstallSeoPlugin($_GET['pid']);
-			break;
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        case "update":
+            $controller->updateSeoPlugin($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "changestatus":
+            $status = empty($_GET['status']) ? 1 : 0;
+            $controller->changeStatus($_GET['seoplugin_id'], $status);
+            $controller->listSeoPlugins();
+            break;
+            
+        case "edit":
+            $controller->editSeoPlugin($_GET);
+            break;
+            
+        case "listinfo":
+            $controller->listPluginInfo($_GET['pid']);
+            break;
+            
+        case "upgrade":
+            $controller->upgradeSeoPlugin($_GET['pid']);
+            break;
+            
+        case "reinstall":
+            $controller->reInstallSeoPlugin($_GET['pid']);
+            break;
 
-		default:
-			$controller->listSeoPlugins();
-			break;
-	}
+        default:
+            $controller->listSeoPlugins();
+            break;
+    }
 }
-
-?>

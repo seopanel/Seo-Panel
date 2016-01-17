@@ -3,25 +3,27 @@ echo showSectionHead($spTextPanel['My Profile']);
 
 // if payment cancelled
 if (!empty($_GET['cancel'])) {
-	showErrorMsg($spTextSubscription["Your transaction cancelled"], false);
+    showErrorMsg($spTextSubscription["Your transaction cancelled"], false);
 }
 
 // if payment error
 if (!empty($_GET['failed'])) {
-	showErrorMsg($spTextSubscription['internal-error-payment'], false);
+    showErrorMsg($spTextSubscription['internal-error-payment'], false);
 }
 
 // if payment error
 if (!empty($_GET['expired'])) {
-	showErrorMsg($spTextSubscription['account-expired'], false);
+    showErrorMsg($spTextSubscription['account-expired'], false);
 }
 
 // if payment error
 if (!empty($_GET['success'])) {
-	showSuccessMsg($spTextSubscription['transaction-success'], false);
+    showSuccessMsg($spTextSubscription['transaction-success'], false);
 }
 
-if(!empty($msg)){ showSuccessMsg($msg, false);}
+if (!empty($msg)) {
+    showSuccessMsg($msg, false);
+}
 ?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
@@ -60,11 +62,14 @@ if(!empty($msg)){ showSuccessMsg($msg, false);}
 	</tr>
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder" style="text-align: right; padding: 12px;">
-			<?php if ($subscriptionActive && !isAdmin()) {?>
+			<?php if ($subscriptionActive && !isAdmin()) {
+    ?>
 	         	<a onclick="scriptDoLoad('users.php?sec=renew-profile', 'content', 'layout=ajax')" href="javascript:void(0);" class="actionbut">
-	         		 &lt;&lt; <?php echo $spTextSubscription['Renew Subscription']; ?>
+	         		 &lt;&lt; <?php echo $spTextSubscription['Renew Subscription'];
+    ?>
 	         	</a>
-         	<?php }?>
+         	<?php 
+}?>
 		</td>
 		<td class="tab_right_bot" style="text-align: left; padding: 12px;">
 			<a onclick="scriptDoLoad('users.php?sec=edit-profile', 'content', 'layout=ajax')" href="javascript:void(0);" class="actionbut">

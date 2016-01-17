@@ -25,16 +25,18 @@
  * @param Array $info API input details
  * @return $fromTime	The timestamp of from time
  */
-function getFromTime($info) {
+function getFromTime($info)
+{
 
-	// if from time is not empty
-	if (!empty($info['from_time'])) {
-		$fromTime = strtotime($info['from_time'] . ' 00:00:00');
-	} else {
-		$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
-	}
+    // if from time is not empty
+    if (!empty($info['from_time'])) {
+        $fromTime = strtotime($info['from_time'] . ' 00:00:00');
+    } else {
+        $fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
+    }
 
-	return $fromTime;;
+    return $fromTime;
+    ;
 }
 
 /**
@@ -42,16 +44,18 @@ function getFromTime($info) {
  * @param Array $info API input details
  * @return $fromTime	The timestamp of to time
  */
-function getToTime($info) {
+function getToTime($info)
+{
 
-	// if from time is not empty
-	if (!empty($info['to_time'])) {
-		$toTime = strtotime($info['to_time'] . ' 00:00:00');
-	} else {
-		$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-	}
+    // if from time is not empty
+    if (!empty($info['to_time'])) {
+        $toTime = strtotime($info['to_time'] . ' 00:00:00');
+    } else {
+        $toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    }
 
-	return $toTime;;
+    return $toTime;
+    ;
 }
 
 /**
@@ -59,8 +63,8 @@ function getToTime($info) {
  * @param String $str		The string to be replaced
  * @return mixed $str		The converted string	
  */
-function removeBraces($str) {
-	$str = str_replace(array('(', ')'), '', $str);
-	return $str;
+function removeBraces($str)
+{
+    $str = str_replace(array('(', ')'), '', $str);
+    return $str;
 }
-?>

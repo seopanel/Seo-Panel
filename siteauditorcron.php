@@ -21,12 +21,11 @@
  ***************************************************************************/
 
 include_once("includes/sp-load.php");
-if(empty($_SERVER['REQUEST_METHOD'])){	
+if (empty($_SERVER['REQUEST_METHOD'])) {
     include_once(SP_CTRLPATH."/siteauditor.ctrl.php");
-    $controller = New SiteAuditorController();
+    $controller = new SiteAuditorController();
     $controller->cron = true;
-    $controller->executeCron();    
+    $controller->executeCron();
 } else {
     showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");
 }
-?>

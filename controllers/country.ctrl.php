@@ -21,20 +21,22 @@
  ***************************************************************************/
 
 # class defines all language controller functions
-class CountryController extends Controller{
-	
-	# func to get all countries
-	function __getAllCountries(){
-		$sql = "select * from country order by country_name";
-		$langList = $this->db->select($sql);
-		return $langList;
-	}
-	
-	# func to get country info
-	function __getCountryInfo( $countryCode){
-		$sql = "select * from country where country_code='$countryCode'";
-		$countryInfo = $this->db->select($sql, true);
-		return $countryInfo;
-	}
+class CountryController extends Controller
+{
+    
+    # func to get all countries
+    public function __getAllCountries()
+    {
+        $sql = "select * from country order by country_name";
+        $langList = $this->db->select($sql);
+        return $langList;
+    }
+    
+    # func to get country info
+    public function __getCountryInfo($countryCode)
+    {
+        $sql = "select * from country where country_code='$countryCode'";
+        $countryInfo = $this->db->select($sql, true);
+        return $countryInfo;
+    }
 }
-?>

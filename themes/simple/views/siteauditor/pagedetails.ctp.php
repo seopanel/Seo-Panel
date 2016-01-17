@@ -49,14 +49,16 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         		<th class="leftcell"><?php echo $spText['label']['Score']?>:</th>
         		<td style="text-align: left;">
         		    <?php
-				        if ($reportInfo['score'] < 0) {
-				            $scoreClass = 'minus';
-				            $reportInfo['score'] = $reportInfo['score'] * -1;
-				        } else {
-				            $scoreClass = 'plus';
-				        }
-				        for($b=0;$b<=$reportInfo['score'];$b++) echo "<span class='$scoreClass'>&nbsp;</span>";
-				    ?>
+                        if ($reportInfo['score'] < 0) {
+                            $scoreClass = 'minus';
+                            $reportInfo['score'] = $reportInfo['score'] * -1;
+                        } else {
+                            $scoreClass = 'plus';
+                        }
+                        for ($b=0;$b<=$reportInfo['score'];$b++) {
+                            echo "<span class='$scoreClass'>&nbsp;</span>";
+                        }
+                    ?>
         		    <?php echo $reportInfo['score']?>
     			</td>
         		<th><?php echo $spText['label']['Brocken']?>:</th>
@@ -78,19 +80,19 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         		<td class="right"><?php echo $spTextSA['External']?></td>
         	</tr>
         	<?php
-        	$colCount = 6; 
-        	if(count($linkList) > 0){
-        		$catCount = count($list);
-        		foreach($linkList as $i => $listInfo){
-        			$class = ($i % 2) ? "blue_row" : "white_row";
-                    if($catCount == ($i + 1)){
+            $colCount = 6;
+            if (count($linkList) > 0) {
+                $catCount = count($list);
+                foreach ($linkList as $i => $listInfo) {
+                    $class = ($i % 2) ? "blue_row" : "white_row";
+                    if ($catCount == ($i + 1)) {
                         $leftBotClass = "tab_left_bot";
                         $rightBotClass = "tab_right_bot";
-                    }else{
+                    } else {
                         $leftBotClass = "td_left_border td_br_right";
                         $rightBotClass = "td_br_right";
                     }
-        			?>
+                    ?>
         			<tr class="<?php echo $class?>">
         				<td class="<?php echo $leftBotClass?>"><?php echo $i+1?></td>				
         				<td class="td_br_right left">
@@ -99,20 +101,23 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         				<td class="td_br_right left"><?php echo $listInfo['link_anchor']?></td>
         				<td class="td_br_right left"><?php echo $listInfo['link_title']?></td>
         				<td class="td_br_right">
-        				    <?php echo $listInfo['nofollow'] ? $spText['common']['Yes'] : $spText['common']['No']; ?>
+        				    <?php echo $listInfo['nofollow'] ? $spText['common']['Yes'] : $spText['common']['No'];
+                    ?>
         				</td>
         				<td class="<?php echo $rightBotClass?>">
-        					<?php echo $listInfo['extrenal'] ? $spText['common']['Yes'] : $spText['common']['No']; ?>
+        					<?php echo $listInfo['extrenal'] ? $spText['common']['Yes'] : $spText['common']['No'];
+                    ?>
         				</td>
         			</tr>
         			<?php
-        		}
-        	}else{	 
-        		echo showNoRecordsList($colCount-2);		
-        	} 
-        	?>
+
+                }
+            } else {
+                echo showNoRecordsList($colCount-2);
+            }
+            ?>
         	<tr class="listBot">
-        		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+        		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
         		<td class="right"></td>
         	</tr>
         </table>

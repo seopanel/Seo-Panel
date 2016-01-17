@@ -21,19 +21,17 @@
  ***************************************************************************/
 
 include_once("includes/sp-load.php");
-if(empty($_SERVER['REQUEST_METHOD'])){
+if (empty($_SERVER['REQUEST_METHOD'])) {
 
-	// get all proxies	
-	include_once(SP_CTRLPATH."/proxy.ctrl.php");
-	$proxyCtrler = new ProxyController();
-	$proxyList = $proxyCtrler->__getAllProxys(false);
-	
-	foreach ($proxyList as $proxyInfo) {
-		$proxyCtrler->checkStatus($proxyInfo['id']);
-		echo "checking proxy: ". $proxyInfo['proxy'].":".$proxyInfo['port']."...\n";
-	}
-	
-}else{
-	showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");	
+    // get all proxies	
+    include_once(SP_CTRLPATH."/proxy.ctrl.php");
+    $proxyCtrler = new ProxyController();
+    $proxyList = $proxyCtrler->__getAllProxys(false);
+    
+    foreach ($proxyList as $proxyInfo) {
+        $proxyCtrler->checkStatus($proxyInfo['id']);
+        echo "checking proxy: ". $proxyInfo['proxy'].":".$proxyInfo['port']."...\n";
+    }
+} else {
+    showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");
 }
-?>

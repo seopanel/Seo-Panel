@@ -10,13 +10,20 @@
 		<td class="td_left_col"><?php echo $spText['label']['Project']?>: </td>
 		<td class="td_right_col">
 			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" style="width: 180px;">
-				<?php foreach($projectList as $list) {?>
-					<?php if($list['id'] == $projectId) {?>
+				<?php foreach ($projectList as $list) {
+    ?>
+					<?php if ($list['id'] == $projectId) {
+    ?>
 						<option value="<?php echo $list['id']?>" selected="selected"><?php echo $list['name']?></option>
-					<?php } else {?>
+					<?php 
+} else {
+    ?>
 						<option value="<?php echo $list['id']?>"><?php echo $list['name']?></option>
-					<?php }?>
-				<?php }?>
+					<?php 
+}
+    ?>
+				<?php 
+}?>
 			</select>
 		</td>
 	</tr>	

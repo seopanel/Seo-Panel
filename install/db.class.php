@@ -21,91 +21,99 @@
  ***************************************************************************/
 
 # class defines all database functions
-class DB{
+class DB
+{
 
-	var $connectionId = false; 	# db connectio id
-	var $error = false;   		# error while databse operations
-	
-	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
-		$this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
-		if (!$this->connectionId){
-			return $this->getError();
-		}
-		return $this->selectDatabase($dbName);
-	}
+    public $connectionId = false;    # db connectio id
+    public $error = false;        # error while databse operations
 
-	# func to select database
-	function selectDatabase($dbName){
-		$res = @mysql_select_db($dbName, $this->connectionId);
-		if(@mysql_errno() != 0){			
-			return $this->getError();
-		}
-	}
+    public function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName)
+    {
+        $this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
+        if (!$this->connectionId) {
+            return $this->getError();
+        }
+        return $this->selectDatabase($dbName);
+    }
 
-	# func to Execute a general mysql query
-	function query($query, $noRows=false){
-		$res = @mysql_query($query, $this->connectionId);
-		if (empty($res)){
-			return $this->getError();
-			@mysql_free_result($res);
-		}
-		return $res;
-	}
-	
+    # func to select database
+    public function selectDatabase($dbName)
+    {
+        $res = @mysql_select_db($dbName, $this->connectionId);
+        if (@mysql_errno() != 0) {
+            return $this->getError();
+        }
+    }
+
+    # func to Execute a general mysql query
+    public function query($query, $noRows=false)
+    {
+        $res = @mysql_query($query, $this->connectionId);
+        if (empty($res)) {
+            return $this->getError();
+            @mysql_free_result($res);
+        }
+        return $res;
+    }
+    
     #func to execute a select query
-	function select($query, $fetchFirst = false){
-		$res = @mysql_query($query, $this->connectionId);
-		if (!$res){
-			return false;
-		}
-		$returnArr = array();
-		while ($row = mysql_fetch_assoc($res)){
-			$returnArr[] = $row;
-		}
-		mysql_free_result($res);
-		if ($fetchFirst){
-			return $returnArr[0];
-		}
-		return $returnArr;
-	}
+    public function select($query, $fetchFirst = false)
+    {
+        $res = @mysql_query($query, $this->connectionId);
+        if (!$res) {
+            return false;
+        }
+        $returnArr = array();
+        while ($row = mysql_fetch_assoc($res)) {
+            $returnArr[] = $row;
+        }
+        mysql_free_result($res);
+        if ($fetchFirst) {
+            return $returnArr[0];
+        }
+        return $returnArr;
+    }
 
-	# func to Display the Mysql error
-	function getError(){
-		if (@mysql_errno() != 0) {			
-			$this->error = true;
-			$error =  "Mysql Error: " . @mysql_error();
-		}
-		return $error;
-	}
-	
-	function importDatabaseFile($filename, $block=true){
-		
-		# temporary variable, used to store current query
-		$tmpline = '';
-		
-		# read in entire file
-		$lines = file($filename);
-		
-		# loop through each line
-		foreach ($lines as $line){
-			
-			# skip it if it's a comment
-			if (substr($line, 0, 2) == '--' || $line == '')
-				continue;
-		 
-			# add this line to the current segment
-			$tmpline .= $line;
-			
-			# if it has a semicolon at the end, it's the end of the query
-			if (substr(trim($line), -1, 1) == ';'){
-				
-				if(!empty($tmpline)){
-					$errMsg = $this->query($tmpline);
-					if($block && $this->error) return $errMsg;
-				}
-				$tmpline = '';
-			}
-		}		
-	}
+    # func to Display the Mysql error
+    public function getError()
+    {
+        if (@mysql_errno() != 0) {
+            $this->error = true;
+            $error =  "Mysql Error: " . @mysql_error();
+        }
+        return $error;
+    }
+    
+    public function importDatabaseFile($filename, $block=true)
+    {
+        
+        # temporary variable, used to store current query
+        $tmpline = '';
+        
+        # read in entire file
+        $lines = file($filename);
+        
+        # loop through each line
+        foreach ($lines as $line) {
+            
+            # skip it if it's a comment
+            if (substr($line, 0, 2) == '--' || $line == '') {
+                continue;
+            }
+         
+            # add this line to the current segment
+            $tmpline .= $line;
+            
+            # if it has a semicolon at the end, it's the end of the query
+            if (substr(trim($line), -1, 1) == ';') {
+                if (!empty($tmpline)) {
+                    $errMsg = $this->query($tmpline);
+                    if ($block && $this->error) {
+                        return $errMsg;
+                    }
+                }
+                $tmpline = '';
+            }
+        }
+    }
 }
-?>

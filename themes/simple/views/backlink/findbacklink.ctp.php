@@ -6,52 +6,54 @@
 		<td class="right">Bing</td>
 	</tr>
 	<?php
-	$colCount = 4; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $url){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
+    $colCount = 4;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        $i = 0;
+        foreach ($list as $url) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
-            }else{
+            } else {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
             
-            $tdWidth = "80px";             
+            $tdWidth = "80px";
             $debugVar = !empty($_POST['debug']) ? "&debug=1" : "";
-            $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . $_POST['debug_format'] : ""           
-			?>
+            $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . $_POST['debug_format'] : ""
+            ?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo $url?></td>
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='googlerank<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<?php echo urlencode($url);
+            ?><?php echo $debugVar?>');
 					</script>
 				</td>
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='alexa<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'alexa<?php echo $i?>', 'sec=backlink&engine=alexa&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'alexa<?php echo $i?>', 'sec=backlink&engine=alexa&url=<?php echo urlencode($url);
+            ?><?php echo $debugVar?>');
 					</script>
 				</td>
 				<td class="<?php echo $rightBotClass?>" width="<?php echo $tdWidth?>" id='msnrank<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'msnrank<?php echo $i?>', 'sec=backlink&engine=msn&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'msnrank<?php echo $i?>', 'sec=backlink&engine=msn&url=<?php echo urlencode($url);
+            ?><?php echo $debugVar?>');
 					</script>
 				</td>
 			</tr>
 			<?php
-			$i++;
-		}
-	}else{	 
-		echo showNoRecordsList($colCount-2);		
-	} 
-	?>
+            $i++;
+        }
+    } else {
+        echo showNoRecordsList($colCount-2);
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 </table>

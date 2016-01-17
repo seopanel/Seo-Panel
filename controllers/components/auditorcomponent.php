@@ -21,22 +21,24 @@
  ***************************************************************************/
 
 # class defines all site auditor controller functions
-class AuditorComponent extends Controller{
+class auditorcomponent extends Controller
+{
     
-    var $commentInfo = array(); // to store the details about the score of each page
-    
+    public $commentInfo = array(); // to store the details about the score of each page
+
     // function to save report info
-    function saveReportInfo($reportInfo, $action='create') {
+    public function saveReportInfo($reportInfo, $action='create')
+    {
         if ($action == 'create') {
-			$dateTime = date('Y-m-d H:i:s');
+            $dateTime = date('Y-m-d H:i:s');
             $reportKeys = array_keys($reportInfo);
             $reportValues = array_values($reportInfo);
             $sql = "insert into auditorreports(".implode(',', $reportKeys).", updated) values('".implode("','", $reportValues)."', '$dateTime')";
-        } elseif($action == 'update') {
+        } elseif ($action == 'update') {
             $sql = "Update auditorreports set ";
             foreach ($reportInfo as $col => $value) {
                 if ($col != 'id') {
-                    $sql .= "$col='$value',";    
+                    $sql .= "$col='$value',";
                 }
             }
             $sql = preg_replace('/\,$/', '', $sql);
@@ -46,12 +48,12 @@ class AuditorComponent extends Controller{
     }
     
     // func to run report for a project
-    function runReport($reportUrl, $projectInfo, $totalLinks) {        
+    public function runReport($reportUrl, $projectInfo, $totalLinks)
+    {
         $spider = new Spider();
         $pageInfo = $spider->getPageInfo($reportUrl, $projectInfo['url'], true);
 
-        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
-            
+        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'")) {
             $reportInfo['id'] = $rInfo['id'];
             $reportInfo['page_title'] = addslashes($pageInfo['page_title']);
             $reportInfo['page_description'] = addslashes($pageInfo['page_description']);
@@ -83,7 +85,7 @@ class AuditorComponent extends Controller{
             }
         
             if ($projectInfo['check_brocken']) {
-                $reportInfo['brocken'] = Spider::isLInkBrocken($linkInfo['link_url']);    
+                $reportInfo['brocken'] = Spider::isLInkBrocken($linkInfo['link_url']);
             }
             
             $this->saveReportInfo($reportInfo, 'update');
@@ -91,8 +93,8 @@ class AuditorComponent extends Controller{
             // to store sitelinks in page and links reports
             $i = 0;
             if (count($pageInfo['site_links']) > 0) {
-            	
-            	// loo through site links
+                
+                // loo through site links
                 foreach ($pageInfo['site_links'] as $linkInfo) {
                     // if store links 
                     if ($projectInfo['store_links_in_page']) {
@@ -102,24 +104,30 @@ class AuditorComponent extends Controller{
                     }
                     
                     // if total links saved less than max links allowed for a project
-                    if ($totalLinks < $projectInfo['max_links']) { 
-                    	
-                    	// check whether valid html serving link
-                        if(preg_match('/\.zip$|\.gz$|\.tar$|\.png$|\.jpg$|\.jpeg$|\.gif$|\.mp3$|\.flv$|\.pdf$|\.m4a$|#$/i', $linkInfo['link_url'])) continue;
+                    if ($totalLinks < $projectInfo['max_links']) {
+                        
+                        // check whether valid html serving link
+                        if (preg_match('/\.zip$|\.gz$|\.tar$|\.png$|\.jpg$|\.jpeg$|\.gif$|\.mp3$|\.flv$|\.pdf$|\.m4a$|#$/i', $linkInfo['link_url'])) {
+                            continue;
+                        }
                         
                         // if found any space in the link
                         $linkInfo['link_url'] = Spider::formatUrl($linkInfo['link_url']);
-                        if (!preg_match('/\S+/', $linkInfo['link_url'])) continue;                        
+                        if (!preg_match('/\S+/', $linkInfo['link_url'])) {
+                            continue;
+                        }
                         
                         // check whether url needs to be excluded
-                        if ($this->isExcludeLink($linkInfo['link_url'], $projectInfo['exclude_links'])) continue;
+                        if ($this->isExcludeLink($linkInfo['link_url'], $projectInfo['exclude_links'])) {
+                            continue;
+                        }
                         
                         // save links for the project report
                         if (!$this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='{$linkInfo['link_url']}'")) {
-        		            $repInfo['page_url'] = $linkInfo['link_url'];
-        		            $repInfo['project_id'] = $projectInfo['id'];
-        		            $this->saveReportInfo($repInfo);
-        		            $totalLinks++;            
+                            $repInfo['page_url'] = $linkInfo['link_url'];
+                            $repInfo['project_id'] = $projectInfo['id'];
+                            $this->saveReportInfo($repInfo);
+                            $totalLinks++;
                         }
                     }
                 }
@@ -134,7 +142,7 @@ class AuditorComponent extends Controller{
                         $linkInfo['extrenal'] = 1;
                         $this->storePagelLinks($linkInfo, $delete);
                     }
-                }                
+                }
             }
 
             // calculate score of each page and update it
@@ -142,19 +150,20 @@ class AuditorComponent extends Controller{
             
             // calculate score of each page and update it
             $this->updateProjectPageScore($projectInfo['id']);
-        }                     
+        }
     }
     
     // function to get report info
-    function getReportInfo($where) {	    
-	    $sql = "SELECT * FROM auditorreports where 1=1 $where";
-		$listInfo = $this->db->select($sql, true);
-		return empty($listInfo['id']) ? false : $listInfo;
-	}
+    public function getReportInfo($where)
+    {
+        $sql = "SELECT * FROM auditorreports where 1=1 $where";
+        $listInfo = $this->db->select($sql, true);
+        return empty($listInfo['id']) ? false : $listInfo;
+    }
     
     // function to store link of page
-    function storePagelLinks($linkInfo, $delete=false) {
-        
+    public function storePagelLinks($linkInfo, $delete=false)
+    {
         foreach ($linkInfo as $col => $val) {
             $linkInfo[$col] = addslashes($val);
         }
@@ -171,22 +180,24 @@ class AuditorComponent extends Controller{
     }
     
     // function to check whether link should be excluded or not
-    function isExcludeLink($link, $excludeList) {
+    public function isExcludeLink($link, $excludeList)
+    {
         $exclude =  false;
         if (!empty($excludeList)) {
             $excludeList = explode(',', $excludeList);
             foreach ($excludeList as $exUrl) {
                 if (stristr($link, trim($exUrl))) {
                     $exclude = true;
-                    break;    
-                }    
+                    break;
+                }
             }
         }
         return $exclude;
     }
     
     // function to find the score of a report page
-    function updateReportPageScore($reportId) {
+    public function updateReportPageScore($reportId)
+    {
         $reportInfo = $this->getReportInfo(" and id=$reportId");
         $scoreInfo = $this->countReportPageScore($reportInfo);
         $score =  array_sum($scoreInfo);
@@ -195,15 +206,16 @@ class AuditorComponent extends Controller{
     }
     
     // function to count report page score
-    function countReportPageScore($reportInfo) {
+    public function countReportPageScore($reportInfo)
+    {
         $scoreInfo = array();
         $this->commentInfo = array();
         $spTextSA = $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']);
         
         // check page title length
         $lengTitle = strlen($reportInfo['page_title']);
-        if ( ($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= SA_TITLE_MIN_LENGTH) ) {
-            $scoreInfo['page_title'] = 1;        
+        if (($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= SA_TITLE_MIN_LENGTH)) {
+            $scoreInfo['page_title'] = 1;
         } else {
             $scoreInfo['page_title'] = -1;
             $msg = $spTextSA["The page title length is not between"]." ".SA_TITLE_MIN_LENGTH." & ".SA_TITLE_MAX_LENGTH;
@@ -212,7 +224,7 @@ class AuditorComponent extends Controller{
         
         // check meta description length
         $lengDes = strlen($reportInfo['page_description']);
-        if ( ($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= SA_DES_MIN_LENGTH) ) {
+        if (($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= SA_DES_MIN_LENGTH)) {
             $scoreInfo['page_description'] = 1;
         } else {
             $scoreInfo['page_description'] = -1;
@@ -222,7 +234,7 @@ class AuditorComponent extends Controller{
         
         // check meta keywords length
         $lengKey = strlen($reportInfo['page_keywords']);
-        if ( ($lengKey <= SA_KEY_MAX_LENGTH) && ($lengKey >= SA_KEY_MIN_LENGTH) ) {
+        if (($lengKey <= SA_KEY_MAX_LENGTH) && ($lengKey >= SA_KEY_MIN_LENGTH)) {
             $scoreInfo['page_keywords'] = 1;
         } else {
             $scoreInfo['page_keywords'] = -1;
@@ -249,11 +261,11 @@ class AuditorComponent extends Controller{
             $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 3;
             $msg = $spTextSA["The page is having exellent pagerank"];
             $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_FIRST) {
+        } elseif ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_FIRST) {
             $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 2;
             $msg = $spTextSA["The page is having very good pagerank"];
             $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank']) {
+        } elseif ($reportInfo['pagerank']) {
             $scoreInfo['pagerank'] = 1;
             $msg = $spTextSA["The page is having good pagerank"];
             $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
@@ -267,54 +279,57 @@ class AuditorComponent extends Controller{
         $seArr = array('google', 'bing');
         foreach ($seArr as $se) {
             $label = $se.'_backlinks';
-            if ($reportInfo[$label] >= SA_BL_CHECK_LEVEL) {                
+            if ($reportInfo[$label] >= SA_BL_CHECK_LEVEL) {
                 $scoreInfo[$label] = 2;
                 $msg = $spTextSA["The page is having exellent number of backlinks in"]." ".$se;
                 $this->commentInfo[$label] = formatSuccessMsg($msg);
-            } elseif($reportInfo[$label]) {
+            } elseif ($reportInfo[$label]) {
                 $scoreInfo[$label] = 1;
                 $msg = $spTextSA["The page is having good number of backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatSuccessMsg($msg);                
+                $this->commentInfo[$label] = formatSuccessMsg($msg);
             } else {
                 $scoreInfo[$label] = 0;
                 $msg = $spTextSA["The page is not having backlinks in"]." ".$se;
                 $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }     
+            }
         }
         
         // check whether indexed or not    
         foreach ($seArr as $se) {
             $label = $se.'_indexed';
-            if($reportInfo[$label]) {
-                $scoreInfo[$label] = 1;                
+            if ($reportInfo[$label]) {
+                $scoreInfo[$label] = 1;
             } else {
                 $scoreInfo[$label] = -1;
                 $msg = $spTextSA["The page is not indexed in"]." ".$se;
                 $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }   
+            }
         }
         return $scoreInfo;
     }
     
     // function to find the score of a project
-    function updateProjectPageScore($projectId) {        
+    public function updateProjectPageScore($projectId)
+    {
         $sql = "select sum(score)/count(*) as avgscore from auditorreports where crawled=1 and project_id=$projectId";
         $listInfo = $this->db->select($sql, true);
-		$score = empty($listInfo['avgscore']) ? 0 : $listInfo['avgscore'];
+        $score = empty($listInfo['avgscore']) ? 0 : $listInfo['avgscore'];
         
         $sql = "update auditorprojects set score=$score where id=$projectId";
-        $this->db->query($sql); 
+        $this->db->query($sql);
     }
     
     // function to get all links of a page
-    function getAllLinksPage($reportId) {
+    public function getAllLinksPage($reportId)
+    {
         $sql = "select * from auditorpagelinks where report_id=$reportId";
         $linkList = $this->db->select($sql);
-        return $linkList;        
+        return $linkList;
     }
     
     // function to get duplicate meta contents info
-    function getDuplicateMetaInfoCount($projectId, $col='page_title', $statusCheck=false, $statusVal=1) {
+    public function getDuplicateMetaInfoCount($projectId, $col='page_title', $statusCheck=false, $statusVal=1)
+    {
         $crawled = $statusCheck ? " and crawled=$statusVal" : "";
         $sql = "select $col,count(*) as count from auditorreports where project_id=$projectId and $col!='' $crawled group by $col having count>1";
         $list = $this->db->select($sql);
@@ -326,10 +341,10 @@ class AuditorComponent extends Controller{
     }
     
     // function to get all report pages of a project
-    function getAllreportPages($where='', $cols='*') {        	    
-	    $sql = "SELECT $cols FROM auditorreports where 1=1 $where";
-		$list = $this->db->select($sql);
-		return $list;
+    public function getAllreportPages($where='', $cols='*')
+    {
+        $sql = "SELECT $cols FROM auditorreports where 1=1 $where";
+        $list = $this->db->select($sql);
+        return $list;
     }
-    
 }

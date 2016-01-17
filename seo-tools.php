@@ -24,7 +24,7 @@ include_once("includes/sp-load.php");
 checkLoggedIn();
 isHavingWebsite();
 include_once(SP_CTRLPATH."/seotools.ctrl.php");
-$controller = New SeoToolsController();
+$controller = new SeoToolsController();
 $controller->view->menu = 'seotools';
 
 $controller->set('spTitle', 'Seo Panel: Provides lots of hot seo tools to increase and track the performace your websites');
@@ -34,18 +34,14 @@ $controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESS
 $controller->set('spTextKeyword', $controller->getLanguageTexts('keyword', $_SESSION['lang_code']));
 $controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-	}
-	
-}else{
-	switch($_GET['sec']){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+    }
+} else {
+    switch ($_GET['sec']) {
 
-		default:
-			$controller->index($_GET);
-			break;
-	}
+        default:
+            $controller->index($_GET);
+            break;
+    }
 }
-
-?>

@@ -26,29 +26,25 @@ include_once(SP_CTRLPATH."/keyword.ctrl.php");
 include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/searchengine.ctrl.php");
 include_once(SP_CTRLPATH."/report.ctrl.php");
-$controller = New ReportController();
+$controller = new ReportController();
 $controller->layout = 'ajax';
 $controller->spTextTools = $controller->getLanguageTexts('seotools', $_SESSION['lang_code']);
 $controller->set('spTextTools', $controller->spTextTools);
 $controller->spTextKeyword = $controller->getLanguageTexts('keyword', $_SESSION['lang_code']);
 $controller->set('spTextKeyword', $controller->spTextKeyword);
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
-	
-	switch($_POST['sec']){
-			
-		default:
-			$controller->showOverallReportSummary($_POST);
-			break;
-	}
-
-}else{
-	switch($_GET['sec']){
-			
-		default:
-			$controller->showOverallReportSummary($_GET);
-			break;
-	}
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+            
+        default:
+            $controller->showOverallReportSummary($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+            
+        default:
+            $controller->showOverallReportSummary($_GET);
+            break;
+    }
 }
-
-?>

@@ -2,26 +2,26 @@
 $borderCollapseVal = $lastTdStyle = "";
 $hrefAction = 'href="javascript:void(0)"';
 
-if(!empty($pdfVersion) || !empty($printVersion)) {
-	
-	// if pdf report to be generated
-	if ($pdfVersion) {
-		showPdfHeader($spTextTools['Auditor Reports']);
-		$borderCollapseVal = "border-collapse: collapse;";
-		$lastTdStyle = "border-right:1px solid #B0C2CC;";
-		$hrefAction = "";
-	} else {
-		showPrintHeader($spTextTools['Auditor Reports']);
-	}
-		
-} else {  
-?>
+if (!empty($pdfVersion) || !empty($printVersion)) {
+    
+    // if pdf report to be generated
+    if ($pdfVersion) {
+        showPdfHeader($spTextTools['Auditor Reports']);
+        $borderCollapseVal = "border-collapse: collapse;";
+        $lastTdStyle = "border-right:1px solid #B0C2CC;";
+        $hrefAction = "";
+    } else {
+        showPrintHeader($spTextTools['Auditor Reports']);
+    }
+} else {
+    ?>
     <div style="float:right;margin-right: 10px;margin-top: -38px;">
 		<a href="<?php echo $mainLink?>&doc_type=pdf"><img src="<?php echo SP_IMGPATH?>/icon_pdf.png"></a> &nbsp;
     	<a href="<?php echo $mainLink?>&doc_type=export"><img src="<?php echo SP_IMGPATH?>/icoExport.gif"></a> &nbsp;
     	<a target="_blank" href="<?php echo $mainLink?>&doc_type=print"><img src="<?php echo SP_IMGPATH?>/print_button.gif"></a>
     </div>
 <?php
+
 }
 ?>
 <div id="run_project" style="margin-top: 40px;">
@@ -36,14 +36,16 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
         		<th><?php echo $spText['label']['Score']?>:</th>
         		<td style="text-align: left;">
         		    <?php
-				        if ($projectInfo['score'] < 0) {
-				            $scoreClass = 'minus';
-				            $projectInfo['score'] = $projectInfo['score'] * -1;
-				        } else {
-				            $scoreClass = 'plus';
-				        }
-				        for($b=0;$b<=$projectInfo['score'];$b++) echo "<span class='$scoreClass'>&nbsp;</span>";
-				    ?>
+                        if ($projectInfo['score'] < 0) {
+                            $scoreClass = 'minus';
+                            $projectInfo['score'] = $projectInfo['score'] * -1;
+                        } else {
+                            $scoreClass = 'plus';
+                        }
+                        for ($b=0;$b<=$projectInfo['score'];$b++) {
+                            echo "<span class='$scoreClass'>&nbsp;</span>";
+                        }
+                    ?>
         		    <?php echo $projectInfo['score']?>
     			</td>
         		<th><?php echo $spText['label']['Updated']?>:</th>
@@ -59,18 +61,20 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
         	</tr>
         	<tr>
             	<?php
-            	$i = 1;
-        	    foreach ($metaArr as $col => $label) {
-    		        $class = ($col == "page_title") ? "leftcell" : "";
-    		        $tdStyle = ($i++ == count($metaArr)) ? $lastTdStyle : ""; 
-    		        ?>
+                $i = 1;
+                foreach ($metaArr as $col => $label) {
+                    $class = ($col == "page_title") ? "leftcell" : "";
+                    $tdStyle = ($i++ == count($metaArr)) ? $lastTdStyle : "";
+                    ?>
     		        <th class="<?php echo $class?>"><?php echo $label?>:</th>
-        			<td style="<?php echo $tdStyle; ?>">
-        				<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo $projectInfo["duplicate_".$col]?></a>
+        			<td style="<?php echo $tdStyle;
+                    ?>">
+        				<a <?php echo $hrefAction;
+                    ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo $projectInfo["duplicate_".$col]?></a>
         			</td>
-    		        <?php	        
-        	    } 
-            	?>
+    		        <?php	
+                }
+                ?>
         	</tr>
         	<tr>
         		<th class="leftcell">PR10:</th>
@@ -107,27 +111,27 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
         	
         	<tr>
             	<?php
-        	    foreach ($seArr as $i => $se) {
-    		        $class = $i ? "" :"leftcell";
-    		        ?>
+                foreach ($seArr as $i => $se) {
+                    $class = $i ? "" :"leftcell";
+                    ?>
     		        <th class="<?php echo $class?>"><?php echo ucfirst($se)?> <?php echo $spTextHome['Backlinks']?>:</th>
         			<td><?php echo $projectInfo[$se."_backlinks"]?></td>
-    		        <?php	        
-        	    } 
-            	?>
+    		        <?php	
+                }
+                ?>
         		<th>&nbsp;</th>
         		<td style="<?php echo $lastTdStyle; ?>">&nbsp;</td>
         	</tr>
         	<tr>
             	<?php
-        	    foreach ($seArr as $i => $se) {
-    		        $class = $i ? "" :"leftcell";
-    		        ?>
+                foreach ($seArr as $i => $se) {
+                    $class = $i ? "" :"leftcell";
+                    ?>
     		        <th class="<?php echo $class?>"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?>:</th>
         			<td><?php echo $projectInfo[$se."_indexed"]?></td>
-    		        <?php	        
-        	    } 
-            	?>
+    		        <?php	
+                }
+                ?>
         		<th>&nbsp;</th>
         		<td style="<?php echo $lastTdStyle; ?>">&nbsp;</td>
         	</tr>
@@ -135,7 +139,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	</div>
 </div>
 <?php
-if(!empty($printVersion) || !empty($pdfVersion)) {
-	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
+if (!empty($printVersion) || !empty($pdfVersion)) {
+    echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
 }
 ?>

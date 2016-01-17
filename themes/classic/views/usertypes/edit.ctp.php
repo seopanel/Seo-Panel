@@ -24,25 +24,32 @@
 		<td class="td_left_col"><?php echo $spText['common']['Websites Count']?>:</td>
 		<td class="td_right_col"><input type="text" name="websitecount" id="websitecount" value="<?php echo $post['websitecount']?>"><?php echo $errMsg['websitecount']?></td>
 	</tr>
-	<?php if ($isPluginSubsActive) {?>
+	<?php if ($isPluginSubsActive) {
+    ?>
 		<tr class="white_row">
 			<td class="td_left_col"><?php echo $spText['common']['Price']?>:</td>
 			<td class="td_right_col">
-				<?php echo $currencyList[SP_PAYMENT_CURRENCY]['symbol']; ?><input type="text" name="price" id="price" value="<?php echo $post['price']?>"><?php echo $errMsg['price']?>
+				<?php echo $currencyList[SP_PAYMENT_CURRENCY]['symbol'];
+    ?><input type="text" name="price" id="price" value="<?php echo $post['price']?>"><?php echo $errMsg['price']?>
 			</td>
 		</tr>
-	<?php }?>
+	<?php 
+}?>
 	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['common']['Status']?>:</td>
 		<td class="td_right_col">
 			<select name="user_type_status" id="user_type_status">
-				<?php if ($post['status']) { ?>
+				<?php if ($post['status']) {
+    ?>
 					<option value="1" selected="selected">Active</option>
 					<option value="0">Inactive</option>
-				<?php } else { ?>
+				<?php 
+} else {
+    ?>
 					<option value="1">Active</option>
 					<option value="0" selected="selected">Inactive</option>
-				<?php } ?>
+				<?php 
+} ?>
 			</select>
 		</td>
 	</tr>		

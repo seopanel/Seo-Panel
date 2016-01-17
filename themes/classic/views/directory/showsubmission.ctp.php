@@ -21,12 +21,13 @@
 			<select name="google_pagerank">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php
-				for ($i=0; $i<=10; $i++) {					
-					?>			
+                for ($i=0; $i<=10; $i++) {
+                    ?>			
 					<option value="<?php echo $i?>" <?php echo $selected?>>PR <?php echo $i?></option>
 					<?php
-				}
-				?>
+
+                }
+                ?>
 			</select>						
 		</td>
 		<th><?php echo $spText['common']['lang']?>:</th>
@@ -34,13 +35,14 @@
 			<select name="lang_code">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php
-				foreach ($langList as $langInfo) {
-				    $selected = ($_SESSION['dirsub_lang'] == $langInfo['lang_code']) ? "selected" : "";
-					?>			
+                foreach ($langList as $langInfo) {
+                    $selected = ($_SESSION['dirsub_lang'] == $langInfo['lang_code']) ? "selected" : "";
+                    ?>			
 					<option value="<?php echo $langInfo['lang_code']?>" <?php echo $selected?>><?php echo $langInfo['lang_name']?></option>
 					<?php
-				}
-				?>
+
+                }
+                ?>
 			</select>
 		</td>
 		<td align='left' colspan="2">

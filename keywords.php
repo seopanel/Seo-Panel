@@ -27,7 +27,7 @@ include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/user-type.ctrl.php");
 #include_once(SP_CTRLPATH."/language.ctrl.php");
 include_once(SP_CTRLPATH."/searchengine.ctrl.php");
-$controller = New KeywordController();
+$controller = new KeywordController();
 $controller->view->menu = 'seotools';
 $controller->layout = 'ajax';
 $controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
@@ -37,98 +37,94 @@ $controller->set('spTextKeyword', $controller->spTextKeyword);
 
 $userId = isLoggedIn();
 
-if($_SERVER['REQUEST_METHOD'] == 'POST'){
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        case "create":
+            $controller->createKeyword($_POST);
+            break;
+            
+        case "update":
+            $controller->updateKeyword($_POST);
+            break;
+            
+        case "import":
+            $controller->createImportedKeywords($_POST);
+            break;
+            
+        case "activateall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__changeStatus($id, 1);
+                }
+            }
+            $controller->listKeywords($_POST);
+            break;
+            
+        case "inactivateall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__changeStatus($id, 0);
+                }
+            }
+            $controller->listKeywords($_POST);
+            break;
+            
+        case "deleteall":
+            if (!empty($_POST['ids'])) {
+                foreach ($_POST['ids'] as $id) {
+                    $controller->__deleteKeyword($id);
+                }
+            }
+            $controller->listKeywords($_POST);
+            break;
 
-	switch($_POST['sec']){
-		case "create":
-			$controller->createKeyword($_POST);
-			break;
-			
-		case "update":
-			$controller->updateKeyword($_POST);
-			break;
-			
-		case "import":
-			$controller->createImportedKeywords($_POST);
-			break;
-			
-		case "activateall":
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__changeStatus($id, 1);
-    		    }
-		    }		    			
-			$controller->listKeywords($_POST);
-		    break;
-			
-		case "inactivateall":
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__changeStatus($id, 0);
-    		    }
-		    }		    			
-			$controller->listKeywords($_POST);
-		    break;
-		    
-		case "deleteall":
-		    if (!empty($_POST['ids'])) {
-    		    foreach($_POST['ids'] as $id) {
-    		        $controller->__deleteKeyword($id);
-    		    }
-		    }		    			
-			$controller->listKeywords($_POST);
-		    break;	    
+        default:
+            $controller->listKeywords($_POST);
+            break;
+    }
+} else {
+    switch ($_GET['sec']) {
+        
+        case "Activate":
+            $controller->__changeStatus($_GET['keywordId'], 1);
+            $controller->listKeywords($_GET);
+            break;
+        
+        case "Inactivate":
+            $controller->__changeStatus($_GET['keywordId'], 0);
+            $controller->listKeywords($_GET);
+            break;
+        
+        case "reports":
+            $controller->showKeywordReports($_GET['keywordId']);
+            break;
+        
+        case "delete":
+            $controller->__deleteKeyword($_GET['keywordId']);
+            $controller->listKeywords($_GET);
+            break;
+        
+        case "edit":
+            $controller->editKeyword($_GET['keywordId']);
+            break;
+        
+        case "new":
+            $controller->set('post', $_GET);
+            $controller->newKeyword();
+            break;
+        
+        case "import":
+            $controller->set('post', $_GET);
+            $controller->importKeywords();
+            break;
+            
+        case "keywordbox":
+            $controller->set('keyNull', $_GET['keyNull']);
+            $controller->showKeywordSelectBox($userId, $_GET['website_id']);
+            break;
 
-		default:
-			$controller->listKeywords($_POST);
-			break;
-	}
-
-}else{
-	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['keywordId'], 1);			
-			$controller->listKeywords($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['keywordId'], 0);
-			$controller->listKeywords($_GET);
-			break;
-		
-		case "reports":
-			$controller->showKeywordReports($_GET['keywordId']);
-			break;
-		
-		case "delete":
-			$controller->__deleteKeyword($_GET['keywordId']);
-			$controller->listKeywords($_GET);
-			break;
-		
-		case "edit":
-			$controller->editKeyword($_GET['keywordId']);
-			break;		
-		
-		case "new":
-			$controller->set('post', $_GET);
-			$controller->newKeyword();
-			break;		
-		
-		case "import":
-			$controller->set('post', $_GET);
-			$controller->importKeywords();
-			break;
-			
-		case "keywordbox":
-			$controller->set('keyNull', $_GET['keyNull']);
-			$controller->showKeywordSelectBox($userId, $_GET['website_id']);
-			break;
-
-		default:
-			$controller->listKeywords($_GET);
-			break;
-	}
+        default:
+            $controller->listKeywords($_GET);
+            break;
+    }
 }
-
-?>

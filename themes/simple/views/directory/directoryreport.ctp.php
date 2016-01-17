@@ -15,19 +15,20 @@
 			<select name="active" style="width:150px;" onchange="<?php echo $onChange?>">
 				<option value="">-- Select --</option>
 				<?php 
-				$activeList = array('pending', 'approved');
-				foreach($activeList as $val){
-					if($val == $activeVal){
-						?>
+                $activeList = array('pending', 'approved');
+                foreach ($activeList as $val) {
+                    if ($val == $activeVal) {
+                        ?>
 						<option value="<?php echo $val?>" selected><?php echo ucfirst($val)?></option>
 						<?php
-					}else{						
-						?>
+
+                    } else {
+                        ?>
 						<option value="<?php echo $val?>"><?php echo ucfirst($val)?></option>
 						<?php	
-					}
-				} 
-				?>
+                    }
+                }
+                ?>
 			</select>
 		</td>		
 		<td colspan="2">
@@ -38,12 +39,12 @@
 </form>
 
 <?php
-	if(empty($websiteId)){
-		?>
+    if (empty($websiteId)) {
+        ?>
 		<p class='note error'><?php echo $spText['common']['No Records Found']?>!</p>
 		<?php
-		exit;
-	} 
+        exit;
+    }
 ?>
 
 <div id='subcontent'>
@@ -61,17 +62,16 @@
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 6; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $listInfo){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
+    $colCount = 6;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        $i = 0;
+        foreach ($list as $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if ($catCount == ($i + 1)) {
                 $leftBotClass = "tab_left_bot";
                 $rightBotClass = "tab_right_bot";
-            }else{
+            } else {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
@@ -79,14 +79,15 @@
             $confirmId = "confirm_".$listInfo['id'];
             $confirmLink = "<a href='javascript:void(0);' onclick=\"scriptDoLoad('directories.php', '$confirmId', 'sec=changeconfirm&id={$listInfo['id']}&confirm=$confirm')\">$confirm</a>";
             
-            $status = empty($listInfo['active']) ? $spTextDir["Pending"] : $spTextDir["Approved"];            
+            $status = empty($listInfo['active']) ? $spTextDir["Pending"] : $spTextDir["Approved"];
             $statusId = "status_".$listInfo['id'];
-			?>
+            ?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>" style='text-align:left;padding-left:10px;'>
 					<a href="<?php echo $listInfo['submit_url']?>" target="_blank"><?php echo $listInfo['domain']?></a>
 				</td>
-				<td class='td_br_right'><?php echo date('Y-m-d', $listInfo['submit_time']); ?></td>
+				<td class='td_br_right'><?php echo date('Y-m-d', $listInfo['submit_time']);
+            ?></td>
 				<td class='td_br_right'><?php echo $listInfo['google_pagerank']?></td>
 				<td class='td_br_right' id='<?php echo $confirmId?>'><?php echo $confirmLink?></td>
 				<td class='td_br_right' id='<?php echo $statusId?>'><?php echo $status?></td>
@@ -99,14 +100,14 @@
 				</td>
 			</tr>
 			<?php
-			$i++;
-		}
-	}else{
-		echo showNoRecordsList($colCount-2);		
-	} 
-	?>
+            $i++;
+        }
+    } else {
+        echo showNoRecordsList($colCount-2);
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 	</table>

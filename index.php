@@ -23,31 +23,27 @@
 include_once("includes/sp-load.php");
 include_once(SP_CTRLPATH."/index.ctrl.php");
 include_once(SP_CTRLPATH."/directory.ctrl.php");
-$controller = New IndexController();
+$controller = new IndexController();
 $controller->view->menu = 'home';
 
-if($_SERVER['REQUEST_METHOD'] == 'GET'){
+if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    switch ($_GET['sec']) {
+        
+        case "news":
+            include_once(SP_CTRLPATH."/information.ctrl.php");
+            $infoCtrler = new InformationController();
+            $infoCtrler->showNews($_GET);
+            break;
 
-	switch($_GET['sec']){
-		
-		case "news":
-			include_once(SP_CTRLPATH."/information.ctrl.php");
-			$infoCtrler = new InformationController();
-			$infoCtrler->showNews($_GET);
-			break;
-
-		default:
-			$controller->index($_GET);
-			break;
-	}
-}elseif($_SERVER['REQUEST_METHOD'] == 'POST'){
-
-	switch($_POST['sec']){
-	    
-	    default:
-			$controller->index($_POST);
-			break;
-	}
+        default:
+            $controller->index($_GET);
+            break;
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    switch ($_POST['sec']) {
+        
+        default:
+            $controller->index($_POST);
+            break;
+    }
 }
-
-?>

@@ -22,18 +22,17 @@ foreach ($headArr as $col => $val) {
     $$linkName = "<a id='sortLink' class='$linkClass' href='javascript:void(0)' onclick=\"scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&order_col=$col&order_val=$oVal')\">$val</a>";
 }
 
-if(!empty($pdfVersion) || !empty($printVersion)) {
+if (!empty($pdfVersion) || !empty($printVersion)) {
 
-	// if pdf report to be generated
-	if ($pdfVersion) {
-		showPdfHeader($spTextTools['Auditor Reports']);
-		$borderCollapseVal = "border-collapse: collapse;";
-		$hrefAction = "";
-	} else {
-		showPrintHeader($spTextTools['Auditor Reports']);
-	}
-
-} else {    
+    // if pdf report to be generated
+    if ($pdfVersion) {
+        showPdfHeader($spTextTools['Auditor Reports']);
+        $borderCollapseVal = "border-collapse: collapse;";
+        $hrefAction = "";
+    } else {
+        showPrintHeader($spTextTools['Auditor Reports']);
+    }
+} else {
     ?>	
 	<td align="right" valign="bottom">
 		<a href="<?php echo $mainLink?>&sec=showreport&report_type=rp_links&doc_type=pdf"><img src="<?php echo SP_IMGPATH?>/icon_pdf.png"></a> &nbsp;
@@ -41,7 +40,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		<a target="_blank" href="<?php echo $mainLink?>&sec=showreport&report_type=rp_links&doc_type=print"><img src="<?php echo SP_IMGPATH?>/print_button.gif"></a>
 		<?php echo $pagingDiv?>
 	</td>
-<?php }?>
+<?php 
+}?>
 	</tr>
 </table>
 
@@ -57,22 +57,24 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		<td><?php echo $total_linksLink?></td>
 		<td><?php echo $scoreLink?></td>
 		<td><?php echo $brockenLink?></td>
-		<?php if (empty($pdfVersion) && empty($printVersion)) {?>
+		<?php if (empty($pdfVersion) && empty($printVersion)) {
+    ?>
 			<td class="right"><?php echo $spText['common']['Action']?></td>
-		<?php }?>
+		<?php 
+}?>
 	</tr>
 	<?php
-	$colCount = 11; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		foreach($list as $i => $listInfo){
-			$class = ($i % 2) ? "blue_row" : "white_row";
-			if( !$i || ($catCount != ($i + 1)) ){
+    $colCount = 11;
+    if (count($list) > 0) {
+        $catCount = count($list);
+        foreach ($list as $i => $listInfo) {
+            $class = ($i % 2) ? "blue_row" : "white_row";
+            if (!$i || ($catCount != ($i + 1))) {
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
             }
             
-            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));             
+            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));
             $pageLink = !empty($pdfVersion) ? str_replace("href='javascript:void(0);'", "", $pageLink) : $pageLink;
             ?>
 			<tr class="<?php echo $class?>">
@@ -86,28 +88,28 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td class="td_br_right"><?php echo $listInfo['total_links']?></td>
 				<td class="td_br_right" style="text-align: right;">
 				    <?php
-				    	if ($pdfVersion) {
-							echo "<b>{$listInfo['score']}</b>";
-						} else {
-				    
-					        if ($listInfo['score'] < 0) {
-					            $scoreClass = 'minus';
-					            $listInfo['score'] = $listInfo['score'] * -1;
-					        } else {
-					            $scoreClass = 'plus';
-					        }
-					        
-					        for($b = 0; $b <= $listInfo['score']; $b++) {
-								echo "<span class='$scoreClass'>&nbsp;</span>";
-							}
-							
-				        }
-				    ?>
+                        if ($pdfVersion) {
+                            echo "<b>{$listInfo['score']}</b>";
+                        } else {
+                            if ($listInfo['score'] < 0) {
+                                $scoreClass = 'minus';
+                                $listInfo['score'] = $listInfo['score'] * -1;
+                            } else {
+                                $scoreClass = 'plus';
+                            }
+                            
+                            for ($b = 0; $b <= $listInfo['score']; $b++) {
+                                echo "<span class='$scoreClass'>&nbsp;</span>";
+                            }
+                        }
+            ?>
 				</td>
 				<td class="td_br_right">
-				    <?php echo $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No']; ?>
+				    <?php echo $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
+            ?>
 				</td>
-				<?php if (empty($pdfVersion) && empty($printVersion)) {?>
+				<?php if (empty($pdfVersion) && empty($printVersion)) {
+    ?>
 					<td class="<?php echo $rightBotClass?>">
 					    <select style="width: 80px;" name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('siteauditor.php', 'subcontent', 'report_id=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&order_col=<?php echo $orderCol?>&order_val=<?php echo $orderVal?>', 'action<?php echo $listInfo['id']?>')">
 							<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
@@ -116,23 +118,27 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<option value="deletepage"><?php echo $spText['common']['Delete']?></option>
 						</select>
 					</td>
-				<?php }?>
+				<?php 
+}
+            ?>
 			</tr>
 			<?php
-		}
-	}else{	 
-		echo showNoRecordsList($colCount-2, '', true);		
-	} 
-	?>
+
+        }
+    } else {
+        echo showNoRecordsList($colCount-2, '', true);
+    }
+    ?>
 	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
+		<td class="left" colspan="<?php echo($colCount-1)?>"></td>
 		<td class="right"></td>
 	</tr>
 </table>
 <?php
-if(!empty($printVersion) || !empty($pdfVersion)) {
-	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
-} else if(empty($printVersion)) {?>
+if (!empty($printVersion) || !empty($pdfVersion)) {
+    echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
+} elseif (empty($printVersion)) {
+    ?>
     <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
     	<tr>
         	<td style="padding-top: 6px;">
@@ -142,4 +148,5 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
         	</td>
     	</tr>
     </table>
-<?php } ?>
+<?php 
+} ?>
