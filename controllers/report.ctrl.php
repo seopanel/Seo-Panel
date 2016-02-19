@@ -603,6 +603,11 @@ class ReportController extends Controller {
 		if(empty($websiteUrl)) return $crawlResult;
 		if(empty($keywordInfo['name'])) return $crawlResult;
 
+		//Match http or https by removing protocol
+    if(preg_match('/^http/i', $websiteUrl)) {
+    	$websiteUrl = parse_url($websiteUrl, PHP_URL_HOST);
+    }
+								
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$seList = explode(':', $keywordInfo['searchengines']);
 		foreach($seList as $seInfoId){
