@@ -698,7 +698,7 @@ class ReportController extends Controller {
 						// check to remove duplicates from same domain if google is the search engine
 						if ($removeDuplicate && $isGoogle) {
 						    $currentDomain = parse_url($url, PHP_URL_HOST);
-						    if ($previousDomain == $currentDomain) {
+						    if ($previousDomain == $currentDomain && $currentDomain == $websiteUrl) {
 						        continue;
 						    }
 						    $previousDomain = $currentDomain;
