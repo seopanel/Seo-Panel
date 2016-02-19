@@ -29,22 +29,22 @@ class ReportController extends Controller {
 	# func to get keyword report summary
 	function __getKeywordSearchReport($keywordId, $fromTime, $toTime, $apiCall = false){
 		$positionInfo = array();
-		
+
 		if(empty($this->seLIst)){
 			$seController = New SearchEngineController();
 			$this->seLIst = $seController->__getAllSearchEngines();
 		}
-		
+
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		foreach($this->seLIst as $seInfo){
-			$sql = "select min(rank) as rank from searchresults 
+			$sql = "select min(rank) as rank from searchresults
 			where keyword_id=$keywordId and searchengine_id=".$seInfo['id']."
 			and (result_date='$fromTimeLabel' or result_date='$toTimeLabel')
 			group by result_date order by result_date DESC limit 0, 2";
 			$reportList = $this->db->select($sql);
 			$reportList = array_reverse($reportList);
-			
+
 			$prevRank = 0;
 			$i = 0;
 			foreach ($reportList as $key => $repInfo) {
@@ -61,34 +61,34 @@ class ReportController extends Controller {
 				$positionInfo[$seInfo['id']]['rank'] = $repInfo['rank'];
 				$prevRank = $repInfo['rank'];
 				$i++;
-			}			
+			}
 		}
-				
+
 		return $positionInfo;
 	}
-	
+
 
 	# func to show keyword report summary
 	function showKeywordReportSummary($searchInfo = '') {
-		
+
 		$userId = isLoggedIn();
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
-						
+
 			case "export":
 				$exportVersion = true;
 				$exportContent = "";
 				break;
-			
+
 			case "pdf":
 				$this->set('pdfVersion', true);
 				break;
-			
+
 			case "print":
 				$this->set('printVersion', true);
 				break;
 		}
-		
+
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 		} else {
@@ -99,71 +99,71 @@ class ReportController extends Controller {
 		} else {
 			$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		}
-		
+
 		$fromTimeTxt = date('Y-m-d', $fromTime);
 		$toTimeTxt = date('Y-m-d', $toTime);
 		$this->set('fromTime', $fromTimeTxt);
 		$this->set('toTime', $toTimeTxt);
-		
+
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsitesWithActiveKeywords($userId, true);
 		$this->set('websiteList', $websiteList);
 		$websiteId = isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id'];
 		$websiteId = intval($websiteId);
 		$this->set('websiteId', $websiteId);
-		
+
 		$websiteUrl = "";
 		foreach ($websiteList as $websiteInfo) {
 		    if ($websiteInfo['id'] == $websiteId) {
 		        $websiteUrl = $websiteInfo['url'];
-		        break;    
+		        break;
 		    }
 		}
 		$this->set('websiteUrl', $websiteUrl);
-		
+
 		$seController = New SearchEngineController();
 		$this->seLIst = $seController->__getAllSearchEngines();
 		$this->set('seList', $this->seLIst);
-		
+
 		// to find order col
         if (!empty($searchInfo['order_col'])) {
 		    $orderCol = $searchInfo['order_col'];
 		    $orderVal = $searchInfo['order_val'];
 		} else {
 		    $orderCol = $this->seLIst[0]['id'];
-		    $orderVal = 'ASC';    
+		    $orderVal = 'ASC';
 		}
-		
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptPath = SP_WEBPATH."/reports.php?sec=reportsum&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTimeTxt&to_time=$toTimeTxt&search_name=" . $searchInfo['search_name'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal";
 		$keywordController = New KeywordController();
-		
+
 		if (in_array($searchInfo['doc_type'], array("pdf", "export"))) {
 			$list = $keywordController->__getAllKeywords($userId, $websiteId, true, true, $orderVal, $searchInfo['search_name']);
 		} else {
-			
+
 			$conditions = " and w.status=1 and k.status=1";
 			$conditions .= isAdmin() ? "" : " and w.user_id=$userId";
 			$conditions .= !empty($websiteId) ? " and w.id=$websiteId" : "";
 			$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
-						
-			$subSql = "select [col] from keywords k,searchresults r, websites w 
+
+			$subSql = "select [col] from keywords k,searchresults r, websites w
 			where k.id=r.keyword_id and k.website_id=w.id $conditions
 			and r.searchengine_id=".intval($orderCol)." and r.result_date='" . addslashes($toTimeTxt) . "'
 			group by k.id";
 
 			$unionOrderCol = ($orderCol == "keyword") ? "name" : "rank";
-			$sql = "(". str_replace("[col]", "k.id,k.name,min(rank) rank,w.name website,w.url weburl", $subSql) .") 
-			UNION 
-			(select k.id,k.name,1000,w.name website,w.url weburl 
-			from keywords k, websites w  
+			$sql = "(". str_replace("[col]", "k.id,k.name,min(rank) rank,w.name website,w.url weburl", $subSql) .")
+			UNION
+			(select k.id,k.name,1000,w.name website,w.url weburl
+			from keywords k, websites w
 			where w.id=k.website_id $conditions and k.id not in
 			(". str_replace("[col]", "distinct(k.id)", $subSql) ."))
 			order by $unionOrderCol $orderVal";
-			
+
 			# pagination setup
 			$this->db->query($sql, true);
 			$this->paging->setDivClass('pagingdiv');
@@ -171,25 +171,25 @@ class ReportController extends Controller {
 			$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
 			$this->set('pagingDiv', $pagingDiv);
 			$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-				
+
 			# set keywords list
 			$list = $this->db->select($sql);
-			
+
 		}
-				
+
 		$indexList = array();
 		foreach($list as $keywordInfo){
 			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime);
-			
+
 			// check whether the sorting search engine is there
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol]) ? 10000 : $positionInfo[$orderCol]['rank'];
-			
+
 			$keywordInfo['position_info'] = $positionInfo;
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
 		}
 
 		// sort array according the value
-		if ($orderCol != 'keyword') { 
+		if ($orderCol != 'keyword') {
     		if ($orderVal == 'DESC') {
     		    arsort($indexList);
     		} else {
@@ -219,22 +219,22 @@ class ReportController extends Controller {
 			}
 			exportToCsv('keyword_report_summary', $exportContent);
 		} else {
-			
+
 			$this->set('list', $keywordList);
-			
+
 			// if pdf export
 			if ($searchInfo['doc_type'] == "pdf") {
 				exportToPdf($this->getViewContent('report/reportsummary'), "keyword_report_summary_$fromTimeTxt-$toTimeTxt.pdf");
 			} else {
 				$this->set('searchInfo', $searchInfo);
 				$this->render('report/reportsummary');
-			}	
-		}		
+			}
+		}
 	}
-	
+
 	# func to show reports
 	function showReports($searchInfo = '') {
-		
+
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
@@ -246,15 +246,15 @@ class ReportController extends Controller {
 		} else {
 			$toTime = @mktime();
 		}
-		
+
 		$fromTimeDate = date('Y-m-d', $fromTime);
 		$toTimeDate = date('Y-m-d', $toTime);
 		$this->set('fromTime', $fromTimeDate);
 		$this->set('toTime', $toTimeDate);
-		
+
 		$keywordController = New KeywordController();
 		if(!empty($searchInfo['keyword_id']) && !empty($searchInfo['rep'])){
-			
+
 			$searchInfo['keyword_id'] = intval($searchInfo['keyword_id']);
 			$keywordInfo = $keywordController->__getKeywordInfo($searchInfo['keyword_id']);
 			$searchInfo['website_id'] = $keywordInfo['website_id'];
@@ -280,8 +280,8 @@ class ReportController extends Controller {
 
 		$conditions = empty ($keywordId) ? "" : " and s.keyword_id=$keywordId";
 		$conditions .= empty ($seId) ? "" : " and s.searchengine_id=$seId";
-		$sql = "select s.*,sd.url,sd.title,sd.description from searchresults s,searchresultdetails sd 
-		where s.id=sd.searchresult_id and result_date>='$fromTimeDate' and result_date<='$toTimeDate' $conditions  
+		$sql = "select s.*,sd.url,sd.title,sd.description from searchresults s,searchresultdetails sd
+		where s.id=sd.searchresult_id and result_date>='$fromTimeDate' and result_date<='$toTimeDate' $conditions
 		order by s.result_date";
 		$repList = $this->db->select($sql);
 
@@ -322,7 +322,7 @@ class ReportController extends Controller {
 
 	# func to show reports in a time
 	function showTimeReport($searchInfo = '') {
-		
+
 		$fromTime = addslashes($searchInfo['time']);
 		$toTime = $fromTime + (3600 * 24);
 		$keywordId = intval($searchInfo['keyId']);
@@ -332,11 +332,11 @@ class ReportController extends Controller {
 
 		$conditions = empty ($keywordId) ? "" : " and s.keyword_id=$keywordId";
 		$conditions .= empty ($seId) ? "" : " and s.searchengine_id=$seId";
-		
+
 		$fromTimeDate = date('Y-m-d', $fromTime);
 		$toTimeDate = date('Y-m-d', $toTime);
-		$sql = "select s.*,sd.url,sd.title,sd.description from searchresults s,searchresultdetails sd 
-		where s.id=sd.searchresult_id and result_date>='$fromTimeDate' and result_date<'$toTimeDate' $conditions  
+		$sql = "select s.*,sd.url,sd.title,sd.description from searchresults s,searchresultdetails sd
+		where s.id=sd.searchresult_id and result_date>='$fromTimeDate' and result_date<'$toTimeDate' $conditions
 		order by s.rank";
 		$reportList = $this->db->select($sql);
 		$this->set('list', $reportList);
@@ -344,12 +344,12 @@ class ReportController extends Controller {
 	}
 
 	# func to show graphical reports
-	function showGraphicalReports($searchInfo = '') {		
-		
+	function showGraphicalReports($searchInfo = '') {
+
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
-		} else {			
+		} else {
 			$fromTime = @mktime(0, 0, 0, date('m'), date('d') - 30, date('Y'));
 		}
 		if (!empty ($searchInfo['to_time'])) {
@@ -377,16 +377,16 @@ class ReportController extends Controller {
 		$this->set('seList', $seList);
 		$seId = empty ($searchInfo['se_id']) ? '' : intval($searchInfo['se_id']);
 		$this->set('seId', $seId);
-		$this->set('seNull', true);		
+		$this->set('seNull', true);
 		$this->set('graphUrl', "graphical-reports.php?sec=graph&fromTime=$fromTime&toTime=$toTime&keywordId=$keywordId&seId=$seId");
-		
+
 		$this->render('report/graphicalreport');
 	}
-	
+
 	# function to show an message in graph when no records exist
-	function showMessageAsImage($msg='', $width=700, $height=30, $red=233, $green=14, $blue=91) {	    
-		
-		$im = imagecreate($width, $height);		
+	function showMessageAsImage($msg='', $width=700, $height=30, $red=233, $green=14, $blue=91) {
+
+		$im = imagecreate($width, $height);
         $bgColor = imagecolorallocate($im, 245, 248, 250);
         $textColor = imagecolorallocate($im, 233, 14, 91);
 	    $fontFile = ($_SESSION['lang_code'] == 'ja') ? "fonts/M+1P+IPAG.ttf" : "fonts/tahoma.ttf";
@@ -398,15 +398,15 @@ class ReportController extends Controller {
 
 	# function to show graph
 	function showGraph($searchInfo = '') {
-		
+
 		$fromTimeDate = date('Y-m-d', $searchInfo['fromTime']);
 		$toTimeDate = date('Y-m-d', $searchInfo['toTime']);
 		$conditions = empty ($searchInfo['keywordId']) ? "" : " and s.keyword_id=".intval($searchInfo['keywordId']);
 		$conditions .= empty ($searchInfo['seId']) ? "" : " and s.searchengine_id=".intval($searchInfo['seId']);
-		$sql = "select s.*,se.domain from searchresults s,searchengines se  
+		$sql = "select s.*,se.domain from searchresults s,searchengines se
 		where s.searchengine_id=se.id and result_date>='$fromTimeDate' and result_date<='$toTimeDate'
 		$conditions order by s.result_date";
-		$repList = $this->db->select($sql);		
+		$repList = $this->db->select($sql);
 		$reportList = array ();
 		$seList = array();
 		foreach ($repList as $repInfo) {
@@ -417,14 +417,14 @@ class ReportController extends Controller {
 				if ($repInfo['rank'] < $reportList[$var]['rank']) {
 					$reportList[$var] = $repInfo;
 				}
-			}			
-			
+			}
+
 			if(empty($seList[$repInfo['searchengine_id']])){
 				$seList[$repInfo['searchengine_id']] = $repInfo['domain'];
 			}
 		}
-		asort($seList);	
-		
+		asort($seList);
+
 		$dataList = array();
 		$maxValue = 0;
 		foreach($reportList as $repInfo){
@@ -432,51 +432,51 @@ class ReportController extends Controller {
 			$dataList[$repInfo['result_date']][$seId] = $repInfo['rank'];
 			$maxValue = ($repInfo['rank'] > $maxValue) ? $repInfo['rank'] : $maxValue;
 		}
-		
+
 		// check whether the records are available for drawing graph
 		if(empty($dataList) || empty($maxValue)) {
 		    $kpText = ($_SESSION['lang_code'] == 'ja') ? $_SESSION['text']['common']['No Records Found']."!" : "No Records Found!";
-		    $this->showMessageAsImage($kpText);		    
+		    $this->showMessageAsImage($kpText);
 		}
-		
+
 		# Dataset definition
 		$dataSet = new pData;
 		foreach($dataList as $dataInfo){
-			$i = 1;	
+			$i = 1;
 			foreach($seList as $seId => $seVal){
 				$val = empty($dataInfo[$seId]) ? 0 : $dataInfo[$seId];
-				$dataSet->AddPoint($val, "Serie".$i++);				  
+				$dataSet->AddPoint($val, "Serie".$i++);
 			}
 		}
-		
+
 		$i = 1;
 		foreach($seList as $seDomain){
 			$dataSet->AddSerie("Serie$i");
 			$dataSet->SetSerieName($seDomain, "Serie$i");
 			$i++;
 		}
-		
+
 		$serieCount = count($seList) + 1;
 		$dataSet->AddPoint(array_keys($dataList), "Serie$serieCount");
 		$dataSet->SetAbsciseLabelSerie("Serie$serieCount");
-		
+
 		# if language is japanese
 		if ($_SESSION['lang_code'] == 'ja') {
-		    $fontFile = "fonts/M+1P+IPAG.ttf";		    
-		    $dataSet->SetXAxisName($_SESSION['text']['common']["Date"]);		
+		    $fontFile = "fonts/M+1P+IPAG.ttf";
+		    $dataSet->SetXAxisName($_SESSION['text']['common']["Date"]);
 		    $dataSet->SetYAxisName($_SESSION['text']['common']["Rank"]);
 		} else {
 	        $fontFile = "fonts/tahoma.ttf";
-		    $dataSet->SetXAxisName("Date");		
+		    $dataSet->SetXAxisName("Date");
 		    $dataSet->SetYAxisName("Rank");
 		}
 
 		/* commented to fix invalid date in graphical reports x axis issue */
-		// $dataSet->SetXAxisFormat("date");		
-		
+		// $dataSet->SetXAxisFormat("date");
+
 		# Initialise the graph
 		$chart = new pChart(720, 520);
-		$chart->setFixedScale($maxValue, 1);		
+		$chart->setFixedScale($maxValue, 1);
 		$chart->setFontProperties($fontFile, 8);
 		$chart->setGraphArea(85, 30, 670, 425);
 		$chart->drawFilledRoundedRectangle(7, 7, 713, 513, 5, 240, 240, 240);
@@ -486,14 +486,14 @@ class ReportController extends Controller {
 		$chart->drawScale($dataSet->GetData(), $dataSet->GetDataDescription(), SCALE_NORMAL, 150, 150, 150, TRUE, 90, 2);
 		$chart->drawGrid(4, TRUE, 230, 230, 230, 50);
 
-		# Draw the 0 line   
+		# Draw the 0 line
 		$chart->setFontProperties($fontFile, 6);
 		$chart->drawTreshold(0, 143, 55, 72, TRUE, TRUE);
 
 		# Draw the line graph
 		$chart->drawLineGraph($dataSet->GetData(), $dataSet->GetDataDescription());
 		$chart->drawPlotGraph($dataSet->GetData(), $dataSet->GetDataDescription(), 3, 2, 255, 255, 255);
-		
+
 		$j = 1;
 		$chart->setFontProperties($fontFile, 10);
 		foreach($seList as $seDomain){
@@ -504,14 +504,14 @@ class ReportController extends Controller {
 		$chart->setFontProperties("fonts/tahoma.ttf", 8);
 		$chart->drawLegend(90, 35, $dataSet->GetDataDescription(), 255, 255, 255);
 		$chart->setFontProperties($fontFile, 10);
-		$kpText = ($_SESSION['lang_code'] == 'ja') ? $this->spTextKeyword["Keyword Position Report"] : "Keyword Position Report"; 
+		$kpText = ($_SESSION['lang_code'] == 'ja') ? $this->spTextKeyword["Keyword Position Report"] : "Keyword Position Report";
 		$chart->drawTitle(60, 22, $kpText, 50, 50, 50, 585);
 		$chart->stroke();
 	}
-	
+
 	# func to show genearte reports interface
 	function showGenerateReports($searchInfo = '') {
-		
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
@@ -524,7 +524,7 @@ class ReportController extends Controller {
 		$this->set('keywordList', $keywordList);
 		$this->set('keyNull', true);
 		$keywordId = empty ($searchInfo['keyword_id']) ? '' : $searchInfo['keyword_id'];
-		$this->set('keywordId', $keywordId);		
+		$this->set('keywordId', $keywordId);
 
 		$seController = New SearchEngineController();
 		$seList = $seController->__getAllSearchEngines();
@@ -532,42 +532,42 @@ class ReportController extends Controller {
 		$seId = empty ($searchInfo['se_id']) ? '' : $searchInfo['se_id'];
 		$this->set('seId', $seId);
 		$this->set('seNull', true);
-		$this->set('seStyle', 170);		
-				
+		$this->set('seStyle', 170);
+
 		$this->render('report/generatereport');
 	}
-	
+
 	# func to generate reports
-	function generateReports( $searchInfo='' ) {		
+	function generateReports( $searchInfo='' ) {
 		$userId = isLoggedIn();
 		$keywordId = empty ($searchInfo['keyword_id']) ? '' : intval($searchInfo['keyword_id']);
 		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
 		$seId = empty ($searchInfo['se_id']) ? '' : intval($searchInfo['se_id']);
-		
+
 		$seController = New SearchEngineController();
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
-		
+
 		$sql = "select k.*,w.url from keywords k,websites w where k.website_id=w.id and k.status=1";
 		if(!empty($userId) && !isAdmin()) $sql .= " and w.user_id=$userId";
 		if(!empty($websiteId)) $sql .= " and k.website_id=$websiteId";
 		if(!empty($keywordId)) $sql .= " and k.id=$keywordId";
 		$sql .= " order by k.name";
-		$keywordList = $this->db->select($sql);		
-		
+		$keywordList = $this->db->select($sql);
+
 		if(count($keywordList) <= 0){
 			echo "<p class='note error'>".$_SESSION['text']['common']['No Keywords Found']."</p>";
 			exit;
 		}
-		
-		# loop through each keyword			
+
+		# loop through each keyword
 		foreach ( $keywordList as $keywordInfo ) {
 			$this->seFound = 0;
 			$crawlResult = $this->crawlKeyword($keywordInfo, $seId);
 			foreach($crawlResult as $sengineId => $matchList){
 				if($matchList['status']){
 					foreach($matchList['matched'] as $i => $matchInfo){
-						$remove = ($i == 0) ? true : false;						
-						$matchInfo['se_id'] = $sengineId;						
+						$remove = ($i == 0) ? true : false;
+						$matchInfo['se_id'] = $sengineId;
 						$matchInfo['keyword_id'] = $keywordInfo['id'];
 						$this->saveMatchedKeywordInfo($matchInfo, $remove);
 					}
@@ -580,9 +580,9 @@ class ReportController extends Controller {
 				echo "<p class='note notefailed'>".$_SESSION['text']['common']['Keyword']." <b>{$keywordInfo['name']}</b> ".$this->spTextKeyword['not assigned to required search engines']."........</p>";
 			}
 			sleep(SP_CRAWL_DELAY);
-		}	
+		}
 	}
-	
+
 	# function to format pagecontent
 	function formatPageContent($seInfoId, $pageContent) {
 	    if (!empty($this->seList[$seInfoId]['from_pattern']) && $this->seList[$seInfoId]['to_pattern']) {
@@ -593,33 +593,33 @@ class ReportController extends Controller {
 	            }
 	        }
 	    }
-	    return $pageContent;	    
+	    return $pageContent;
 	}
-	
+
 	# func to crawl keyword
 	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true) {
 		$crawlResult = array();
 		$websiteUrl = $keywordInfo['url'];
 		if(empty($websiteUrl)) return $crawlResult;
-		if(empty($keywordInfo['name'])) return $crawlResult;	
-		
+		if(empty($keywordInfo['name'])) return $crawlResult;
+
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$seList = explode(':', $keywordInfo['searchengines']);
 		foreach($seList as $seInfoId){
-			
+
 			// function to execute only passed search engine
 			if(!empty($seId) && ($seInfoId != $seId)) continue;
-			
+
 			// if search engine not found continue
 			if (empty($this->seList[$seInfoId])) continue;
-			
+
 			$this->seFound = 1;
-			
+
 			// if execution from cron check whether cron already executed
 			/*if ($cron) {
 			    if (SP_MULTIPLE_CRON_EXEC && $this->isCronExecuted($keywordInfo['id'], $seInfoId, $time)) continue;
-			}*/			
-			
+			}*/
+
 			$searchUrl = str_replace('[--keyword--]', urlencode(stripslashes($keywordInfo['name'])), $this->seList[$seInfoId]['url']);
 			$searchUrl = str_replace('[--lang--]', $keywordInfo['lang_code'], $searchUrl);
 			$searchUrl = str_replace('[--country--]', $keywordInfo['country_code'], $searchUrl);
@@ -627,27 +627,27 @@ class ReportController extends Controller {
 			    $searchUrl = str_replace('&cr=country&', '&cr=&', $searchUrl);
 			}
 			$seUrl = str_replace('[--start--]', $this->seList[$seInfoId]['start'], $searchUrl);
-			
+
 			// if google add special parameters
 			$isGoogle = false;
 			if (stristr($this->seList[$seInfoId]['url'], 'google')) {
 			    $isGoogle = true;
 			    $seUrl .= "&ie=utf-8&pws=0&gl=".$keywordInfo['country_code'];
 			}
-			
+
 			if(!empty($this->seList[$seInfoId]['cookie_send'])){
 				$this->seList[$seInfoId]['cookie_send'] = str_replace('[--lang--]', $keywordInfo['lang_code'], $this->seList[$seInfoId]['cookie_send']);
-				$this->spider->_CURLOPT_COOKIE = $this->seList[$seInfoId]['cookie_send'];				
+				$this->spider->_CURLOPT_COOKIE = $this->seList[$seInfoId]['cookie_send'];
 			}
-			
+
 			$result = $this->spider->getContent($seUrl);
-			$pageContent = $this->formatPageContent($seInfoId, $result['page']);			
+			$pageContent = $this->formatPageContent($seInfoId, $result['page']);
 
 			$crawlLogCtrl = new CrawlLogController();
 			$crawlInfo['crawl_type'] = 'keyword';
 			$crawlInfo['ref_id'] = empty($keywordInfo['id']) ? $keywordInfo['name'] : $keywordInfo['id'];
 			$crawlInfo['subject'] = $seInfoId;
-			
+
 			$seStart = $this->seList[$seInfoId]['start'] + $this->seList[$seInfoId]['start_offset'];
 			while(empty($result['error']) && ($seStart < $this->seList[$seInfoId]['max_results']) ){
 				$logId = $result['log_id'];
@@ -663,30 +663,30 @@ class ReportController extends Controller {
 			if(!empty($this->seList[$seInfoId]['encoding'])){
 				$pageContent = mb_convert_encoding($pageContent, "UTF-8", $this->seList[$seInfoId]['encoding']);
 			}
-			
+
 			$crawlStatus = 0;
 			if(empty($result['error'])){
-			    
+
 			    // to update cron that report executed for akeyword on a search engine
 			    if (SP_MULTIPLE_CRON_EXEC && $cron) $this->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
-			    
+
 			    if(preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches)){
-			    	
+
 					$urlList = $matches[$this->seList[$seInfoId]['url_index']];
 					$crawlResult[$seInfoId]['matched'] = array();
 					$rank = 1;
 					$previousDomain = "";
 					foreach($urlList as $i => $url){
 						$url = urldecode(strip_tags($url));
-						
+
 						// add special condition for baidu
 						if (stristr($this->seList[$seInfoId]['domain'], "baidu")) {
 							$url =  addHttpToUrl($url);
 							$url = str_replace("...", "", $url);
 						}
-						
+
 						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) continue;
-						
+
 						// check for to remove msn ad links in page
 						if(stristr($url, 'r.msn.com')) continue;
 
@@ -694,15 +694,15 @@ class ReportController extends Controller {
 						if ($removeDuplicate && $isGoogle) {
 						    $currentDomain = parse_url($url, PHP_URL_HOST);
 						    if ($previousDomain == $currentDomain) {
-						        continue;        
+						        continue;
 						    }
 						    $previousDomain = $currentDomain;
 						}
-						
+
 						if($this->showAll || stristr($url, $websiteUrl)){
 
 							if($this->showAll && stristr($url, $websiteUrl)){
-								$matchInfo['found'] = 1; 
+								$matchInfo['found'] = 1;
 							}else{
 								$matchInfo['found'] = 0;
 							}
@@ -712,56 +712,56 @@ class ReportController extends Controller {
 							$matchInfo['rank'] = $rank;
 							$crawlResult[$seInfoId]['matched'][] = $matchInfo;
 						}
-						$rank++;							
+						$rank++;
 					}
-					$crawlStatus = 1;					
-					
+					$crawlStatus = 1;
+
 				} else {
-					
+
 					// set crawl log info
 					$crawlInfo['crawl_status'] = 0;
 					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
-					
+
 					if(SP_DEBUG){
 						echo "<p class='note' style='text-align:left;'>Error occured while parsing $seUrl ".formatErrorMsg("Regex not matched <br>\n")."</p>";
 					}
-				}	
+				}
 			} else {
 				if (SP_DEBUG) {
 					echo "<p class='note' style='text-align:left;'>Error occured while crawling $seUrl ".formatErrorMsg($result['errmsg']."<br>\n")."</p>";
 				}
-			}			
-			$crawlResult[$seInfoId]['status'] = $crawlStatus;			
+			}
+			$crawlResult[$seInfoId]['status'] = $crawlStatus;
 			sleep(SP_CRAWL_DELAY);
-			
+
 			// update crawl log
 			$logId = $result['log_id'];
 			$crawlLogCtrl->updateCrawlLog($logId, $crawlInfo);
-			
+
 		}
-		
+
 		// if proxy enabled if crawl failed try to check next item
-		if (SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
-			
+		if (!$crawlResult[$seId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
+
 			// max proxy checked in one execution is exeeded
 			if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
-			
+
 				// if proxy is available for execution
 				$proxyCtrler = New ProxyController();
 				if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
 					$this->proxyCheckCount++;
 					sleep(SP_CRAWL_DELAY);
-					$crawlResult = $this->crawlKeyword($keywordInfo, $seId, $cron, $removeDuplicate);		
+					$crawlResult = $this->crawlKeyword($keywordInfo, $seId, $cron, $removeDuplicate);
 				}
-				
+
 			} else {
 				$this->proxyCheckCount = 1;
 			}
 		}
-		
+
 		return  $crawlResult;
 	}
-	
+
 	# func to save the report
 	function saveMatchedKeywordInfo($matchInfo, $remove=false) {
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
@@ -771,113 +771,113 @@ class ReportController extends Controller {
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
 			and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 			$recordList = $this->db->select($sql);
-		
+
 			if(count($recordList) > 0){
 				foreach($recordList as $recordInfo){
 					$sql = "delete from searchresultdetails where searchresult_id=".$recordInfo['id'];
 					$this->db->query($sql);
 				}
-				
+
 				$sql = "delete from searchresults where keyword_id={$matchInfo['keyword_id']}
 				and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 				$this->db->query($sql);
 			}
 		}
-		
+
 		$sql = "insert into searchresults(keyword_id,searchengine_id,rank,time,result_date)
 				values({$matchInfo['keyword_id']},{$matchInfo['se_id']},{$matchInfo['rank']},$time,'$resultDate')";
 		$this->db->query($sql);
-		
-		$recordId = $this->db->getMaxId('searchresults');		
+
+		$recordId = $this->db->getMaxId('searchresults');
 		$sql = "insert into searchresultdetails(searchresult_id,url,title,description)
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
-		$this->db->query($sql); 
+		$this->db->query($sql);
 	}
-	
+
 	# func to check keyword rank
 	function quickRankChecker() {
-		
+
 		$seController = New SearchEngineController();
 		$seList = $seController->__getAllSearchEngines();
 		$this->set('seList', $seList);
-		$this->set('seStyle', 230);		
+		$this->set('seStyle', 230);
 		$seId = empty ($searchInfo['se_id']) ? '' : $searchInfo['se_id'];
 		$this->set('seId', $seId);
-		
+
 		$langController = New LanguageController();
 		$this->set('langNull', true);
-		$this->set('langStyle', 230);			
+		$this->set('langStyle', 230);
 		$this->set('langList', $langController->__getAllLanguages());
-		
+
 		$countryController = New CountryController();
 		$this->set('countryList', $countryController->__getAllCountries());
-		$this->set('countryNull', true);		
+		$this->set('countryNull', true);
 		$this->set('countryStyle', 230);
-		
+
 		$this->render('report/quickrankchecker');
 	}
-	
+
 	# func to show quick rank report
 	function showQuickRankChecker($keywordInfo='') {
-		
+
 		$keywordInfo['searchengines'] = $keywordInfo['se_id'];
 		$this->showAll = $keywordInfo['show_all'];
-		
+
 		$seController = New SearchEngineController();
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
-		
+
 		$crawlResult = $this->crawlKeyword($keywordInfo);
-		
+
 		$resultList = array();
 		if(!empty($crawlResult[$keywordInfo['se_id']]['status'])){
 			$resultList = $crawlResult[$keywordInfo['se_id']]['matched'];
 		}
 		$this->set('list', $resultList);
-		
+
 		$this->render('report/showquickrankchecker');
 	}
-	
+
 	#function to save keyword cron trcker for multiple execution of cron same day
 	function saveCronTrackInfo($keywordId, $seId, $time) {
 	    $sql = "Insert into keywordcrontracker(keyword_id,searchengine_id,time) values($keywordId,$seId,$time)";
 	    $this->db->query($sql);
 	}
-	
+
 	# function to check whether cron executed for a particular keyword and search engine
 	function isCronExecuted($keywordId, $seId, $time) {
 	    $sql = "select keyword_id from keywordcrontracker where keyword_id=$keywordId and searchengine_id=$seId and time=$time";
         $info = $this->db->select($sql, true);
 	    return empty($info['keyword_id']) ? false : true;
 	}
-	
-    # function to show system reports 
+
+    # function to show system reports
 	function showOverallReportSummary($searchInfo='', $cronUserId=false) {
-			
+
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
         $this->set('spTextHome', $spTextHome);
         $this->set('cronUserId', $cronUserId);
-		
+
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
-			
+
 			case "export":
 				$exportVersion = true;
 				$exportContent = "";
 				break;
-			
+
 			case "pdf":
 				$this->set('pdfVersion', true);
 				break;
-			
+
 			case "print":
 				$this->set('printVersion', true);
 				break;
 		}
-		
+
 		$this->set('sectionHead', 'Overall Report Summary');
 		$userId = empty($cronUserId) ? isLoggedIn() : $cronUserId;
 		$isAdmin = isAdmin();
-		
+
 		$websiteCtrler = New WebsiteController();
 		$websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 		$this->set('siteList', $websiteList);
@@ -885,29 +885,29 @@ class ReportController extends Controller {
 		$websiteId = intval($websiteId);
 		$this->set('websiteId', $websiteId);
 		$urlarg = "website_id=$websiteId";
-		
+
 		$websiteUrl = "";
 		foreach ($websiteList as $websiteInfo) {
 		    if ($websiteInfo['id'] == $websiteId) {
 		        $websiteUrl = $websiteInfo['url'];
-		        break;    
+		        break;
 		    }
 		}
 		$this->set('websiteUrl', $websiteUrl);
-				
+
 		$reportTypes = array(
 			'keyword-position' => $this->spTextTools["Keyword Position Summary"],
 			'website-stats' => $spTextHome["Website Statistics"],
 		);
 		$this->set('reportTypes', $reportTypes);
 		$urlarg .= "&report_type=".$searchInfo['report_type'];
-		
+
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 		} else {
 			$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
 		}
-		
+
 		if (!empty ($searchInfo['to_time'])) {
 			$toTime = strtotime($searchInfo['to_time'] . ' 00:00:00');
 		} else {
@@ -916,50 +916,50 @@ class ReportController extends Controller {
 		$fromTimeShort = date('Y-m-d', $fromTime);
 		$this->set('fromTime', $fromTimeShort);
 		$toTimeShort = date('Y-m-d', $toTime);
-		$this->set('toTime', $toTimeShort);		
-		$urlarg .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];		
-		
+		$this->set('toTime', $toTimeShort);
+		$urlarg .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];
+
 		$seController = New SearchEngineController();
 		$this->seLIst = $seController->__getAllSearchEngines();
 		$this->set('seList', $this->seLIst);
-		
+
 		$this->set('isAdmin', $isAdmin);
 		$this->set('urlarg', $urlarg);
-		
+
 		$scriptPath = SP_WEBPATH."/archive.php?website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];
-		
+
 		# keyword position report section
 		if (empty($searchInfo['report_type']) ||  ($searchInfo['report_type'] == 'keyword-position')) {
-		    
+
 		    // to find order col
             if (!empty($searchInfo['order_col'])) {
     		    $orderCol = $searchInfo['order_col'];
     		    $orderVal = $searchInfo['order_val'];
     		} else {
     		    $orderCol = $this->seLIst[0]['id'];
-    		    $orderVal = 'ASC';    
+    		    $orderVal = 'ASC';
     		}
-    		
+
     		$this->set('orderCol', $orderCol);
     		$this->set('orderVal', $orderVal);
     		$keywordController = New KeywordController();
 			$scriptPath .= "&report_type=keyword-position&order_col=$orderCol&order_val=$orderVal";
-    		
+
     		if (in_array($searchInfo['doc_type'], array("pdf", "export")) || !empty($cronUserId)) {
     			$list = $keywordController->__getAllKeywords($userId, $websiteId, true, true, $orderVal, $searchInfo['search_name']);
     		} else {
-    				
+
     			$conditions = " and w.status=1 and k.status=1";
     			$conditions .= isAdmin() ? "" : " and w.user_id=$userId";
     			$conditions .= !empty($websiteId) ? " and w.id=$websiteId" : "";
     			$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
-    		
+
     			$subSql = "select [col] from keywords k,searchresults r, websites w
     			where k.id=r.keyword_id and k.website_id=w.id $conditions
     			and r.searchengine_id=".intval($orderCol)." and r.result_date='" . addslashes($toTimeShort) . "'
     			group by k.id";
-    		
+
     			$unionOrderCol = ($orderCol == "keyword") ? "name" : "rank";
 				$sql = "(". str_replace("[col]", "k.id,k.name,min(rank) rank,w.name website,w.url weburl", $subSql) .")
     			UNION
@@ -968,7 +968,7 @@ class ReportController extends Controller {
     			where w.id=k.website_id $conditions and k.id not in
     			(". str_replace("[col]", "distinct(k.id)", $subSql) ."))
     			order by $unionOrderCol $orderVal";
-    						
+
     			# pagination setup
     			$this->db->query($sql, true);
     			$this->paging->setDivClass('pagingdiv');
@@ -976,25 +976,25 @@ class ReportController extends Controller {
     			$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
     			$this->set('keywordPagingDiv', $pagingDiv);
     			$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-    		
+
     			# set keywords list
     			$list = $this->db->select($sql);
-    								
+
     		}
-    		
+
     		$indexList = array();
     		foreach($list as $keywordInfo){
     			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime);
-    			
+
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol]) ? 10000 : $positionInfo[$orderCol]['rank'];
-    			
+
     			$keywordInfo['position_info'] = $positionInfo;
     			$keywordList[$keywordInfo['id']] = $keywordInfo;
     		}
-    
+
     		// sort array according the value
-    		if ($orderCol != 'keyword') { 
+    		if ($orderCol != 'keyword') {
         		if ($orderVal == 'DESC') {
         		    arsort($indexList);
         		} else {
@@ -1002,7 +1002,7 @@ class ReportController extends Controller {
         		}
     		}
     		$this->set('indexList', $indexList);
-    
+
     		if ($exportVersion) {
     			$spText = $_SESSION['text'];
     			$reportHeading =  $this->spTextTools['Keyword Position Summary']."($fromTimeShort - $toTimeShort)";
@@ -1024,14 +1024,14 @@ class ReportController extends Controller {
     			}
     		} else {
 				$this->set('list', $keywordList);
-				$this->set('keywordPos', true);	
+				$this->set('keywordPos', true);
     		}
-			
+
 		}
-		
+
 		# website report section
 		if (empty($searchInfo['report_type']) ||  ($searchInfo['report_type'] == 'website-stats')) {
-						
+
 			// pagination setup
 			if (!in_array($searchInfo['doc_type'], array('export', 'pdf')) || !empty($cronUserId)) {
 				$scriptPath .= "&report_type=website-stats";
@@ -1039,13 +1039,13 @@ class ReportController extends Controller {
 				$sql = "select * from websites w where w.status=1";
 				$sql .= isAdmin() ? "" : " and w.user_id=$userId";
     			$sql .= !empty($websiteId) ? " and w.id=$websiteId" : "";
-				
+
 				// search for user name
 				if (!empty($searchInfo['search_name'])) {
 					$sql .= " and (w.name like '%".addslashes($searchInfo['search_name'])."%'
 					or w.url like '%".addslashes($searchInfo['search_name'])."%')";
 				}
-				
+
 				$sql .= " order by w.name";
 				$this->db->query($sql, true);
 				$this->paging->setDivClass('pagingdiv');
@@ -1056,59 +1056,59 @@ class ReportController extends Controller {
 				$this->set('pageNo', $info['pageno']);
 				$websiteList = $this->db->select($sql);
 			}
-		    
+
 		    include_once(SP_CTRLPATH."/saturationchecker.ctrl.php");
 			include_once(SP_CTRLPATH."/rank.ctrl.php");
 			include_once(SP_CTRLPATH."/backlink.ctrl.php");
 			include_once(SP_CTRLPATH."/directory.ctrl.php");
 			$rankCtrler = New RankController();
 			$backlinlCtrler = New BacklinkController();
-			$saturationCtrler = New SaturationCheckerController();			
+			$saturationCtrler = New SaturationCheckerController();
 			$dirCtrler = New DirectoryController();
-			
+
 			$websiteRankList = array();
 			foreach($websiteList as $listInfo){
-				
+
 			    // if only needs to show onewebsite selected
 			    if (!empty($websiteId) && ($listInfo['id'] != $websiteId)) continue;
-			    
+
 				# rank reports
 				$report = $rankCtrler->__getWebsiteRankReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
 				$listInfo['alexarank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank']." ".$report['rank_diff_alexa'];
 				$listInfo['googlerank'] = empty($report['google_pagerank']) ? "-" : $report['google_pagerank']." ".$report['rank_diff_google'];
-				
+
 				# back links reports
 				$report = $backlinlCtrler->__getWebsitebacklinkReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
 				$listInfo['google']['backlinks'] = empty($report['google']) ? "-" : $report['google']." ".$report['rank_diff_google'];
 				$listInfo['alexa']['backlinks'] = empty($report['alexa']) ? "-" : $report['alexa']." ".$report['rank_diff_alexa'];
 				$listInfo['msn']['backlinks'] = empty($report['msn']) ? "-" : $report['msn']." ".$report['rank_diff_msn'];
-				
+
 				# rank reports
 				$report = $saturationCtrler->__getWebsiteSaturationReport($listInfo['id'], $fromTime, $toTime);
-				$report = $report[0];				
+				$report = $report[0];
 				$listInfo['google']['indexed'] = empty($report['google']) ? "-" : $report['google']." ".$report['rank_diff_google'];
 				$listInfo['msn']['indexed'] = empty($report['msn']) ? "-" : $report['msn']." ".$report['rank_diff_msn'];
-				
+
 				$listInfo['dirsub']['total'] = $dirCtrler->__getTotalSubmitInfo($listInfo['id']);
 				$listInfo['dirsub']['active'] = $dirCtrler->__getTotalSubmitInfo($listInfo['id'], true);
 				$websiteRankList[] = $listInfo;
 			}
-			
+
 			// if export function called
 			if ($exportVersion) {
 				$exportContent .= createExportContent( array());
 				$exportContent .= createExportContent( array());
 				$exportContent .= createExportContent( array('', $spTextHome['Website Statistics']."($fromTimeShort - $toTimeShort)", ''));
-				
-				if ((isAdmin() && !empty($webUserId))) {				    
-				    $exportContent .= createExportContent( array());				    
+
+				if ((isAdmin() && !empty($webUserId))) {
+				    $exportContent .= createExportContent( array());
 				    $exportContent .= createExportContent( array());
 				    $userInfo = $userCtrler->__getUserInfo($webUserId);
 				    $exportContent .= createExportContent( array($_SESSION['text']['common']['User'], $userInfo['username']));
 				}
-				
+
 				$exportContent .= createExportContent( array());
 				$headList = array(
 					$_SESSION['text']['common']['Id'],
@@ -1133,29 +1133,29 @@ class ReportController extends Controller {
 						strip_tags($websiteInfo['google']['backlinks']),
 						strip_tags($websiteInfo['alexa']['backlinks']),
 						strip_tags($websiteInfo['msn']['backlinks']),
-						strip_tags($websiteInfo['google']['indexed']),					
+						strip_tags($websiteInfo['google']['indexed']),
 						strip_tags($websiteInfo['msn']['indexed']),
-						$websiteInfo['dirsub']['total'],					
+						$websiteInfo['dirsub']['total'],
 						$websiteInfo['dirsub']['active'],
 					);
 					$exportContent .= createExportContent( $valueList);
-				} 
-			}else {			
+				}
+			}else {
 				$this->set('websiteRankList', $websiteRankList);
 				$this->set('websiteStats', true);
 			}
 		}
-		
+
 		if ($exportVersion) {
 			exportToCsv('archived_report', $exportContent);
 		} else {
 			$this->set('searchInfo', $searchInfo);
-			
+
 			// if execution through cron job then just return the content to send through mail
 			if (!empty($cronUserId)) {
 			    return $this->getViewContent('report/archive');
 			} else {
-				
+
 				// if pdf export
 				if ($searchInfo['doc_type'] == "pdf") {
 					exportToPdf($this->getViewContent('report/archive'), "overall_summary_$fromTimeShort-$toTimeShort.pdf");
@@ -1163,15 +1163,15 @@ class ReportController extends Controller {
 			    	$this->render('report/archive');
 				}
 			}
-		}	
+		}
 	}
-	
+
     # func to get report settings data
 	function getUserReportSettings($userId) {
 		$userId = intval($userId);
 		$sql = "select * from reports_settings where user_id=$userId";
 		$repSetInfo = $this->db->select($sql, true);
-		
+
 		// if report settings are empty add default interval
 		if (empty($repSetInfo)) {
 		    $repSetInfo['user_id'] = $userId;
@@ -1182,68 +1182,68 @@ class ReportController extends Controller {
 		    $this->createUserReportSettings($repSetInfo);
 		    $repSetInfo['id'] = $this->db->getMaxId('reports_settings');
 		}
-		
+
 		return $repSetInfo;
 	}
-	
+
 	# func to insert report settings
 	function createUserReportSettings($setInfo) {
-		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,last_generated) 
+		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,last_generated)
 				values({$setInfo['user_id']},{$setInfo['report_interval']},{$setInfo['email_notification']},'{$setInfo['last_generated']}')";
 		$this->db->query($sql);
 	}
-	
+
 	# func to update user report generate interval
 	function updateUserReportSetting($userId, $col, $val) {
 		$sql = "Update reports_settings set $col='".addslashes($val)."' where user_id=$userId";
 		$this->db->query($sql);
-	}	
-	
+	}
+
 	# func to schedule reports
 	function showReportsScheduler($success=false, $postInfo='') {
 		$userId = isLoggedIn();
-		
+
 		if (isAdmin()) {
-		    $userId = empty($postInfo['user_id']) ? $userId : $postInfo['user_id'];		    
+		    $userId = empty($postInfo['user_id']) ? $userId : $postInfo['user_id'];
 		}
-		
+
 		$repSetInfo = $this->getUserReportSettings($userId);
 		$this->set('repSetInfo', $repSetInfo);
-		
-		$reportInterval = !isset($postInfo['report_interval']) ? $repSetInfo['report_interval'] : $postInfo['report_interval'];		
+
+		$reportInterval = !isset($postInfo['report_interval']) ? $repSetInfo['report_interval'] : $postInfo['report_interval'];
 		$this->set('reportInterval', $reportInterval);
 		if ($reportInterval == 30) {
 		    $nextGenTime = mktime(0, 0, 0, date('m') + 1, 1, date('Y'));
 		} else {
-		    $nextGenTime = $repSetInfo['last_generated'] + ( $repSetInfo['report_interval'] * 86400);    
-		}		
+		    $nextGenTime = $repSetInfo['last_generated'] + ( $repSetInfo['report_interval'] * 86400);
+		}
 		$this->set('nextReportTime', date('d M Y', $nextGenTime));
-		
+
 		$scheduleList = array(
 			1 => $_SESSION['text']['label']['Daily'],
 			2 => $this->spTextReport['2 Days'],
 			7 => $_SESSION['text']['label']['Weekly'],
 			30 => $_SESSION['text']['label']['Monthly'],
-		);	
-		
+		);
+
 		$userCtrler = New UserController();
 		$userList = $userCtrler->__getAllUsers();
-		$this->set('userList', $userList);    
-		
+		$this->set('userList', $userList);
+
 		$this->set('success', $success);
-		$this->set('scheduleList', $scheduleList);		
+		$this->set('scheduleList', $scheduleList);
 		$this->render('report/reportscheduler');
 	}
-	
+
 	# func to save Report Schedule
-	function saveReportSchedule($info) {	    
-		$userId = isAdmin() ? $info['user_id'] : isLoggedIn();		
+	function saveReportSchedule($info) {
+		$userId = isAdmin() ? $info['user_id'] : isLoggedIn();
 		$repSetInfo = $this->getUserReportSettings($userId);
 	    $this->updateUserReportSetting($userId, 'report_interval', $info['report_interval']);
 	    $this->updateUserReportSetting($userId, 'email_notification', $info['email_notification']);
 	    $this->showReportsScheduler(true, $info);
 	}
-	
+
 	# func to check whether report can be generated for user
 	function isGenerateReportsForUser($userId) {
 		$genReport = false;
@@ -1255,19 +1255,19 @@ class ReportController extends Controller {
     		    // if monthly interval generate on first of each month
     		    if ($repSetInfo['report_interval'] == 30) {
     		        $genReport = (date('d') == 1) ? true : false;
-    		    } else {		    
+    		    } else {
         			$nextGenTime = $lastGeneratedTime + ( $repSetInfo['report_interval'] * 86400);
         			$genReport = (mktime() > $nextGenTime) ? true : false;
-    		    }    
-		    }		    
+    		    }
+		    }
 		}
-		$repSetInfo['generate_report'] = $genReport; 
+		$repSetInfo['generate_report'] = $genReport;
 		return $repSetInfo;
 	}
-		
+
 	# function to sent Email Notification For ReportGeneration
 	function sentEmailNotificationForReportGen($userInfo, $fromTime, $toTime) {
-	    
+
 	    $searchInfo = array(
     	    'website_id' => 0,
             'report_type' => '',
@@ -1279,22 +1279,22 @@ class ReportController extends Controller {
         );
         $reportContent = $this->showOverallReportSummary($searchInfo, $userInfo['id']);
         $this->set('reportContent', $reportContent);
-        
+
         $reportTexts = $this->getLanguageTexts('reports', $userInfo['lang_code']);
         $this->set('reportTexts', $reportTexts);
         $this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
         $this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
-	    
+
 		$name = $userInfo['first_name'].' '.$userInfo['last_name'];
 		$this->set('name', $name);
 		$subject = $reportTexts['report_email_subject'];
 		$content = $this->getViewContent('email/emailnotificationreportgen');
-		
+
 		$userController =  New UserController();
 		$adminInfo = $userController->__getAdminInfo();
 		$adminName = $adminInfo['first_name']."-".$adminInfo['last_name'];
 		$this->set('adminName', $adminName);
-		
+
 		if (!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)) {
 			echo 'An internal error occured while sending mail!';
 		} else {
