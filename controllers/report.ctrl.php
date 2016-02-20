@@ -620,6 +620,8 @@ class ReportController extends Controller {
 
 			$this->seFound = 1;
 
+			$seId = $seInfoId;
+
 			// if execution from cron check whether cron already executed
 			/*if ($cron) {
 			    if (SP_MULTIPLE_CRON_EXEC && $this->isCronExecuted($keywordInfo['id'], $seInfoId, $time)) continue;
@@ -1257,7 +1259,7 @@ class ReportController extends Controller {
 		$repSetInfo = $this->getUserReportSettings($userId);
 		if ($repSetInfo['report_interval'] > 0) {
 		    $lastGeneratedTime = $repSetInfo['last_generated'];
-		    $currentDateTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+		    $currentDateTime = time();
 		    if ($lastGeneratedTime < $currentDateTime) {
     		    // if monthly interval generate on first of each month
     		    if ($repSetInfo['report_interval'] == 30) {
