@@ -28,6 +28,7 @@ class Spider{
 	var $_CURL_RESOURCE = null;
 	var $_CURLOPT_FAILONERROR = false;
 	var $_CURLOPT_FOLLOWLOCATION = true;
+	var $_CURLOPT_MAXREDIRS = 5; //Don't get caught in redirect loop
 	var $_CURLOPT_RETURNTRANSFER = true;
 	var $_CURLOPT_TIMEOUT = 15;
 	var $_CURLOPT_POST = true;
@@ -97,7 +98,7 @@ class Spider{
     # func to get backlink page info
 	function getPageInfo($url, $domainUrl, $returnUrls=false){
 
-	    $urlWithTrailingSlash = Spider::addTrailingSlash($url);
+	  $urlWithTrailingSlash = Spider::addTrailingSlash($url);
 		$ret = $this->getContent($urlWithTrailingSlash);
 		$pageInfo = array();
 		$checkUrl = formatUrl($domainUrl);
@@ -263,6 +264,7 @@ class Spider{
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_URL , $url );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FAILONERROR , $this -> _CURLOPT_FAILONERROR );
 		@curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FOLLOWLOCATION , $this -> _CURLOPT_FOLLOWLOCATION );
+		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_MAXREDIRS , $this -> _CURLOPT_MAXREDIRS );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_RETURNTRANSFER , $this -> _CURLOPT_RETURNTRANSFER );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_TIMEOUT , $this -> _CURLOPT_TIMEOUT );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEJAR , $this -> _CURLOPT_COOKIEJAR );
@@ -404,7 +406,7 @@ class Spider{
 	}
 
 	// function to get the header of url
-    function getHeader($url){
+  function getHeader($url){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -431,5 +433,6 @@ class Spider{
 	        return false;
 	    }
 	}
+
 }
 ?>
