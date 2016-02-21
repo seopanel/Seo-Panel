@@ -28,7 +28,7 @@ class Spider{
 	var $_CURL_RESOURCE = null;
 	var $_CURLOPT_FAILONERROR = false;
 	var $_CURLOPT_FOLLOWLOCATION = true;
-	var $_CURLOPT_MAXREDIRS = 4; //Don't get caught in redirect loop
+	var $_CURLOPT_MAXREDIRS = 5; //Don't get caught in redirect loop
 	var $_CURLOPT_RETURNTRANSFER = true;
 	var $_CURLOPT_TIMEOUT = 15;
 	var $_CURLOPT_POST = true;
@@ -406,16 +406,14 @@ class Spider{
 	}
 
 	// function to get the header of url
-  function getHeader($url, $followRedirects = true){
+  function getHeader($url){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
 		curl_setopt($ch, CURLOPT_USERAGENT, SP_USER_AGENT);
-		if($followRedirects){
-			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		}
-		curl_setopt($ch, CURLOPT_MAXREDIRS, $this -> _CURLOPT_MAXREDIRS);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+		curl_setopt($ch, CURLOPT_MAXREDIRS, 4);
 
 		// Only calling the head
 		curl_setopt($ch, CURLOPT_HEADER, true); // header will be at output
@@ -438,8 +436,7 @@ class Spider{
 
 	// function to check whether link is a redirect
 	function isLinkRedirect($url) {
-			$followRedirects = false; //don't follow with cURL as we need that info.
-			$header = $this->getHeader($url, $followRedirects);
+			$header = $this->getHeader($url);
 			if (stristr($header, '301 Moved Permanently') || stristr($header, '308 Permanent Redirect')) {
 					return true;
 			} else {
