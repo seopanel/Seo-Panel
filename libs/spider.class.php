@@ -43,6 +43,7 @@ class Spider{
 	var $_CURLOPT_HEADER = 0;
 	var $_CURL_HTTPHEADER = array();
 	var $userAgentList = array();
+	var $effectiveUrl = null;
 
 	# spider constructor
 	function Spider()	{
@@ -129,7 +130,7 @@ class Spider{
 			// loop through matches
 			for($i=0; $i < count($matches[1]); $i++){
 
-				// check links foudn valid or not
+				// check links found valid or not
 				$href = $this->__getTagParam("href",$matches[1][$i]);
 				if ( !empty($href) || !empty($matches[2][$i])) {
 
@@ -318,12 +319,14 @@ class Spider{
 		$ret['error'] = curl_errno( $this -> _CURL_RESOURCE );
 		$ret['errmsg'] = curl_error( $this -> _CURL_RESOURCE );
 
+		$this->effectiveUrl = curl_getinfo($this -> _CURL_RESOURCE, CURLINFO_EFFECTIVE_URL);
+
 		// update crawl log in database for future reference
 		if ($logCrawl) {
 			$crawlLogCtrl = new CrawlLogController();
 			$crawlInfo['crawl_status'] = $ret['error'] ? 0 : 1;
 			$crawlInfo['crawl_type'] = 'raw crawl';
-			$crawlInfo['ref_id'] = $crawlInfo['crawl_link'] = addslashes($url);
+			$crawlInfo['ref_id'] = $crawlInfo['crawl_link'] = addslashes($this->effectiveUrl);
 			$crawlInfo['crawl_referer'] = addslashes($this-> _CURLOPT_REFERER);
 			$crawlInfo['crawl_cookie'] = addslashes($this -> _CURLOPT_COOKIE);
 			$crawlInfo['crawl_post_fields'] = addslashes($this -> _CURLOPT_POSTFIELDS);

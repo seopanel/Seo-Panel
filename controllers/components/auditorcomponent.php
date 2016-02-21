@@ -49,6 +49,9 @@ class AuditorComponent extends Controller{
     function runReport($reportUrl, $projectInfo, $totalLinks) {
         $spider = new Spider();
         $pageInfo = $spider->getPageInfo($reportUrl, $projectInfo['url'], true);
+        if(!empty($spider->effectiveUrl)){
+          $reportUrl = $spider->effectiveUrl;
+        }
 
         if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
 
