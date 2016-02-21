@@ -172,18 +172,18 @@ class Spider{
     				    // if details of urls to be checked
     				    if($returnUrls){
     				        $linkInfo['link_url'] = $href;
-    						if(stristr($matches[2][$i], '<img')) {
-    							$linkInfo['link_anchor'] = $this->__getTagParam("alt", $matches[2][$i]);
-    						} else {
-    							$linkInfo['link_anchor'] = strip_tags($matches[2][$i]);
-    						}
-    						$linkInfo['nofollow'] = stristr($matches[1][$i], 'nofollow') ? 1 : 0;
-    						$linkInfo['link_title'] = $this->__getTagParam("title", $matches[1][$i]);
-    						if ($external) {
-    						    $pageInfo['external_links'][] = $linkInfo;
-    						} else {
-    						    $pageInfo['site_links'][] = $linkInfo;
-    						}
+		    						if(stristr($matches[2][$i], '<img')) {
+		    							$linkInfo['link_anchor'] = $this->__getTagParam("alt", $matches[2][$i]);
+		    						} else {
+		    							$linkInfo['link_anchor'] = strip_tags($matches[2][$i]);
+		    						}
+		    						$linkInfo['nofollow'] = stristr($matches[1][$i], 'nofollow') ? 1 : 0;
+		    						$linkInfo['link_title'] = $this->__getTagParam("title", $matches[1][$i]);
+		    						if ($external) {
+		    						    $pageInfo['external_links'][] = $linkInfo;
+		    						} else {
+		    						    $pageInfo['site_links'][] = $linkInfo;
+		    						}
     				    }
 
     				}
@@ -424,7 +424,7 @@ class Spider{
 		return $content;
 	}
 
-	// function to check whether link is brocke
+	// function to check whether link is broken
 	function isLInkBrocken($url) {
 	    $header = Spider::getHeader($url);
 	    if (stristr($header, '404 Not Found')) {
