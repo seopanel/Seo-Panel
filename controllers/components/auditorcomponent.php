@@ -92,7 +92,7 @@ class AuditorComponent extends Controller{
             $i = 0;
             if (count($pageInfo['site_links']) > 0) {
 
-            	// loo through site links
+            	// loop through site links
                 foreach ($pageInfo['site_links'] as $linkInfo) {
                     // if store links
                     if ($projectInfo['store_links_in_page']) {
