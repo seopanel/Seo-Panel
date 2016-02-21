@@ -116,10 +116,10 @@ class AuditorComponent extends Controller{
 
                         // save links for the project report
                         if (!$this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='{$linkInfo['link_url']}'")) {
-        		            $repInfo['page_url'] = $linkInfo['link_url'];
-        		            $repInfo['project_id'] = $projectInfo['id'];
-        		            $this->saveReportInfo($repInfo);
-        		            $totalLinks++;
+            		            $repInfo['page_url'] = $linkInfo['link_url'];
+            		            $repInfo['project_id'] = $projectInfo['id'];
+            		            $this->saveReportInfo($repInfo);
+            		            $totalLinks++;
                         }
                     }
                 }
