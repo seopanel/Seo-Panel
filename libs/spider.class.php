@@ -434,15 +434,5 @@ class Spider{
 	    }
 	}
 
-	// function to check whether link is a redirect
-	function isLinkRedirect($url) {
-			$header = Spider::getHeader($url);
-			if (stristr($header, '301 Moved Permanently') || stristr($header, '308 Permanent Redirect')) {
-					return true;
-			} else {
-					return false;
-			}
-	}
-
 }
 ?>
