@@ -147,10 +147,10 @@ class AuditorComponent extends Controller{
 
     // function to get report info
     function getReportInfo($where) {
-	    $sql = "SELECT * FROM auditorreports where 1=1 $where";
-		$listInfo = $this->db->select($sql, true);
-		return empty($listInfo['id']) ? false : $listInfo;
-	}
+    	  $sql = "SELECT * FROM auditorreports where 1=1 $where";
+    		$listInfo = $this->db->select($sql, true);
+    		return empty($listInfo['id']) ? false : $listInfo;
+	  }
 
     // function to store link of page
     function storePagelLinks($linkInfo, $delete=false) {
