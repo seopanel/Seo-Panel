@@ -53,7 +53,7 @@ class AuditorComponent extends Controller{
         if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
 
             if(!empty($spider->effectiveUrl)) {
-                $effectiveUrl = $spider->effectiveUrl;
+                $effectiveUrl = rtrim($spider->effectiveUrl, '/'); //remove trailing slash
                 $reportId = $rInfo['id'];
 
                 if ($effectiveUrl != $reportUrl){ //redirect occurred
