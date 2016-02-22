@@ -620,8 +620,6 @@ class ReportController extends Controller {
 
 			$this->seFound = 1;
 
-			$seId = $seInfoId;
-
 			// if execution from cron check whether cron already executed
 			/*if ($cron) {
 			    if (SP_MULTIPLE_CRON_EXEC && $this->isCronExecuted($keywordInfo['id'], $seInfoId, $time)) continue;
@@ -747,24 +745,23 @@ class ReportController extends Controller {
 			$logId = $result['log_id'];
 			$crawlLogCtrl->updateCrawlLog($logId, $crawlInfo);
 
-		}
+			// if proxy enabled if crawl failed try to check next item
+			if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
 
-		// if proxy enabled if crawl failed try to check next item
-		if (!$crawlResult[$seId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
+				// max proxy checked in one execution is exeeded
+				if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
 
-			// max proxy checked in one execution is exeeded
-			if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
+					// if proxy is available for execution
+					$proxyCtrler = New ProxyController();
+					if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
+						$this->proxyCheckCount++;
+						sleep(SP_CRAWL_DELAY);
+						$crawlResult = $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate);
+					}
 
-				// if proxy is available for execution
-				$proxyCtrler = New ProxyController();
-				if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
-					$this->proxyCheckCount++;
-					sleep(SP_CRAWL_DELAY);
-					$crawlResult = $this->crawlKeyword($keywordInfo, $seId, $cron, $removeDuplicate);
+				} else {
+					$this->proxyCheckCount = 1;
 				}
-
-			} else {
-				$this->proxyCheckCount = 1;
 			}
 		}
 
