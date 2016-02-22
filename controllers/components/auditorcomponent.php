@@ -52,31 +52,30 @@ class AuditorComponent extends Controller{
 
         if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
 
+            // handle redirects
             if(!empty($spider->effectiveUrl)) {
                 $effectiveUrl = rtrim($spider->effectiveUrl, '/'); //remove trailing slash
                 $reportId = $rInfo['id'];
 
                 if ($effectiveUrl != $reportUrl){ //redirect occurred
-                  if (stristr($effectiveUrl, $projectInfo['url'])) { //still on same domain
-                      //check if we already have an entry for the effective URL
-                      if ($rInfoForEffectiveUrl = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$effectiveUrl'")){
-                        $sql = "delete from auditorreports where id=$reportId";
-                        $this->db->query($sql);
-                        return "Redirected to existing URL";
-                      }
-                      else{ //if we don't already have an entry, update this one
-                        $sql = "update auditorreports set page_url=$effectiveUrl where id=$reportId";
-                        $this->db->query($sql);
-                        $reportUrl = $effectiveUrl;
-                      }
-                  }
-                  else { //external link -- delete it from report
-                    $sql = "delete from auditorreports where id=$reportId";
-                    $this->db->query($sql);
-                    return false;
-                  }
+                    if (stristr($effectiveUrl, $projectInfo['url'])) { //still on same domain
+                        // check if we already have an entry for the effective URL
+                        if ($rInfoForEffectiveUrl = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$effectiveUrl'")) {
+                          $this->db->query("delete from auditorreports where id=$reportId");
+                          return "Redirected to existing URL";
+                        }
+                        else { // otherwise update current entry with correct URL
+                          $sql = "update auditorreports set page_url=$effectiveUrl where id=$reportId";
+                          $this->db->query($sql);
+                          $reportUrl = $effectiveUrl;
+                        }
+                    }
+                    else { // external link -- delete it from report
+                      $sql = "delete from auditorreports where id=$reportId";
+                      $this->db->query($sql);
+                      return false;
+                    }
                 }
-
             }
 
             $reportInfo['id'] = $rInfo['id'];
