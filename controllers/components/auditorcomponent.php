@@ -49,11 +49,35 @@ class AuditorComponent extends Controller{
     function runReport($reportUrl, $projectInfo, $totalLinks) {
         $spider = new Spider();
         $pageInfo = $spider->getPageInfo($reportUrl, $projectInfo['url'], true);
-        if(!empty($spider->effectiveUrl)){
-          $reportUrl = $spider->effectiveUrl;
-        }
 
         if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
+
+            if(!empty($spider->effectiveUrl)) {
+                $effectiveUrl = $spider->effectiveUrl;
+                $reportId = $rInfo['id'];
+
+                if ($effectiveUrl != $reportUrl){ //redirect occurred
+                  if (stristr($effectiveUrl, $projectInfo['url'])) { //still on same domain
+                      //check if we already have an entry for the effective URL
+                      if ($rInfoForEffectiveUrl = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$effectiveUrl'")){
+                        $sql = "delete from auditorreports where id=$reportId";
+                        $this->db->query($sql);
+                        return "Redirected to existing URL";
+                      }
+                      else{ //if we don't already have an entry, update this one
+                        $sql = "update auditorreports set page_url=$effectiveUrl where id=$reportId";
+                        $this->db->query($sql);
+                        $reportUrl = $effectiveUrl;
+                      }
+                  }
+                  else { //external link -- delete it from report
+                    $sql = "delete from auditorreports where id=$reportId";
+                    $this->db->query($sql);
+                    return false;
+                  }
+                }
+
+            }
 
             $reportInfo['id'] = $rInfo['id'];
             $reportInfo['page_title'] = addslashes($pageInfo['page_title']);
@@ -146,6 +170,7 @@ class AuditorComponent extends Controller{
             // calculate score of each page and update it
             $this->updateProjectPageScore($projectInfo['id']);
         }
+        return $reportUrl;
     }
 
     // function to get report info
