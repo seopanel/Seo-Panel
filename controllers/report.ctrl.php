@@ -756,7 +756,7 @@ class ReportController extends Controller {
 					if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
 						$this->proxyCheckCount++;
 						sleep(SP_CRAWL_DELAY);
-						$crawlResult = $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate);
+						$crawlResult[] = $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate);
 					}
 
 				} else {
@@ -765,7 +765,7 @@ class ReportController extends Controller {
 			}
 		}
 
-		return  $crawlResult;
+		return $crawlResult;
 	}
 
 	# func to save the report
