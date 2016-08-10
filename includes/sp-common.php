@@ -20,6 +20,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+include_once 'phpuri.php';
+
 # func to format error message
 function formatErrorMsg($msg, $class='error', $star="*"){
 	if(!empty($msg)){
@@ -177,10 +179,28 @@ function confirmPostAJAXLink($file, $form, $area, $trigger='OnClick'){
 }
 
 function formatUrl( $url, $removeWWW=true ) {
-	$url = str_replace('http://', '', $url);
-	$url = str_replace('https://', '', $url);
-	if ($removeWWW) $url = str_replace('www.', '', $url);
-	return $url;
+    $turl = trim($url);
+    $limit = 1;
+    if(strpos($turl, 'http://') === 0){
+	$turl = str_replace('http://', '', $turl, $limit);
+    }
+    if(strpos($turl, 'https://') === 0){
+	$turl = str_replace('https://', '', $turl, $limit);
+    }
+	if ($removeWWW && strpos($turl, 'www.') === 0){
+            $turl = str_replace('www.', '', $turl, $limit);
+        }
+	return $turl;
+}
+
+function formatRelativeUrl($url,$base_url){
+    $base = phpUri::parse($base_url);
+    $r = $base->join($url);
+    if($r == $url){
+        return FALSE;
+    }else{
+        return $r;
+    }
 }
 
 function formatDate($date) {
@@ -503,5 +523,227 @@ function showPdfFooter($spText) {
     ?>
     <div style="clear: both; margin-top: 30px;font-size: 12px; text-align: center;"><?php echo str_replace('[year]', date('Y'), $copyrightTxt)?></div>
 	<?php
+}
+
+function add_filter($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+    global $hooks;
+    return $hooks->add_filter($tag, $function_to_add, $priority, $accepted_args);
+}
+
+function remove_filter( $tag, $function_to_remove, $priority = 10 ) {
+    global $hooks;
+    return $hooks->remove_filter( $tag, $function_to_remove, $priority );
+}
+
+function remove_all_filters($tag, $priority = false) {
+    global $hooks;
+    return $hooks->remove_all_filters($tag, $priority);
+}
+
+function has_filter($tag, $function_to_check = false) {
+    global $hooks;
+    return $hooks->has_filter($tag, $function_to_check);
+}
+
+function apply_filters($tag, $value) {
+    global $hooks;
+    return $hooks->apply_filters($tag, $value);
+}
+
+function apply_filters_ref_array($tag, $args) {
+    global $hooks;
+    return $hooks->apply_filters_ref_array($tag, $args);
+}
+
+function add_action($tag, $function_to_add, $priority = 10, $accepted_args = 1) {
+    global $hooks;
+    return $hooks->add_action($tag, $function_to_add, $priority, $accepted_args);
+}
+
+function has_action($tag, $function_to_check = false) {
+    global $hooks;
+    return $hooks->has_action($tag, $function_to_check);
+}
+
+function remove_action( $tag, $function_to_remove, $priority = 10 ) {
+    global $hooks;
+    return $hooks->remove_action( $tag, $function_to_remove, $priority);
+}
+
+function remove_all_actions($tag, $priority = false) {
+    global $hooks;
+    return $hooks->remove_all_actions($tag, $priority);
+}
+
+function do_action($tag, $arg = '') {
+    global $hooks;
+    return $hooks->do_action($tag, $arg);
+}
+
+function do_action_ref_array($tag, $args) {
+    global $hooks;
+    return $hooks->do_action_ref_array($tag, $args);
+}
+
+function did_action($tag) {
+    global $hooks;
+    return $hooks->did_action($tag);
+}
+
+function current_filter() {
+    global $hooks;
+    return $hooks->current_filter();
+}
+
+function current_action() {
+    global $hooks;
+    return $hooks->current_action();
+}
+
+function doing_filter( $filter = null ) {
+    global $hooks;
+    return $hooks->doing_filter( $filter);
+}
+
+function doing_action( $action = null ) {
+    global $hooks;
+    return $hooks->doing_action( $action);
+}
+
+function add_setting($set_name,$set_val,$set_label,$set_category = 'ign_misc',$set_type = 'text',$display=1){
+    global $sp_db;
+    if(empty($set_name) || empty($set_label) || empty($set_category)){
+        return False;
+    }
+    if(isset($set_val)){
+        $set_val = maybe_serialize($set_val);
+    }
+    $data = Array ("set_val" => $set_val,
+                   "set_label" => $set_label,
+                   "set_category" => $set_category,
+                   "set_type" => $set_type,
+                   "display" => $display,
+    );
+    $sp_db->where ('set_name', $set_name);
+    $id = $sp_db->getValue('settings','id');
+    if($id){
+        return FALSE;
+    }else{
+        $data['set_name'] = $set_name;
+        $res = $sp_db->insert ('settings', $data);
+    }
+    if($res){
+        return TRUE;
+    }else{
+        return FALSE;
+    }
+}
+
+function update_setting($set_name,$data = array()){
+    global $sp_db;
+    if(empty($set_name) || !is_array($data)){
+        return False;
+    }
+    if(isset($data['set_val'])){
+        $data['set_val'] = maybe_serialize($data['set_val']);
+    }
+    $data_labels = Array ("set_val" => '',
+                   "set_label" => '',
+                   "set_category" => 'ign_misc',
+                   "set_type" => 'text',
+                   "display" => 1
+    );
+    $sp_db->where ('set_name', $set_name);
+    $id = $sp_db->getValue('settings','id');
+    $data_update = array();
+    if($id){
+        foreach($data_labels as $k => $v){
+            if(isset($data[$k]) && !empty($data[$k])){
+                $data_update[$k] = $data[$k];
+            }
+        }
+       $sp_db->where ('id', $id);
+        $res = $sp_db->update ('settings', $data_update);
+    }else{
+        if(empty($data['set_label']) || empty($data['set_category'])){
+            return False;
+        }
+        foreach($data_labels as $k => $v){
+            if(isset($data[$k]) && !empty($data[$k])){
+                $data_update[$k] = $data[$k];
+            }else{
+                $data_update[$k] = $v;
+            }
+        }
+        $data_update['set_name'] = $set_name;
+        $res = $sp_db->insert ('settings', $data_update);
+    }
+    if($res){
+        return TRUE;
+    }else{
+        return FALSE;
+    }
+}
+
+function get_setting($set_name){
+    global $sp_db;
+    $sp_db->where ('set_name', $set_name);
+    $res = $sp_db->getOne('settings');
+    $res['set_val'] = maybe_unserialize($res['set_val']);
+    return $res;
+}
+
+function get_setting_value($set_name){
+    if(defined($set_name)){
+        if(version_compare(phpversion(),'5.6') >= 0){
+            return constant($set_name);
+        }else{
+            return maybe_unserialize(constant($set_name));
+        }
+    }else{
+        global $sp_db;
+        $sp_db->where ('set_name', $set_name);
+        $res = $sp_db->getValue('settings','set_val');
+        return maybe_unserialize($res);
+    }
+}
+
+function register_score($tag,$score_object){
+    global $scores;
+    $default_types = array('report','website');
+    $add_types = apply_filters('score_types', array());
+    $score_types = array_merge($default_types,$add_types);
+    if(!is_array($scores)){
+        $scores = array();
+    }
+    foreach($score_types as $k){
+        if(!isset($scores[$k]) || !is_array($scores[$k])){
+            $scores[$k] = array();
+        }
+    }
+    if(is_subclass_of($score_object,'Score',FALSE)){
+        $type = $score_object->get_type();
+        $tag = $score_object->get_tag();
+    }else{
+        return FALSE;
+    }
+    if(key_exists($type, $scores) && !key_exists($tag, $scores[$type])){
+        $scores[$type][$tag] = $score_object;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+function getProjectInfo($projectId){
+    global $sp_db;
+    $sp_db->where("p.website_id=w.id");
+    $sp_db->where("p.id", $projectId);
+    $cols = array("p.*","w.url","w.name");
+    $products = $sp_db->get("websites w, auditorprojects p", null, $cols);   
+    if (!empty($products)){
+        return $products[0];
+    }else{
+        return NULL;
+    }
 }
 ?>

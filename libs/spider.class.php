@@ -21,6 +21,7 @@
  ***************************************************************************/
 
 include_once(SP_CTRLPATH."/proxy.ctrl.php");
+use PHPHtmlParser\Dom;
 
 class Spider{
 
@@ -73,7 +74,7 @@ class Spider{
 		$url = preg_replace('/\/{2,}/', '/', $url);
 		$url = preg_replace('/&{2,}/', '&', $url);
 		$url = preg_replace('/#{2,}/', '#', $url);
-		$url = Spider::removeTrailingSlash($url);
+		//$url = Spider::removeTrailingSlash($url);
 		return $scheme.$url;
 	}
 	
@@ -95,105 +96,249 @@ class Spider{
 	}
 	
     # func to get backlink page info
-	function getPageInfo($url, $domainUrl, $returnUrls=false){
-	    
-	    $urlWithTrailingSlash = Spider::addTrailingSlash($url);
-		$ret = $this->getContent($urlWithTrailingSlash);
-		$pageInfo = array();
-		$checkUrl = formatUrl($domainUrl);
-		
-		// if relative links of a page needs to be checked
-		if (SP_RELATIVE_LINK_CRAWL) {
-		    $relativeUrl = $domainUrl . $this->getRelativeUrl($url);
-		}
-		
-		// find main domain host link
-		$domainHostInfo = parse_url($domainUrl);
-		$domainHostLink = $domainHostInfo['scheme'] . "://" . $domainHostInfo['host'] . "/";
-		
-		if( !empty($ret['page'])){
-			$string = str_replace(array("\n",'\n\r','\r\n','\r'), "", $ret['page']);			
-			$pageInfo = WebsiteController::crawlMetaData($url, '', $string, true);
-			
-			// check whether base url tag is there
-			$baseTagUrl = "";
-			if (preg_match("/<base (.*?)>/is", $string, $match)) {
-				$baseTagUrl = $this->__getTagParam("href", $match[1]);
-				$baseTagUrl = $this->addTrailingSlash($baseTagUrl);
-			}
-					
-			$pattern = "/<a(.*?)>(.*?)<\/a>/is";	
-			preg_match_all($pattern, $string, $matches, PREG_PATTERN_ORDER);
-			
-			// loop through matches
-			for($i=0; $i < count($matches[1]); $i++){
-				
-				// check links foudn valid or not
-				$href = $this->__getTagParam("href",$matches[1][$i]);
-				if ( !empty($href) || !empty($matches[2][$i])) {
-					
-    				if( !preg_match( '/mailto:/', $href ) && !preg_match( '/javascript:|;/', $href ) ){
-    				    
-    					// find external links
-    				    $pageInfo['total_links'] += 1;
-    				    $external = 0;
-    				    if (stristr($href, 'http://') ||  stristr($href, 'https://')) {
-    				    	
-    					    if (!preg_match("/^".preg_quote($checkUrl, '/')."/", formatUrl($href))) {
-    					        $external = 1;
-    					        $pageInfo['external'] += 1;
-    					    }
-    					    					        
-    				    } else {
-    				        
-    				        // if url starts with / then append with base url of site
-    				    	if (preg_match('/^\//', $href)) {
-    				    		$href = $domainHostLink . $href;
-    				    	} elseif (!empty($baseTagUrl)) {
-    				        	$href = $baseTagUrl . $href;
-    				        } elseif ( $url == $domainUrl) {
-    				            $href = $domainUrl ."/". $href;        
-    				        } elseif ( SP_RELATIVE_LINK_CRAWL) {    				            
-    				            $href = $relativeUrl ."/". $href;        
-    				        } else {
-    				            $pageInfo['total_links'] -= 1;
-    				            continue;
-    				        }
-    				        
-    				        // if contains back directory operator
-    				        if (stristr($href, '/../')) {
-                            	$hrefParts = explode('/../', $href);
-                            	preg_match('/.*\//', $hrefParts[0], $matchpart);	
-                            	$href = $matchpart[0]. $hrefParts[1];
-                            }
-    				    }
-    				    
-    				    // if details of urls to be checked
-    				    if($returnUrls){
-    				        $linkInfo['link_url'] = $href;
-    						if(stristr($matches[2][$i], '<img')) {
-    							$linkInfo['link_anchor'] = $this->__getTagParam("alt", $matches[2][$i]);
-    						} else {
-    							$linkInfo['link_anchor'] = strip_tags($matches[2][$i]);
-    						}										
-    						$linkInfo['nofollow'] = stristr($matches[1][$i], 'nofollow') ? 1 : 0;
-    						$linkInfo['link_title'] = $this->__getTagParam("title", $matches[1][$i]);
-    						if ($external) {
-    						    $pageInfo['external_links'][] = $linkInfo;
-    						} else {
-    						    $pageInfo['site_links'][] = $linkInfo;
-    						}
-    				    }
-    				    
-    				}
-				}
-			}			
-		}
-		
-		return $pageInfo;
-	}
-	
-	# function to remove last trailing slash
+
+    function getPageInfo($url, $domainUrl, $returnUrls = false) {
+        $pageInfo = array();
+        if(empty($url)){
+            return $pageInfo;
+        }
+        $urlWithTrailingSlash = Spider::addTrailingSlash($url);
+        $ret = $this->getContent($urlWithTrailingSlash);
+        //$checkUrl = formatUrl($domainUrl);
+        $cleanUrl = $this->removeTrailingSlash(formatUrl($domainUrl, TRUE));
+
+        // if relative links of a page needs to be checked
+//		if (SP_RELATIVE_LINK_CRAWL) {
+//		    $relativeUrl = $domainUrl . $this->getRelativeUrl($url);
+//		}
+        // find main domain host link
+        $domainHostInfo = parse_url($domainUrl);
+        $domainHostLink = $domainHostInfo['scheme'] . "://" . $domainHostInfo['host'] . "/";
+
+        if (!empty($ret['page'])) {
+            //$string = str_replace(array("\n",'\n\r','\r\n','\r'), "", $ret['page']);
+            $string = apply_filters('pre_spider_page', $ret['page'], $urlWithTrailingSlash);
+            //$pageInfo = WebsiteController::crawlMetaData($url, '', $string, true);
+
+            $dom = new Dom;
+            $dom->load($string);
+            $pageInfo = apply_filters('pre_page_info', array(), $dom, $urlWithTrailingSlash);
+
+            if (!is_array($pageInfo)) {
+                $pageInfo = array();
+            }
+            if (!isset($pageInfo['page_title'])) {
+                $hold = $dom->find('title');
+                if (!empty($hold->count())) {
+                    $text = $hold->text;
+                    if (!empty($text)) {
+                        $pageInfo['page_title'] = $text;
+                    } else {
+                        $pageInfo['page_title'] = NULL;
+                    }
+                }
+            }
+            if (!isset($pageInfo['page_description'])) {
+                $pageInfo['page_description'] = NULL;
+                $hold = $dom->find('meta[name=description]');
+                if (!empty($hold->count())) {
+                    $attr = $hold->getAttributes();
+                    if (array_key_exists('content', $attr)) {
+                        $pageInfo['page_description'] = $attr['content'];
+                    }
+                }
+            }
+            if (!isset($pageInfo['keywords'])) {
+                $pageInfo['keywords'] = NULL;
+                $hold = $dom->find('meta[name=keywords]');
+                if (!empty($hold->count())) {
+                    $attr = $hold->getAttributes();
+                    if (array_key_exists('content', $attr)) {
+                        $pageInfo['keywords'] = $attr['content'];
+                    }
+                }
+            }
+
+            // check whether base url tag is there
+            $baseTagUrlSlash = $domainHostLink;
+            $hold = $dom->find('base');
+            if (!empty($hold->count())) {
+                $text = $hold->href;
+                if (!empty($text)) {
+                    $baseTagUrlSlash = $this->addTrailingSlash($text);
+                    
+                } 
+            }
+            $baseTagUrl = $this->removeTrailingSlash($baseTagUrlSlash);
+//			if (preg_match("/<base (.*?)>/is", $string, $match)) {
+//				$baseTagUrl = $this->__getTagParam("href", $match[1]);
+//				$baseTagUrl = $this->addTrailingSlash($baseTagUrl);
+//			}
+            $pageInfo['total_links'] = 0;
+            $pageInfo['external'] = 0;
+            $pageInfo['alternate'] = 0;
+            $pageInfo['external_links'] = array();
+            $pageInfo['site_links'] = array();
+            $pageInfo['alternate_links'] = array();
+            $as = $dom->find('a');
+            $total_links = 0;
+            $external_count = 0;
+            $alternate_count = 0;
+            foreach ($as as $a) {
+                $text = $a->href;
+                $total_links += 1;
+                $external = FALSE;
+                $alternate = FALSE;
+                if (!empty($text)) {
+                    if (strpos($text, $cleanUrl) === 0) {
+                        $text = str_replace($cleanUrl, $baseTagUrl, $text);
+                    } else if (strpos($text, 'http://') === 0 || strpos($text, 'https://') === 0 || strpos($text, 'www.') === 0) {
+                        $test_url = formatUrl($text, TRUE);
+                        if (strpos($test_url, $cleanUrl) !== 0) {
+                            $external_count += 1;
+                            $external = TRUE;
+                        } else {
+                            $text = str_replace($cleanUrl, $baseTagUrl, $test_url);
+                        }
+                    } elseif (formatRelativeUrl($text, $baseTagUrl)) {
+                            $text = formatRelativeUrl($text, $baseTagUrl);
+                    } else {
+                        $alternate_count += 1;
+                        $alternate = TRUE;
+                    }
+                }
+                $rerel = str_replace($baseTagUrl, '', $text);
+                if($rerel == '\\' || $rerel == '/' ){
+                    $text = $baseTagUrl;
+                }
+                // if details of urls to be checked
+                $linkInfo['link_url'] = $text;
+                $outertext = $a->outerhtml;
+                $imgs = $a->find('img');
+                foreach ($imgs as $img) {
+                    $imgouter = $img->outerhtml;
+                    $alt = $img->alt;
+                    if (is_null($alt)) {
+                        $alt = "";
+                    }
+                    str_replace($imgouter, $alt, $outertext);
+                }
+                $linkInfo['link_anchor'] = strip_tags($outertext);
+                $nofollow = $a->rel;
+                $linkInfo['nofollow'] = 0;
+                if (!empty($nofollow) && strpos($nofollow, 'nofollow') !== FALSE) {
+                    $linkInfo['nofollow'] = 1;
+                }
+                $title = $a->title;
+                if (!empty($title)) {
+                    $linkInfo['link_title'] = $title;
+                }
+                $internal = TRUE;
+                if($external || $alternate){
+                    $internal = FALSE;
+                }
+                $linkInfo = apply_filters('add_link_info', $linkInfo,$internal);
+                if ($returnUrls) {
+                    if($external){
+                        $external = apply_filters('add_external_link_info', $external, $linkInfo);
+                    }
+                    if($alternate){
+                        $alternate = apply_filters('add_alternate_link_info', $alternate, $linkInfo);
+                    }
+                    if($linkInfo){
+                        if ($external) {
+                            $pageInfo['external_links'][] = $linkInfo;
+                        } else if ($alternate) {
+                            $pageInfo['alternate_links'][] = $linkInfo;
+                        } else {
+                            $pageInfo['site_links'][] = $linkInfo;
+                        }
+                    }
+                }
+                $total_links = apply_filters('link_count', $total_links, $linkInfo, $internal);
+                if($external){
+                    $external_count = apply_filters('external_link_count', $external_count, $linkInfo);
+                }
+                if($alternate){
+                    $alternate_count = apply_filters('alternate_link_count', $alternate_count, $linkInfo);
+                }
+            }
+            $pageInfo['total_links'] = $total_links;
+            $pageInfo['external'] = $external_count;
+            $pageInfo['alternate'] = $alternate_count;
+//			$pattern = "/<a(.*?)>(.*?)<\/a>/is";	
+//			preg_match_all($pattern, $string, $matches, PREG_PATTERN_ORDER);
+//			
+//			// loop through matches
+//			for($i=0; $i < count($matches[1]); $i++){
+//				
+//				// check links foudn valid or not
+//				$href = $this->__getTagParam("href",$matches[1][$i]);
+//				if ( !empty($href) || !empty($matches[2][$i])) {
+//					
+//    				if( !preg_match( '/mailto:/', $href ) && !preg_match( '/javascript:|;/', $href ) ){
+//    				    
+//    					// find external links
+//    				    $pageInfo['total_links'] += 1;
+//    				    $external = 0;
+//    				    if (stristr($href, 'http://') ||  stristr($href, 'https://')) {
+//    				    	
+//    					    if (!preg_match("/^".preg_quote($checkUrl, '/')."/", formatUrl($href))) {
+//    					        $external = 1;
+//    					        $pageInfo['external'] += 1;
+//    					    }
+//    					    					        
+//    				    } else {
+//    				        
+//    				        // if url starts with / then append with base url of site
+//    				    	if (preg_match('/^\//', $href)) {
+//    				    		$href = $domainHostLink . $href;
+//    				    	} elseif (!empty($baseTagUrl)) {
+//    				        	$href = $baseTagUrl . $href;
+//    				        } elseif ( $url == $domainUrl) {
+//    				            $href = $domainUrl ."/". $href;        
+//    				        } elseif ( SP_RELATIVE_LINK_CRAWL) {    				            
+//    				            $href = $relativeUrl ."/". $href;        
+//    				        } else {
+//    				            $pageInfo['total_links'] -= 1;
+//    				            continue;
+//    				        }
+//    				        
+//    				        // if contains back directory operator
+//    				        if (stristr($href, '/../')) {
+//                            	$hrefParts = explode('/../', $href);
+//                            	preg_match('/.*\//', $hrefParts[0], $matchpart);	
+//                            	$href = $matchpart[0]. $hrefParts[1];
+//                            }
+//    				    }
+//    				    
+//    				    // if details of urls to be checked
+//    				    if($returnUrls){
+//    				        $linkInfo['link_url'] = $href;
+//    						if(stristr($matches[2][$i], '<img')) {
+//    							$linkInfo['link_anchor'] = $this->__getTagParam("alt", $matches[2][$i]);
+//    						} else {
+//    							$linkInfo['link_anchor'] = strip_tags($matches[2][$i]);
+//    						}										
+//    						$linkInfo['nofollow'] = stristr($matches[1][$i], 'nofollow') ? 1 : 0;
+//    						$linkInfo['link_title'] = $this->__getTagParam("title", $matches[1][$i]);
+//    						if ($external) {
+//    						    $pageInfo['external_links'][] = $linkInfo;
+//    						} else {
+//    						    $pageInfo['site_links'][] = $linkInfo;
+//    						}
+//    				    }
+//    				    
+//    				}
+//				}
+//			}
+            $pageInfo = apply_filters('post_page_info', $pageInfo, $dom, $urlWithTrailingSlash);
+        }
+
+        return $pageInfo;
+    }
+
+    # function to remove last trailing slash
 	public static function removeTrailingSlash($url) {		
 		$url = preg_replace('/\/$/', '', $url);
 		return $url;
@@ -422,13 +567,21 @@ class Spider{
 	}
 	
 	// function to check whether link is brocke
-	public static function isLInkBrocken($url) {
-	    $header = Spider::getHeader($url);
-	    if (stristr($header, '404 Not Found')) {
-	        return true;
-	    } else {
-	        return false; 
-	    }
+	public static function isLInkBrocken($url,$fresh = FALSE) {
+            if(!$fresh){
+                global $sp_db;
+                $sp_db->where('link_url',$url);
+                $val = $sp_db->getValue('auditorpagelinks','brocken');
+                if($val != NULL){
+                    return $val;
+                }
+            }
+            $header = Spider::getHeader($url);
+            if (stristr($header, '404 Not Found')) {
+                return true;
+            } else {
+                return false; 
+            }
 	}
 }
 ?>

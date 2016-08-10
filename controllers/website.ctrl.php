@@ -394,6 +394,26 @@ class WebsiteController extends Controller{
 		}
 		
 	}
+        
+        public static function getPageContent($pageContent=''){
+            $ret = array();
+	    if (empty($pageContent)) {
+    		if(!preg_match('/\w+/', $websiteUrl)){
+                    return False;
+                }
+    		$websiteUrl = addHttpToUrl($websiteUrl);
+    		$spider = New Spider();
+    		$ret = $spider->getContent($websiteUrl);
+	    } else {
+	        $ret['page'] = $pageContent;
+	    }
+            return $ret;
+        }
+        
+        public static function getTitle($dom){
+            $ret = $this->getPageContent($pageContent);
+            
+        }
 	
 	# func to crawl meta data of a website
 	public static function crawlMetaData($websiteUrl, $keyInput='', $pageContent='', $returVal=false) {

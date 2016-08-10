@@ -76,18 +76,25 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 	define('SP_DATAPATH', SP_ABSPATH."/install/data");
 	define('SP_JSPATH', SP_WEBPATH."/js");
 	define('SP_IMGPATH', SP_WEBPATH."/images");	
+        define('SP_SCORESPATH', SP_ABSPATH."/scores");
 	
 	# create database object
 	include_once(SP_LIBPATH."/database.class.php");
 	$dbObj = New Database(DB_ENGINE);
 	$dbConn = $dbObj->dbConnect();
+        include_once (SP_INCPATH.'/wp-includes/wp-includes.php');
 	
 	// set system settings variables
-	$sql = "select * from settings order by id";
+	$sql = "select * from settings WHERE `set_category` NOT REGEXP '^ign_' order by id";
 	$settingsList = $dbConn->select($sql);
 	foreach($settingsList as $settingsInfo){
 		if(!defined($settingsInfo['set_name'])){
-			define($settingsInfo['set_name'], $settingsInfo['set_val']);
+                    if(version_compare(phpversion(),'5.6') >= 0){
+                        $set_val = maybe_unserialize($settingsInfo['set_val']);
+                    }else{
+                        $set_val = $settingsInfo['set_val'];
+                    }
+			define($settingsInfo['set_name'], $set_val);
 		}
 	}
 	
@@ -138,7 +145,6 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
             }
         }
     }
-    
 	# create super class object
 	include_once(SP_LIBPATH."/seopanel.class.php");
 	$seopanel = New Seopanel();

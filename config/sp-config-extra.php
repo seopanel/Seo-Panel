@@ -30,6 +30,9 @@ define('SP_PLUGINDIR', 'plugins');
 # The seo panel plugin config file
 define('SP_PLUGINCONF', 'conf.php');
 
+# The seo panel plugin config file
+define('SP_PLUGINLOAD', 'load.php');
+
 # The seo panel plugin db file
 define('SP_PLUGINDBFILE', 'database.sql');
 

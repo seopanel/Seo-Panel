@@ -43,7 +43,8 @@ class Seopanel{
 		include_once(SP_LIBPATH.'/smtp.class.php');
 		@Session::startSession();
 		
-		# include common functions		
+		# include common functions	
+                include_once(SP_ABSPATH."/includes/hooks.php");
 		include_once(SP_INCPATH.'/sp-common.php');
 		
 		# include coomon controllers classes
@@ -58,6 +59,10 @@ class Seopanel{
 		include_once(SP_CTRLPATH.'/searchengine.ctrl.php');	
 		include_once(SP_CTRLPATH.'/currency.ctrl.php');	
 		include_once(SP_CTRLPATH.'/seoplugins.ctrl.php');
+                include_once (SP_INCPATH.'/sp-load-html-parser.php');
+                include_once(SP_SCORESPATH.'/load-scores.php');
+                $plugins_load = new SeoPluginsController();
+                $plugins_load->loadAllPlugins();
 		
 	}	
 	

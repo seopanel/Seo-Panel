@@ -74,6 +74,16 @@ class SeoPluginsController extends Controller{
 	function initPlugin($data) {
 		return;
 	}
+        
+        function loadAllPlugins(){
+            $plugin_list = $this->__getAllSeoPlugins();
+            foreach($plugin_list as $k => $v){
+                $pluginDirName = $v['name'];
+		if(file_exists(SP_PLUGINPATH."/".$pluginDirName."/".SP_PLUGINLOAD)){
+			include_once(SP_PLUGINPATH."/".$pluginDirName."/".SP_PLUGINLOAD);
+		}
+            }
+        }
 
 	# func to load plugin css files
 	function loadAllPluginCss() {

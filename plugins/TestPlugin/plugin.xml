@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<plugin>
-	<author>Geo Varghese</author>
-	<label>Test Plugin</label>
-	<description>Seo Panel Test Plugin: Check the structure of test plugin and it will help you to create new Seo Panel Plugins.</description>
-	<version>1.0.0</version>
-	<website>http://www.seopanel.in/plugins/</website>	
-</plugin>

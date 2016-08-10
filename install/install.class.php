@@ -166,6 +166,7 @@ class Install {
 				<td>
 					<select name="db_engine">
 						<option value="mysql">MySQL</option>
+						<option value="mysqlihelper">MySQLI</option>
 					</select>
 				</td>
 			</tr>
