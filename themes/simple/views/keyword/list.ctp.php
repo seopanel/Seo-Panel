@@ -73,8 +73,8 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 				<td class="td_br_right"><?php echo $listInfo['id']?></td>
 				<td class="td_br_right left"><?php echo $keywordLink?></td>
 				<td class="td_br_right left"><?php echo $listInfo['website']?></td>
-				<td class="td_br_right"><? echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
-				<td class="td_br_right"><? echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>
+				<td class="td_br_right"><?php echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
+				<td class="td_br_right"><?php echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>
 				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
 				<td class="<?php echo $rightBotClass?>" width="100px">
 					<?php
@@ -88,7 +88,7 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 					?>
 					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('keywords.php', 'content', 'keywordId=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&website_id=<?php echo $websiteId?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
-						<?if($listInfo['webstatus'] && $listInfo['status']){?>
+						<?php if($listInfo['webstatus'] && $listInfo['status']){?>
 							<option value="reports"><?php echo $spText['common']['Reports']?></option>
 						<?php }?>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>

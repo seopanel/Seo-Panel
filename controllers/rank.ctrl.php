@@ -40,10 +40,12 @@ class RankController extends Controller{
 			    if ($i++ > 10) break;
 			}
 			
-			if(!stristr($url, 'http://')) $url = "http://".$url;
-			
+			$url = addHttpToUrl($url);
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
+		
+		$mozRankList = $this->__getMozRank($list);
+		$this->set('mozRankList', $mozRankList);
 
 		$this->set('list', $list);
 		$this->render('rank/findquickrank');
@@ -60,8 +62,23 @@ class RankController extends Controller{
 		print "<img src='$imageUrl'>";
 	}
 
-	function __getGooglePageRank ($url) {
+	function printMOZRank($url){
+		$pageRank = $this->__getMozRank($url);
+		if($pageRank >= 0){
+			$imageUrl = SP_IMGPATH."/pr/pr".$pageRank.".gif";
+		}else{
+			$imageUrl = SP_IMGPATH."/pr/pr.gif";
+		}
 
+		print "<img src='$imageUrl'>";
+	}
+
+	function __getGooglePageRank ($url) {
+		
+		return 0;
+
+		// commented due to gooogle stops this service
+		/*
 	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
 	    $websiteUrl =  $url;   
 		$url = "http://toolbarqueries.google.com/tbr?client=navclient-auto&ch=".$this->CheckHash($this->hashURL($url))."&features=Rank&q=info:".$url."&num=100&filter=0";
@@ -86,6 +103,7 @@ class RankController extends Controller{
 		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
 		
 		return $rank;
+		*/
 	}
 
 	function printAlexaRank($url){
@@ -139,6 +157,81 @@ class RankController extends Controller{
 		
 		return $rank;
 	}
+	
+	// function to get moz rank
+	function __getMozRank ($urlList = array(), $accessID = "", $secretKey = "", $returnLog = false) {
+		$mozRankList = array();
+		
+		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return $mozRankList;
+		
+		if (empty($urlList)) return $mozRankList;
+		
+		// Get your access id and secret key here: https://moz.com/products/api/keys
+		$accessID = !empty($accessID) ? $accessID : SP_MOZ_API_ACCESS_ID;
+		$secretKey = !empty($secretKey) ? $secretKey : SP_MOZ_API_SECRET;
+		
+		// if empty no need to crawl
+		if (empty($accessID) || empty($secretKey)) return $mozRankList;
+		
+		// Set your expires times for several minutes into the future.
+		// An expires time excessively far in the future will not be honored by the Mozscape API.
+		$expires = time() + 300;
+		
+		// Put each parameter on a new line.
+		$stringToSign = $accessID."\n".$expires;
+		
+		// Get the "raw" or binary output of the hmac hash.
+		$binarySignature = hash_hmac('sha1', $stringToSign, $secretKey, true);
+		
+		// Base64-encode it and then url-encode that.
+		$urlSafeSignature = urlencode(base64_encode($binarySignature));
+		
+		// Add up all the bit flags you want returned.
+		// Learn more here: https://moz.com/help/guides/moz-api/mozscape/api-reference/url-metrics
+		$cols = "16384";
+		
+		// Put it all together and you get your request URL.
+		$requestUrl = SP_MOZ_API_LINK . "/url-metrics/?Cols=".$cols."&AccessID=".$accessID."&Expires=".$expires."&Signature=".$urlSafeSignature;
+		
+		// Put your URLS into an array and json_encode them.
+		$encodedDomains = json_encode($urlList);
+		
+		$spider = new Spider();
+		$spider->_CURLOPT_POSTFIELDS = $encodedDomains;
+		$ret = $spider->getContent($requestUrl);
+		
+		// parse rank from the page
+		if (!empty($ret['page'])) {
+			$rankList = json_decode($ret['page']);
+			
+			// if no errors occured
+			if (empty($rankList->error_message)) {
+			
+				// loop through rank list
+				foreach ($rankList as $rankInfo) {
+					$mozRankList[] = round($rankInfo->umrp, 2);
+				}
+				
+			} else {
+				$crawlInfo['crawl_status'] = 0;
+				$crawlInfo['log_message'] = $rankList->error_message;
+			}
+			
+		} else {
+			$crawlInfo['crawl_status'] = 0;
+			$crawlInfo['log_message'] = $ret['errmsg'];
+		}
+	
+		// update crawl log
+		$crawlLogCtrl = new CrawlLogController();
+		$crawlInfo['crawl_type'] = 'rank';
+		$crawlInfo['ref_id'] = $encodedDomains;
+		$crawlInfo['subject'] = "moz";
+		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
+	
+		return $returnLog ? array($mozRankList, $crawlInfo) : $mozRankList;
+	}
+	
 
 	function strToNum($Str, $Check, $Magic) {
 		$Int32Unit = 4294967296;
@@ -226,11 +319,19 @@ class RankController extends Controller{
 			exit;
 		}
 		
-		# loop through each websites			
-		foreach ( $websiteList as $websiteInfo ) {
+		$urlList = array();
+		foreach ($websiteList as $websiteInfo) {
+			$urlList[] = addHttpToUrl($websiteInfo['url']);
+		}
+		
+		// get moz ranks
+		$mozRankList = $this->__getMozRank($urlList);
+				
+		// loop through each websites			
+		foreach ( $websiteList as $i => $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
-			$websiteInfo['googlePagerank'] = $this->__getGooglePageRank($websiteUrl);
 			$websiteInfo['alexaRank'] = $this->__getAlexaRank($websiteUrl);
+			$websiteInfo['moz_rank'] = !empty($mozRankList[$i]) ? $mozRankList[$i] : 0;
 			
 			$this->saveRankResults($websiteInfo, true);			
 			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
@@ -246,8 +347,8 @@ class RankController extends Controller{
 			$this->db->query($sql);
 		}
 		
-		$sql = "insert into rankresults(website_id,google_pagerank,alexa_rank,result_time)
-				values({$matchInfo['id']},{$matchInfo['googlePagerank']},{$matchInfo['alexaRank']},$time)";
+		$sql = "insert into rankresults(website_id,moz_rank,alexa_rank,result_time)
+				values({$matchInfo['id']},{$matchInfo['moz_rank']},{$matchInfo['alexaRank']},$time)";
 		$this->db->query($sql);
 	}
 	
@@ -290,7 +391,7 @@ class RankController extends Controller{
 		$reportList = $this->db->select($sql);
 		
 		$i = 0;
-		$colList = array('google' => 'google_pagerank', 'alexa' => 'alexa_rank');
+		$colList = array('moz' => 'moz_rank', 'alexa' => 'alexa_rank');
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
@@ -349,7 +450,7 @@ class RankController extends Controller{
 		$reportList = array_reverse($reportList);
 		
 		$i = 0;
-		$colList = array('google' => 'google_pagerank', 'alexa' => 'alexa_rank');
+		$colList = array('moz' => 'moz_rank', 'alexa' => 'alexa_rank');
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}

@@ -65,9 +65,10 @@ class DirectoryController extends Controller{
 		}else{
 			$websiteInfo = $submitInfo;
 		}
+		
 		$this->set('websiteInfo', $websiteInfo);		
 		$this->session->setSession('no_captcha', empty($submitInfo['no_captcha']) ? 0 : 1);
-		$this->session->setSession('dirsub_pr', $submitInfo['google_pagerank']);
+		$this->session->setSession('dirsub_pr', $submitInfo['pagerank']);
 		$this->session->setSession('dirsub_lang', $submitInfo['lang_code']);
 		$this->set('noTitles', $this->noTitles);		
 		$this->render('directory/showsitesubmission');
@@ -99,7 +100,7 @@ class DirectoryController extends Controller{
 				return;
 			}
 		
-			if(!stristr($submitInfo['url'], 'http://')) $submitInfo['url'] = "http://".$submitInfo['url'];
+			$submitInfo['url'] = addHttpToUrl($submitInfo['url']);
 			$recUrl = formatUrl($submitInfo['reciprocal_url']);
 			$submitInfo['reciprocal_url'] = empty($recUrl) ? "" : addHttpToUrl($submitInfo['reciprocal_url']);
 		
@@ -180,9 +181,21 @@ class DirectoryController extends Controller{
 		
 		$sql = "select * from directories where working=1";
 		if(!empty($_SESSION['no_captcha'])) $sql .= " and is_captcha=0";
-		if(!empty($_SESSION['dirsub_pr'])) $sql .= " and google_pagerank={$_SESSION['dirsub_pr']}";
+		
+		// check for page rank
+		if(!empty($_SESSION['dirsub_pr'])) {
+			$prMax = intval($_SESSION['dirsub_pr']) + 0.5;
+			$prMin = intval($_SESSION['dirsub_pr']) - 0.5;
+			$sql .= " and pagerank<$prMax and pagerank>=$prMin";
+		}
+		
 		if(!empty($_SESSION['dirsub_lang'])) $sql .= " and lang_code='{$_SESSION['dirsub_lang']}'";
-		if(!empty($_SESSION['no_reciprocal'])) $sql .= " and extra_val not like '%LINK_TYPE=reciprocal%'";
+		
+		// if reciprocal directory needs to be filtered
+		if(!empty($_SESSION['no_reciprocal'])) {
+			$sql .= " and extra_val not like '%LINK_TYPE=reciprocal%' and is_reciprocal=0";
+		}		
+		
 		if(!empty($dirId)) $sql .= " and id=$dirId";
 		if(count($dirList) > 0) $sql .= " and id not in (".implode(',', $dirList).")";
 		$sql .= " order by rank DESC, extra_val ASC, id ASC";
@@ -483,7 +496,7 @@ class DirectoryController extends Controller{
 			$pageScriptPath .= "&search_name=" . $searchInfo['search_name'];
 		}
 				
-		$sql = "select ds.* ,d.domain,d.google_pagerank, d.submit_url
+		$sql = "select ds.* ,d.domain,d.pagerank, d.submit_url
 		from skipdirectories ds,directories d where ds.directory_id=d.id $conditions order by id desc,d.domain";
 								
 		# pagination setup		
@@ -525,7 +538,7 @@ class DirectoryController extends Controller{
 			$pageScriptPath .= "&search_name=" . $searchInfo['search_name'];
 		}
 		
-		$sql = "select ds.* ,d.domain,d.google_pagerank, d.submit_url from dirsubmitinfo ds,directories d 
+		$sql = "select ds.* ,d.domain,d.pagerank, d.submit_url from dirsubmitinfo ds,directories d 
 		where ds.directory_id=d.id $conditions order by submit_time desc,d.domain";
 								
 		# pagination setup		
@@ -703,7 +716,14 @@ class DirectoryController extends Controller{
 		$sql = "SELECT *,l.lang_name FROM directories d,languages l where d.lang_code=l.lang_code and working='{$info['stscheck']}'";		
 		if(!empty($info['dir_name'])) $sql .= " and domain like '%".addslashes($info['dir_name'])."%'";
 		if($info['capcheck'] != '') $sql .= " and is_captcha='$capcheck'";
-		if(isset($info['google_pagerank']) && ($info['google_pagerank'] != '')) $sql .= " and google_pagerank='".intval($info['google_pagerank'])."'";
+		
+		// check for page rank
+		if(isset($info['pagerank']) && ($info['pagerank'] != '')) {
+			$prMax = intval($info['pagerank']) + 0.5;
+			$prMin = intval($info['pagerank']) - 0.5;
+			$sql .= " and pagerank<$prMax and pagerank>=$prMin";
+		}
+		
 		if (!empty($info['langcode'])) { $info['lang_code'] = $info['langcode']; }
 		if(!empty($info['lang_code'])) $sql .= " and d.lang_code='".addslashes($info['lang_code'])."'";
 		$sql .= " order by id";		
@@ -713,7 +733,7 @@ class DirectoryController extends Controller{
 		$this->paging->setDivClass('pagingdiv');
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
 		$pageScriptPath = 'directories.php?sec=directorymgr&dir_name='.urlencode($info['dir_name'])."&stscheck={$info['stscheck']}&capcheck=".$info['capcheck'];
-		$pageScriptPath .= "&google_pagerank=".$info['google_pagerank']."&langcode=".$info['lang_code'];
+		$pageScriptPath .= "&pagerank=".$info['pagerank']."&langcode=".$info['lang_code'];
 		$pagingDiv = $this->paging->printPages($pageScriptPath);		
 		$this->set('pagingDiv', $pagingDiv);
 		$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
@@ -812,8 +832,9 @@ class DirectoryController extends Controller{
 			if ($this->checkPR) {				
 				include_once(SP_CTRLPATH."/rank.ctrl.php");
 				$rankCtrler = New RankController();
-				$pagerank = $rankCtrler->__getGooglePageRank($dirInfo['domain']);
-				$prUpdate = ",google_pagerank=$pagerank";	
+				$rankInfo = $rankCtrler->__getMozRank(array($dirInfo['domain']));
+				$pagerank = !empty($rankInfo[0]) ? $rankInfo[0] : 0;
+				$prUpdate = ",pagerank=$pagerank";
 			}
 		}
 		

@@ -58,7 +58,7 @@
 				<td class='td_br_right'  style='text-align:left;padding-left:10px;'>
 					<a href="<?php echo $listInfo['submit_url']?>" target="_blank"><?php echo $listInfo['domain']?></a>
 				</td>
-				<td class='td_br_right'><?php echo $listInfo['google_pagerank']?></td>
+				<td class='td_br_right'><?php echo $listInfo['pagerank']?></td>
 				<td class="<?php echo $rightBotClass?>"><?php echo $includeLink?></td>
 			</tr>
 			<?php

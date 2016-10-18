@@ -41,12 +41,12 @@
             
 			?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>"><?echo $listInfo['id'];?></td>
-				<td class="td_br_right left"><? echo $listInfo['name'];?></td>
-				<td class="td_br_right"><? echo $accessLink;?></td>				
-				<td class="td_br_right"><? echo $reportgenLink;?></td>
-				<td class="td_br_right"><? echo $cronLink;?></td>
-				<td class="<?php echo $rightBotClass?>" width="100px"><? echo $activateLink;?></td>
+				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['id'];?></td>
+				<td class="td_br_right left"><?php echo $listInfo['name'];?></td>
+				<td class="td_br_right"><?php echo $accessLink;?></td>				
+				<td class="td_br_right"><?php echo $reportgenLink;?></td>
+				<td class="td_br_right"><?php echo $cronLink;?></td>
+				<td class="<?php echo $rightBotClass?>" width="100px"><?php echo $activateLink;?></td>
 			</tr>
 			<?php
 		}

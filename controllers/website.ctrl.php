@@ -396,10 +396,10 @@ class WebsiteController extends Controller{
 	}
 	
 	# func to crawl meta data of a website
-	function crawlMetaData($websiteUrl, $keyInput='', $pageContent='', $returVal=false) {
+	public static function crawlMetaData($websiteUrl, $keyInput='', $pageContent='', $returVal=false) {
 	    if (empty($pageContent)) {
     		if(!preg_match('/\w+/', $websiteUrl)) return;
-    		if(!stristr($websiteUrl, 'http://')) $websiteUrl = "http://".$websiteUrl;
+    		$websiteUrl = addHttpToUrl($websiteUrl);
     		$spider = New Spider();
     		$ret = $spider->getContent($websiteUrl);
 	    } else {
@@ -457,7 +457,7 @@ class WebsiteController extends Controller{
 		return $metaInfo; 
 	}
 	
-	function addInputValue($value, $col) {
+	public static function addInputValue($value, $col) {
 
 		$value = removeNewLines($value);
 		?>

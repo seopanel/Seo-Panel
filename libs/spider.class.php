@@ -62,7 +62,11 @@ class Spider{
 	}
 
 	# func to format urls
+<<<<<<< HEAD
 	function formatUrl($url){
+=======
+	public static function formatUrl($url){	    
+>>>>>>> seopanel/master
 	    $scheme = "";
 		if(stristr($url,'http://')){
 			$scheme = "http://";
@@ -194,13 +198,17 @@ class Spider{
 	}
 
 	# function to remove last trailing slash
+<<<<<<< HEAD
 	function removeTrailingSlash($url) {
+=======
+	public static function removeTrailingSlash($url) {		
+>>>>>>> seopanel/master
 		$url = preg_replace('/\/$/', '', $url);
 		return $url;
 	}
 
     # function to remove last trailing slash
-	function addTrailingSlash($url) {
+	public static function addTrailingSlash($url) {
 	    if (!stristr($url, '?') && !stristr($url, '#')) {
 	        if (!preg_match("/\.([^\/]+)$/", $url)) {
         		if (!preg_match('/\/$/', $url)) {
@@ -404,7 +412,7 @@ class Spider{
 	}
 
 	// function to get the header of url
-    function getHeader($url){
+    public static function getHeader($url){
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_URL, $url);
@@ -423,7 +431,7 @@ class Spider{
 	}
 
 	// function to check whether link is brocke
-	function isLInkBrocken($url) {
+	public static function isLInkBrocken($url) {
 	    $header = Spider::getHeader($url);
 	    if (stristr($header, '404 Not Found')) {
 	        return true;

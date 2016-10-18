@@ -27,8 +27,8 @@ class Install {
 		
 		$phpClass = "red";
 		$phpSupport = "No";
-		$phpVersion = phpversion();		
-		if(intval($phpVersion) >= 4){			
+		$phpVersion = phpversion();
+		if (intval($phpVersion) >= 4 and intval($phpVersion) < 7) {			
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -107,7 +107,7 @@ class Install {
 			<tr><th colspan="2" class="header">Installation compatibility</th></tr>
 			<tr><td colspan="2" class="error"><?php echo $errMsg;?></td></tr>
 			<tr>
-				<th>PHP version >= 4.0.0</th>
+				<th>PHP version >= 4.0.0 and &lt; 7.0.0</th>
 				<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 			</tr>
 			<tr>
@@ -386,7 +386,7 @@ class Install {
 		$phpClass = "red";
 		$phpSupport = "No";
 		$phpVersion = phpversion();
-		if(intval($phpVersion) >= 4){			
+		if (intval($phpVersion) >= 4 and intval($phpVersion) < 7) {			
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -476,7 +476,7 @@ class Install {
 			<tr><th colspan="2" class="header">Upgrade compatibility</th></tr>
 			<tr><td colspan="2" class="error"><?php echo $errMsg;?></td></tr>
 			<tr>
-				<th>PHP version >= 4.0.0</th>
+				<th>PHP version >= 4.0.0 and &lt; 7.0.0</th>
 				<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 			</tr>
 			<tr>

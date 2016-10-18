@@ -119,7 +119,7 @@ class SearchEngineController extends Controller{
 	}
 	
 	# function to check whether captcha found in search engine results
-	function isCaptchInSearchResults($searchContent) {
+	static function isCaptchInSearchResults($searchContent) {
 
 		$captchFound = false;
 		

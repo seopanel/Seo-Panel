@@ -1,5 +1,5 @@
 *******************************************
-Seo Control Panel - Seo Panel Version 3.8.0
+Seo Control Panel - Seo Panel
 *******************************************
 
 -----------------------------------------
@@ -40,6 +40,11 @@ Installation: Simple 5 minute installation
    		
    			Username: spadmin
    			Password: spadmin
+   			
+   	9. Go to Admin Panel => System Settings => MOZ Settings
+   	
+   	   Add moz api key using the link shown in the page 
+   	   
    		
    	Note: 
    		a) Please change password of administrator by visiting 'Profile' link on right top of the seo panel to prevent from security threats.
@@ -94,7 +99,11 @@ Steps to Upgrade Seo Panel to Latest Version
       	   
        e.g. http://www.yourdomain.com/seopanel/install/upgrade.php
    
-   	9. Follow the steps and fill out all the requested information.   
+   	9. Follow the steps and fill out all the requested information. 
+   	
+   	10. Go to Admin Panel => System Settings => MOZ Settings
+   	
+   	   Add moz api key using the link shown in the page  
 
 	Note:
 

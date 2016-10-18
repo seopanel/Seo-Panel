@@ -87,7 +87,7 @@
 					<a href="<?php echo $listInfo['submit_url']?>" target="_blank"><?php echo $listInfo['domain']?></a>
 				</td>
 				<td class='td_br_right'><?php echo date('Y-m-d', $listInfo['submit_time']); ?></td>
-				<td class='td_br_right'><?php echo $listInfo['google_pagerank']?></td>
+				<td class='td_br_right'><?php echo $listInfo['pagerank']?></td>
 				<td class='td_br_right' id='<?php echo $confirmId?>'><?php echo $confirmLink?></td>
 				<td class='td_br_right' id='<?php echo $statusId?>'><?php echo $status?></td>
 				<td class="<?php echo $rightBotClass?>">

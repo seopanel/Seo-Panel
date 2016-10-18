@@ -352,3 +352,10 @@ function urlencode(str) {
 	  str = (str + '').toString();
 	  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
 }
+
+function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
+	accessId = $('input:text[name=SP_MOZ_API_ACCESS_ID]').val();
+	secretKey = $('input:text[name=SP_MOZ_API_SECRET]').val();
+	scriptArgs += "&access_id=" + accessId + "&secret_key=" + secretKey;
+	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}

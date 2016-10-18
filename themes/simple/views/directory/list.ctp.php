@@ -32,13 +32,13 @@
 		</td>		
 	</tr>
 	<tr>		
-		<th><?php echo $spText['common']['Google Pagerank']?>: </th>
+		<th><?php echo $spText['common']['Pagerank']?>: </th>
 		<td>
-			<select name="google_pagerank" onchange="<?php echo $submitLink?>">
+			<select name="pagerank" onchange="<?php echo $submitLink?>">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>				
 				<?php
 				for ($i=0; $i<=10; $i++) {
-					$selected = (($info['google_pagerank'] != '') && ($i == $info['google_pagerank'])) ? "selected" : "";					
+					$selected = (($info['pagerank'] != '') && ($i == $info['pagerank'])) ? "selected" : "";					
 					?>			
 					<option value="<?php echo $i?>" <?php echo $selected?>>PR <?php echo $i?></option>
 					<?php
@@ -101,7 +101,7 @@
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['id']?></td>
 				
 				<td class="td_br_right left"><a target="_blank" href="<?php echo $listInfo['submit_url']?>"><?php echo str_replace('http://', '', $listInfo['domain']); ?></a></td>
-				<td class="td_br_right" id="pr_<?php echo $listInfo['id']?>"><?php echo $listInfo['google_pagerank']?></td>
+				<td class="td_br_right" id="pr_<?php echo $listInfo['id']?>"><?php echo $listInfo['pagerank']?></td>
 				<td class="td_br_right" id="captcha_<?php echo $listInfo['id']?>"><?php echo $listInfo['is_captcha'] ? $spText['common']["Yes"] : $spText['common']["No"];	?></td>
 				<td class="td_br_right"><?php echo $listInfo['lang_name']?></td>
 				<td class="td_br_right" id="status_<?php echo $listInfo['id']?>"><?php echo $statusLink;	?></td>

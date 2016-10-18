@@ -12,6 +12,16 @@ if (!empty($errorMsg)) {
     echo showErrorMsg($errorMsg, false);
 }
 
+// help text to get MOZ account
+if ($category == "moz") {
+	?>
+	<div id="topnewsbox" style="margin-bottom: 20px;">
+		<a class="bold_link" href="https://moz.com/help/guides/moz-api/mozscape/getting-started-with-mozscape/create-and-manage-your-account" target="_blank">
+			<?php echo $spTextSettings['click-to-get-moz-account']; ?> &gt;&gt;
+		</a>
+	</div>
+	<?php
+}
 ?>
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
@@ -51,7 +61,7 @@ if (!empty($errorMsg)) {
 		}
 		
 		// sp demo settings
-		$demoCheckArr = array('SP_API_KEY', 'API_SECRET', 'SP_SMTP_PASSWORD');
+		$demoCheckArr = array('SP_API_KEY', 'API_SECRET', 'SP_SMTP_PASSWORD', 'SP_MOZ_API_ACCESS_ID', 'SP_MOZ_API_SECRET');
 		if (SP_DEMO && in_array($listInfo['set_name'], $demoCheckArr)) {
 			$listInfo['set_val'] = "********";
 		}
@@ -114,6 +124,13 @@ if (!empty($errorMsg)) {
 						    $type = in_array($listInfo['set_name'], $passTypeList) ? "password" : "text";
 						    ?>
 							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo stripslashes($listInfo['set_val'])?>" style='width:<?php echo $width?>px'>
+							<?php if ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {?>
+								<div style="padding: 10px 6px;">
+									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" style="text-decoration: none;"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+								</div>
+								<div id="show_conn_res" style="padding: 10px 6px;"></div>
+							<?php }?>
+							
 						<?php }?>
 					<?php }?>
 				<?php }else{?>

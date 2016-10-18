@@ -1,10 +1,10 @@
 <?php echo showSectionHead($spTextKeyword['Import Keywords']); ?>
-<? if(!empty($validationMsg)){
+<?php if(!empty($validationMsg)){
 		?>
 		<p class="dirmsg">
 			<font class="error"><?php echo $validationMsg?></font>
 		</p>
-		<? 
+		<?php 
 		}
 ?>
 <form id="newKeyword">

@@ -111,6 +111,7 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 	$sql = "select * from themes where status=1 order by id";
 	$themeInfo = $dbConn->select($sql, true);
 	$themeLocation = empty($themeInfo['folder']) ? "themes/classic" : "themes/".$themeInfo['folder'];
+	define('SP_THEME_ABSPATH', SP_ABSPATH."/$themeLocation");
 	define('SP_VIEWPATH', SP_ABSPATH."/$themeLocation/views");
 	define('SP_CSSPATH', SP_WEBPATH."/$themeLocation/css");	
 

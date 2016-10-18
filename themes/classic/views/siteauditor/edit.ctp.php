@@ -40,7 +40,7 @@
 		</td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spTextSA['Check google pagerank of pages']?>:*</td>
+		<td class="td_left_col"><?php echo $spTextSA['Check pagerank of pages']?>:*</td>
 		<td class="td_right_col">
 			<?php $selected = ($post['check_pr'] == 1) ? "selected" : ""; ?>
 			<select name="check_pr">

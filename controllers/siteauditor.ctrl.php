@@ -508,9 +508,11 @@ class SiteAuditorController extends Controller{
 		$filter = "";
 		
 		// check for page rank
-		if(isset($data['google_pagerank']) && ($data['google_pagerank'] != -1)) {
-			$sql .= " and pagerank=".intval($data['google_pagerank']);
-			$filter .= "&google_pagerank=".$data['google_pagerank'];
+		if(isset($data['pagerank']) && ($data['pagerank'] != -1)) {
+			$prMax = intval($data['pagerank']) + 0.5;
+			$prMin = intval($data['pagerank']) - 0.5;
+			$sql .= " and pagerank<$prMax and pagerank>=$prMin";
+			$filter .= "&pagerank=".$data['pagerank'];
 		}	
 		
 		// check for page url
@@ -556,7 +558,7 @@ class SiteAuditorController extends Controller{
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$headArr =  array(
         	'page_url' => $this->spTextSA["Page Link"],
-        	'pagerank' => "PR",
+        	'pagerank' => $_SESSION['text']['common']['MOZ Rank'],
         	'score' => $_SESSION['text']['label']["Score"],
         	'brocken' => $_SESSION['text']['label']["Brocken"],
             'external_links' => $this->spTextSA["External Links"],
@@ -651,7 +653,9 @@ class SiteAuditorController extends Controller{
 		
 		// check for pagerank
 		for ($i=0; $i<=10; $i++) {
-		    $conditions = " and pagerank=$i";
+		    $prMax = $i + 0.5;
+		    $prMin = $i - 0.5;
+		    $conditions = " and pagerank<$prMax and pagerank>=$prMin";
 		    $projectInfo['PR'.$i] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);    
 		}
 		

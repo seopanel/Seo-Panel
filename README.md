@@ -39,6 +39,10 @@ Username: spadmin
 
 Password: spadmin
 
+9. Go to Admin Panel => System Settings => MOZ Settings
+   	
+   Add moz api key using the link shown in the page
+
 ####Note:
 
 a. Please change password of administrator by visiting Profile link on right top of the seo panel to prevent from security threats.

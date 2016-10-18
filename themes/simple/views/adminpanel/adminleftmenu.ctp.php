@@ -152,6 +152,7 @@ foreach($menuList as $i => $menuInfo){
 			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php';</script>			
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php', 'content')"><?php echo $spTextPanel['System Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=moz', 'content')"><?php echo $spTextPanel['MOZ Settings']?></a></li>
 			</ul>
 			<?php
 			break;

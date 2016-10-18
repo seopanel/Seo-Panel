@@ -28,6 +28,13 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 		</td>
 	</tr>
 </table>
+
+<div id="topnewsbox">
+	<a class="bold_link" href="http://www.squidproxies.com/billing/aff.php?aff=249" target="_blank">
+		<?php echo $spTextProxy['click-to-get-proxy']; ?> &gt;&gt;
+	</a>
+</div>
+
 <?php echo $pagingDiv?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
@@ -116,10 +123,7 @@ if (SP_DEMO) {
          	</a>&nbsp;&nbsp;
          	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['common']['Delete']?>
-         	</a>&nbsp;&nbsp;
-         	<a target="_blank" href="http://www.squidproxies.com/billing/aff.php?aff=249" class="actionbut">
-         		Get Proxy
-         	</a>
+         	</a>&nbsp;&nbsp;         	
     	</td>
 	</tr>
 </table>
