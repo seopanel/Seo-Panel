@@ -74,6 +74,9 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 		</td>
 	</tr>
 </table>
+
+<br><br>
+<b>Current Time:</b> <?php echo date("Y-m-d H:i:s <b>T(P)</b>"); ?>
 <?php echo $pagingDiv?>
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">

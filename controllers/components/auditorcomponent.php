@@ -63,7 +63,8 @@ class AuditorComponent extends Controller{
             // gooogle pagerank check
             if ($projectInfo['check_pr']) {
                 $rankCtrler = $this->createController('Rank');
-                $reportInfo['pagerank'] = $rankCtrler->__getGooglePageRank(Spider::addTrailingSlash($reportUrl));
+                $rankInfo = $rankCtrler->__getMozRank(array($reportUrl));
+                $reportInfo['pagerank'] = !empty($rankInfo[0]) ? $rankInfo[0] : 0;
             }
             
             // backlinks page check

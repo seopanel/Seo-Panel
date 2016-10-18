@@ -1,10 +1,10 @@
-<? if(!empty($msg)){
+<?php if(!empty($msg)){
 	$msgClass = empty($error) ? "success" : "error"; 
 	?>
 		<p class="dirmsg">
 			<font class="<?php echo $msgClass?>"><?php echo $msg?></font>
 		</p>
-	<? 
+	<?php 
 	}
 ?>
 <form id="submissionForm" name="submissionForm">
@@ -27,22 +27,22 @@
 		<td class="td_right_col"><a href="<?php echo $dirInfo['submit_url']?>" target="_blank"><?php echo $dirInfo['domain']?></a></td>
 	</tr>		
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spText['common']['Google Pagerank']?>:</td>
-		<td class="td_right_col"><?php echo $dirInfo['google_pagerank']?></td>
+		<td class="td_left_col"><?php echo $spText['common']['Pagerank']?>:</td>
+		<td class="td_right_col"><?php echo $dirInfo['pagerank']?></td>
 	</tr>		
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Category']?>:</td>
 		<td class="td_right_col"><?php echo $categorySel?></td>
 	</tr>
-	<? if (!empty($reciprocalDir)) { ?>
+	<?php if (!empty($reciprocalDir)) { ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Reciprocal Link']?>:</td>
 			<td class="td_right_col">
 				<input type="text" name="reciprocal_url" value="<?php echo $reciprocalUrl?>" style="width: 300px;">
 			</td>
 		</tr>
-	<? } ?>	
-	<? if(!empty($captchaUrl)){ ?>
+	<?php } ?>	
+	<?php if(!empty($captchaUrl)){ ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Enter the code shown']?>:</td>
 			<td class="td_right_col">
@@ -53,7 +53,7 @@
 				<p><img src='<?php echo $captchaUrl?>'></p>
 			</td>
 		</tr>
-	<? } ?>		
+	<?php } ?>		
 	<tr class="white_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

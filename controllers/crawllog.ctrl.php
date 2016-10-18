@@ -163,7 +163,7 @@ class CrawlLogController extends Controller {
 		$urlParams .= "&from_time=$fromTimeLabel&to_time=$toTimeLabel";
 		
 		// sql created using param
-		$sql .= " $conditions and crawl_time >='$fromTimeLabel 00:00:00' and crawl_time<='$toTimeLabel 23:59:59' order by crawl_time DESC";
+		$sql .= " $conditions and crawl_time >='$fromTimeLabel 00:00:00' and crawl_time<='$toTimeLabel 23:59:59' order by id DESC";
 		
 		// pagination setup
 		$this->db->query($sql, true);

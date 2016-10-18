@@ -16,9 +16,9 @@
 		<th style="text-align: left;" nowrap="nowrap"><?php echo $spTextDir['Directories with out Reciprocal Link']?></th>		
 	</tr>	
 	<tr>				
-		<th><?php echo $spText['common']['Google Pagerank']?>: </th>
+		<th><?php echo $spText['common']['Pagerank']?>: </th>
 		<td>			
-			<select name="google_pagerank">
+			<select name="pagerank">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php
 				for ($i=0; $i<=10; $i++) {					

@@ -26,8 +26,8 @@
 			<tr class="<?php echo $class?>" style="<?php echo $foundStyle?>">
 				<td class="<?php echo $leftBotClass?>" width='100px;'><b><?php echo $listInfo['rank']; ?></b></td>
 				<td class='td_br_right' id='seresult' colspan="2">
-					<a href='<?php echo $listInfo['url']?>' target='_blank'><? echo stripslashes($listInfo['title']);?></a>
-					<p><? echo stripslashes($listInfo['description']);?><p>
+					<a href='<?php echo $listInfo['url']?>' target='_blank'><?php echo stripslashes($listInfo['title']);?></a>
+					<p><?php echo stripslashes($listInfo['description']);?><p>
 					<label><?php echo $listInfo['url']?></label>
 				</td>
 			</tr>
@@ -40,7 +40,7 @@
 			<td class="tab_left_bot_noborder"></td>
 			<td class="tab_right_bot" colspan="2" style="text-align: left;"><?php echo $spText['common']['No Records Found']?>!</td>
 		</tr>
-		<?		
+		<?php		
 	} 
 	?>
 	<tr class="listBot">

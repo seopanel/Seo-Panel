@@ -1,4 +1,15 @@
+<div class="Center" style='width:100%;'>
+	<?php echo getRoundTabTop(); ?>
+	<div id="content">
+    	<script type="text/javascript">
+        	scriptDoLoad('archive.php', 'content');
+		</script>
+	</div>
+    <?php echo getRoundTabBot(); ?>	
+</div>	
+
 <?php
+/*
 $borderCollapseVal = $pdfVersion ? "border-collapse: collapse;" : ""; 
 if(!empty($printVersion) || !empty($pdfVersion)) {
     $pdfVersion ? showPdfHeader($spTextHome['Account Summary']) : showPrintHeader($spTextHome['Account Summary']);
@@ -70,7 +81,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<td class="subheaderdark" colspan="2"><?php echo $spTextHome['Directory Submission']?></td>
 		</tr>		
 		<tr>
-			<td class="subheader">Google</td>
+			<td class="subheader">Moz</td>
 			<td class="subheader">Alexa</td>
 			<td class="subheader">Google</td>
 			<td class="subheader">Alexa</td>
@@ -80,15 +91,19 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<td class="subheader"><?php echo $spText['common']['Total']?></td>
 			<td class="subheader"><?php echo $spText['common']['Active']?></td>
 		</tr>
-		<?php if(count($websiteList) > 0){
-		    $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec="; 
-		    ?> 
-			<?php foreach($websiteList as $websiteInfo){
-			    $rankLink = $mainLink."rank-checker&default_args=".urlencode("sec=reports&website_id=".$websiteInfo['id']); 
-			    $backlinkLink = $mainLink."backlink-checker&default_args=".urlencode("sec=reports&website_id=".$websiteInfo['id']);
-			    $indexedLink = $mainLink."saturation-checker&default_args=".urlencode("sec=reports&website_id=".$websiteInfo['id']);
-			    $totaldirLink = $mainLink."directory-submission&default_args=".urlencode("sec=reports&website_id=".$websiteInfo['id']);
-			    $activeDirLink = $mainLink."directory-submission&default_args=".urlencode("sec=reports&active=approved&&website_id=".$websiteInfo['id']);
+		<?php 
+		if(count($websiteList) > 0){
+			
+			foreach($websiteList as $websiteInfo){
+			    $mozRankLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['mozrank']);
+			    $alexaRankLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['alexarank']);
+			    $googleBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['google']['backlinks']);
+			    $alexaBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['alexa']['backlinks']);
+			    $bingBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['msn']['backlinks']);
+			    $googleIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['google']['indexed']);
+			    $bingIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['msn']['indexed']);
+			    $totaldirLink = scriptAJAXLinkHrefDialog('directories.php', 'content', "sec=reports&website_id=".$websiteInfo['id'], $websiteInfo['dirsub']['total']);
+			    $activeDirLink = scriptAJAXLinkHrefDialog('directories.php', 'content', "sec=reports&active=approved&&website_id=".$websiteInfo['id'], $websiteInfo['dirsub']['active']);
 			    ?>
 				<tr>
 					<td class="content" style="border-left: none;"><?php echo $websiteInfo['id']?></td>
@@ -96,15 +111,15 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 						<?php echo $websiteInfo['name'];?><br>
 						<a href="<?php echo $websiteInfo['url'];?>" target="_blank"><?php echo $websiteInfo['url'];?></a>
 					</td>
-					<td class="content"><a href="<?php echo $rankLink?>"><?php echo $websiteInfo['googlerank'];?></a></td>
-					<td class="content"><a href="<?php echo $rankLink?>"><?php echo $websiteInfo['alexarank'];?></a></td>
-					<td class="content"><a href="<?php echo $backlinkLink?>"><?php echo $websiteInfo['google']['backlinks'];?></a></td>
-					<td class="content"><a href="<?php echo $backlinkLink?>"><?php echo $websiteInfo['alexa']['backlinks'];?></a></td>
-					<td class="content"><a href="<?php echo $backlinkLink?>"><?php echo $websiteInfo['msn']['backlinks'];?></a></td>
-					<td class="content"><a href="<?php echo $indexedLink?>"><?php echo $websiteInfo['google']['indexed'];?></a></td>				
-					<td class="content"><a href="<?php echo $indexedLink?>"><?php echo $websiteInfo['msn']['indexed'];?></a></td>
-					<td class="contentmid"><a href="<?php echo $totaldirLink?>"><?php echo $websiteInfo['dirsub']['total'];?></a></td>					
-					<td class="contentmid"><a href="<?php echo $activeDirLink?>"><?php echo $websiteInfo['dirsub']['active'];?></a></td>
+					<td class="content"><?php echo $mozRankLink;?></td>
+					<td class="content"><?php echo $alexaRankLink; ?></td>
+					<td class="content"><?php echo $googleBackLInk; ?></td>
+					<td class="content"><?php echo $alexaBackLInk; ?></td>
+					<td class="content"><?php echo $bingBackLInk; ?></td>
+					<td class="content"><?php echo $googleIndexLInk; ?></td>
+					<td class="content"><?php echo $bingIndexLInk; ?></td>
+					<td class="contentmid"><?php echo $totaldirLink?></td>					
+					<td class="contentmid"><?php echo $activeDirLink?></td>
 				</tr> 
 			<?php } ?>
 		<?php }else{ ?>
@@ -124,4 +139,5 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
     </div>
     <?php   
 }
+*/
 ?>

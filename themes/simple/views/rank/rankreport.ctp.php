@@ -42,7 +42,7 @@
 	<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
-		<td><?php echo $spText['common']['Google Pagerank']?></td>
+		<td><?php echo $spText['common']['MOZ Rank']?></td>
 		<td class="right"><?php echo $spText['common']['Alexa Rank']?></td>
 	</tr>
 	<?php
@@ -63,7 +63,7 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo date('Y-m-d', $listInfo['result_time']); ?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:120px;'><b><?php echo $listInfo['google_pagerank'].'</b> '. $listInfo['rank_diff_google']?></td>
+				<td class='td_br_right' style='text-align:left;padding-left:120px;'><b><?php echo $listInfo['moz_rank'].'</b> '. $listInfo['rank_diff_moz']?></td>
 				<td class="<?php echo $rightBotClass?>" style='text-align:left;padding-left:160px;'><b><?php echo $listInfo['alexa_rank'].'</b> '. $listInfo['rank_diff_alexa']?></td>
 			</tr>
 			<?php
@@ -76,7 +76,7 @@
 		    <td class="td_bottom_border" colspan="1"><?php echo $spText['common']['No Records Found']?>!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
+		<?php		
 	} 
 	?>
 	<tr class="listBot">

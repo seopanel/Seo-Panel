@@ -3,7 +3,7 @@
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Id']?></td>		
 		<td><?php echo $spText['common']['Name']?></td>
-		<td><?php echo $spText['common']['Google Pagerank']?></td>
+		<td><?php echo $spText['common']['Pagerank']?></td>
 		<!--
 		<td><?php echo $spTextDir['Coupon Code']?></td>
 		<td><?php echo $spTextDir['Coupon Offer']?></td>

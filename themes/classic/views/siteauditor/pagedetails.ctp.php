@@ -12,7 +12,7 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         	<tr>
         		<th class="leftcell" width="20%"><?php echo $spTextSA['Page Link']?>:</th>
         		<td width="40%" style="text-align: left;"><a href="<?php echo $reportInfo['page_url']?>" target="_blank"><?php echo $reportInfo['page_url']?></a></td>
-        		<th width="20%">Google Pagerank:</th>
+        		<th width="20%"><?php echo $_SESSION['text']['common']['MOZ Rank']; ?>:</th>
         		<td><?php echo $reportInfo['pagerank']?></td>        		
         	</tr>
         	<tr>

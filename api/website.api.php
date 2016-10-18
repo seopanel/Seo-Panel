@@ -83,9 +83,9 @@ class WebsiteAPI extends Seopanel{
 		$websiteInfo['alexa']['alexarank']['rank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank'];
 		$websiteInfo['alexa']['alexarank']['diff'] = removeBraces($report['rank_diff_alexa']);
 		$websiteInfo['alexa']['alexarank']['date'] = $toTimeDate; 
-		$websiteInfo['google']['pagerank']['rank'] = empty($report['google_pagerank']) ? "-" : $report['google_pagerank'];
-		$websiteInfo['google']['pagerank']['diff'] = removeBraces($report['rank_diff_google']);
-		$websiteInfo['google']['pagerank']['date'] = $toTimeDate;
+		$websiteInfo['moz']['pagerank']['rank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank'];
+		$websiteInfo['moz']['pagerank']['diff'] = removeBraces($report['rank_diff_moz']);
+		$websiteInfo['noz']['pagerank']['date'] = $toTimeDate;
 		
 		// back links reports
 		$report = $backlinlCtrler->__getWebsitebacklinkReport($websiteInfo['id'], $fromTime, $toTime);

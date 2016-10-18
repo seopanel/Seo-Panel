@@ -6,7 +6,7 @@ if (!empty($msg)) {
 	<p class="dirmsg">
 		<font class="success"><?php echo $msg?></font>
 	</p>
-	<? 
+	<?php 
 }
 	
 $scriptUrl = SP_WEBPATH . "/websites.php";	
@@ -16,7 +16,7 @@ if(!empty($validationMsg)){
 		<p class="dirmsg">
 			<font class="error"><?php echo $validationMsg?></font>
 		</p>
-		<? 
+		<?php 
 		}
 
 ?>

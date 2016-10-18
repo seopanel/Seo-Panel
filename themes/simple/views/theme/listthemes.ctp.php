@@ -43,7 +43,7 @@ if(!empty($msg)){
 				<td class="td_br_right left"><?php echo $listInfo['author']?></td>
 				<td class="td_br_right left"><a href="<?php echo $listInfo['website']?>" target="_blank"><?php echo $listInfo['website']?></a></td>
 				<td class="td_br_right"><?php echo $statLabel; ?></td>
-				<td class="td_br_right"><? echo $listInfo['installed'] ? "<font class='green'>Success</font>" : "<font class='red'>Failed</font>"; ?></td>
+				<td class="td_br_right"><?php echo $listInfo['installed'] ? "<font class='green'>Success</font>" : "<font class='red'>Failed</font>"; ?></td>
 				<td class="<?php echo $rightBotClass?>" width="100px">
 					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('themes-manager.php?pageno=<?php echo $pageNo?>', 'content', 'pid=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>

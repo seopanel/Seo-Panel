@@ -1,5 +1,5 @@
 <?php echo showSectionHead($spTextPanel['Edit My Profile']); ?>
-<? if(!empty($msg)){ showSuccessMsg($msg, false);} ?>
+<?php if(!empty($msg)){ showSuccessMsg($msg, false);} ?>
 <form id="updateUser">
 <input type="hidden" name="sec" value="updatemyprofile"/>
 <input type="hidden" name="oldName" value="<?php echo $post['oldName']?>"/>

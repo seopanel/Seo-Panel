@@ -38,7 +38,8 @@ class ReportController extends Controller {
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		foreach($this->seLIst as $seInfo){
-			$sql = "select min(rank) as rank from searchresults
+
+			$sql = "select min(rank) as rank,result_date from searchresults
 			where keyword_id=$keywordId and searchengine_id=".$seInfo['id']."
 			and (result_date='$fromTimeLabel' or result_date='$toTimeLabel')
 			group by result_date order by result_date DESC limit 0, 2";
@@ -59,6 +60,7 @@ class ReportController extends Controller {
 				}
 				$positionInfo[$seInfo['id']]['rank_diff'] = empty ($rankDiff) ? '' : $rankDiff;
 				$positionInfo[$seInfo['id']]['rank'] = $repInfo['rank'];
+				$positionInfo[$seInfo['id']][$repInfo['result_date']] = $repInfo['rank'];
 				$prevRank = $repInfo['rank'];
 				$i++;
 			}
@@ -88,19 +90,35 @@ class ReportController extends Controller {
 				$this->set('printVersion', true);
 				break;
 		}
+<<<<<<< HEAD
 
+=======
+
+		// verify reports generated for user or not
+		$repSetInfo = $this->getUserReportSettings($userId);
+		$repGenerated = (date('y-m-d') === date("y-m-d", $repSetInfo['last_generated'])) ? true : false;
+
+>>>>>>> seopanel/master
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 		} else {
-			$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
+			$intervalDays = $repGenerated ? 7 : 8;
+			$fromTime = mktime(0, 0, 0, date('m'), date('d') - $intervalDays, date('Y'));
 		}
+
 		if (!empty ($searchInfo['to_time'])) {
 			$toTime = strtotime($searchInfo['to_time'] . ' 00:00:00');
 		} else {
-			$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+			$intervalDays = $repGenerated ? 0 : 1;
+			$toTime = mktime(0, 0, 0, date('m'), date('d') - $intervalDays, date('Y'));
 		}
+<<<<<<< HEAD
 
 		$fromTimeTxt = date('Y-m-d', $fromTime);
+=======
+
+		$fromTimeTxt = date('Y-m-d', $fromTime);
+>>>>>>> seopanel/master
 		$toTimeTxt = date('Y-m-d', $toTime);
 		$this->set('fromTime', $fromTimeTxt);
 		$this->set('toTime', $toTimeTxt);
@@ -170,6 +188,7 @@ class ReportController extends Controller {
 			$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
 			$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
 			$this->set('pagingDiv', $pagingDiv);
+			$this->set('pageNo', $searchInfo['pageno']);
 			$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
 
 			# set keywords list
@@ -179,11 +198,19 @@ class ReportController extends Controller {
 
 		$indexList = array();
 		foreach($list as $keywordInfo){
+<<<<<<< HEAD
 			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime);
 
 			// check whether the sorting search engine is there
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol]) ? 10000 : $positionInfo[$orderCol]['rank'];
 
+=======
+			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
+
+			// check whether the sorting search engine is there
+		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeTxt]) ? 10000 : $positionInfo[$orderCol][$toTimeTxt];
+
+>>>>>>> seopanel/master
 			$keywordInfo['position_info'] = $positionInfo;
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
 		}
@@ -204,22 +231,47 @@ class ReportController extends Controller {
 			$exportContent .= createExportContent( array('', $reportHeading, ''));
 			$exportContent .= createExportContent( array());
 			$headList = array($spText['common']['Website'], $spText['common']['Keyword']);
-			foreach ($this->seLIst as $seInfo) $headList[] = $seInfo['domain'];
+
+			$pTxt = str_replace("-", "/", substr($fromTimeTxt, -5));
+			$cTxt = str_replace("-", "/", substr($toTimeTxt, -5));
+			foreach ($this->seLIst as $seInfo) {
+				$domainTxt = str_replace("www.", "", $seInfo['domain']);
+				$headList[] = $domainTxt . "($cTxt)";
+				$headList[] = $domainTxt . "($pTxt)";
+				$headList[] = $domainTxt . "(+/-)";
+			}
+
 			$exportContent .= createExportContent( $headList);
 			foreach($indexList as $keywordId => $rankValue){
 			    $listInfo = $keywordList[$keywordId];
 				$positionInfo = $listInfo['position_info'];
+
 				$valueList = array($listInfo['weburl'], $listInfo['name']);
 				foreach ($this->seLIst as $index => $seInfo){
-					$rank = empty($positionInfo[$seInfo['id']]['rank']) ? '-' : $positionInfo[$seInfo['id']]['rank'];
-					$rankDiff = empty($positionInfo[$seInfo['id']]['rank_diff']) ? '' : $positionInfo[$seInfo['id']]['rank_diff'];
-					$valueList[] = $rank. strip_tags($rankDiff);
+
+					$rankInfo = $positionInfo[$seInfo['id']];
+					$prevRank = isset($rankInfo[$fromTimeTxt]) ? $rankInfo[$fromTimeTxt] : "";
+					$currRank = isset($rankInfo[$toTimeTxt]) ? $rankInfo[$toTimeTxt] : "";
+					$rankDiff = "";
+
+					// if both ranks are existing
+					if ($prevRank != '' && $currRank != '') {
+						$rankDiff = $prevRank - $currRank;
+					}
+
+					$valueList[] = $currRank;
+					$valueList[] = $prevRank;
+					$valueList[] = $rankDiff;
 				}
+
 				$exportContent .= createExportContent( $valueList);
 			}
 			exportToCsv('keyword_report_summary', $exportContent);
 		} else {
+<<<<<<< HEAD
 
+=======
+>>>>>>> seopanel/master
 			$this->set('list', $keywordList);
 
 			// if pdf export
@@ -483,7 +535,9 @@ class ReportController extends Controller {
 		$chart->drawRoundedRectangle(5, 5, 715, 515, 5, 230, 230, 230);
 
 		$chart->drawGraphArea(255, 255, 255, TRUE);
-		$chart->drawScale($dataSet->GetData(), $dataSet->GetDataDescription(), SCALE_NORMAL, 150, 150, 150, TRUE, 90, 2);
+		$getData = $dataSet->GetData();
+		$getDataDes = $dataSet->GetDataDescription();
+		$chart->drawScale($getData, $getDataDes, SCALE_NORMAL, 150, 150, 150, TRUE, 90, 2);
 		$chart->drawGrid(4, TRUE, 230, 230, 230, 50);
 
 		# Draw the 0 line
@@ -491,18 +545,31 @@ class ReportController extends Controller {
 		$chart->drawTreshold(0, 143, 55, 72, TRUE, TRUE);
 
 		# Draw the line graph
+<<<<<<< HEAD
 		$chart->drawLineGraph($dataSet->GetData(), $dataSet->GetDataDescription());
 		$chart->drawPlotGraph($dataSet->GetData(), $dataSet->GetDataDescription(), 3, 2, 255, 255, 255);
 
+=======
+		$getData = $dataSet->GetData();
+		$getDataDes = $dataSet->GetDataDescription();
+		$chart->drawLineGraph($getData, $getDataDes);
+		$getData = $dataSet->GetData();
+		$getDataDes = $dataSet->GetDataDescription();
+		$chart->drawPlotGraph($getData, $getDataDes, 3, 2, 255, 255, 255);
+
+>>>>>>> seopanel/master
 		$j = 1;
 		$chart->setFontProperties($fontFile, 10);
 		foreach($seList as $seDomain){
-			$chart->writeValues($dataSet->GetData(), $dataSet->GetDataDescription(), "Serie".$j++);
+			$getData = $dataSet->GetData();
+			$getDataDes = $dataSet->GetDataDescription();
+			$chart->writeValues($getData, $getDataDes, "Serie".$j++);
 		}
 
 		# Finish the graph
 		$chart->setFontProperties("fonts/tahoma.ttf", 8);
-		$chart->drawLegend(90, 35, $dataSet->GetDataDescription(), 255, 255, 255);
+		$getDataDes = $dataSet->GetDataDescription();
+		$chart->drawLegend(90, 35, $getDataDes, 255, 255, 255);
 		$chart->setFontProperties($fontFile, 10);
 		$kpText = ($_SESSION['lang_code'] == 'ja') ? $this->spTextKeyword["Keyword Position Report"] : "Keyword Position Report";
 		$chart->drawTitle(60, 22, $kpText, 50, 50, 50, 585);
@@ -599,15 +666,19 @@ class ReportController extends Controller {
 	# func to crawl keyword
 	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true) {
 		$crawlResult = array();
-		$websiteUrl = $keywordInfo['url'];
+		$websiteUrl = formatUrl($keywordInfo['url'], false);
 		if(empty($websiteUrl)) return $crawlResult;
 		if(empty($keywordInfo['name'])) return $crawlResult;
+<<<<<<< HEAD
 
 		//Match http or https by removing protocol
     if(preg_match('/^http/i', $websiteUrl)) {
     	$websiteUrl = parse_url($websiteUrl, PHP_URL_HOST);
     }
 
+=======
+
+>>>>>>> seopanel/master
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$seList = explode(':', $keywordInfo['searchengines']);
 		foreach($seList as $seInfoId){
@@ -675,9 +746,17 @@ class ReportController extends Controller {
 
 			    // to update cron that report executed for akeyword on a search engine
 			    if (SP_MULTIPLE_CRON_EXEC && $cron) $this->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
+<<<<<<< HEAD
 
 			    if(preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches)){
 
+=======
+
+			    // verify the urls existing in the result
+			    preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches);
+			    if (!empty($matches[$this->seList[$seInfoId]['url_index']])) {
+
+>>>>>>> seopanel/master
 					$urlList = $matches[$this->seList[$seInfoId]['url_index']];
 					$crawlResult[$seInfoId]['matched'] = array();
 					$rank = 1;
@@ -744,6 +823,7 @@ class ReportController extends Controller {
 			// update crawl log
 			$logId = $result['log_id'];
 			$crawlLogCtrl->updateCrawlLog($logId, $crawlInfo);
+<<<<<<< HEAD
 
 			// if proxy enabled if crawl failed try to check next item
 			if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
@@ -761,6 +841,23 @@ class ReportController extends Controller {
 
 				} else {
 					$this->proxyCheckCount = 1;
+=======
+
+		}
+
+		// if proxy enabled if crawl failed try to check next item
+		if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
+
+			// max proxy checked in one execution is exeeded
+			if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
+
+				// if proxy is available for execution
+				$proxyCtrler = New ProxyController();
+				if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
+					$this->proxyCheckCount++;
+					sleep(SP_CRAWL_DELAY);
+					$crawlResult = $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate);
+>>>>>>> seopanel/master
 				}
 			}
 		}
@@ -906,19 +1003,31 @@ class ReportController extends Controller {
 			'website-stats' => $spTextHome["Website Statistics"],
 		);
 		$this->set('reportTypes', $reportTypes);
+<<<<<<< HEAD
 		$urlarg .= "&report_type=".$searchInfo['report_type'];
 
+=======
+		$urlarg .= "&report_type=".$searchInfo['report_type'];
+
+		// verify reports generated for user or not
+		$repSetInfo = $this->getUserReportSettings($userId);
+		$repGenerated = (date('y-m-d') === date("y-m-d", $repSetInfo['last_generated'])) ? true : false;
+
+>>>>>>> seopanel/master
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 		} else {
-			$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
+			$intervalDays = $repGenerated ? 7 : 8;
+			$fromTime = mktime(0, 0, 0, date('m'), date('d') - $intervalDays, date('Y'));
 		}
 
 		if (!empty ($searchInfo['to_time'])) {
 			$toTime = strtotime($searchInfo['to_time'] . ' 00:00:00');
 		} else {
-			$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+			$intervalDays = $repGenerated ? 0 : 1;
+			$toTime = mktime(0, 0, 0, date('m'), date('d') - $intervalDays, date('Y'));
 		}
+
 		$fromTimeShort = date('Y-m-d', $fromTime);
 		$this->set('fromTime', $fromTimeShort);
 		$toTimeShort = date('Y-m-d', $toTime);
@@ -981,6 +1090,7 @@ class ReportController extends Controller {
 				$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
     			$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
     			$this->set('keywordPagingDiv', $pagingDiv);
+    			$this->set('pageNo', $searchInfo['pageno']);
     			$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
 
     			# set keywords list
@@ -990,11 +1100,19 @@ class ReportController extends Controller {
 
     		$indexList = array();
     		foreach($list as $keywordInfo){
+<<<<<<< HEAD
     			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime);
 
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol]) ? 10000 : $positionInfo[$orderCol]['rank'];
 
+=======
+    			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
+
+    			// check whether the sorting search engine is there
+    		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeShort]) ? 10000 : $positionInfo[$orderCol][$toTimeShort];
+
+>>>>>>> seopanel/master
     			$keywordInfo['position_info'] = $positionInfo;
     			$keywordList[$keywordInfo['id']] = $keywordInfo;
     		}
@@ -1015,19 +1133,44 @@ class ReportController extends Controller {
     			$exportContent .= createExportContent( array('', $reportHeading, ''));
     			$exportContent .= createExportContent( array());
     			$headList = array($spText['common']['Website'], $spText['common']['Keyword']);
-    			foreach ($this->seLIst as $seInfo) $headList[] = $seInfo['domain'];
+
+    			$pTxt = str_replace("-", "/", substr($fromTimeShort, -5));
+    			$cTxt = str_replace("-", "/", substr($toTimeShort, -5));
+    			foreach ($this->seLIst as $seInfo) {
+    				$domainTxt = str_replace("www.", "", $seInfo['domain']);
+    				$headList[] = $domainTxt . "($cTxt)";
+    				$headList[] = $domainTxt . "($pTxt)";
+    				$headList[] = $domainTxt . "(+/-)";
+    			}
+
     			$exportContent .= createExportContent( $headList);
+
+
     			foreach($indexList as $keywordId => $rankValue){
-    			    $listInfo = $keywordList[$keywordId];
+    				$listInfo = $keywordList[$keywordId];
     				$positionInfo = $listInfo['position_info'];
+
     				$valueList = array($listInfo['weburl'], $listInfo['name']);
     				foreach ($this->seLIst as $index => $seInfo){
-    					$rank = empty($positionInfo[$seInfo['id']]['rank']) ? '-' : $positionInfo[$seInfo['id']]['rank'];
-    					$rankDiff = empty($positionInfo[$seInfo['id']]['rank_diff']) ? '' : $positionInfo[$seInfo['id']]['rank_diff'];
-    					$valueList[] = $rank. strip_tags($rankDiff);
+
+    					$rankInfo = $positionInfo[$seInfo['id']];
+    					$prevRank = isset($rankInfo[$fromTimeShort]) ? $rankInfo[$fromTimeShort] : "";
+    					$currRank = isset($rankInfo[$toTimeShort]) ? $rankInfo[$toTimeShort] : "";
+    					$rankDiff = "";
+
+    					// if both ranks are existing
+    					if ($prevRank != '' && $currRank != '') {
+    						$rankDiff = $prevRank - $currRank;
+    					}
+
+    					$valueList[] = $currRank;
+    					$valueList[] = $prevRank;
+    					$valueList[] = $rankDiff;
     				}
+
     				$exportContent .= createExportContent( $valueList);
     			}
+
     		} else {
 				$this->set('list', $keywordList);
 				$this->set('keywordPos', true);
@@ -1059,7 +1202,7 @@ class ReportController extends Controller {
 				$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
 				$this->set('websitePagingDiv', $pagingDiv);
 				$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
-				$this->set('pageNo', $info['pageno']);
+				$this->set('pageNo', $searchInfo['pageno']);
 				$websiteList = $this->db->select($sql);
 			}
 
@@ -1082,8 +1225,13 @@ class ReportController extends Controller {
 				$report = $rankCtrler->__getWebsiteRankReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
 				$listInfo['alexarank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank']." ".$report['rank_diff_alexa'];
+<<<<<<< HEAD
 				$listInfo['googlerank'] = empty($report['google_pagerank']) ? "-" : $report['google_pagerank']." ".$report['rank_diff_google'];
 
+=======
+				$listInfo['mozrank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank']." ".$report['rank_diff_moz'];
+
+>>>>>>> seopanel/master
 				# back links reports
 				$report = $backlinlCtrler->__getWebsitebacklinkReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
@@ -1119,8 +1267,8 @@ class ReportController extends Controller {
 				$headList = array(
 					$_SESSION['text']['common']['Id'],
 					$_SESSION['text']['common']['Website'],
-					'Google Pagerank',
-					'Alexa Rank',
+					$_SESSION['text']['common']['MOZ Rank'],
+					$_SESSION['text']['common']['Alexa Rank'],
 					'Google '.$spTextHome['Backlinks'],
 					'alexa '.$spTextHome['Backlinks'],
 					'Bing '.$spTextHome['Backlinks'],
@@ -1134,7 +1282,7 @@ class ReportController extends Controller {
 					$valueList = array(
 						$websiteInfo['id'],
 						$websiteInfo['url'],
-						strip_tags($websiteInfo['googlerank']),
+						strip_tags($websiteInfo['mozrank']),
 						strip_tags($websiteInfo['alexarank']),
 						strip_tags($websiteInfo['google']['backlinks']),
 						strip_tags($websiteInfo['alexa']['backlinks']),
@@ -1159,6 +1307,7 @@ class ReportController extends Controller {
 
 			// if execution through cron job then just return the content to send through mail
 			if (!empty($cronUserId)) {
+				$this->set('cronUserId', $cronUserId);
 			    return $this->getViewContent('report/archive');
 			} else {
 

@@ -29,17 +29,17 @@
 				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo $url?></td>
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='googlerank<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='alexa<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'alexa<?php echo $i?>', 'sec=backlink&engine=alexa&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'alexa<?php echo $i?>', 'sec=backlink&engine=alexa&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
 				<td class="<?php echo $rightBotClass?>" width="<?php echo $tdWidth?>" id='msnrank<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'msnrank<?php echo $i?>', 'sec=backlink&engine=msn&url=<? echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'msnrank<?php echo $i?>', 'sec=backlink&engine=msn&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
 			</tr>

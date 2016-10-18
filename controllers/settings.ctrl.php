@@ -66,12 +66,18 @@ class SettingsController extends Controller{
             $this->set('spTextProxy', $spTextProxy);		    
 	        $this->render('settings/showproxysettings');
 		} else {
+			
+			$spTextPanel = $this->getLanguageTexts('panel', $_SESSION['lang_code']);
 
 			// switch through category
 			switch ($category) {
 				
 				case "api":
-					$this->set('headLabel', 'API Settings');					
+					$this->set('headLabel', $spTextPanel['API Settings']);					
+					break;
+				
+				case "moz":
+					$this->set('headLabel', $spTextPanel['MOZ Settings']);					
 					break;
 					
 				default:					

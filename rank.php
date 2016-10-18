@@ -53,6 +53,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "showalexa":
 			$controller->printAlexaRank(urldecode($_POST['url']));
 			break;
+			
+		case "showmozrank":
+			$controller->printMOZRank(urldecode($_POST['url']));
+			break;
 		
 		default:
 			$controller->findQuickRank($_POST);
@@ -68,6 +72,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			
 		case "showpr":
 			$controller->printGooglePageRank(urldecode($_GET['url']));
+			break;
+			
+		case "showmozrank":
+			$controller->printMOZRank(urldecode($_GET['url']));
 			break;
 		
 		case "showalexa":

@@ -239,7 +239,8 @@ class CronController extends Controller {
 		if (SP_MULTIPLE_CRON_EXEC && $rankCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) return;
 		
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
-		$websiteInfo['googlePagerank'] = $rankCtrler->__getGooglePageRank($websiteUrl);
+		$mozRankInfo = $rankCtrler->__getMozRank(array($websiteUrl));
+		$websiteInfo['moz_rank'] = $mozRankInfo[0];
 		$websiteInfo['alexaRank'] = $rankCtrler->__getAlexaRank($websiteUrl);
 			
 		$rankCtrler->saveRankResults($websiteInfo, true);			

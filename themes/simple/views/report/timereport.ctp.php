@@ -1,4 +1,3 @@
-
 <table width="100%" border="0" cellspacing="0" cellpadding="2px;" class="list">
 	<tr>
 	<td width='33%'>
@@ -26,8 +25,8 @@
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>" width='100px;'><?php echo date('Y-m-d', $listInfo['time']); ?></td>
 				<td class='td_br_right' id='seresult'>
-					<a href='<?php echo $listInfo['url']?>' target='_blank'><? echo stripslashes($listInfo['title']);?></a>
-					<p><? echo stripslashes($listInfo['description']);?><p>
+					<a href='<?php echo $listInfo['url']?>' target='_blank'><?php echo stripslashes($listInfo['title']);?></a>
+					<p><?php echo stripslashes($listInfo['description']);?><p>
 					<label><?php echo $listInfo['url']?></label>
 				</td>
 				<td class="<?php echo $rightBotClass?>" width="100px" style='text-align:left;'><b><?php echo $listInfo['rank']?></b></td>
@@ -42,7 +41,7 @@
 		    <td class="td_bottom_border" colspan="1">No Records Found!</td>
 		    <td class="tab_right_bot">&nbsp;</td>
 		</tr>
-		<?		
+		<?php		
 	} 
 	?>
 	<tr class="listBot">
