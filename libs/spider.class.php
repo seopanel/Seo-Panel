@@ -62,7 +62,6 @@ class Spider{
 	}
 
 	# func to format urls
-
 	public static function formatUrl($url){
 	    $scheme = "";
 		if(stristr($url,'http://')){
@@ -195,11 +194,7 @@ class Spider{
 	}
 
 	# function to remove last trailing slash
-<<<<<<< HEAD
-	function removeTrailingSlash($url) {
-=======
 	public static function removeTrailingSlash($url) {
->>>>>>> seopanel/master
 		$url = preg_replace('/\/$/', '', $url);
 		return $url;
 	}

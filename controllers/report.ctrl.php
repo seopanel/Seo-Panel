@@ -38,7 +38,6 @@ class ReportController extends Controller {
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		foreach($this->seLIst as $seInfo){
-
 			$sql = "select min(rank) as rank,result_date from searchresults
 			where keyword_id=$keywordId and searchengine_id=".$seInfo['id']."
 			and (result_date='$fromTimeLabel' or result_date='$toTimeLabel')
@@ -90,15 +89,11 @@ class ReportController extends Controller {
 				$this->set('printVersion', true);
 				break;
 		}
-<<<<<<< HEAD
-
-=======
 
 		// verify reports generated for user or not
 		$repSetInfo = $this->getUserReportSettings($userId);
 		$repGenerated = (date('y-m-d') === date("y-m-d", $repSetInfo['last_generated'])) ? true : false;
 
->>>>>>> seopanel/master
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 		} else {
@@ -112,13 +107,8 @@ class ReportController extends Controller {
 			$intervalDays = $repGenerated ? 0 : 1;
 			$toTime = mktime(0, 0, 0, date('m'), date('d') - $intervalDays, date('Y'));
 		}
-<<<<<<< HEAD
 
 		$fromTimeTxt = date('Y-m-d', $fromTime);
-=======
-
-		$fromTimeTxt = date('Y-m-d', $fromTime);
->>>>>>> seopanel/master
 		$toTimeTxt = date('Y-m-d', $toTime);
 		$this->set('fromTime', $fromTimeTxt);
 		$this->set('toTime', $toTimeTxt);
@@ -198,19 +188,11 @@ class ReportController extends Controller {
 
 		$indexList = array();
 		foreach($list as $keywordInfo){
-<<<<<<< HEAD
-			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime);
-
-			// check whether the sorting search engine is there
-		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol]) ? 10000 : $positionInfo[$orderCol]['rank'];
-
-=======
 			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
 
 			// check whether the sorting search engine is there
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeTxt]) ? 10000 : $positionInfo[$orderCol][$toTimeTxt];
 
->>>>>>> seopanel/master
 			$keywordInfo['position_info'] = $positionInfo;
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
 		}
@@ -268,10 +250,6 @@ class ReportController extends Controller {
 			}
 			exportToCsv('keyword_report_summary', $exportContent);
 		} else {
-<<<<<<< HEAD
-
-=======
->>>>>>> seopanel/master
 			$this->set('list', $keywordList);
 
 			// if pdf export
@@ -545,11 +523,6 @@ class ReportController extends Controller {
 		$chart->drawTreshold(0, 143, 55, 72, TRUE, TRUE);
 
 		# Draw the line graph
-<<<<<<< HEAD
-		$chart->drawLineGraph($dataSet->GetData(), $dataSet->GetDataDescription());
-		$chart->drawPlotGraph($dataSet->GetData(), $dataSet->GetDataDescription(), 3, 2, 255, 255, 255);
-
-=======
 		$getData = $dataSet->GetData();
 		$getDataDes = $dataSet->GetDataDescription();
 		$chart->drawLineGraph($getData, $getDataDes);
@@ -557,7 +530,6 @@ class ReportController extends Controller {
 		$getDataDes = $dataSet->GetDataDescription();
 		$chart->drawPlotGraph($getData, $getDataDes, 3, 2, 255, 255, 255);
 
->>>>>>> seopanel/master
 		$j = 1;
 		$chart->setFontProperties($fontFile, 10);
 		foreach($seList as $seDomain){
@@ -669,16 +641,12 @@ class ReportController extends Controller {
 		$websiteUrl = formatUrl($keywordInfo['url'], false);
 		if(empty($websiteUrl)) return $crawlResult;
 		if(empty($keywordInfo['name'])) return $crawlResult;
-<<<<<<< HEAD
 
 		//Match http or https by removing protocol
     if(preg_match('/^http/i', $websiteUrl)) {
     	$websiteUrl = parse_url($websiteUrl, PHP_URL_HOST);
     }
 
-=======
-
->>>>>>> seopanel/master
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$seList = explode(':', $keywordInfo['searchengines']);
 		foreach($seList as $seInfoId){
@@ -746,60 +714,54 @@ class ReportController extends Controller {
 
 			    // to update cron that report executed for akeyword on a search engine
 			    if (SP_MULTIPLE_CRON_EXEC && $cron) $this->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
-<<<<<<< HEAD
-
-			    if(preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches)){
-
-=======
 
 			    // verify the urls existing in the result
 			    preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches);
 			    if (!empty($matches[$this->seList[$seInfoId]['url_index']])) {
 
->>>>>>> seopanel/master
-					$urlList = $matches[$this->seList[$seInfoId]['url_index']];
-					$crawlResult[$seInfoId]['matched'] = array();
-					$rank = 1;
-					$previousDomain = "";
-					foreach($urlList as $i => $url){
-						$url = urldecode(strip_tags($url));
+							$urlList = $matches[$this->seList[$seInfoId]['url_index']];
+							$crawlResult[$seInfoId]['matched'] = array();
+							$rank = 1;
+							$previousDomain = "";
+							foreach($urlList as $i => $url){
+								$url = urldecode(strip_tags($url));
 
-						// add special condition for baidu
-						if (stristr($this->seList[$seInfoId]['domain'], "baidu")) {
-							$url =  addHttpToUrl($url);
-							$url = str_replace("...", "", $url);
-						}
+								// add special condition for baidu
+								if (stristr($this->seList[$seInfoId]['domain'], "baidu")) {
+									$url =  addHttpToUrl($url);
+									$url = str_replace("...", "", $url);
+								}
 
-						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) continue;
+								if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) continue;
 
-						// check for to remove msn ad links in page
-						if(stristr($url, 'r.msn.com')) continue;
+								// check for to remove msn ad links in page
+								if(stristr($url, 'r.msn.com')) continue;
 
-						// check to remove duplicates from same domain if google is the search engine
-						if ($removeDuplicate && $isGoogle) {
-						    $currentDomain = parse_url($url, PHP_URL_HOST);
-						    if ($previousDomain == $currentDomain && $currentDomain == $websiteUrl) {
-						        continue;
-						    }
-						    $previousDomain = $currentDomain;
-						}
+								// check to remove duplicates from same domain if google is the search engine
+								if ($removeDuplicate && $isGoogle) {
+								    $currentDomain = parse_url($url, PHP_URL_HOST);
+								    if ($previousDomain == $currentDomain && $currentDomain == $websiteUrl) {
+								        continue;
+								    }
+								    $previousDomain = $currentDomain;
+								}
 
-						if($this->showAll || stristr($url, $websiteUrl)){
+								if($this->showAll || stristr($url, $websiteUrl)){
 
-							if($this->showAll && stristr($url, $websiteUrl)){
-								$matchInfo['found'] = 1;
-							}else{
-								$matchInfo['found'] = 0;
+									if($this->showAll && stristr($url, $websiteUrl)){
+										$matchInfo['found'] = 1;
+									}else{
+										$matchInfo['found'] = 0;
+									}
+									$matchInfo['url'] = $url;
+									$matchInfo['title'] = strip_tags($matches[$this->seList[$seInfoId]['title_index']][$i]);
+									$matchInfo['description'] = strip_tags($matches[$this->seList[$seInfoId]['description_index']][$i]);
+									$matchInfo['rank'] = $rank;
+									$crawlResult[$seInfoId]['matched'][] = $matchInfo;
+								}
+								$rank++;
 							}
-							$matchInfo['url'] = $url;
-							$matchInfo['title'] = strip_tags($matches[$this->seList[$seInfoId]['title_index']][$i]);
-							$matchInfo['description'] = strip_tags($matches[$this->seList[$seInfoId]['description_index']][$i]);
-							$matchInfo['rank'] = $rank;
-							$crawlResult[$seInfoId]['matched'][] = $matchInfo;
-						}
-						$rank++;
-					}
-					$crawlStatus = 1;
+							$crawlStatus = 1;
 
 				} else {
 
@@ -823,7 +785,6 @@ class ReportController extends Controller {
 			// update crawl log
 			$logId = $result['log_id'];
 			$crawlLogCtrl->updateCrawlLog($logId, $crawlInfo);
-<<<<<<< HEAD
 
 			// if proxy enabled if crawl failed try to check next item
 			if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
@@ -841,27 +802,10 @@ class ReportController extends Controller {
 
 				} else {
 					$this->proxyCheckCount = 1;
-=======
-
-		}
-
-		// if proxy enabled if crawl failed try to check next item
-		if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
-
-			// max proxy checked in one execution is exeeded
-			if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
-
-				// if proxy is available for execution
-				$proxyCtrler = New ProxyController();
-				if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
-					$this->proxyCheckCount++;
-					sleep(SP_CRAWL_DELAY);
-					$crawlResult = $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate);
->>>>>>> seopanel/master
 				}
+
 			}
 		}
-
 		return $crawlResult;
 	}
 
@@ -1004,6 +948,7 @@ class ReportController extends Controller {
 		);
 		$this->set('reportTypes', $reportTypes);
 <<<<<<< HEAD
+<<<<<<< HEAD
 		$urlarg .= "&report_type=".$searchInfo['report_type'];
 
 =======
@@ -1013,6 +958,17 @@ class ReportController extends Controller {
 		$repSetInfo = $this->getUserReportSettings($userId);
 		$repGenerated = (date('y-m-d') === date("y-m-d", $repSetInfo['last_generated'])) ? true : false;
 
+=======
+		$urlarg .= "&report_type=".$searchInfo['report_type'];
+
+=======
+		$urlarg .= "&report_type=".$searchInfo['report_type'];
+
+		// verify reports generated for user or not
+		$repSetInfo = $this->getUserReportSettings($userId);
+		$repGenerated = (date('y-m-d') === date("y-m-d", $repSetInfo['last_generated'])) ? true : false;
+
+>>>>>>> master
 >>>>>>> seopanel/master
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
@@ -1111,7 +1067,11 @@ class ReportController extends Controller {
 
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeShort]) ? 10000 : $positionInfo[$orderCol][$toTimeShort];
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> master
 >>>>>>> seopanel/master
     			$keywordInfo['position_info'] = $positionInfo;
     			$keywordList[$keywordInfo['id']] = $keywordInfo;
@@ -1230,7 +1190,11 @@ class ReportController extends Controller {
 
 =======
 				$listInfo['mozrank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank']." ".$report['rank_diff_moz'];
+<<<<<<< HEAD
 
+=======
+
+>>>>>>> master
 >>>>>>> seopanel/master
 				# back links reports
 				$report = $backlinlCtrler->__getWebsitebacklinkReport($listInfo['id'], $fromTime, $toTime);
