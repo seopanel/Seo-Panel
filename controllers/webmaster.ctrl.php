@@ -30,7 +30,7 @@ class WebMasterController extends GoogleAPIController {
 	var $sourceList = array('google');
 	var $colList = array();	
 	
-	function WebMasterController() {
+    function __construct() {
 		parent::__construct();
 
 		$this->spTextWB = $this->getLanguageTexts('webmaster', $_SESSION['lang_code']);

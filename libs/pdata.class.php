@@ -49,8 +49,7 @@
    var $Data;
    var $DataDescription;
 
-   function pData()
-    {
+   function __construct() {
      $this->Data                           = "";
      $this->DataDescription                = "";
      $this->DataDescription["Position"]    = "Name";

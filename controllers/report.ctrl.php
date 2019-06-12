@@ -1247,7 +1247,10 @@ class ReportController extends Controller {
 		
 		# website search report section
 		if (empty($searchInfo['report_type']) || in_array($searchInfo['report_type'], array('social-media-reports', 'website-search-reports', 'keyword-search-reports', 'sitemap-reports')) ) {
-			$webMasterCtrler = new WebMasterController();
+
+            include_once(SP_CTRLPATH."/social_media.ctrl.php");
+
+		    $webMasterCtrler = new WebMasterController();
 			$socialMediaCtrler = New SocialMediaController();
 			$webMasterCtrler->set('spTextTools', $this->spTextTools);
 			$webMasterCtrler->spTextTools = $this->spTextTools;
@@ -1419,11 +1422,11 @@ class ReportController extends Controller {
     		    // if monthly interval generate on first of each month
     		    if ($repSetInfo['report_interval'] == 30) {
     		        $genReport = (date('d') == 1) ? true : false;
-    		    } else {		    
+    		    } else {
         			$nextGenTime = $lastGeneratedTime + ( $repSetInfo['report_interval'] * 86400);
-        			$genReport = (mktime() > $nextGenTime) ? true : false;
-    		    }    
-		    }		    
+        			$genReport = (time() > $nextGenTime) ? true : false;
+    		    }
+		    }
 		}
 		$repSetInfo['generate_report'] = $genReport; 
 		return $repSetInfo;

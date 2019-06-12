@@ -33,7 +33,7 @@ class GoogleAPIController extends Controller{
 	/*
 	 * contructor
 	 */
-	function GoogleAPIController() {
+    function __construct() {
 		parent::__construct();
 		$this->tokenCtrler = new UserTokenController();
 	}

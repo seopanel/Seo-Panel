@@ -34,8 +34,8 @@ class UserTypeController extends Controller {
 	/**
 	 * constructor
 	 */
-	function UserTypeController() {
-    	
+    function __construct() {
+
     	// call parent constructor
     	parent::__construct();
     	
