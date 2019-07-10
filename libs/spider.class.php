@@ -44,9 +44,9 @@ class Spider{
 	var $_CURL_HTTPHEADER = array();
 	var $userAgentList = array();
 	var $effectiveUrl = null;
-	
+
 	# spider constructor
-	function Spider()	{			
+    function __construct() {
 		$this -> _CURLOPT_COOKIEJAR = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEJAR;
 		$this -> _CURLOPT_COOKIEFILE = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEFILE;		
 		$this -> _CURL_RESOURCE = curl_init( );
@@ -60,9 +60,8 @@ class Spider{
 		$this->userAgentList[] = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.0; search bar)";
 		$this->userAgentList[] = "Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))";
 		$this->userAgentList[] = defined('SP_USER_AGENT') ? SP_USER_AGENT : $this->_CURLOPT_USERAGENT;
-		
-	}	
-	
+	}
+
 	# func to format urls
 	public static function formatUrl($url){	    
 	    $scheme = "";
@@ -403,7 +402,7 @@ class Spider{
 		}
 		
 	}
-	
+
 	# func to get session id
 	function getSessionId($page){
 		if (preg_match('/PHPSESSID=(.*?);/', $page, $result)) {
@@ -412,7 +411,7 @@ class Spider{
 			return false;
 		}
 	}
-	
+
 	# func to check proxy 
 	function checkProxy($proxyInfo) {
 		
@@ -494,7 +493,7 @@ class Spider{
 		curl_close ($ch);
 		return $content;
 	}
-	
+
 	// function to check whether link is brocke
 	public static function isLInkBrocken($url) {
 	    $header = Spider::getHeader($url);
@@ -504,16 +503,18 @@ class Spider{
 	        return 0; 
 	    }
 	}
-	
+
 	// function to check whether link is a redirect
 	public static function isLinkRedirect($url) {
 			$followRedirects = false; //don't follow with cURL as we need that info.
-			$header = $this->getHeader($url, $followRedirects);
+			$header = Spider::getHeader($url, $followRedirects);
 			if (stristr($header, '301 Moved Permanently') || stristr($header, '308 Permanent Redirect')) {
 					return true;
 			} else {
 					return 0;
 			}
 	}
+
 }
+
 ?>

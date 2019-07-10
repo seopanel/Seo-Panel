@@ -86,12 +86,8 @@
       var $bUseColour;
       var $sFileType;
       var $sCode = '';
-      
-      function PhpCaptcha(
-         $aFonts, // array of TrueType fonts to use - specify full path
-         $iWidth = CAPTCHA_WIDTH, // width of image
-         $iHeight = CAPTCHA_HEIGHT // height of image
-      ) {
+
+      function __construct($aFonts,$iWidth = CAPTCHA_WIDTH,$iHeight = CAPTCHA_HEIGHT) {
          // get parameters
          $this->aFonts = $aFonts;
          $this->SetNumChars(CAPTCHA_NUM_CHARS);
@@ -476,10 +472,10 @@
          @unlink("$this->sAudioPath$sFile.wav");
       }
    }
-   
+
    // example sub class
    class PhpCaptchaColour extends PhpCaptcha {
-      function PhpCaptchaColour($aFonts, $iWidth = CAPTCHA_WIDTH, $iHeight = CAPTCHA_HEIGHT) {
+      function __construct($aFonts, $iWidth = CAPTCHA_WIDTH, $iHeight = CAPTCHA_HEIGHT) {
          // call parent constructor
          parent::PhpCaptcha($aFonts, $iWidth, $iHeight);
          
@@ -487,4 +483,5 @@
          $this->UseColour(true);
       }
    }
+
 ?>

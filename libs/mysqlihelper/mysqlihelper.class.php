@@ -56,6 +56,20 @@ class MysqliHelper extends Database{
 
 	// func to execute a select query
 	function select($query, $fetchFirst = false){
+
+        $dbName = DB_NAME;
+        $dbUser = DB_USER;
+        $dbPassword = DB_PASSWORD;
+        $dbServer = DB_HOST;
+
+        if( $this->connectionId ) {
+            if( @mysqli_ping($this->connectionId) ) {} else {
+                $this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
+            }
+        } else {
+            $this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
+        }
+
 		$res = mysqli_query($this->connectionId, $query);
 		$this->showError();
 		
@@ -79,6 +93,20 @@ class MysqliHelper extends Database{
 
 	// func to Execute a general mysql query
 	function query($query, $noRows=false){
+
+        $dbName = DB_NAME;
+        $dbUser = DB_USER;
+        $dbPassword = DB_PASSWORD;
+        $dbServer = DB_HOST;
+
+        if( $this->connectionId ) {
+            if( @mysqli_ping($this->connectionId) ) {} else {
+                $this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
+            }
+        } else {
+            $this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
+        }
+
 		$res = @mysqli_query($this->connectionId, $query);
 		
 		if ($res){
