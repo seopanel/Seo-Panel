@@ -155,6 +155,12 @@ class Install {
 			$this->checkRequirements(true);
 			return;
 		}
+		
+		// check whether installation from the docker, then use env variables
+		$info['db_host'] = !empty($info['db_host']) ? $info['db_host'] : getenv('MYSQL_DB_HOST');
+		$info['db_name'] = !empty($info['db_name']) ? $info['db_name'] : getenv('MYSQL_DATABASE');
+		$info['db_user'] = !empty($info['db_user']) ? $info['db_user'] : getenv('MYSQL_USER');
+		$info['db_pass'] = !empty($info['db_pass']) ? $info['db_pass'] : getenv('MYSQL_PASSWORD');
 		?>
 		<h1 class="BlockHeader">Database Settings</h1>
 		<form method="post">
@@ -560,7 +566,6 @@ class Install {
 		    '4.7.0',
 		    '4.8.0',
 		    '4.9.0',
-		    '4.10.0',
 		);
 		
 		// get current version number
