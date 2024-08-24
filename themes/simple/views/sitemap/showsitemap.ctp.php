@@ -52,7 +52,7 @@
 			<textarea name="exclude_url"><?php echo $post['exclude_url']?></textarea>
 			<p style="margin-top: 6px;"><?php echo $spTextSA['Insert links separated with comma']?>.</p>
 			<p><b>Note:</b> <?php echo $spTextSA['anylinkcontainexcludesitemap']?>.</p>
-			<p><b>Eg:</b> http://www.seopanel.in/plugin/l/, http://www.seopanel.in/plugin/d/</p>
+			<p><b>Eg:</b> https://www.seopanel.org/plugin/l/, https://www.seopanel.org/plugin/d/</p>
 		</td>
 	</tr>
 	<tr>
