@@ -1,6 +1,7 @@
 .buildpath
 .project
 .settings
+.env
 .gitignore.swp
 *.sublime-workspace
 *.sublime-project
