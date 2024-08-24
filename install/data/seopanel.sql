@@ -685,7 +685,7 @@ CREATE TABLE IF NOT EXISTS `information_list` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
 INSERT INTO `information_list` (`id`, `info_type`, `content`, `update_date`) VALUES
-(1, 'news', '	<a style="text-decoration: none" href="http://www.seopanel.in/aboutus/sponsors/" target="_blank" id=''news_info''>\n		<b style="color:red;">New*</b> <b>Donate</b> <b style="color: green">$500</b> \n		and become a <b>premium sponsor of Seo Panel</b>. Also get <b>all plugins</b> we develop for Free!\n	</a>\n	', '2016-12-16');
+(1, 'news', '	<a style="text-decoration: none" href="https://www.seopanel.org/aboutus/sponsors/" target="_blank" id=''news_info''>\n		<b style="color:red;">New*</b> <b>Donate</b> <b style="color: green">$500</b> \n		and become a <b>premium sponsor of Seo Panel</b>. Also get <b>all plugins</b> we develop for Free!\n	</a>\n	', '2016-12-16');
 
 CREATE TABLE IF NOT EXISTS `keywordcrontracker` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -890,9 +890,9 @@ CREATE TABLE IF NOT EXISTS `seoplugins` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=4 ;
 
 INSERT INTO `seoplugins` (`id`, `label`, `name`, `author`, `description`, `version`, `website`, `status`, `installed`, `priority`) VALUES
-(1, 'Meta Tag Generator', 'MetaTagGenerator', 'Geo Varghese', 'Meta Tag Generator', '1.0.0', 'http://www.seopanel.in/plugins/', 1, 1, 100),
-(2, 'Test Plugin', 'TestPlugin', 'Geo Varghese', 'Seo Panel Test Plugin: Check the structure of test plugin and it will help you to create new Seo Panel Plugins.', '1.0.0', 'http://www.seopanel.in/plugins/', 0, 1, 100),
-(3, 'Quick Web Proxy', 'QuickWebProxy', 'Seo Panel', 'It will help you to create a web proxy server using your hosting server or external proxy servers', '1.0.0', 'https://www.seopanel.in/plugin/l/94/quick-web-proxy/', 1, 1, 100);
+(1, 'Meta Tag Generator', 'MetaTagGenerator', 'Geo Varghese', 'Meta Tag Generator', '1.0.0', 'https://www.seopanel.org/plugins/', 1, 1, 100),
+(2, 'Test Plugin', 'TestPlugin', 'Geo Varghese', 'Seo Panel Test Plugin: Check the structure of test plugin and it will help you to create new Seo Panel Plugins.', '1.0.0', 'https://www.seopanel.org/plugins/', 0, 1, 100),
+(3, 'Quick Web Proxy', 'QuickWebProxy', 'Seo Panel', 'It will help you to create a web proxy server using your hosting server or external proxy servers', '1.0.0', 'https://www.seopanel.org/plugin/l/94/quick-web-proxy/', 1, 1, 100);
 
 CREATE TABLE IF NOT EXISTS `seotools` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -1041,8 +1041,8 @@ CREATE TABLE IF NOT EXISTS `themes` (
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=3 ;
 
 INSERT INTO `themes` (`id`, `name`, `folder`, `author`, `description`, `version`, `website`, `status`, `installed`) VALUES
-(1, 'Classic', 'classic', 'Geo Varghese', 'Classic theme of Seo Panel', '1.0.0', 'http://www.seopanel.in/theme/l/1/classic/', 1, 1),
-(2, 'Simple', 'simple', 'Geo Varghese', 'Simple theme of Seo Panel', '1.0.0', 'http://www.seopanel.in/theme/l/2/simple/', 0, 1);
+(1, 'Classic', 'classic', 'Geo Varghese', 'Classic theme of Seo Panel', '1.0.0', 'https://www.seopanel.org/theme/l/1/classic/', 1, 1),
+(2, 'Simple', 'simple', 'Geo Varghese', 'Simple theme of Seo Panel', '1.0.0', 'https://www.seopanel.org/theme/l/2/simple/', 0, 1);
 
 CREATE TABLE IF NOT EXISTS `timezone` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
