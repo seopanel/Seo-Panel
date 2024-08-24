@@ -82,6 +82,15 @@ class SocialMediaController extends Controller{
     		    "url_part" => $engineList['youtube']['url_part'],
     		    "example" => "https://www.youtube.com/c/seopanel",
     		],
+    	    "reddit" => [
+    	        "label" => "reddit",
+    	        "data_from" => "crawl",
+    	        "regex" => [
+    	            "follower" => $engineList['reddit']['regex1'],
+    	        ],
+    	        "url_part" => $engineList['reddit']['url_part'],
+    	        'example' => 'https://www.reddit.com/r/Twitter',
+    	    ],
     	];
     	
     	$this->set('pageScriptPath', $this->pageScriptPath);
@@ -458,10 +467,16 @@ class SocialMediaController extends Controller{
 						$result['followers'] = formatNumber($matches[1]);
 					}	
 				}
+				
+				// if not found any details
+				if (!$result['status']) {
+				    $result['msg'] = "Social media channel details not found.";
+				} else {
+				    $result['msg'] = "Social media channel details fetched successfully.";
+				}
 			} else {
 				$result['msg'] = $smContentInfo['errmsg'];
 			}
-			
 		}
 		
 		return $result;

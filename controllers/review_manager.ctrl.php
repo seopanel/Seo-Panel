@@ -361,10 +361,15 @@ class ReviewManagerController extends ReviewBase{
 					}	
 				}
 				
+				// if not found any details
+				if (!$result['status']) {
+				    $result['msg'] = "Review page details not found.";
+				} else {
+				    $result['msg'] = "Review page details fetched successfully.";
+				}
 			} else {
 				$result['msg'] = $smContentInfo['errmsg'];
 			}
-			
 		}
 		
 		return $result;
