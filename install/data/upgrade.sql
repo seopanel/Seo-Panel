@@ -22,14 +22,11 @@ UPDATE `currency` SET `symbol` = 'ł' WHERE `currency`.`id` = 58;
 UPDATE `currency` SET `symbol` = '₫' WHERE `currency`.`id` = 65;
 UPDATE `currency` SET `symbol` = '¥' WHERE `currency`.`id` = 16;
 
-INSERT INTO `crawl_engines` (`id`, `engine_name`, `engine_category`, `regex1`, `regex2`, `regex3`, `regex4`, `url`, `url_part`, `status`) 
-VALUES (NULL, 'yelp', 'review', '/\"reviewCount\":(\\d+)/is', '/\"ratingValue\":(\\d+\\.\\d+)/is', NULL, NULL, '', NULL, '1');
-
-INSERT INTO `crawl_engines` (`id`, `engine_name`, `engine_category`, `regex1`, `regex2`, `regex3`, `regex4`, `url`, `url_part`, `status`) 
-VALUES (NULL, 'trustpilot', 'review', '/\"reviewCount\":\"(\\d+)\"/is', '/\"ratingValue\":\"(\\d+\\.\\d+)\"/is', NULL, NULL, '', NULL, '1');
-
-INSERT INTO `crawl_engines` (`id`, `engine_name`, `engine_category`, `regex1`, `regex2`, `regex3`, `regex4`, `url`, `url_part`, `status`) 
-VALUES (NULL, 'tripadvisor', 'review', '/\"reviewCount\":\"(\\d+)\"/is', '/\"ratingValue\":\"(\\d+\\.\\d+)\"/is', NULL, NULL, '', NULL, '1');
+INSERT INTO `crawl_engines` (`id`, `engine_name`, `engine_category`, `regex1`, `regex2`, `regex3`, `regex4`, `url`, `url_part`, `status`) VALUES
+(NULL, 'yelp', 'review', '/reviewCount.*?:(\\d+),/is', '/aggregateRating.*?:([0-9]*\\.?[0-9]+),/is', NULL, NULL, '', NULL, 1),
+(NULL, 'trustpilot', 'review', '/\"reviewCount\":\"(\\d+)\"/is', '/\"ratingValue\":\"(\\d+\\.\\d+)\"/is', NULL, NULL, '', NULL, 1),
+(NULL, 'tripadvisor', 'review', '/\"reviewCount\":(\\d+)/is', '/\"ratingValue\":\"(\\d+\\.\\d+)\"/is', NULL, NULL, '', NULL, 1),
+(NULL, 'reddit', 'social_media', '/subscribers=\"(\\d+)\"/is', NULL, NULL, NULL, '', NULL, 1);
 
 UPDATE `crawl_engines` SET `regex1` = '/\"follower_count\":(\\d+)/is' WHERE engine_name='pinterest' and engine_category='social_media';
 

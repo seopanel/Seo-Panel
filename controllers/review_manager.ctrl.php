@@ -357,7 +357,7 @@ class ReviewManagerController extends ReviewBase{
 						
 					if (!empty($matches[1])) {
 						$result['status'] = 1;
-						$result['rating'] = formatNumber($matches[1]);
+						$result['rating'] = round(formatNumber($matches[1]), 2);
 					}	
 				}
 				

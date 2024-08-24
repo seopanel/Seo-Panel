@@ -35,23 +35,25 @@ class ReviewBase extends Controller {
     			    "rating" => $engineList['google']['regex2'],
     			],
     		    "url_part" => '?hl=en',
-    		    'example' => ['https://www.google.com/search?q=kfc+Damrak']
+    		    'example' => ['https://www.google.com/search?q=kfc+Damrak'],
+    		    'icon' => 'fab fa-google',
     		],
-    	    "glassdoor" => [
+    	    /*"glassdoor" => [
     	        "label" => "Glassdoor",
     	        "regex" => [
     	            "reviews" => $engineList['glassdoor']['regex1'],
     	            "rating" => $engineList['glassdoor']['regex2'],
     	        ],
     		    'example' => ['https://www.glassdoor.com/Overview/Working-at-Google-EI_IE9079.11,17.htm']
-    	    ],
+    	    ],*/
     	    "yelp" => [
     	        "label" => "Yelp",
     	        "regex" => [
     	            "reviews" => $engineList['yelp']['regex1'],
     	            "rating" => $engineList['yelp']['regex2'],
     	        ],
-    	        'example' => ['https://www.yelp.com/biz/intercontinental-singapore-singapore-2']
+    	        'example' => ['https://www.yelp.com/biz/intercontinental-singapore-singapore-2'],
+    	        'icon' => 'fab fa-yelp',
     	    ],
     	    "trustpilot" => [
     	        "label" => "Trustpilot",
@@ -59,7 +61,8 @@ class ReviewBase extends Controller {
     	            "reviews" => $engineList['trustpilot']['regex1'],
     	            "rating" => $engineList['trustpilot']['regex2'],
     	        ],
-    	        'example' => ['https://www.trustpilot.com/review/xohotels.com']
+    	        'example' => ['https://www.trustpilot.com/review/xohotels.com'],
+    	        'icon' => 'fab fa-buffer',
     	    ],
     	    "tripadvisor" => [
     	        "label" => "Tripadvisor",
@@ -67,12 +70,12 @@ class ReviewBase extends Controller {
     	            "reviews" => $engineList['tripadvisor']['regex1'],
     	            "rating" => $engineList['tripadvisor']['regex2'],
     	        ],
-    	        'example' => ['https://www.tripadvisor.com/Hotel_Review-g188098-d236186-Reviews-Hotel_Julen-Zermatt_Canton_of_Valais_Swiss_Alps.html']
+    	        'example' => ['https://www.tripadvisor.com/Hotel_Review-g188098-d236186-Reviews-Hotel_Julen-Zermatt_Canton_of_Valais_Swiss_Alps.html'],
+    	        'icon' => 'fab fa-tripadvisor',
     	    ],
     	];
     	
     	parent::__construct();
-    }
-    
+    }    
 }
 ?>

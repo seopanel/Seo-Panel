@@ -155,13 +155,18 @@ $colCount = ($baseColCount * 3);
 				?>
 				<tr>
 					<td>
-						<?php echo $listInfo['name']; ?>
+						<a href="<?php echo $listInfo['url']?>" target="_blank">
+							<?php echo $listInfo['name']; ?>
+						</a>
 					</td>
 					<td>
-						<a href="javascript:void(0)"><?php echo $websiteList[$listInfo['website_id']]['name']; ?></a>
+						<?php echo $websiteList[$listInfo['website_id']]['name']; ?>
 					</td>
 					<td>
-						<a href="javascript:void(0)"><?php echo $serviceList[$listInfo['type']]['label']; ?></a>
+						<a href="javascript:void(0)">
+							<i class="fab fa-<?php echo $serviceList[$listInfo['type']]['icon']?>"></i>
+							<?php echo $serviceList[$listInfo['type']]['label']; ?>
+						</a>
 					</td>
 					<?php
 					foreach ($colList as $colName => $colVal){
