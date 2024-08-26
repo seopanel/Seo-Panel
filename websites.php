@@ -170,6 +170,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->deleteWebmasterToolSitemap($_GET['id']);
 			break;
 			
+		case "fetchgoogleanalytics":
+		    $propertyList = $controller->fetchGoogleAnalyticProperties($_POST);
+		    print json_encode(['status' => 1, 'data' => $propertyList]);
+		    break;
+			
 		default:
 			$controller->listWebsites($_GET);
 			break;

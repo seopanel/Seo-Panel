@@ -364,6 +364,7 @@ class Spider{
 		$ret['page'] = curl_exec( $this -> _CURL_RESOURCE );
 		$ret['error'] = curl_errno( $this -> _CURL_RESOURCE );
 		$ret['errmsg'] = curl_error( $this -> _CURL_RESOURCE );
+		$ret['http_code'] = curl_getinfo($this -> _CURL_RESOURCE, CURLINFO_HTTP_CODE);
 		
 		$this->effectiveUrl = curl_getinfo($this -> _CURL_RESOURCE, CURLINFO_EFFECTIVE_URL);
 		

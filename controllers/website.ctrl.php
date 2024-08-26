@@ -24,8 +24,7 @@
 class WebsiteController extends Controller{
 
 	# func to show websites
-	function listWebsites($info=[]){		
-		
+	function listWebsites($info=[]) {		
 		$userId = isLoggedIn();		
 		$info['pageno'] = intval($info['pageno']);
 		$pageScriptPath = 'websites.php?stscheck=';
@@ -81,6 +80,9 @@ class WebsiteController extends Controller{
 		
 		$this->set('statusList', $statusList);
 		$this->set('info', $info);
+		
+		$propertyList = $this->__getAllAnalyticProperties(TRUE);
+		$this->set('propertyList', $propertyList);
 				
 		$websiteList = $this->db->select($sql);	
 		$this->set('pageNo', $info['pageno']);		
@@ -207,8 +209,7 @@ class WebsiteController extends Controller{
 		$sql = "delete from dirsubmitinfo where website_id=$websiteId";
 		$this->db->query($sql);
 		$sql = "delete from skipdirectories where website_id=$websiteId";
-		$this->db->query($sql);
-		    
+		$this->db->query($sql);		    
 	}
 
 	function newWebsite($info=[]) {
@@ -238,6 +239,8 @@ class WebsiteController extends Controller{
 			$this->set('isAdmin', 1);
 		}
 		
+		$propertyList = $this->__getAllAnalyticProperties(TRUE);
+		$this->set('propertyList', $propertyList);
 		$this->render('website/new');
 	}
 
@@ -268,7 +271,7 @@ class WebsiteController extends Controller{
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
-		$errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
+		$errMsg['url'] = formatErrorMsg($this->validate->checkUrl($listInfo['url']));
 		$listInfo['url'] = addHttpToUrl($listInfo['url']);
 		$statusVal = isset($listInfo['status']) ? intval($listInfo['status']) : 1;
 		
@@ -364,7 +367,7 @@ class WebsiteController extends Controller{
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
-		$errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
+		$errMsg['url'] = formatErrorMsg($this->validate->checkUrl($listInfo['url']));
 		$listInfo['url'] = addHttpToUrl($listInfo['url']);
 		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";		
 		
@@ -679,12 +682,10 @@ class WebsiteController extends Controller{
 			
 		} else {
 			return true;
-		}
-			
+		}			
 	}
 	
-	function showimportWebmasterToolsWebsites() {
-		
+	function showimportWebmasterToolsWebsites() {		
 		$userId = isLoggedIn();
 		$this->set('spTextTools', $this->getLanguageTexts('seotools', $_SESSION['lang_code']));
 		$userCtrler = New UserController();
@@ -941,10 +942,83 @@ class WebsiteController extends Controller{
 			showErrorMsg($result['msg'], false);
 		}
 		
-		$this->listSitemap(array('website_id' => $sitemapInfo['website_id']));
+		$this->listSitemap(array('website_id' => $sitemapInfo['website_id']));	
+	}	
 	
+	function syncGoogleAnalyticProperties($userId) {
+	    $userId = intval($userId);
+	    $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");
+	    $propertyList = createSelectList($analyticList, "ALL", 'property_id');
+	    
+	    $GoogleCtrl  = new GoogleAPIController();
+	    $result = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    if(!empty($result)) {
+	        $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");	        
+	        foreach ($result as $data) {
+	            $propertyId = $data['property_id'];
+	            
+	            if (!empty($propertyList[$propertyId])) {
+	                $propertyDbId = $propertyList[$propertyId]['id'];
+	                $dataList = [
+	                    'user_id' => $userId,
+	                    'account_name' => $data['account_name'],
+	                    'account_id' => $data['account_id'],
+	                    'property_name' => $data['property_name'],
+	                    'datetime_updated' => date('Y-m-d H:i:s'),
+	                ];
+	                
+	                $this->dbHelper->updateRow('analytics_properties', $dataList, "id=$propertyDbId");
+	            } else {
+	                $dataList = [
+	                    'user_id' => $userId,
+	                    'account_name' => $data['account_name'],
+	                    'account_id' => $data['account_id'],
+	                    'property_name' => $data['property_name'],
+	                    'property_id' => $data['property_id'],
+	                ];
+	                
+	                $this->dbHelper->insertRow('analytics_properties', $dataList);
+	            }
+	        }
+	    }
 	}
 	
-		
+	function fetchGoogleAnalyticProperties() {
+	    $userId = isLoggedIn();
+	    $this->syncGoogleAnalyticProperties($userId);
+	    
+	    $propertyList = $this->__getAllAnalyticProperties(TRUE);
+	    return $propertyList;
+	}
+	
+	function __getUserAnalyticProperties($userId) {
+	    $userId = intval($userId);
+	    $sql = "SELECT *
+                FROM analytics_properties
+                WHERE user_id= $userId ORDER BY account_name, property_name, property_id";
+	    $list = $this->db->select($sql);
+	    return $list;
+	}
+	
+	function __getAllAnalyticProperties($asSelectList=FALSE) {
+	    $sql = "SELECT *
+                FROM analytics_properties
+                ORDER BY account_name, property_name, property_id";
+	    $list = $this->db->select($sql);
+	    
+	    // if return as property list
+	    if ($asSelectList) {
+	        $propertyList = [];
+	        foreach ($list as $item) {
+	            if (empty($item['view_id'])) {
+	                $propertyList[$item['property_id']] = $item['account_name'].' - '.$item['property_name'] ."({$item['property_id']})";
+	            }
+	        }
+	        
+	        return $propertyList;
+	    } else {
+	        return $list;
+	    }
+	}
 }
 ?>

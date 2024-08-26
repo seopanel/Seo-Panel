@@ -28,6 +28,28 @@ INSERT INTO `crawl_engines` (`id`, `engine_name`, `engine_category`, `regex1`, `
 (NULL, 'tripadvisor', 'review', '/\"reviewCount\":(\\d+)/is', '/\"ratingValue\":\"(\\d+\\.\\d+)\"/is', NULL, NULL, '', NULL, 1),
 (NULL, 'reddit', 'social_media', '/subscribers=\"(\\d+)\"/is', NULL, NULL, NULL, '', NULL, 1);
 
+CREATE TABLE `analytics_properties` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `account_name` varchar(120) NOT NULL,
+  `account_id` varchar(120) NOT NULL,
+  `property_name` varchar(120) NOT NULL,
+  `property_id` varchar(120) NOT NULL,
+  `datetime_created` datetime NOT NULL DEFAULT current_timestamp(),
+  `datetime_updated` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+ALTER TABLE `analytics_properties` ADD PRIMARY KEY (`id`), ADD KEY `analytics_properties_user_id_delete` (`user_id`);
+ALTER TABLE `analytics_properties` MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `analytics_properties` ADD CONSTRAINT `analytics_properties_user_id_delete` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
+
+INSERT INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'website', 'Sync Google Analytics Properties', 'Sync Google Analytics Properties'),
+('en', 'website', 'Google Analytics Property', 'Google Analytics Property'),
+('en', 'common', 'Invalid Url', 'Invalid Url');
+
+
+-- ----  
 UPDATE `crawl_engines` SET `regex1` = '/\"follower_count\":(\\d+)/is' WHERE engine_name='pinterest' and engine_category='social_media';
 
 UPDATE `searchengines` SET `regex` = '<div.*?class=\"?g.*?>.*?href=\"(.*?)\".*?>.*?<h3.*?>(.*?)<\\/h3>',
