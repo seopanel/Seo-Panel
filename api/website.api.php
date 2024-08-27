@@ -310,8 +310,6 @@ class WebsiteAPI extends Seopanel{
 		// if website exists
 		if ($websiteInfo = $this->ctrler->__getWebsiteInfo($websiteId)) {
 			
-			$websiteInfo['oldName'] = $websiteInfo['name'];
-			
 			// loop through inputs
 			foreach ($info as $key => $val) {
 				$websiteInfo[$key] = $val;

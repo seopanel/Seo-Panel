@@ -810,9 +810,9 @@ function timeElapsedString($datetime, $full = false) {
 function createSelectList($list, $nameCol = 'name', $idCol = 'id' ) {
     $newList = [];
     foreach ($list as $listInfo) {
-        $newList[$listInfo[$idCol]] = $listInfo[$nameCol];
+        $newList[$listInfo[$idCol]] = ($nameCol== 'ALL') ? $listInfo : $listInfo[$nameCol];
     }
-
+    
     return $newList;
 }
 

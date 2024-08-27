@@ -241,24 +241,32 @@ class WebsiteController extends Controller{
 		
 		$propertyList = $this->__getAllAnalyticProperties(TRUE);
 		$this->set('propertyList', $propertyList);
-		$this->render('website/new');
+		$this->set('editAction', 'create');
+		$this->render('website/edit_website');
 	}
 
-	function __checkName($name, $userId){
-		
-		$sql = "select id from websites where name='".addslashes($name)."' and user_id=$userId";
+	function __checkName($name, $userId, $websiteId=FALSE) {
+	    $userId = intval($userId);
+	    $websiteId = intval($websiteId);
+		$sql = "select id 
+                from websites
+                where name='".addslashes($name)."' and user_id=$userId";
+		$sql .= !empty($websiteId) ? " and id!=$websiteId" : "";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
 	}
 
-	function __checkWebsiteUrl($url, $websiteId=0){		
+	function __checkWebsiteUrl($url, $websiteId=0) {
+	    $websiteId = intval($websiteId);
 		$sql = "select id from websites where url='".addslashes($url)."'";
 		$sql .= $websiteId ? " and id!=$websiteId" : "";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
 	}
 
-	function createWebsite($listInfo, $apiCall = false){
+	function createWebsite($listInfo, $apiCall=false) {
+	    $listInfo['url'] = trim($listInfo['url']);
+	    $listInfo['name'] = trim($listInfo['name']);
 		
 		// add user id when using as admin or calling api
 		if (isAdmin() || $apiCall) {
@@ -327,34 +335,40 @@ class WebsiteController extends Controller{
 		return empty($listInfo['id']) ? false :  $listInfo;
 	}
 
-	function editWebsite($websiteId, $listInfo=''){		
-		
+	function editWebsite($websiteId, $listInfo=[]) {		
 		$websiteId = intval($websiteId);
 		if(!empty($websiteId)){
 			if(empty($listInfo)){
 				$listInfo = $this->__getWebsiteInfo($websiteId);
-				$listInfo['oldName'] = $listInfo['name'];
 			}
+			
 			$listInfo['title'] = stripslashes($listInfo['title']);
 			$listInfo['description'] = stripslashes($listInfo['description']);
 			$listInfo['keywords'] = stripslashes($listInfo['keywords']);
 			$this->set('post', $listInfo);
 			
-			# get all users
-			if(isAdmin()){
+			// get all users
+			if(isAdmin()) {
 				$userCtrler = New UserController();
 				$userList = $userCtrler->__getAllUsers();
 				$this->set('userList', $userList);  			
 				$this->set('isAdmin', 1);
 			}
 			
-			$this->render('website/edit');
+			$propertyList = $this->__getAllAnalyticProperties(TRUE);
+			$this->set('propertyList', $propertyList);
+			
+			$this->set('editAction', 'update');
+			$this->render('website/edit_website');
 			exit;
-		}
+		}		
+		
 		$this->listWebsites([]);
 	}
 
-	function updateWebsite($listInfo, $apiCall = false){
+	function updateWebsite($listInfo, $apiCall=false) {
+	    $listInfo['url'] = trim($listInfo['url']);
+	    $listInfo['name'] = trim($listInfo['name']);
 		
 		// check whether admin or api calll
 		if (isAdmin() || $apiCall) {
@@ -369,7 +383,7 @@ class WebsiteController extends Controller{
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
 		$errMsg['url'] = formatErrorMsg($this->validate->checkUrl($listInfo['url']));
 		$listInfo['url'] = addHttpToUrl($listInfo['url']);
-		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";		
+		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";
 		
 		// check limit
 		if(!$this->validate->flagErr && !empty($listInfo['user_id'])){
@@ -388,13 +402,11 @@ class WebsiteController extends Controller{
 		}
 		
 		// verify the form
-		if(!$this->validate->flagErr){
+		if(!$this->validate->flagErr) {
 
-		    if(strtolower($listInfo['name']) != strtolower($listInfo['oldName'])){
-				if ($this->__checkName($listInfo['name'], $userId)) {
-					$errMsg['name'] = formatErrorMsg($this->spTextWeb['Website already exist']);
-					$this->validate->flagErr = true;
-				}
+		    if ($this->__checkName($listInfo['name'], $userId, $listInfo['id'])) {
+				$errMsg['name'] = formatErrorMsg($this->spTextWeb['Website already exist']);
+				$this->validate->flagErr = true;
 			}
 			
 			if ($this->__checkWebsiteUrl($listInfo['url'], $listInfo['id'])) {
@@ -435,8 +447,7 @@ class WebsiteController extends Controller{
 		} else {
 			$this->set('errMsg', $errMsg);
 			$this->editWebsite($listInfo['id'], $listInfo);
-		}
-		
+		}		
 	}
 	
 	# func to crawl meta data of a website
@@ -502,7 +513,6 @@ class WebsiteController extends Controller{
 	}
 	
 	public static function addInputValue($value, $col) {
-
 		$value = removeNewLines($value);
 		?>
 		<script type="text/javascript">
@@ -512,7 +522,6 @@ class WebsiteController extends Controller{
 	}
 	
 	function showImportWebsites() {
-
 		$userId = isLoggedIn();
 		
 		# get all users
@@ -952,8 +961,7 @@ class WebsiteController extends Controller{
 	    
 	    $GoogleCtrl  = new GoogleAPIController();
 	    $result = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
-	    if(!empty($result)) {
-	        $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");	        
+	    if(!empty($result)) {     
 	        foreach ($result as $data) {
 	            $propertyId = $data['property_id'];
 	            

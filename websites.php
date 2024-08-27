@@ -171,7 +171,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "fetchgoogleanalytics":
-		    $propertyList = $controller->fetchGoogleAnalyticProperties($_POST);
+		    $propertyList = $controller->fetchGoogleAnalyticProperties();
 		    print json_encode(['status' => 1, 'data' => $propertyList]);
 		    break;
 			

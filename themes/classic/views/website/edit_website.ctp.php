@@ -1,5 +1,6 @@
-<?php echo showSectionHead($spTextPanel['New Website']); ?>
 <?php 
+$headText = ($editAction == 'update') ? $spTextPanel['New Website'] : $spTextWeb['Edit Website'];
+echo showSectionHead($headText);
 if(!empty($msg)){
 	?>
 	<p class="dirmsg">
@@ -18,8 +19,11 @@ if(!empty($validationMsg)){
 
 $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 ?>
-<form id="newWebsite">
-<input type="hidden" name="sec" value="create"/>
+<form id="edit_website">
+<input type="hidden" name="sec" value="<?php echo $editAction?>"/>
+<?php if ($editAction == 'update') {?>	
+	<input type="hidden" name="id" value="<?php echo $post['id']?>"/>
+<?php }?>
 <table class="list">
 	<tr class="listHead">
 		<td class="left" width='30%'><?php echo $spTextPanel['New Website']?></td>
@@ -89,7 +93,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 	        		</a>
     	        </div>
 	        </div>
-        	<div id="connection_refresh_content" style="margin: 16px 6px;" class="fw-bold float-right"></div>
+        	<div id="connection_refresh_content" style="margin: 16px 6px;display: none;" class="fw-bold float-right"></div>
 		</td>
 	</tr>
 </table>
@@ -99,7 +103,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
     		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
-         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('websites.php', 'newWebsite', 'content')"; ?>
+         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('websites.php', 'edit_website', 'content')"; ?>
          	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
          		<?php echo $spText['button']['Proceed']?>
          	</a>
@@ -107,3 +111,38 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 	</tr>
 </table>
 </form>
+
+<script type="text/javascript">
+$(function() {
+    $("#connection_refresh").click(function() {
+    	$("#connection_refresh_content").show();
+        $.ajax({
+            url: '<?php echo SP_WEBPATH?>/websites.php?sec=fetchgoogleanalytics',
+            type: "GET",
+  			dataType: "json",
+            success: function(response) {
+            	$("#connection_refresh_content").show();
+                if(response.status) {
+                	var connectionList = response.data;
+                	$('#analytics_view_id').empty();
+                	$.each(connectionList, function(propertyId, propertyName) {
+                      $('#analytics_view_id').append($('<option>', {
+                        value: propertyId,
+                        text: propertyName,
+                      }));
+                    });
+                	
+                	$("#connection_refresh_content").html('<span class="text-success form-success"><i class="ri-checkbox-circle-line"></i>Google Analytics Properties Synced.</span>');
+                } else {
+                	$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>Failed to Sync Google Analytics Properties</span>');
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+            	$("#connection_refresh_content").show();
+                var errMsg = "API Error: " + errorThrown; 
+				$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>' + errMsg + '</span>');
+            }
+        });
+    });
+});
+</script>
