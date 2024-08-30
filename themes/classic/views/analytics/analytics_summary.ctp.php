@@ -172,7 +172,7 @@ $colCount = ($baseColCount * 3) + 2;
 				    ?>
 					<td><?php echo $prevRankLink; ?></td>
 					<td><?php echo $currRankLink; ?></td>
-					<td><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
+					<td class="text-nowrap"><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
 					<?php					
 				}
 				?>				
