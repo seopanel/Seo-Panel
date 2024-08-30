@@ -21,4 +21,4 @@
         chart.draw(data, options);
     }
 </script>
-<div id="curve_chart" style="width: 900px; height: 500px"></div>
+<div id="curve_chart" style="min-width: 900px; min-height: 500px"></div>
