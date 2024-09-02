@@ -134,7 +134,9 @@ class RankController extends Controller{
 
 	# alexa_rank
 	function __getAlexaRank ($url) {
-	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
+	    return 0;
+	    
+	    /*if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
 	    $websiteUrl =  $url;
 		$url = 'http://data.alexa.com/data?cli=10&dat=snbamz&url=' . urlencode($url);
 		$ret = $this->spider->getContent($url);
@@ -159,7 +161,7 @@ class RankController extends Controller{
 		$crawlInfo['subject'] = "alexa";
 		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
 		
-		return $rank;
+		return $rank;*/
 	}
 	
 	// function to get moz rank
