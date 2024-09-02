@@ -1232,6 +1232,7 @@ class ReportController extends Controller {
 				if ((isAdmin() && !empty($webUserId))) {				    
 				    $exportContent .= createExportContent( array());				    
 				    $exportContent .= createExportContent( array());
+				    $userCtrler = new UserController();
 				    $userInfo = $userCtrler->__getUserInfo($webUserId);
 				    $exportContent .= createExportContent( array($_SESSION['text']['common']['User'], $userInfo['username']));
 				}
@@ -1242,9 +1243,7 @@ class ReportController extends Controller {
 					$_SESSION['text']['common']['MOZ Rank'],
 					$_SESSION['text']['common']['Domain Authority'],
 					$_SESSION['text']['common']['Page Authority'],
-					$_SESSION['text']['common']['Alexa Rank'],
 					'Google '.$spTextHome['Backlinks'],
-					'alexa '.$spTextHome['Backlinks'],
 					'Bing '.$spTextHome['Backlinks'],
 					'Google '.$spTextHome['Indexed'],
 					'Bing '.$spTextHome['Indexed'],
@@ -1261,9 +1260,7 @@ class ReportController extends Controller {
 						strip_tags($websiteInfo['mozrank']),
 						strip_tags($websiteInfo['domain_authority']),
 						strip_tags($websiteInfo['page_authority']),
-						strip_tags($websiteInfo['alexarank']),
 						strip_tags($websiteInfo['google']['backlinks']),
-						strip_tags($websiteInfo['alexa']['backlinks']),
 						strip_tags($websiteInfo['msn']['backlinks']),
 						strip_tags($websiteInfo['google']['indexed']),					
 						strip_tags($websiteInfo['msn']['indexed']),

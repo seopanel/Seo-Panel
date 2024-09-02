@@ -43,16 +43,14 @@
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
 		<td>Google</td>
-		<td>Alexa</td>
 		<td class="right">Bing</td>
 	</tr>
 	<?php
-	$colCount = 4; 
+	$colCount = 3; 
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
-		foreach($list as $listInfo){
-			
+		foreach($list as $listInfo) {			
 			$class = ($i % 2) ? "blue_row" : "white_row";
             if($catCount == ($i + 1)){
                 $leftBotClass = "tab_left_bot";
@@ -65,7 +63,6 @@
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
 				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['google']?>" target="_blank"><?php echo $listInfo['google'].'</a> '. $listInfo['rank_diff_google']?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['alexa']?>" target="_blank"><?php echo $listInfo['alexa'].'</a> '. $listInfo['rank_diff_alexa']?></td>
 				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['msn']?>" target="_blank"><?php echo $listInfo['msn'].'</a> '. $listInfo['rank_diff_msn']?></td>
 			</tr>
 			<?php

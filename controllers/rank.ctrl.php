@@ -23,11 +23,10 @@
 # class defines all rank controller functions
 class RankController extends Controller{
 	
-	var $colList = array('moz' => 'moz_rank', 'alexa' => 'alexa_rank', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
+	var $colList = array('moz' => 'moz_rank', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
 	
 	# func to show quick rank checker
 	function showQuickRankChecker() {
-		
 		$this->render('rank/showquickrank');
 	}
 	
@@ -297,19 +296,16 @@ class RankController extends Controller{
 	}
 	
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo = '') {
-		
+	function showGenerateReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
-		$this->set('websiteList', $websiteList);
-						
+		$this->set('websiteList', $websiteList);						
 		$this->render('rank/generatereport');
 	}
 	
 	# func to generate reports
-	function generateReports( $searchInfo='' ) {
-				
+	function generateReports($searchInfo=[]) {				
 		$userId = isLoggedIn();		
 		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
 		
@@ -374,8 +370,7 @@ class RankController extends Controller{
 	}
 	
 	# func to show reports
-	function showReports($searchInfo = '') {
-		
+	function showReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = $searchInfo['from_time'];
@@ -448,10 +443,8 @@ class RankController extends Controller{
 		$this->render('rank/rankreport');
 	}
 	
-	
-	# func to show reports for a particular website
+	// func to show reports for a particular website
 	function __getWebsiteRankReport($websiteId, $fromTime, $toTime) {
-
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		$sql = "select s.* ,w.name
@@ -513,8 +506,7 @@ class RankController extends Controller{
 	}
 	
 	# func to show graphical reports
-	function showGraphicalReports($searchInfo = '') {
-	
+	function showGraphicalReports($searchInfo=[]) {	
 		$userId = isLoggedIn();
 		$fromTime = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
 		$toTime = !empty ($searchInfo['to_time']) ? $searchInfo['to_time'] : date("Y-m-d");
@@ -537,7 +529,6 @@ class RankController extends Controller{
         
         $colLabelList = array(
         	'moz_rank' => $_SESSION['text']['common']['MOZ Rank'],
-        	'alexa_rank' => $_SESSION['text']['common']['Alexa Rank'],
         	'domain_authority' => $_SESSION['text']['common']['Domain Authority'],
         	'page_authority' => $_SESSION['text']['common']['Page Authority'],
         );    

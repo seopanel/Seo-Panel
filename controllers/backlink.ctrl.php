@@ -23,15 +23,13 @@
 # class defines all backlink controller functions
 class BacklinkController extends Controller{
 	var $url;
-	var $colList = array('google' => 'google', 'alexa' => 'alexa', 'msn' => 'msn');
+	var $colList = array('google' => 'google', 'msn' => 'bing');
 	var $backUrlList = array(
 		'google' => 'http://www.google.com/search?hl=en&q=link%3A',
-		'alexa' => 'http://www.alexa.com/siteinfo/',
 		'msn' => 'http://www.bing.com/search?q=link%3A',
 	);
 	
 	function showBacklink() {
-		
 		$this->render('backlink/showbacklink');
 	}
 	
@@ -70,7 +68,7 @@ class BacklinkController extends Controller{
 		echo "<a href='$backlinkUrl' target='_blank'>$backlinkCount</a>";
 	}
 	
-	function __getBacklinks ($engine) {
+	function __getBacklinks ($engine, $cron=false) {
 		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
 		
 		// check whether any api source is enabled for crawl keyword
@@ -126,7 +124,7 @@ class BacklinkController extends Controller{
 				
 			# alexa
 			case 'alexa':
-				$url = $this->backUrlList[$engine] . urlencode($this->url);
+				/*$url = $this->backUrlList[$engine] . urlencode($this->url);
 				$v = $this->spider->getContent($url);
 				$pageContent = empty($v['page']) ? '' :  $v['page'];				
 				$r = [];
@@ -137,7 +135,8 @@ class BacklinkController extends Controller{
 					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
 				}
 							
-				$backlinkCount = !empty($r[1]) ? intval(str_replace(",", "", $r[1])) : 0;
+				$backlinkCount = !empty($r[1]) ? intval(str_replace(",", "", $r[1])) : 0;*/
+			    $backlinkCount = 0;
 				break;
 		}
 
@@ -199,8 +198,8 @@ class BacklinkController extends Controller{
 			$this->db->query($sql);
 		}
 		
-		$sql = "insert into backlinkresults(website_id,google,alexa,msn,result_date)
-		values({$matchInfo['id']},{$matchInfo['google']},{$matchInfo['alexa']},{$matchInfo['msn']}, '$resultDate')";
+		$sql = "insert into backlinkresults(website_id,google,msn,result_date)
+		values({$matchInfo['id']},{$matchInfo['google']},{$matchInfo['msn']}, '$resultDate')";
 		$this->db->query($sql);
 		
 	}
@@ -282,7 +281,6 @@ class BacklinkController extends Controller{
 		$this->set('directLinkList', array(
 		    'google' => $this->backUrlList['google'] . $websiteUrl,		    
 		    'msn' => $this->backUrlList['msn'] . $websiteUrl,
-		    'alexa' => $this->backUrlList['alexa'] . $websiteUrl,
 		));
 
 		$this->set('list', array_reverse($reportList, true));

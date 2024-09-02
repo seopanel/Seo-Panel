@@ -222,14 +222,14 @@ if (!empty($keywordPos) && !empty($seCount)) {
 	<?php
 	if (!empty($websiteStats)) {
     	echo showSectionHead($spTextHome['Website Statistics']);
-    	$colSpan = 14; 
+    	$colSpan = 13; 
     	if (empty($pdfVersion)) echo $websitePagingDiv;
     	?>
     	<table id="cust_tab">
     		<tr>
     			<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
-    			<th id="head" colspan="4"><?php echo $spTextHome['Ranks']?></th>
-    			<th id="head" colspan="3"><?php echo $spTextHome['Backlinks']?></th>
+    			<th id="head" colspan="3"><?php echo $spTextHome['Ranks']?></th>
+    			<th id="head" colspan="2"><?php echo $spTextHome['Backlinks']?></th>
     			<th id="head" colspan="2"><?php echo $spTextHome['Pages Indexed']?></th>
     			<th id="head" colspan="2"><?php echo $spTextPS['Page Speed']?></th>
     			<th id="head" colspan="2"><?php echo $spTextHome['Directory Submission']?></th>
@@ -238,9 +238,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
     			<th>Moz</th>
     			<th><?php echo $spText['common']['Domain Authority']?></th>
     			<th><?php echo $spText['common']['Page Authority']?></th>
-    			<th>Alexa</th>
     			<th>Google</th>
-    			<th>Alexa</th>
     			<th>Bing</th>			
     			<th>Google</th>
     			<th>Bing</th>
@@ -256,11 +254,9 @@ if (!empty($keywordPos) && !empty($seCount)) {
 					$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
     				$timeArg = "&from_time=$rangeFromTime&to_time=$toTime";
     				$googleRankLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['mozrank']);
-    				$alexaRankLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['alexarank']);
     				$daLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['domain_authority']);
     				$paLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['page_authority']);
     				$googleBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['google']['backlinks']);
-    				$alexaBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['alexa']['backlinks']);
     				$bingBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['msn']['backlinks']);
     				$googleIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['google']['indexed']);
     				$bingIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['msn']['indexed']);
@@ -276,9 +272,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
     					<td><?php echo $googleRankLink;?></td>
 						<td><?php echo $daLink; ?></td>
 						<td><?php echo $paLink; ?></td>
-						<td><?php echo $alexaRankLink; ?></td>
 						<td><?php echo $googleBackLInk; ?></td>
-						<td><?php echo $alexaBackLInk; ?></td>
 						<td><?php echo $bingBackLInk; ?></td>
 						<td><?php echo $googleIndexLInk; ?></td>
 						<td><?php echo $bingIndexLInk; ?></td>
