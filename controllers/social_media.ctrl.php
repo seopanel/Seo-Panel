@@ -56,7 +56,7 @@ class SocialMediaController extends Controller{
     			    "follower" => $engineList['instagram']['regex1'],
     			],
     		    "url_part" => $engineList['instagram']['url_part'],
-    		    "example" => "https://www.instagram.com/seopanelorg/",
+    		    "example" => "https://www.instagram.com/seopanelorg",
     		],
     		"linkedin" => [
     			"label" => "LinkedIn",
@@ -72,7 +72,7 @@ class SocialMediaController extends Controller{
     			"regex" => [
     			    "follower" => $engineList['pinterest']['regex1'],
     			],
-    		    "example" => "https://www.pinterest.com/seopanel/",
+    		    "example" => "https://www.pinterest.com/seopanel",
     		],
     		"youtube" => [
     			"label" => "Youtube",
