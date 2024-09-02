@@ -447,8 +447,6 @@ class CronController extends Controller {
 		$websiteInfo['moz_rank'] = $mozRankInfo[0]['moz_rank'];
 		$websiteInfo['page_authority'] = $mozRankInfo[0]['page_authority'];
 		$websiteInfo['domain_authority'] = $mozRankInfo[0]['domain_authority'];
-		
-		$websiteInfo['alexaRank'] = $rankCtrler->__getAlexaRank($websiteUrl);
 		$rankCtrler->saveRankResults($websiteInfo, true);			
 		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
 		
