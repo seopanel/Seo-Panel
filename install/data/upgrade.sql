@@ -43,16 +43,10 @@ ALTER TABLE `analytics_properties` ADD PRIMARY KEY (`id`), ADD KEY `analytics_pr
 ALTER TABLE `analytics_properties` MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 ALTER TABLE `analytics_properties` ADD CONSTRAINT `analytics_properties_user_id_delete` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
-INSERT INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'website', 'Sync Google Analytics Properties', 'Sync Google Analytics Properties'),
-('en', 'website', 'Google Analytics Property', 'Google Analytics Property'),
-('en', 'common', 'Invalid Url', 'Invalid Url');
-
 ALTER TABLE `backlinkresults` CHANGE `alexa` `alexa` INT(11) NOT NULL DEFAULT '0';
 ALTER TABLE `rankresults` CHANGE `alexa_rank` `alexa_rank` INT(11) NOT NULL DEFAULT '0'; 
 
 UPDATE `crawl_engines` SET `regex1` = '/\"follower_count\":(\\d+)/is' WHERE engine_name='pinterest' and engine_category='social_media';
-
 UPDATE `crawl_engines` SET `regex2` = '/media_result_group.*?\"Rated (\\d+\\.\\d+) out/is' WHERE engine_name='google' and engine_category='review';
 
 UPDATE `searchengines` SET `regex` = '<div.*?class=\"?g.*?>.*?href=\"(.*?)\".*?>.*?<h3.*?>(.*?)<\\/h3>',
