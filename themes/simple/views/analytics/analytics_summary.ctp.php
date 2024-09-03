@@ -4,7 +4,7 @@ $borderCollapseVal = $pdfVersion ? "border-collapse: collapse;" : "";
 if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     $pdfVersion ? showPdfHeader($spTextTools['Website Analytics Summary']) : showPrintHeader($spTextTools['Website Analytics Summary']);
     ?>
-    <table width="80%" class="search">
+    <table class="search">
     	<?php if (!empty($websiteId)) {?>
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
@@ -37,8 +37,8 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 					<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>">
 				</td>
 				<th width="100px"><?php echo $spText['common']['Website']?>: </th>
-				<td width="160px">
-					<select name="website_id" id="website_id" style='width:100px;' onchange="<?php echo $submitLink?>">
+				<td>
+					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>">
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
@@ -50,7 +50,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 					</select>
 				</td>
 				<th width="100px;"><?php echo $spText['common']['Period']?>:</th>
-	    		<td width="236px">
+	    		<td>
 	    			<input type="text" value="<?php echo $fromTime?>" name="from_time"/> 
 	    			<input type="text" value="<?php echo $toTime?>" name="to_time"/>
         			<script type="text/javascript">
@@ -172,7 +172,7 @@ $colCount = ($baseColCount * 3) + 2;
 				    ?>
 					<td><?php echo $prevRankLink; ?></td>
 					<td><?php echo $currRankLink; ?></td>
-					<td><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
+					<td class="text-nowrap"><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
 					<?php					
 				}
 				?>				

@@ -4,7 +4,7 @@ $borderCollapseVal = $pdfVersion ? "border-collapse: collapse;" : "";
 if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     $pdfVersion ? showPdfHeader($spTextTools['Review Report Summary']) : showPrintHeader($spTextTools['Review Report Summary']);
     ?>
-    <table width="80%" class="search">
+    <table class="search">
     	<?php if (!empty($websiteId)) {?>
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
@@ -38,7 +38,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 				</td>
 				<th width="100px"><?php echo $spText['common']['Website']?>: </th>
 				<td width="160px">
-					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>">
+					<select name="website_id" id="website_id" style='width:100px;' onchange="<?php echo $submitLink?>">
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
@@ -99,7 +99,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($colList);
-$colCount = ($baseColCount * 3) -1 ;
+$colCount = ($baseColCount * 3);
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
@@ -125,7 +125,8 @@ $colCount = ($baseColCount * 3) -1 ;
 			<?php 
 			if ($colName == "name") {
                 ?>
-				<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>	
+				<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
+				<th id="head" rowspan="2"><?php echo $spText['label']['Type']?></th>	
 				<?php
 			}			
 		}
@@ -150,14 +151,22 @@ $colCount = ($baseColCount * 3) -1 ;
 			foreach($baseReportList as $listInfo){
 				$keywordId = $listInfo['id'];
 				$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
-				$scriptLink = "website_id=$websiteId&link_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";          
+				$scriptLink = "website_id=$websiteId&link_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 				?>
 				<tr>
 					<td>
-						<?php echo $listInfo['name']; ?>
+						<a href="<?php echo $listInfo['url']?>" target="_blank">
+							<?php echo $listInfo['name']; ?>
+						</a>
 					</td>
 					<td>
-						<a href="javascript:void(0)"><?php echo $websiteList[$listInfo['website_id']]['name']; ?></a>
+						<?php echo $websiteList[$listInfo['website_id']]['name']; ?>
+					</td>
+					<td>
+						<a href="javascript:void(0)">
+							<i class="fab fa-<?php echo $serviceList[$listInfo['type']]['icon']?>"></i>
+							<?php echo $serviceList[$listInfo['type']]['label']; ?>
+						</a>
 					</td>
 					<?php
 					foreach ($colList as $colName => $colVal){

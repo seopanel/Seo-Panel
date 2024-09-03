@@ -4,11 +4,10 @@
 		<td><?php echo $spText['common']['Url']?></td>		
 		<td><?php echo $spText['common']['MOZ Rank']?></td>	
 		<td><?php echo $spText['common']['Domain Authority']?></td>	
-		<td><?php echo $spText['common']['Page Authority']?></td>
-		<td class="right"><?php echo $spText['common']['Alexa Rank']?></td>
+		<td class="right"><?php echo $spText['common']['Page Authority']?></td>
 	</tr>
 	<?php
-	$colCount = 6; 
+	$colCount = 5;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
@@ -35,13 +34,8 @@
 				<td width="150px" class='td_br_right rankarea'>
 					<b class="success"><?php echo empty($mozRankList[$i]['domain_authority']) ? "-" : $mozRankList[$i]['domain_authority']; ?></b>
 				</td>
-				<td width="150px" class='td_br_right rankarea'>
+				<td class="<?php echo $rightBotClass?>" width="150px" class='td_br_right rankarea'>
 					<b class="success"><?php echo empty($mozRankList[$i]['page_authority']) ? "-" : $mozRankList[$i]['page_authority']; ?></b>
-				</td>
-				<td class="<?php echo $rightBotClass?>" width="150px" id='alexarank<?php echo $i?>' class='rankarea'>
-					<script type="text/javascript">
-						scriptDoLoadPost('rank.php', 'tmp', 'alexarank<?php echo $i?>', 'sec=showalexa&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
-					</script>
 				</td>
 			</tr>
 			<?php

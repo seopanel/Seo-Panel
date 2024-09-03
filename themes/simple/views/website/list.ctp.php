@@ -52,7 +52,7 @@
 			<td><?php echo $spText['common']['User']?></td>
 		<?php } ?>
 		<td><?php echo $spText['common']['Url']?></td>
-		<td><?php echo $spTextWeb['Google Analytics View Id']?></td>
+		<td><?php echo $spTextWeb['Google Analytics Property']?></td>
 		<td><?php echo $spText['common']['Status']?></td>
 		<td class="right"><?php echo $spText['common']['Action']?></td>
 	</tr>
@@ -79,7 +79,9 @@
 					<td class="td_br_right left"><?php echo $listInfo['username']?></td>
 				<?php } ?>
 				<td class="td_br_right left"><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
-				<td class="td_br_right"><?php echo $listInfo['analytics_view_id']?></td>
+				<td class="td_br_right">
+					<?php echo !empty($listInfo['analytics_view_id']) ? $propertyList[$listInfo['analytics_view_id']] : ""?>
+				</td>
 				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
 				<td class="<?php echo $rightBotClass?>" width="100px">
 					<?php

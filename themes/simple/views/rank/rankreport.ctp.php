@@ -44,11 +44,10 @@
 		<td class="left"><?php echo $spText['common']['Date']?></td>
 		<td><?php echo $spText['common']['MOZ Rank']?></td>
 		<td><?php echo $spText['common']['Domain Authority']?></td>
-		<td><?php echo $spText['common']['Page Authority']?></td>
-		<td class="right"><?php echo $spText['common']['Alexa Rank']?></td>
+		<td class="right"><?php echo $spText['common']['Page Authority']?></td>
 	</tr>
 	<?php
-	$colCount = 5; 
+	$colCount = 4; 
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
@@ -67,15 +66,14 @@
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
 				<td class='td_br_right left'><b><?php echo $listInfo['moz_rank'].'</b> '. $listInfo['rank_diff_moz']?></td>
 				<td class='td_br_right left'><b><?php echo $listInfo['domain_authority'].'</b> '. $listInfo['rank_diff_domain_authority']?></td>
-				<td class='td_br_right left'><b><?php echo $listInfo['page_authority'].'</b> '. $listInfo['rank_diff_page_authority']?></td>
-				<td class="<?php echo $rightBotClass?>" style='text-align:left;padding-left:160px;'><b><?php echo $listInfo['alexa_rank'].'</b> '. $listInfo['rank_diff_alexa']?></td>
+				<td class="<?php echo $rightBotClass?>"><b><?php echo $listInfo['page_authority'].'</b> '. $listInfo['rank_diff_page_authority']?></td>
 			</tr>
 			<?php
 			$i++;
 		}
 	}else{
 		echo showNoRecordsList($colCount-2);
-	} 
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
