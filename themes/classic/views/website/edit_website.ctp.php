@@ -85,7 +85,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		<td class="td_right_col">
 			<div class="row">
             	<div class="col-sm-8">    					
-					<?php echo createSelectBoxFromList($propertyList, "analytics_view_id", $post['analytics_view_id']);?>
+					<?php echo createSelectBoxFromList($propertyList, "analytics_view_id", $post['analytics_view_id'], $spText['common']['Select']);?>
     	        </div>
     	        <div class="col-sm-4">
     	        	<a href="javascript:void(0);" class="btn btn-primary" id="connection_refresh">
