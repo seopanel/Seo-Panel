@@ -209,7 +209,7 @@ function addHttpToUrl($url){
 	if(!stristr($url, 'http://') && !stristr($url, 'https://')){
 		$url = 'http://'.trim($url);
 	}
-	return $url;
+	return trim($url);
 }
 
 function formatFileName( $fileName ) {

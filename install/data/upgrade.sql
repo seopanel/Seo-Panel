@@ -53,5 +53,7 @@ ALTER TABLE `rankresults` CHANGE `alexa_rank` `alexa_rank` INT(11) NOT NULL DEFA
 
 UPDATE `crawl_engines` SET `regex1` = '/\"follower_count\":(\\d+)/is' WHERE engine_name='pinterest' and engine_category='social_media';
 
+UPDATE `crawl_engines` SET `regex2` = '/media_result_group.*?\"Rated (\\d+\\.\\d+) out/is' WHERE engine_name='google' and engine_category='review';
+
 UPDATE `searchengines` SET `regex` = '<div.*?class=\"?g.*?>.*?href=\"(.*?)\".*?>.*?<h3.*?>(.*?)<\\/h3>',
 `from_pattern` = 'id=\"search\"', `to_pattern` = 'id=\"bottomads\"' where  url LIKE '%google%';
