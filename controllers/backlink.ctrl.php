@@ -122,20 +122,8 @@ class BacklinkController extends Controller{
 				$backlinkCount = !empty($r[1]) ? str_replace(',', '', $r[1]) : 0;
 				break;
 				
-			# alexa
+			// alexa
 			case 'alexa':
-				/*$url = $this->backUrlList[$engine] . urlencode($this->url);
-				$v = $this->spider->getContent($url);
-				$pageContent = empty($v['page']) ? '' :  $v['page'];				
-				$r = [];
-				$engineInfo = Spider::getCrawlEngineInfo('alexa', 'backlink');
-				if (preg_match($engineInfo['regex1'], $pageContent, $r)) {
-				} else {
-					$crawlInfo['crawl_status'] = 0;
-					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
-				}
-							
-				$backlinkCount = !empty($r[1]) ? intval(str_replace(",", "", $r[1])) : 0;*/
 			    $backlinkCount = 0;
 				break;
 		}

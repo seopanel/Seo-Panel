@@ -1194,7 +1194,6 @@ class ReportController extends Controller {
 				# rank reports
 				$report = $rankCtrler->__getWebsiteRankReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
-				$listInfo['alexarank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank']." ".$report['rank_diff_alexa'];
 				$listInfo['mozrank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank']." ".$report['rank_diff_moz'];
 				$listInfo['domain_authority'] = empty($report['domain_authority']) ? "-" : $report['domain_authority']." ".$report['rank_diff_domain_authority'];
 				$listInfo['page_authority'] = empty($report['page_authority']) ? "-" : $report['page_authority']." ".$report['rank_diff_page_authority'];
@@ -1203,7 +1202,6 @@ class ReportController extends Controller {
 				$report = $backlinlCtrler->__getWebsitebacklinkReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
 				$listInfo['google']['backlinks'] = empty($report['google']) ? "-" : $report['google']." ".$report['rank_diff_google'];
-				$listInfo['alexa']['backlinks'] = empty($report['alexa']) ? "-" : $report['alexa']." ".$report['rank_diff_alexa'];
 				$listInfo['msn']['backlinks'] = empty($report['msn']) ? "-" : $report['msn']." ".$report['rank_diff_msn'];
 				
 				# rank reports
