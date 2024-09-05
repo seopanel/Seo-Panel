@@ -235,6 +235,11 @@ class GoogleAPIController extends Controller{
 	    $websites = array();
 	    $client = $this->getAuthClient($userId);
 	    
+	    // if error occured
+	    if (!is_object($client)) {
+	        return [FALSE, $websites, $client];
+	    }
+	    
 	    // Create a Google_Service_Analytics object
 	    $analytics = new Google_Service_Analytics($client);	    
 	    
@@ -269,7 +274,7 @@ class GoogleAPIController extends Controller{
 	        }
 	    }
 	    
-	    return $websites;
+	    return [TRUE, $websites, "success"];
 	}
 	
 	// Function to get GA4 properties

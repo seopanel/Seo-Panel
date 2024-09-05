@@ -141,11 +141,12 @@ $(function() {
                 	
                 	$("#connection_refresh_content").html('<span class="text-success form-success"><i class="ri-checkbox-circle-line"></i>Google Analytics Properties Synced.</span>');
                 } else {
-                	$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>Failed to Sync Google Analytics Properties</span>');
+                	$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>'+ response.msg +'</span>');
                 }
             },
             beforeSend: function() {
 				$('#connection_refresh_loading').show();
+				$("#connection_refresh_content").html('');
 			},
             error: function(jqXHR, textStatus, errorThrown) {
             	$("#connection_refresh_content").show();

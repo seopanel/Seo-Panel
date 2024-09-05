@@ -960,8 +960,8 @@ class WebsiteController extends Controller{
 	    $propertyList = createSelectList($analyticList, "ALL", 'property_id');
 	    
 	    $GoogleCtrl  = new GoogleAPIController();
-	    $result = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
-	    if(!empty($result)) {     
+	    [$status, $result, $errMsg] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    if($status && !empty($result)) {
 	        foreach ($result as $data) {
 	            $propertyId = $data['property_id'];
 	            
@@ -989,14 +989,25 @@ class WebsiteController extends Controller{
 	            }
 	        }
 	    }
+	    
+	    return [$status, $errMsg];
 	}
 	
 	function fetchGoogleAnalyticProperties() {
+	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error"];
 	    $userId = isLoggedIn();
-	    $this->syncGoogleAnalyticProperties($userId);
 	    
-	    $propertyList = $this->__getAllAnalyticProperties(TRUE);
-	    return $propertyList;
+	    // sync google analytics properties using the connectin
+	    [$status, $errMsg] = $this->syncGoogleAnalyticProperties($userId);
+	    if ($status) {
+	        $propertyList = $this->__getAllAnalyticProperties(TRUE);
+	        $response['data'] = $propertyList;
+	        $response['status'] = TRUE;
+	    } else {
+	        $response['msg'] = $errMsg;
+	    }
+	    
+	    return $response;
 	}
 	
 	function __getUserAnalyticProperties($userId) {
