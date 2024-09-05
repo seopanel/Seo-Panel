@@ -65,7 +65,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 				</div>
 			</div>							
 			<?php echo $errMsg['url']?>
-			<div id="crawlstats" style="float: right;padding-right:40px;"></div>			
+			<div id="crawlstats" style="padding-right:40px;" class="mt-2 float-right mt-2"></div>
 		</td>
 	</tr>
 	<tr class="white_row">
@@ -85,13 +85,16 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		<td class="td_right_col">
 			<div class="row">
             	<div class="col-sm-8">    					
-					<?php echo createSelectBoxFromList($propertyList, "analytics_view_id", $post['analytics_view_id']);?>
+					<?php echo createSelectBoxFromList($propertyList, "analytics_view_id", $post['analytics_view_id'], $spText['common']['Select']);?>
     	        </div>
     	        <div class="col-sm-4">
     	        	<a href="javascript:void(0);" class="btn btn-primary" id="connection_refresh">
     	        		<?php echo $spTextWeb['Sync Google Analytics Properties']?>  
 	        		</a>
     	        </div>
+	        </div>
+	        <div id="connection_refresh_loading" class="float-right mt-2" style="display: none; width: 50%;">
+				<div id="loading_longthin"></div>
 	        </div>
         	<div id="connection_refresh_content" style="margin: 16px 6px;display: none;" class="fw-bold float-right"></div>
 		</td>
@@ -125,6 +128,10 @@ $(function() {
                 if(response.status) {
                 	var connectionList = response.data;
                 	$('#analytics_view_id').empty();
+					$('#analytics_view_id').append($('<option>', {
+                        value: '',
+                        text: '-- <?php echo $spText['common']['Select']?> --',
+                    }));
                 	$.each(connectionList, function(propertyId, propertyName) {
                       $('#analytics_view_id').append($('<option>', {
                         value: propertyId,
@@ -137,11 +144,17 @@ $(function() {
                 	$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>Failed to Sync Google Analytics Properties</span>');
                 }
             },
+            beforeSend: function() {
+				$('#connection_refresh_loading').show();
+			},
             error: function(jqXHR, textStatus, errorThrown) {
             	$("#connection_refresh_content").show();
                 var errMsg = "API Error: " + errorThrown; 
 				$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>' + errMsg + '</span>');
-            }
+            },
+            complete: function() {
+				$('#connection_refresh_loading').hide();
+			}
         });
     });
 });
