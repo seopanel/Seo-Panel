@@ -974,7 +974,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (40, 'API Secret', 'API_SECRET', '', 'api', 'medium', 1),
 (41, 'Company Name', 'SP_COMPANY_NAME', 'Seo Panel', 'system', 'medium', 1),
 (42, 'Currency', 'SP_PAYMENT_CURRENCY', 'USD', 'system', 'medium', 1),
-(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '4.11.0', 'system', 'medium', 0),
+(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '4.12.0', 'system', 'medium', 0),
 (44, 'Moz API Link', 'SP_MOZ_API_LINK', 'http://lsapi.seomoz.com/linkscape', 'moz', 'medium', 0),
 (45, 'Moz API Link', 'SP_MOZ_API_ACCESS_ID', '', 'moz', 'large', 1),
 (46, 'Moz API Link', 'SP_MOZ_API_SECRET', '', 'moz', 'large', 1),

@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   seopanel:
-    image: seopanel/seopanel:4.11.0
+    image: seopanel/seopanel:4.12.0
     container_name: seopanel
     ports:
       - "80:80"
