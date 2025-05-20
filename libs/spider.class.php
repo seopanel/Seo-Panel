@@ -61,6 +61,7 @@ class Spider{
 		// user agents
 		$this->userAgentList['google'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
 		$this->userAgentList['bing'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
+		$this->userAgentList['pinterest'] = "Mozilla/5.0 (X11; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0";
 		$this->userAgentList['default'] = defined('SP_USER_AGENT') ? SP_USER_AGENT : $this->_CURLOPT_USERAGENT;
 	}	
 	
@@ -305,6 +306,8 @@ class Spider{
 		        $ugKey = 'google';
 		    } else if (stristr($url, 'bing.')) {
 		        $ugKey = 'bing';
+		    } else if (stristr($url, 'pinterest.')) {
+		        $ugKey = 'pinterest';
 		    }
 		    
     		$this->_CURLOPT_USERAGENT = $this->getUserAgent($ugKey);
@@ -361,6 +364,7 @@ class Spider{
 		$ret['page'] = curl_exec( $this -> _CURL_RESOURCE );
 		$ret['error'] = curl_errno( $this -> _CURL_RESOURCE );
 		$ret['errmsg'] = curl_error( $this -> _CURL_RESOURCE );
+		$ret['http_code'] = curl_getinfo($this -> _CURL_RESOURCE, CURLINFO_HTTP_CODE);
 		
 		$this->effectiveUrl = curl_getinfo($this -> _CURL_RESOURCE, CURLINFO_EFFECTIVE_URL);
 		

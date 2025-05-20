@@ -4,6 +4,7 @@ $submitAction = "scriptDoLoadPost('rank.php', 'search_form', 'content')";
 ?>
 <form id='search_form'>
 <input type="hidden" name="sec" value="graphical-reports">
+<input type="hidden" name="search_engine" value="moz">
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -27,15 +28,10 @@ $submitAction = "scriptDoLoadPost('rank.php', 'search_form', 'content')";
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
 			});
 		  	</script>
-		</td>		
-		<th><?php echo $spText['common']['Search Engine']?>: </th>
-		<td>
-			<select name="search_engine" style='width:80px;' onchange="<?php echo $submitAction;?>">
-				<option value="moz" <?php echo ($searchEngine == 'moz') ? "selected" : "";?>>MOZ</option>
-				<option value="alexa" <?php echo ($searchEngine == 'alexa') ? "selected" : "";?>>Alexa</option>
-			</select>
 		</td>
-		<td colspan="2"><a href="javascript:void(0);" onclick="<?php echo $submitAction;?>" class="actionbut"><?php echo $spText['button']['Show Records']?></a></td>
+		<td>
+			<a href="javascript:void(0);" onclick="<?php echo $submitAction;?>" class="actionbut"><?php echo $spText['button']['Show Records']?></a>
+		</td>
 	</tr>
 </table>
 </form>

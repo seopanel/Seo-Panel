@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  seopanel:
+    image: seopanel/seopanel:4.11.0
+    container_name: seopanel
+    ports:
+      - "80:80"
+    env_file: .env
+    depends_on:
+      - db
+
+  db:
+    image: mysql:5.7
+    container_name: seopanel_db
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

@@ -76,6 +76,7 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 				<td width="40px"><?php echo $listInfo['id']?></td>
 				<td><?php echo $projectLink?></td>
 				<td>
+					<i class="fab fa-<?php echo $serviceList[$listInfo['type']]['icon']?>"></i>
 					<?php echo $serviceList[$listInfo['type']]['label']?>
 				</td>
 				<td><?php echo $listInfo['url']?></td>				

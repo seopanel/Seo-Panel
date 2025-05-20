@@ -81,10 +81,7 @@ class WebsiteAPI extends Seopanel{
 		// rank reports
 		$report = $rankCtrler->__getWebsiteRankReport($websiteInfo['id'], $fromTime, $toTime);
 		$report = $report[0];
-		$toTimeDate =  date('Y-m-d', $toTime);
-		$websiteInfo['alexa']['alexarank']['rank'] = empty($report['alexa_rank']) ? "-" : $report['alexa_rank'];
-		$websiteInfo['alexa']['alexarank']['diff'] = removeBraces($report['rank_diff_alexa']);
-		$websiteInfo['alexa']['alexarank']['date'] = $toTimeDate; 
+		$toTimeDate =  date('Y-m-d', $toTime); 
 		$websiteInfo['moz']['pagerank']['rank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank'];
 		$websiteInfo['moz']['pagerank']['diff'] = removeBraces($report['rank_diff_moz']);
 		$websiteInfo['noz']['pagerank']['date'] = $toTimeDate;
@@ -95,9 +92,6 @@ class WebsiteAPI extends Seopanel{
 		$websiteInfo['google']['backlinks']['rank'] = empty($report['google']) ? "-" : $report['google'];
 		$websiteInfo['google']['backlinks']['diff'] = $report['rank_diff_google'];
 		$websiteInfo['google']['backlinks']['date'] = $toTimeDate;
-		$websiteInfo['alexa']['backlinks']['rank'] = empty($report['alexa']) ? "-" : $report['alexa'];
-		$websiteInfo['alexa']['backlinks']['diff'] = $report['rank_diff_alexa'];
-		$websiteInfo['alexa']['backlinks']['date'] = $toTimeDate;
 		$websiteInfo['bing']['backlinks']['rank'] = empty($report['msn']) ? "-" : $report['msn'];
 		$websiteInfo['bing']['backlinks']['diff'] = $report['rank_diff_msn'];
 		$websiteInfo['bing']['backlinks']['date'] = $toTimeDate;
@@ -309,8 +303,6 @@ class WebsiteAPI extends Seopanel{
 	
 		// if website exists
 		if ($websiteInfo = $this->ctrler->__getWebsiteInfo($websiteId)) {
-			
-			$websiteInfo['oldName'] = $websiteInfo['name'];
 			
 			// loop through inputs
 			foreach ($info as $key => $val) {

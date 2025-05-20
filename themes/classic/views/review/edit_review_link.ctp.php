@@ -39,7 +39,7 @@ if(!empty($validationMsg)){
 	<tr class="form_data">
 		<td><?php echo $spText['label']['Type']?>:</td>
 		<td>
-			<select name="type">
+			<select name="type" id="review_link_type">
 				<?php foreach($serviceList as $serviceName => $serviceInfo){?>
 					<?php if($serviceName == $post['type']){?>
 						<option value="<?php echo $serviceName?>" selected><?php echo $serviceInfo['label']?></option>
@@ -64,7 +64,7 @@ if(!empty($validationMsg)){
 			$serviceSelName = !empty($post['type']) ? $post['type'] : "google";
 			if (!empty($serviceList[$serviceSelName]['example'])) {
 				?>
-				<p><b>Eg:</b> <?php echo implode(', ', $serviceList[$serviceSelName]['example'])?></p>
+				<p><b>Eg:</b> <span id="ex_review_link"><?php echo implode(', ', $serviceList[$serviceSelName]['example'])?></span></p>
 				<?php
 			}?>
 		</td>
@@ -85,3 +85,17 @@ if(!empty($validationMsg)){
 	</tr>
 </table>
 </form>
+
+<script type="text/javascript">
+var typeList = [];
+<?php foreach ($serviceList as $serviceName => $serviceInfo) {?>
+	typeList["<?php echo $serviceName?>"] = "<?php echo $serviceInfo['example'][0]?>";
+<?php }?>
+
+(function () {
+	$('#review_link_type').change(function() {
+		service = $(this).val();
+		$('#ex_review_link').html(typeList[service]);
+	});
+})();
+</script>

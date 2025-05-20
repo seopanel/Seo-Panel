@@ -59,8 +59,14 @@ if(!empty($validationMsg)){
 		<td id='sm_url_label'><?php echo $spText['common']['Link']?>:</td>
 		<td>
 			<input type="text" name="url" value="<?php echo $post['url']?>" class="form-control"><?php echo $errMsg['url']?>
+			<?php
+			$serviceSelName = !empty($post['type']) ? $post['type'] : "facebook";
+			if (!empty($serviceList[$serviceSelName]['example'])) {
+				?>
+				<p><b>Eg:</b> <span id="ex_review_link"><?php echo $serviceList[$serviceSelName]['example']?></span></p>
+				<?php
+			}?>
 			<div style="padding: 10px 6px; display: none;" id="sm_url_note">
-				<p><b>Eg:</b> 14576538</p>
     			<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
     				<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
     			</a>
@@ -85,22 +91,24 @@ if(!empty($validationMsg)){
 </form>
 
 <script type="text/javascript">
-$(function() {
+var typeList = [];
+<?php foreach ($serviceList as $serviceName => $serviceInfo) {?>
+	typeList["<?php echo $serviceName?>"] = "<?php echo $serviceInfo['example']?>";
+<?php }?>
 
-	function smTypeChange() {
-		smType = $("#sm_type option:selected").val();
+$(function() {	
+	$('#sm_type').change(function() {
+		smType = $(this).val();
+		$('#ex_review_link').html(typeList[smType]);
+		
 		if (smType == 'linkedin') {
 			$('#sm_url_label').html("<?php echo $spTextSMC['Company Id']?>:");
 			$('#sm_url_note').show();
 		} else {
 			$('#sm_url_label').html("<?php echo $spText['common']['Link']?>:");
 			$('#sm_url_note').hide();
-		}	
-	}
-
-	smTypeChange();
-	$("#sm_type").on('change', function() {
-		smTypeChange();
+		}		
 	});
+	
 });
 </script>

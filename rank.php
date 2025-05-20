@@ -60,18 +60,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showReports($_POST);
 			break;
 			
-		case "showpr":
-			$controller->printGooglePageRank(urldecode($_POST['url']));
-			break;
-		
-		case "showalexa":
-			$controller->printAlexaRank(urldecode($_POST['url']));
-			break;
-			
-		case "showmozrank":
-			$controller->printMOZRank(urldecode($_POST['url']));
-			break;
-			
 		case "graphical-reports":
 			$controller->showGraphicalReports($_POST);
 			break;
@@ -88,20 +76,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showQuickRankChecker();
 			break;
 			
-		case "showpr":
-			$controller->printGooglePageRank(urldecode($_GET['url']));
-			break;
-			
 		case "showmozrank":
 			$controller->printMOZRank(urldecode($_GET['url']));
-			break;
-		
-		case "showalexa":
-			$controller->printAlexaRank(urldecode($_GET['url']));
-			break;
-			
-		case "alexaimg":
-			$controller->printAlexaRankImg($_GET['rank']);
 			break;
 			
 		case "generate":

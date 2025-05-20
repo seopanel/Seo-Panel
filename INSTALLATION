@@ -6,7 +6,7 @@ Seo Control Panel - Seo Panel
 Installation: Simple 5 minute installation
 ------------------------------------------
 
- Simply use Softaculous / Installatron / Webuzo / AMPPS to install SEO Panel or Follow the below steps
+ Simply use Softaculous / Installatron / Webuzo / AMPPS / Bitnami to install SEO Panel or Follow the below steps
 
 	1. Download and Unzip the package
    
@@ -23,7 +23,7 @@ Installation: Simple 5 minute installation
 
 	7. Change the permissions on "config/sp-config.php" to be writable only by yourself (644 or -rw-r--r-- within your FTP Client)   
    
-   	8. Please use following login details to access Admin Interface.
+   	8. Please use the following login details to access Admin Interface.
    
    		Admin Section:
    		
@@ -35,11 +35,27 @@ Installation: Simple 5 minute installation
    	   Add moz api key using the link shown in the page
    		
    	Note: 
-   		a) Please change password of administrator by visiting 'Profile' link on right top of the seo panel to prevent from security threats.
+   		a) Please change the password of administrator by visiting Profile link on right top of the seo panel to prevent from security threats.
    		
    		b) Remove "install" directory of seo panel
 
 
+------------------------------------------
+Docker Installation 
+------------------------------------------
+
+	1. Copy sample_env file to .env file and edit required details in it
+	
+		cp sample_env .env
+	
+	2. Execute following command to start docker containers 
+	
+		docker compose up
+
+	3. Take following link in browser and follow the installation instructions
+	
+		http://localhost/
+		 
 
 --------------------------------------------
 Steps to Upgrade Seo Panel to Latest Version
@@ -100,7 +116,7 @@ Steps to Upgrade Seo Panel to Latest Version
 		b. Copy all plugins from "plugins" folder of old seo panel folder to "plugins" folder of new Seo Panel. 
 
 
-Installation Reference Link: http://www.seopanel.in/install/
+Installation Reference Link: https://www.seopanel.org/install/
   		
 If you have any issues while installation, Please use following resources to fix it or contact seo panel team. 
 
@@ -112,9 +128,9 @@ a) Seo Panel Help Guide: http://help.seopanel.in/
 
 b) Seo Panel Forum: http://forum.seopanel.in/
 
-b) Seo Panel Support: http://www.seopanel.in/support/
+b) Seo Panel Support: https://www.seopanel.org/support/
 
-d) Seo Panel Contact: http://www.seopanel.in/contact/
+d) Seo Panel Contact: https://www.seopanel.org/contact/
 
 -------------------------------------------
 Developed By Geo Varghese (www.seopanel.in)

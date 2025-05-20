@@ -1039,7 +1039,16 @@ class Google_Client
   {
     $options = ['exceptions' => false];
 
-    $version = ClientInterface::VERSION;
+    // SP Custom change 
+    /*$version = ClientInterface::VERSION;*/    
+    if (defined('\GuzzleHttp\ClientInterface::VERSION')) {
+        $version = \GuzzleHttp\ClientInterface::VERSION;
+    } else {
+        $version = '6.2.1';
+    }
+    
+    // SP Custom change 
+    
     if ('5' === $version[0]) {
       $options = [
         'base_url' => $this->config['base_path'],

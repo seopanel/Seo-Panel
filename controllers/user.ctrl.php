@@ -444,9 +444,9 @@ class UserController extends Controller{
 	
 	# func to change status
 	function __changeStatus($userId, $status){
-		
 		$userId = intval($userId);
-		$sql = "update users set status=$status where id=$userId";
+		$confirmStr = !empty($status) ? ",confirm=1" : "";
+		$sql = "update users set status=$status $confirmStr where id=$userId";
 		$this->db->query($sql);
 		
 		# deaactivate all websites under this user
@@ -562,10 +562,10 @@ class UserController extends Controller{
 		if(!$this->validate->flagErr){
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
-					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date) 
+					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm) 
 						values($userTypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
-						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']})";
+						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
 					$this->db->query($sql);
 					
 					// if render results

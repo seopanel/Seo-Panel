@@ -128,7 +128,7 @@
 		<td><?php echo $spText['common']['Status']?>:</td>
 		<td>
 			<select name="user_type_status" id="user_type_status">
-				<?php if ($post['status']) { ?>
+				<?php if (!empty($post['status']) || !empty($post['user_type_status'])) { ?>
 					<option value="1" selected="selected"><?php echo $_SESSION['text']['common']['Active']?></option>
 					<option value="0"><?php echo $_SESSION['text']['common']['Inactive']?></option>
 				<?php } else { ?>

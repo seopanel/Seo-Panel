@@ -56,5 +56,5 @@ CREATE TABLE IF NOT EXISTS `themes` (
 --
 
 INSERT INTO `themes` (`id`, `name`, `folder`, `author`, `description`, `version`, `website`, `status`, `installed`) VALUES
-(1, 'Classic', 'classic', 'Geo Varghese', 'Classic theme of Seo Panel', '1.0.0', 'http://www.seopanel.in/theme/l/1/classic/', 1, 1),
-(2, 'Simple', 'simple', 'Geo Varghese', 'Simple theme of Seo Panel', '1.0.0', 'http://www.seopanel.in/theme/l/2/simple/', 0, 1);
+(1, 'Classic', 'classic', 'Geo Varghese', 'Classic theme of Seo Panel', '1.0.0', 'https://www.seopanel.org/theme/l/1/classic/', 1, 1),
+(2, 'Simple', 'simple', 'Geo Varghese', 'Simple theme of Seo Panel', '1.0.0', 'https://www.seopanel.org/theme/l/2/simple/', 0, 1);

@@ -2,11 +2,10 @@
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Url']?></td>
 		<td>Google</td>
-		<td>Alexa</td>
 		<td class="right">Bing</td>
 	</tr>
 	<?php
-	$colCount = 4; 
+	$colCount = 3; 
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
@@ -30,11 +29,6 @@
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='googlerank<?php echo $i?>'>
 					<script type="text/javascript">
 						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
-					</script>
-				</td>
-				<td class="td_br_right" width="<?php echo $tdWidth?>" id='alexa<?php echo $i?>'>
-					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'alexa<?php echo $i?>', 'sec=backlink&engine=alexa&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
 				<td class="<?php echo $rightBotClass?>" width="<?php echo $tdWidth?>" id='msnrank<?php echo $i?>'>

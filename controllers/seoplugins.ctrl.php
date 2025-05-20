@@ -506,21 +506,26 @@ class SeoPluginsController extends Controller{
 	}
 	
 	# function to create helpers for main controlller
-	function createHelper($helperName) {
-		$pluginPath = !empty($this->pluginPath)	? $this->pluginPath : PLUGIN_PATH;
-		include_once($pluginPath . "/".strtolower($helperName).".ctrl.php");
-		$helperObj = New $helperName();
-		$helperObj->pluginPath = $this->pluginPath;
-		$helperObj->pluginId = $this->pluginId;
-		$helperObj->pluginViewPath = $this->pluginViewPath;
-		$helperObj->pluginWebPath = $this->pluginWebPath;
-		$helperObj->pluginImagePath = $this->pluginImagePath;
-		$helperObj->pluginCssPath = $this->pluginCssPath;
-		$helperObj->pluginJsPath = $this->pluginJsPath;
-		$helperObj->pluginScriptUrl = $this->pluginScriptUrl;
-		$helperObj->data = $this->data;
-		$helperObj->pluginText = $this->pluginText;		
-		return $helperObj;
+	function createHelper($helperName, $pluginDirName='') {
+	    $pluginPath = !empty($this->pluginPath)	? $this->pluginPath : SP_PLUGINPATH."/$pluginDirName";
+	    $pluginHelperFile = $pluginPath . "/".strtolower($helperName).".ctrl.php";
+	    if (!file_exists($pluginHelperFile)) {
+	        return false;
+	    }
+	    
+	    include_once($pluginHelperFile);
+	    $helperObj = New $helperName();
+	    $helperObj->pluginPath = $this->pluginPath;
+	    $helperObj->pluginId = $this->pluginId;
+	    $helperObj->pluginViewPath = $this->pluginViewPath;
+	    $helperObj->pluginWebPath = $this->pluginWebPath;
+	    $helperObj->pluginImagePath = $this->pluginImagePath;
+	    $helperObj->pluginCssPath = $this->pluginCssPath;
+	    $helperObj->pluginJsPath = $this->pluginJsPath;
+	    $helperObj->pluginScriptUrl = $this->pluginScriptUrl;
+	    $helperObj->data = $this->data;
+	    $helperObj->pluginText = $this->pluginText;
+	    return $helperObj;
 	}
 	
 	# func to get plugin language texts

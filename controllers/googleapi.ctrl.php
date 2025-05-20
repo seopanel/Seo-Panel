@@ -141,8 +141,12 @@ class GoogleAPIController extends Controller{
 	 * function to setup app scopes(read write permissions)
 	 */
 	function setAppScopes($client) {
-	    $client->addScope([Google_Service_Webmasters::WEBMASTERS, Google_Service_AnalyticsReporting::ANALYTICS_READONLY]);
-		return $client;
+	    $client->addScope([
+	        Google_Service_Webmasters::WEBMASTERS,
+	        Google_Service_AnalyticsReporting::ANALYTICS_READONLY,
+	        Google_Service_Analytics::ANALYTICS_READONLY,
+	    ]);
+	    return $client;
 	}
 	
 	/*
@@ -167,8 +171,7 @@ class GoogleAPIController extends Controller{
 			$ret['msg'] = $client;
 		}
 		
-		return $ret;
-		
+		return $ret;		
 	}
 	
 	/*
@@ -202,7 +205,6 @@ class GoogleAPIController extends Controller{
 		}
 		
 		return $ret;
-		
 	}
 	
 	/*
@@ -227,8 +229,90 @@ class GoogleAPIController extends Controller{
 		
 		$tokenInfo = $this->tokenCtrler->deleteAllUserTokens($userId, $this->sourceName);
 		return $ret;
-		
 	}
-			
+	
+	function getanalyticWebsitesPropertyIds($userId) {
+	    $websites = array();
+	    $client = $this->getAuthClient($userId);
+	    
+	    // if error occured
+	    if (!is_object($client)) {
+	        return [FALSE, $websites, $client];
+	    }
+	    
+	    // Create a Google_Service_Analytics object
+	    $analytics = new Google_Service_Analytics($client);	    
+	    
+	    // Retrieve the list of accounts
+	    $accounts = $analytics->management_accounts->listManagementAccounts();
+	    
+	    // Loop through the accounts
+	    foreach ($accounts->getItems() as $account) {
+	        // Get the account ID and name
+	        $accountId = $account->getId();
+	        $accountName = $account->getName();
+	        
+	        // get analytics admin properties
+	        $accessToken = $this->__getAccessToken($client);
+	        $apiUrl = "https://analyticsadmin.googleapis.com/v1alpha/properties?filter=parent:accounts/$accountId";
+	        $ret = $this->plainAPICall($apiUrl, $accessToken);	        
+	        if (!empty($ret['error'])) {
+	            continue;
+	        }
+	        
+	        if (!empty($ret['page']['properties'])) {	            
+	            foreach ($ret['page']['properties'] as $property) {
+	                $propertyId = str_replace("properties/", "", $property['name']);
+	                $propertyName = $property['displayName'];
+	                $websites[] = array(
+	                    'account_name' => $accountName,
+	                    'account_id' => $accountId,
+	                    'property_name' => $propertyName,
+	                    'property_id' => $propertyId,
+	                );
+	            }
+	        }
+	    }
+	    
+	    return [TRUE, $websites, "success"];
+	}
+	
+	// Function to get GA4 properties
+	function getGA4Properties($client, $accountId) {
+	    $accessToken = $this->__getAccessToken($client);
+	    $apiUrl = "https://analyticsadmin.googleapis.com/v1alpha/properties?filter=parent%3Daccounts%2F$accountId";
+	    $ret = $this->plainAPICall($apiUrl, $accessToken);
+	    if (!empty($ret['error'])) {
+	        return [false, $ret['errmsg'], []];
+	    }
+	}
+	
+	function __getAccessToken($client) {
+	    $tokenInfo = $client->getAccessToken();
+	    $accessToken = !empty($tokenInfo['access_token']) ? $tokenInfo['access_token'] : FALSE;
+	    return $accessToken;
+	}
+	
+	function plainAPICall($apiUrl, $accessToken, $postArgs=[]) {
+	    $spider = new Spider();
+	    array_push($spider ->_CURL_HTTPHEADER, 'Authorization: Bearer ' . $accessToken);
+	    
+	    if (!empty($postArgs)) {
+	        $spider->_CURLOPT_POSTFIELDS = http_build_query($postArgs);
+	    }
+	    
+	    $ret = $spider->getContent($apiUrl);	    
+	    if (!empty($ret['page'])) {
+	        $apiRes = json_decode($ret['page'], TRUE);	        
+	        if ($ret['http_code'] == 200) {
+	            $ret['page'] = $apiRes;
+	        } else {
+	            $ret['error'] = $ret['http_code'];
+	            $ret['errmsg'] = !empty($apiRes['error']['message']) ? $apiRes['error']['message'] : "API Error";
+	        }
+	    }
+	    
+	    return $ret;
+	}
 }
 ?>

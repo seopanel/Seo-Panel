@@ -270,5 +270,17 @@ class Validation{
         $this->flagErr = true;
         return $msg;
     }
+    
+    function checkUrl($url) {
+        $msg = '';
+        
+        $url = formatUrl($url, TRUE);
+        if(strlen( $url) == 0){
+            $msg = $_SESSION['text']['common']['Invalid Url'];
+            $this->flagErr = true;
+        }
+        
+        return $msg;
+    }
 }
 ?>

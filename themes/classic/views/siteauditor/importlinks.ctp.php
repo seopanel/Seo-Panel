@@ -26,7 +26,7 @@
 			<textarea name="links" rows="10"><?php echo $post['links']?></textarea>
 			<br><?php echo $errMsg['links']?>
 			<p style="font-size: 12px;"><?php echo $spTextSA['Insert links separated with comma']?>.</p>
-			<P><b>Eg:</b> http://www.seopanel.in/plugin/l/, http://www.seopanel.in/plugin/d/</P>
+			<P><b>Eg:</b> https://www.seopanel.org/plugin/l/, https://www.seopanel.org/plugin/d/</P>
 		</td>
 	</tr>		
 	<tr class="blue_row">

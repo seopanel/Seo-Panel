@@ -7,7 +7,7 @@ $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('analytics.php', 'searc
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" style='width:190px;'>
+			<select name="website_id">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -18,7 +18,7 @@ $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('analytics.php', 'searc
 			</select>
 		</td>
 		<th width="100px;"><?php echo $spText['common']['Period']?>:</th>
-    	<td width="236px">
+    	<td>
     		<input type="text" value="<?php echo $fromTime?>" name="from_time"/> 
     		<input type="text" value="<?php echo $toTime?>" name="to_time"/>
 			<script type="text/javascript">
@@ -27,7 +27,7 @@ $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('analytics.php', 'searc
 			});
 		  	</script>
     	</td>
-		<td style="padding-left: 9px; padding-top: 10px;">
+		<td>
 			<a href="javascript:void(0);" onclick="<?php echo $actFun?>" class="actionbut"><?php echo $spText['button']['Proceed']?></a>
 		</td>
 	</tr>

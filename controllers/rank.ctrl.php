@@ -23,11 +23,10 @@
 # class defines all rank controller functions
 class RankController extends Controller{
 	
-	var $colList = array('moz' => 'moz_rank', 'alexa' => 'alexa_rank', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
+	var $colList = array('moz' => 'moz_rank', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
 	
 	# func to show quick rank checker
 	function showQuickRankChecker() {
-		
 		$this->render('rank/showquickrank');
 	}
 	
@@ -55,17 +54,6 @@ class RankController extends Controller{
 		$this->render('rank/findquickrank');
 	}
 
-	function printGooglePageRank($url){
-		$pageRank = $this->__getGooglePageRank($url);
-		if($pageRank >= 0){
-			$imageUrl = SP_IMGPATH."/pr/pr".$pageRank.".gif";
-		}else{
-			$imageUrl = SP_IMGPATH."/pr/pr.gif";
-		}
-
-		print "<img src='$imageUrl'>";
-	}
-
 	function printMOZRank($url){
 		$pageRank = $this->__getMozRank($url);
 		if($pageRank >= 0){
@@ -75,92 +63,6 @@ class RankController extends Controller{
 		}
 
 		print "<img src='$imageUrl'>";
-	}
-
-	function __getGooglePageRank ($url) {
-		
-		return 0;
-
-		// commented due to gooogle stops this service
-		/*
-	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
-	    $websiteUrl =  $url;   
-		$url = "http://toolbarqueries.google.com/tbr?client=navclient-auto&ch=".$this->CheckHash($this->hashURL($url))."&features=Rank&q=info:".$url."&num=100&filter=0";
-		$ret = $this->spider->getContent($url);
-		$rank = 0;
-		
-		// parse rank from the page
-		if (!empty($ret['page'])) {
-			if (preg_match('/Rank_([0-9]+):([0-9]+):([0-9]+)/si', $ret['page'], $matches) ) {
-				$rank = empty($matches[3]) ? 0 : $matches[3];
-			} else {
-				$crawlInfo['crawl_status'] = 0;
-				$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($ret['page']) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
-			}
-		}
-		
-		// update crawl log
-		$crawlLogCtrl = new CrawlLogController();
-		$crawlInfo['crawl_type'] = 'rank';
-		$crawlInfo['ref_id'] = $websiteUrl;
-		$crawlInfo['subject'] = "google";
-		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-		
-		return $rank;
-		*/
-	}
-
-	function printAlexaRank($url){
-		$alexaRank = $this->__getAlexaRank($url);
-		$imageUrl = SP_WEBPATH."/rank.php?sec=alexaimg&rank=$alexaRank";
-
-		print "<img src='$imageUrl'>";
-	}
-
-	function printAlexaRankImg($alexaRank) {
-		$rankImage = SP_IMGPATH."/alexa-rank.jpeg";
-		
-		$im = imagecreatefromjpeg ($rankImage);
-		$textColor = imagecolorallocate($im, 0, 0, 255);
-		$width = imagesx($im);
-		$height = imagesy($im);
-		$leftTextPos = ( $width - (7 * strlen($alexaRank)) )/2;
-		imagestring($im, 3, $leftTextPos, 35, $alexaRank, $textColor);
-
-		ob_end_clean();
-		Header('Content-type: image/jpeg');
-		imagejpeg($im);
-		exit;
-	}
-
-	# alexa_rank
-	function __getAlexaRank ($url) {
-	    if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;	
-	    $websiteUrl =  $url;
-		$url = 'http://data.alexa.com/data?cli=10&dat=snbamz&url=' . urlencode($url);
-		$ret = $this->spider->getContent($url);
-		$rank = 0;
-		
-		// parse rank from teh page
-		if(!empty($ret['page'])) {
-		    $matches = [];
-		    $engineInfo = Spider::getCrawlEngineInfo('alexa', 'rank');
-		    if (preg_match($engineInfo['regex1'], $ret['page'], $matches) ) {
-				$rank = empty($matches[2]) ? 0 : $matches[2];	
-			} else {
-				$crawlInfo['crawl_status'] = 0;
-				$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($ret['page']) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
-			}
-		}
-		
-		// update crawl log
-		$crawlLogCtrl = new CrawlLogController();
-		$crawlInfo['crawl_type'] = 'rank';
-		$crawlInfo['ref_id'] = $websiteUrl;
-		$crawlInfo['subject'] = "alexa";
-		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-		
-		return $rank;
 	}
 	
 	// function to get moz rank
@@ -297,19 +199,16 @@ class RankController extends Controller{
 	}
 	
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo = '') {
-		
+	function showGenerateReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
-		$this->set('websiteList', $websiteList);
-						
+		$this->set('websiteList', $websiteList);						
 		$this->render('rank/generatereport');
 	}
 	
 	# func to generate reports
-	function generateReports( $searchInfo='' ) {
-				
+	function generateReports($searchInfo=[]) {				
 		$userId = isLoggedIn();		
 		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
 		
@@ -338,7 +237,6 @@ class RankController extends Controller{
 		// loop through each websites			
 		foreach ( $websiteList as $i => $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
-			$websiteInfo['alexaRank'] = $this->__getAlexaRank($websiteUrl);
 			$websiteInfo['moz_rank'] = !empty($mozRankList[$i]['moz_rank']) ? $mozRankList[$i]['moz_rank'] : 0;
 			$websiteInfo['domain_authority'] = !empty($mozRankList[$i]['domain_authority']) ? $mozRankList[$i]['domain_authority'] : 0;
 			$websiteInfo['page_authority'] = !empty($mozRankList[$i]['page_authority']) ? $mozRankList[$i]['page_authority'] : 0;
@@ -360,8 +258,8 @@ class RankController extends Controller{
 		$mozRank = floatval($matchInfo['moz_rank']);
 		$domainAuthority = floatval($matchInfo['domain_authority']);
 		$pageAuthority = floatval($matchInfo['page_authority']);
-		$sql = "insert into rankresults(website_id, moz_rank, alexa_rank, domain_authority, page_authority, result_date)
-			values({$matchInfo['id']}, $mozRank, {$matchInfo['alexaRank']},	$domainAuthority, $pageAuthority, '$resultDate')";
+		$sql = "insert into rankresults(website_id, moz_rank, domain_authority, page_authority, result_date)
+			values({$matchInfo['id']}, $mozRank, $domainAuthority, $pageAuthority, '$resultDate')";
 		$this->db->query($sql);
 	}
 	
@@ -374,8 +272,7 @@ class RankController extends Controller{
 	}
 	
 	# func to show reports
-	function showReports($searchInfo = '') {
-		
+	function showReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = $searchInfo['from_time'];
@@ -448,10 +345,8 @@ class RankController extends Controller{
 		$this->render('rank/rankreport');
 	}
 	
-	
-	# func to show reports for a particular website
+	// func to show reports for a particular website
 	function __getWebsiteRankReport($websiteId, $fromTime, $toTime) {
-
 		$fromTimeLabel = date('Y-m-d', $fromTime);
 		$toTimeLabel = date('Y-m-d', $toTime);
 		$sql = "select s.* ,w.name
@@ -513,8 +408,7 @@ class RankController extends Controller{
 	}
 	
 	# func to show graphical reports
-	function showGraphicalReports($searchInfo = '') {
-	
+	function showGraphicalReports($searchInfo=[]) {	
 		$userId = isLoggedIn();
 		$fromTime = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
 		$toTime = !empty ($searchInfo['to_time']) ? $searchInfo['to_time'] : date("Y-m-d");
@@ -537,7 +431,6 @@ class RankController extends Controller{
         
         $colLabelList = array(
         	'moz_rank' => $_SESSION['text']['common']['MOZ Rank'],
-        	'alexa_rank' => $_SESSION['text']['common']['Alexa Rank'],
         	'domain_authority' => $_SESSION['text']['common']['Domain Authority'],
         	'page_authority' => $_SESSION['text']['common']['Page Authority'],
         );    

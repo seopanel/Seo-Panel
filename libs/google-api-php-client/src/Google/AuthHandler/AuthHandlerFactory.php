@@ -28,7 +28,17 @@ class Google_AuthHandler_AuthHandlerFactory
    */
   public static function build($cache = null, array $cacheConfig = [])
   {
-    $version = ClientInterface::VERSION;
+    
+    // SP Custom change 
+    /*$version = ClientInterface::VERSION;*/
+    if (defined('\GuzzleHttp\ClientInterface::VERSION')) {
+        $version = \GuzzleHttp\ClientInterface::VERSION;
+    } else {
+        $version = '6.2.1';
+    }
+    
+    // SP Custom change
+      
 
     switch ($version[0]) {
       case '5':

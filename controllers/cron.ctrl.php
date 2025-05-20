@@ -102,9 +102,8 @@ class CronController extends Controller {
 		$this->render('report/reportgenerator');
 	}
 	
-	# common cron execute function
+	// common cron execute function
 	function executeCron($includeList=array(), $userSelectList=array()) {
-		
 		$this->loadCronJobTools($includeList);
 		$lastGenerated = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		
@@ -134,7 +133,6 @@ class CronController extends Controller {
 		    $repSetInfo = $reportCtrler->isGenerateReportsForUser($userInfo['id']);
 		    
 			if (!empty($repSetInfo['generate_report'])) {
-			    
 			    $websiteCtrler = New WebsiteController();
 			    $sql = "select * from websites where status=1 and user_id=" . $userInfo['id'] . " and crawled=0 order by name";
 			    $websiteList = $websiteCtrler->db->select($sql);
@@ -142,9 +140,7 @@ class CronController extends Controller {
     			
     			// if websites are available
     			if ($websiteCount > 0) {
-    			
         			foreach($websiteList as $websiteInfo){
-        				
         				$this->websiteInfo = $websiteInfo;
         				$this->routeCronJob($websiteInfo['id'], '', true);
         				$this->checkedWebsites++;
@@ -212,9 +208,8 @@ class CronController extends Controller {
 		
 	}
 	
-	# function to route the cronjobs to different methods
-	function routeCronJob($websiteId, $repTools='', $cron=false){		
-		
+	// function to route the cronjobs to different methods
+	function routeCronJob($websiteId, $repTools='', $cron=false) {
 		$websiteId = intval($websiteId);
 		if(empty($this->websiteInfo)){
 			$websiteCtrler = New WebsiteController();
@@ -225,6 +220,7 @@ class CronController extends Controller {
 			if(empty($this->cronList)){
 				$this->loadCronJobTools();
 			}
+			
 			$seoTools = $this->cronList;	
 		}else{			
 			$this->loadReportGenerationTools(explode(':', $repTools));
@@ -247,7 +243,9 @@ class CronController extends Controller {
 		foreach ($seoTools as $cronInfo) {
 		    
 		    // check whether user have acccess to the tool
-		    if (!$isAdmin && empty($toolAccessList[$cronInfo['id']]['value']) ) continue;
+		    if (!$isAdmin && empty($toolAccessList[$cronInfo['id']]['value']) ) {
+		        continue;
+		    }
 		    
 			switch($cronInfo['url_section']){
 				
@@ -427,31 +425,26 @@ class CronController extends Controller {
 		
 	}	
 	
-	# func to generate rank reports from cron
-	function rankCheckerCron($websiteId){
-		
+	// func to generate rank reports from cron
+	function rankCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/rank.ctrl.php");
 		$this->debugMsg("Starting Rank Checker cron for website: {$this->websiteInfo['name']}....<br>\n");
 		
 		$rankCtrler = New RankController();
 		$websiteInfo = $this->websiteInfo;
-		
-		if (SP_MULTIPLE_CRON_EXEC && $rankCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) return;
+		if (SP_MULTIPLE_CRON_EXEC && $rankCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) {
+		    return;
+		}
 		
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
-		/*$mozRankInfo = $rankCtrler->__getMozRank(array($websiteUrl));*/
-		
 		$mozCtrler = new MozController();
 		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
 		
-		$websiteInfo['moz_rank'] = $mozRankInfo[0]['moz_rank'];
-		$websiteInfo['page_authority'] = $mozRankInfo[0]['page_authority'];
-		$websiteInfo['domain_authority'] = $mozRankInfo[0]['domain_authority'];
-		
-		$websiteInfo['alexaRank'] = $rankCtrler->__getAlexaRank($websiteUrl);
+		$websiteInfo['moz_rank'] = !empty($mozRankInfo[0]['moz_rank']) ? $mozRankInfo[0]['moz_rank'] : 0;
+		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;$mozRankInfo[0]['page_authority'];
+		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;$mozRankInfo[0]['domain_authority'];
 		$rankCtrler->saveRankResults($websiteInfo, true);			
 		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
-		
 	}
 	
 	# func to find the keyword position checker

@@ -209,7 +209,7 @@ function addHttpToUrl($url){
 	if(!stristr($url, 'http://') && !stristr($url, 'https://')){
 		$url = 'http://'.trim($url);
 	}
-	return $url;
+	return trim($url);
 }
 
 function formatFileName( $fileName ) {
@@ -810,9 +810,60 @@ function timeElapsedString($datetime, $full = false) {
 function createSelectList($list, $nameCol = 'name', $idCol = 'id' ) {
     $newList = [];
     foreach ($list as $listInfo) {
-        $newList[$listInfo[$idCol]] = $listInfo[$nameCol];
+        $newList[$listInfo[$idCol]] = ($nameCol== 'ALL') ? $listInfo : $listInfo[$nameCol];
     }
-
+    
     return $newList;
+}
+
+function createValueList($list, $colName='id') {
+    $newList = [];
+    
+    foreach ($list as $listInfo) {
+        $newList[] = $listInfo[$colName];
+    }
+    
+    return $newList;
+}
+
+function createSelectBoxFromList($optList, $nameAtr, $selectedVal, $emptySelectLabel="", $onChange="", $className='form-control') {
+    $selectStr = "<select name='$nameAtr' id='$nameAtr' class='$className' onChange=\"$onChange\">";
+    
+    if (!empty($emptySelectLabel)) {
+        $selectStr .= "<option value=''>-- $emptySelectLabel --</option>";
+    }
+    
+    foreach($optList as $optVal => $optLabel) {
+        $selected = ($optVal == $selectedVal) ? "selected" : "";
+        $selectStr .= "<option value='$optVal' $selected>$optLabel</option>";
+    }
+    
+    $selectStr .= "<select>";
+    return $selectStr;
+}
+
+function createSelectBox($optList, $nameAtr, $selectedVal, $labelCol='name', $idCol='id', $emptySelectLabel="", $onChange="", $className='form-control') {
+    
+    $multipleAttr = "";
+    if (stristr($nameAtr, ':')) {
+        list($nameAtr, $extraAttr) = explode(':', $nameAtr);
+        $multipleAttr = ($extraAttr == "multiple") ? 'multiple="multiple"' : "";
+    }
+    
+    $selectStr = "<select name='$nameAtr' id='$nameAtr' $multipleAttr class='$className' onChange=\"$onChange\">";
+    
+    if (!empty($emptySelectLabel)) {
+        $selectStr .= "<option value=''>-- $emptySelectLabel --</option>";
+    }
+    
+    foreach($optList as $optInfo) {
+        $optVal = $optInfo[$idCol];
+        $optLabel = ucwords($optInfo[$labelCol]);
+        $selected = ($optVal == $selectedVal) ? "selected" : "";
+        $selectStr .= "<option value='$optVal' $selected>$optLabel</option>";
+    }
+    
+    $selectStr .= "<select>";
+    return $selectStr;
 }
 ?>

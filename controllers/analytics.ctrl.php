@@ -20,161 +20,217 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-// include google api module
-include_once(SP_CTRLPATH . "/googleapi.ctrl.php");
+include_once(SP_LIBPATH . "/analyticsdata/vendor/autoload.php");
+include_once(SP_CTRLPATH . "/user-token.ctrl.php");
+
+use Google\Auth\Credentials\UserRefreshCredentials;
+use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\DateRange;
+use Google\Analytics\Data\V1beta\Metric;
+use Google\Analytics\Data\V1beta\Dimension;
 
 // class defines all google analytics api controller functions
-class AnalyticsController extends GoogleAPIController {
+class AnalyticsController extends Controller {
 	
     var $spTextGA;
     var $metrics;
 	var $metricList;
 	var $defaultMetricName = "users";
-	var $dimensionName = "source";
+	var $dimensionName = "sourceMedium";
+	var $sourceTypeList = ['referral', 'direct', 'organic', 'cpc', 'social'];
+	var $socialNetworkList;
+	var $totalLabel = "total";
+	var $tokenCtrler;
+	var $sourceName = 'google';
 	
 	function __construct() {
-		parent::__construct();
-		$this->spTextGA = $this->getLanguageTexts('analytics', $_SESSION['lang_code']);
-		$this->set('spTextGA', $this->spTextGA);
-		$this->metrics = array(
-		    'users' => $this->spTextGA['Users'],
-		    'newUsers' => $this->spTextGA['New Users'],
-		    'sessions' => $this->spTextGA['Sessions'],
-		    'bounceRate' => $this->spTextGA['Bounce Rate'],
-		    'avgSessionDuration' => $this->spTextGA['Avg. Session Duration'],
-		    'goalCompletionsAll' => $this->spTextGA['Goal Completions'],
-		);
-		
-		
-		$this->set('metricColList', $this->metrics);
-		$this->metricList = array_keys($this->metrics);
+	    parent::__construct();
+	    $this->spTextGA = $this->getLanguageTexts('analytics', $_SESSION['lang_code']);
+	    $this->set('spTextGA', $this->spTextGA);
+	    $this->metrics = array(
+	        'users' => $this->spTextGA['Users'],
+	        'newUsers' => $this->spTextGA['New Users'],
+	        'sessions' => $this->spTextGA['Sessions'],
+	        'bounceRate' => $this->spTextGA['Bounce Rate'],
+	        'avgSessionDuration' => $this->spTextGA['Avg. Session Duration'],
+	        'goalCompletionsAll' => $this->spTextGA['Goal Completions'],
+	    );
+	    
+	    $this->dimensions = array(
+	        'sourceMedium' => "Source",
+	        'pagePath' => "Page",
+	        'country' => "Country",
+	        /*'socialNetwork' => "Social Network",*/
+	        'deviceCategory' => "Device",
+	        'language' => "Language",
+	        'browser' => "Browser",
+	        'operatingSystem' => "Operating System",
+	    );
+	    
+	    $this->set('dimensions', $this->dimensions);
+	    $this->set('metricColList', $this->metrics);
+	    $this->metricList = array_keys($this->metrics);
+	}
+	
+	/**
+	 * function to get google analytics GA4 auth client
+	 */
+	function getGoogleAnalyticsGA4AuthClient($userId) {
+	    // get user token info
+	    $tokenCtrler = new UserTokenController();
+	    $tokenInfo = $tokenCtrler->getUserToken($userId, $this->sourceName);
+	    
+	    // if token not set for the user
+	    if (empty($tokenInfo['refresh_token'])) {
+	        $spTextWebmaster = $this->getLanguageTexts('webmaster', $_SESSION['lang_code']);
+	        $errorText = $spTextWebmaster["Error: Google api connection failed"] . ". ";
+	        $errorText .= "<a href='".SP_WEBPATH ."/admin-panel.php?sec=connections' target='_blank'>{$spTextWebmaster['Click here to connect to your google account']}.</a>";
+	        $alertCtler = new AlertController();
+	        $alertInfo = array(
+	            'alert_subject' => $spTextWebmaster['Click here to connect to your google account'],
+	            'alert_message' => $spTextWebmaster["Error: Google api connection failed"],
+	            'alert_url' => SP_WEBPATH ."/admin-panel.php?sec=connections",
+	            'alert_type' => "danger",
+	            'alert_category' => "reports",
+	        );
+	        $alertCtler->createAlert($alertInfo, $userId);
+	        return $errorText;
+	    }
+	    
+	    try {
+	        $credentials = new UserRefreshCredentials(['https://www.googleapis.com/auth/analytics.readonly'], [
+	            'client_id' => SP_GOOGLE_API_CLIENT_ID,
+	            'client_secret' => SP_GOOGLE_API_CLIENT_SECRET,
+	            'refresh_token' => $tokenInfo['refresh_token'],
+	        ]);
+	        
+	        // Initialize the client
+	        $ga4Client = new BetaAnalyticsDataClient(['credentials' => $credentials]);
+	        return $ga4Client;
+	    } catch (Exception $e) {
+	        $err = $e->getMessage();
+	        return "Error: Google analytics GA4 client creation - $err";
+	    }
 	}
 	
 	/*
 	 * function to get analytics query result
 	 */
-	function getAnalyticsResults($userId, $VIEW_ID, $startDate, $endDate) {
-		$result = array('status' => false);
-		
-		if (empty($VIEW_ID)) {
-		    $result['msg'] = $this->spTextGA['view_id_not_found_error'];
-		    $alertCtler = new AlertController();
-		    $alertInfo = array(
-	    		'alert_subject' => $this->spTextGA['view_id_not_found_error'],
-	    		'alert_message' => "",
-	    		'alert_url' => SP_WEBPATH ."/admin-panel.php",
-	    		'alert_type' => "danger",
-	    		'alert_category' => "reports",
-		    );
-		    $alertCtler->createAlert($alertInfo, $userId);
-		    return $result;
-		}
-		
-		try {
-			
-    		$client = $this->getAuthClient($userId);
-    		
-    		// check whether client created successfully
-    		if (!is_object($client)) {
-    		    $result['msg'] = $client;
-    		    return $result;
-    		}
-    		
-    		$analytics = new Google_Service_AnalyticsReporting($client);
-    		
-    		// Create the DateRange object.
-    		$dateRange = new Google_Service_AnalyticsReporting_DateRange();
-    		$dateRange->setStartDate($startDate);
-    		$dateRange->setEndDate($endDate);
-    		
-    		// Create the Metrics object list
-    		$metricObjList = [];
-    		foreach ($this->metricList as $metricName) {
-	    		$sessions = new Google_Service_AnalyticsReporting_Metric();
-	    		$sessions->setExpression("ga:$metricName");
-	    		$sessions->setAlias($metricName);
-	    		$metricObjList[] = $sessions;
-    		}
-    		
-    		// Create the dimension.
-    		$dimension = new Google_Service_AnalyticsReporting_Dimension();
-    		$dimension->setName("ga:$this->dimensionName");
-    		
-    		// Create the Ordering.    		
-    		$ordering = new Google_Service_AnalyticsReporting_OrderBy();
-    		$ordering->setFieldName("ga:$this->defaultMetricName");
-    		$ordering->setOrderType("VALUE");
-    		$ordering->setSortOrder("DESCENDING");
-    		
-    		// Create the ReportRequest object.
-    		$request = new Google_Service_AnalyticsReporting_ReportRequest();
-    		$request->setViewId($VIEW_ID);
-    		$request->setDateRanges($dateRange);
-    		$request->setMetrics($metricObjList);
-    		$request->setDimensions(array($dimension));
-    		$request->setOrderBys($ordering);
-    		
-    		$body = new Google_Service_AnalyticsReporting_GetReportsRequest();
-    		$body->setReportRequests( array( $request) );
-    		$res = $analytics->reports->batchGet( $body );    		
-    		$resultList = $this->formatResult($res);
-    		
-    		$result['status'] = true;
-    		$result['resultList'] = $resultList;    		
-		} catch (Exception $e) {
-		    $err = $e->getMessage();
-		    $result['msg'] = "Error: search query analytics - $err";
-		}
-		
-		return $result;
-		
+	function getAnalyticsResults($userId, $propertyId, $startDate, $endDate, $dimensionName="sourceMedium") {
+	    $result = array('status' => false);
+	    if (empty($propertyId)) {
+	        $result['msg'] = $this->spTextGA['view_id_not_found_error'];
+	        $alertCtler = new AlertController();
+	        $alertInfo = array(
+	            'alert_subject' => $this->spTextGA['view_id_not_found_error'],
+	            'alert_message' => "",
+	            'alert_url' => SP_WEBPATH ."/admin-panel.php",
+	            'alert_type' => "danger",
+	            'alert_category' => "reports",
+	        );
+	        $alertCtler->createAlert($alertInfo, $userId);
+	        return $result;
+	    }
+	    
+	    try {
+	        // create GA4 client
+	        $client = $this->getGoogleAnalyticsGA4AuthClient($userId);
+	        if (!is_object($client)) {
+	            $result['msg'] = $client;
+	            return $result;
+	        }
+	        
+	        // Define the date range for your query
+	        $dateRange = new DateRange();
+	        $dateRange->setStartDate($startDate);
+	        $dateRange->setEndDate($endDate);
+	        
+	        // create the dimension.
+	        $dimensionName = !empty($dimensionName) ? $dimensionName : $this->dimensionName;
+	        $dimension = [
+	            new Dimension(['name' => self::getActualQueryDimensionName($dimensionName)]),
+	        ];
+	        
+	        $metricObjList = [];
+	        foreach ($this->metricList as $metricName) {
+	            $metricObjList[] = new Metric(['name' => self::getActualQueryMetricName($metricName)]);
+	        }
+	        
+	        // Make the request
+	        $resultList = [];
+	        $response = $client->runReport([
+	            'property' => 'properties/' . $propertyId,
+	            'dateRanges' => [$dateRange],
+	            'dimensions' => $dimension,
+	            'metrics' => $metricObjList,
+	        ]);
+	        
+	        // Extract and print the results
+	        $rows = $response->getRows();
+	        foreach ($rows as $row) {
+	            $dimensionValues = $row->getDimensionValues();
+	            $metricValues = $row->getMetricValues();
+	            
+	            $dimensionVal = $dimensionValues[0]->getValue();
+	            if (!empty($dimensionVal)) {
+	                $metricData = [];
+	                $i = 0;
+	                foreach ($this->metricList as $metricName) {
+	                    $metricDataVal = $metricValues[$i]->getValue();
+	                    $metricData[$metricName] = self::formatMetricValue($metricDataVal, $metricName);
+	                    $i++;
+	                }
+	                
+	                $resultList[$dimensionVal] = $metricData;
+	            }
+	        }
+	        
+	        $result['status'] = true;
+	        $result['resultList'] = $resultList;
+	    } catch (Exception $e) {
+	        $err = $e->getMessage();
+	        $result['msg'] = "Error: search query analytics - $err";
+	    }
+	    
+	    return $result;
 	}
 	
-	function formatMetricValue($value, $metricName) {
-		
-		if ($metricName == "bounceRate") {
-			$value = round($value, 2);
-		}
-			
-		if ($metricName == "avgSessionDuration") {
-			$value = round(($value/60), 2);
-		}
-		
-		return $value;
+	public static function getActualQueryMetricName($metricName) {
+	    $queryMetricName = $metricName;
+	    if ($metricName == "users") {
+	        $queryMetricName = "activeUsers";
+	    }
+	    
+	    if ($metricName == "avgSessionDuration") {
+	        $queryMetricName = "averageSessionDuration";
+	    }
+	    
+	    if ($metricName == "goalCompletionsAll") {
+	        $queryMetricName = "conversions";
+	    }
+	    
+	    return $queryMetricName;
 	}
 	
-	function formatResult($reports) {
-		$resultList = array();
-		
-		// loop through the reports
-		for ( $reportIndex = 0; $reportIndex < count( $reports ); $reportIndex++ ) {
-			$report = $reports[ $reportIndex ];
-			
-			// get total value
-			$totals = $report->getData()->getTotals();
-			$values = $totals[0]->getValues();
-			$resultList['total'] = [];
-			foreach ($this->metricList as $i => $metricName) {
-				$resultList['total'][$metricName] = $this->formatMetricValue($values[$i], $metricName);
-			}
-			
-			// get dimension type value
-			$rows = $report->getData()->getRows();
-			for ( $rowIndex = 0; $rowIndex < count($rows); $rowIndex++) {
-				$row = $rows[$rowIndex];
-				$dimensions = $row->getDimensions();
-				$metrics = $row->getMetrics();
-				$values = $metrics[0]->getValues();
-				
-				// find metric values
-				$resultList[$dimensions[0]] = [];
-				foreach ($this->metricList as $i => $metricName) {
-					$resultList[$dimensions[0]][$metricName] = $this->formatMetricValue($values[$i], $metricName);
-				}
-			}
-		}
-		
-		return $resultList;
+	public static function getActualQueryDimensionName($dimensionName) {
+	    $queryDimensionName = $dimensionName;
+	    if ($dimensionName == "sourceMedium") {
+	        $queryDimensionName = "sessionSourceMedium";
+	    }
+	    
+	    return $queryDimensionName;
+	}
+	
+	public static function formatMetricValue($value, $metricName) {
+	    if (in_array($metricName, ["bounceRate", "goalCompletionsAll"])) {
+	        $value = round($value, 2);
+	    }
+	    
+	    if ($metricName == "avgSessionDuration") {
+	        $value = round(($value/60), 2);
+	    }
+	    
+	    return $value;
 	}
 	
 	function getAnalyticsSourceList() {
@@ -264,8 +320,8 @@ class AnalyticsController extends GoogleAPIController {
 	}
 
 	// func to do quick report
-	function doQuickChecker($searchInfo = '') {
-	
+	function doQuickChecker($searchInfo=[]) {
+	    
 		if (!empty($searchInfo['website_id'])) {
 			$websiteId = intval($searchInfo['website_id']);
 			$websiteController = New WebsiteController();
@@ -278,7 +334,7 @@ class AnalyticsController extends GoogleAPIController {
 								
 				// query results from api and verify no error occured
 				$result = $this->getAnalyticsResults($websiteInfo['user_id'], $websiteInfo['analytics_view_id'], $reportStartDate, $reportEndDate);
-					
+				
 				// if status is success
 				if ($result['status']) {
 					$websiteReport = array_shift($result['resultList']);
@@ -289,7 +345,6 @@ class AnalyticsController extends GoogleAPIController {
 					$this->set('searchInfo', $searchInfo);
 					$this->render('analytics/quick_checker_results');
 					return true;
-					
 				}
 			}
 		} 

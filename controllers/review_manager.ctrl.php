@@ -357,14 +357,19 @@ class ReviewManagerController extends ReviewBase{
 						
 					if (!empty($matches[1])) {
 						$result['status'] = 1;
-						$result['rating'] = formatNumber($matches[1]);
+						$result['rating'] = round(formatNumber($matches[1]), 2);
 					}	
 				}
 				
+				// if not found any details
+				if (!$result['status']) {
+				    $result['msg'] = "Review page details not found.";
+				} else {
+				    $result['msg'] = "Review page details fetched successfully.";
+				}
 			} else {
 				$result['msg'] = $smContentInfo['errmsg'];
 			}
-			
 		}
 		
 		return $result;
@@ -520,7 +525,7 @@ class ReviewManagerController extends ReviewBase{
 			$reportHeading =  $this->spTextTools['Review Report Summary']."($fromTime - $toTime)";
 			$exportContent .= createExportContent( array('', $reportHeading, ''));
 			$exportContent .= createExportContent( array());
-			$headList = array($spText['common']['Website'], $spText['common']['Url']);
+			$headList = array($spText['common']['Website'], $spText['common']['Url'], $spText['label']['Type']);
 	
 			$pTxt = str_replace("-", "/", substr($fromTime, -5));
 			$cTxt = str_replace("-", "/", substr($toTime, -5));
@@ -534,7 +539,7 @@ class ReviewManagerController extends ReviewBase{
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 	
-				$valueList = array($websiteList[$listInfo['website_id']]['url'], $listInfo['url']);
+			    $valueList = array($websiteList[$listInfo['website_id']]['url'], $listInfo['url'], $this->serviceList[$listInfo['type']]['label']);
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'name') continue;
 						

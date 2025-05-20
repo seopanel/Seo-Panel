@@ -1,4 +1,7 @@
-<?php echo showSectionHead($spTextTools['Graphical Reports']); ?>
+<?php 
+echo showSectionHead($spTextTools['Graphical Reports']);
+$submitLink = "scriptDoLoadPost('$pageScriptPath', 'search_form', 'content', '&sec=viewGraphReports')";
+?>
 <form id='search_form'>
 <table width="100%" class="search">
 	<tr>
@@ -28,7 +31,10 @@
 	<tr>
 		<th><?php echo $spText['common']['Url']?>: </th>
 		<td id="link_area">
-			<?php echo $this->render('review/review_link_select_box', 'ajax'); ?>
+			<?php			
+			$this->data['onChange'] = $submitLink;
+			echo $this->render('review/review_link_select_box', 'ajax');
+			?>
 		</td>
 		<th><?php echo $spText['label']['Report Type']?>: </th>
 		<td>
@@ -42,7 +48,7 @@
 					<?php }?>
 				<?php }?>
 			</select>
-			<a href="javascript:void(0);" onclick="scriptDoLoadPost('<?php echo $pageScriptPath ?>', 'search_form', 'content', '&sec=viewGraphReports')" class="actionbut">
+			<a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="actionbut">
 				<?php echo $spText['button']['Show Records']?>
 			</a>
 		</td>

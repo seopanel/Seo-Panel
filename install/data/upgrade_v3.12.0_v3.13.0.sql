@@ -16,7 +16,7 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 --
 
 INSERT INTO `seoplugins` (`label`, `name`, `author`, `description`, `version`, `website`, `status`, `installed`) VALUES
-('Quick Web Proxy', 'QuickWebProxy', 'Seo Panel', 'It will help you to create a web proxy server using your hosting server or external proxy servers', '1.0.0', 'https://www.seopanel.in/plugin/l/94/quick-web-proxy/', 1, 1);
+('Quick Web Proxy', 'QuickWebProxy', 'Seo Panel', 'It will help you to create a web proxy server using your hosting server or external proxy servers', '1.0.0', 'https://www.seopanel.org/plugin/l/94/quick-web-proxy/', 1, 1);
 
 CREATE TABLE IF NOT EXISTS `qwp_settings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

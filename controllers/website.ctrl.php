@@ -24,8 +24,7 @@
 class WebsiteController extends Controller{
 
 	# func to show websites
-	function listWebsites($info=[]){		
-		
+	function listWebsites($info=[]) {		
 		$userId = isLoggedIn();		
 		$info['pageno'] = intval($info['pageno']);
 		$pageScriptPath = 'websites.php?stscheck=';
@@ -81,6 +80,9 @@ class WebsiteController extends Controller{
 		
 		$this->set('statusList', $statusList);
 		$this->set('info', $info);
+		
+		$propertyList = $this->__getAllAnalyticProperties(TRUE);
+		$this->set('propertyList', $propertyList);
 				
 		$websiteList = $this->db->select($sql);	
 		$this->set('pageNo', $info['pageno']);		
@@ -207,8 +209,7 @@ class WebsiteController extends Controller{
 		$sql = "delete from dirsubmitinfo where website_id=$websiteId";
 		$this->db->query($sql);
 		$sql = "delete from skipdirectories where website_id=$websiteId";
-		$this->db->query($sql);
-		    
+		$this->db->query($sql);		    
 	}
 
 	function newWebsite($info=[]) {
@@ -238,24 +239,34 @@ class WebsiteController extends Controller{
 			$this->set('isAdmin', 1);
 		}
 		
-		$this->render('website/new');
+		$propertyList = $this->__getAllAnalyticProperties(TRUE);
+		$this->set('propertyList', $propertyList);
+		$this->set('editAction', 'create');
+		$this->render('website/edit_website');
 	}
 
-	function __checkName($name, $userId){
-		
-		$sql = "select id from websites where name='".addslashes($name)."' and user_id=$userId";
+	function __checkName($name, $userId, $websiteId=FALSE) {
+	    $userId = intval($userId);
+	    $websiteId = intval($websiteId);
+		$sql = "select id 
+                from websites
+                where name='".addslashes($name)."' and user_id=$userId";
+		$sql .= !empty($websiteId) ? " and id!=$websiteId" : "";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
 	}
 
-	function __checkWebsiteUrl($url, $websiteId=0){		
+	function __checkWebsiteUrl($url, $websiteId=0) {
+	    $websiteId = intval($websiteId);
 		$sql = "select id from websites where url='".addslashes($url)."'";
 		$sql .= $websiteId ? " and id!=$websiteId" : "";
 		$listInfo = $this->db->select($sql, true);
 		return empty($listInfo['id']) ? false :  $listInfo['id'];
 	}
 
-	function createWebsite($listInfo, $apiCall = false){
+	function createWebsite($listInfo, $apiCall=false) {
+	    $listInfo['url'] = trim($listInfo['url']);
+	    $listInfo['name'] = trim($listInfo['name']);
 		
 		// add user id when using as admin or calling api
 		if (isAdmin() || $apiCall) {
@@ -268,7 +279,7 @@ class WebsiteController extends Controller{
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
-		$errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
+		$errMsg['url'] = formatErrorMsg($this->validate->checkUrl($listInfo['url']));
 		$listInfo['url'] = addHttpToUrl($listInfo['url']);
 		$statusVal = isset($listInfo['status']) ? intval($listInfo['status']) : 1;
 		
@@ -324,34 +335,40 @@ class WebsiteController extends Controller{
 		return empty($listInfo['id']) ? false :  $listInfo;
 	}
 
-	function editWebsite($websiteId, $listInfo=''){		
-		
+	function editWebsite($websiteId, $listInfo=[]) {		
 		$websiteId = intval($websiteId);
 		if(!empty($websiteId)){
 			if(empty($listInfo)){
 				$listInfo = $this->__getWebsiteInfo($websiteId);
-				$listInfo['oldName'] = $listInfo['name'];
 			}
+			
 			$listInfo['title'] = stripslashes($listInfo['title']);
 			$listInfo['description'] = stripslashes($listInfo['description']);
 			$listInfo['keywords'] = stripslashes($listInfo['keywords']);
 			$this->set('post', $listInfo);
 			
-			# get all users
-			if(isAdmin()){
+			// get all users
+			if(isAdmin()) {
 				$userCtrler = New UserController();
 				$userList = $userCtrler->__getAllUsers();
 				$this->set('userList', $userList);  			
 				$this->set('isAdmin', 1);
 			}
 			
-			$this->render('website/edit');
+			$propertyList = $this->__getAllAnalyticProperties(TRUE);
+			$this->set('propertyList', $propertyList);
+			
+			$this->set('editAction', 'update');
+			$this->render('website/edit_website');
 			exit;
-		}
+		}		
+		
 		$this->listWebsites([]);
 	}
 
-	function updateWebsite($listInfo, $apiCall = false){
+	function updateWebsite($listInfo, $apiCall=false) {
+	    $listInfo['url'] = trim($listInfo['url']);
+	    $listInfo['name'] = trim($listInfo['name']);
 		
 		// check whether admin or api calll
 		if (isAdmin() || $apiCall) {
@@ -364,9 +381,9 @@ class WebsiteController extends Controller{
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
-		$errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
+		$errMsg['url'] = formatErrorMsg($this->validate->checkUrl($listInfo['url']));
 		$listInfo['url'] = addHttpToUrl($listInfo['url']);
-		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";		
+		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";
 		
 		// check limit
 		if(!$this->validate->flagErr && !empty($listInfo['user_id'])){
@@ -385,13 +402,11 @@ class WebsiteController extends Controller{
 		}
 		
 		// verify the form
-		if(!$this->validate->flagErr){
+		if(!$this->validate->flagErr) {
 
-		    if(strtolower($listInfo['name']) != strtolower($listInfo['oldName'])){
-				if ($this->__checkName($listInfo['name'], $userId)) {
-					$errMsg['name'] = formatErrorMsg($this->spTextWeb['Website already exist']);
-					$this->validate->flagErr = true;
-				}
+		    if ($this->__checkName($listInfo['name'], $userId, $listInfo['id'])) {
+				$errMsg['name'] = formatErrorMsg($this->spTextWeb['Website already exist']);
+				$this->validate->flagErr = true;
 			}
 			
 			if ($this->__checkWebsiteUrl($listInfo['url'], $listInfo['id'])) {
@@ -432,8 +447,7 @@ class WebsiteController extends Controller{
 		} else {
 			$this->set('errMsg', $errMsg);
 			$this->editWebsite($listInfo['id'], $listInfo);
-		}
-		
+		}		
 	}
 	
 	# func to crawl meta data of a website
@@ -499,7 +513,6 @@ class WebsiteController extends Controller{
 	}
 	
 	public static function addInputValue($value, $col) {
-
 		$value = removeNewLines($value);
 		?>
 		<script type="text/javascript">
@@ -509,7 +522,6 @@ class WebsiteController extends Controller{
 	}
 	
 	function showImportWebsites() {
-
 		$userId = isLoggedIn();
 		
 		# get all users
@@ -679,12 +691,10 @@ class WebsiteController extends Controller{
 			
 		} else {
 			return true;
-		}
-			
+		}			
 	}
 	
-	function showimportWebmasterToolsWebsites() {
-		
+	function showimportWebmasterToolsWebsites() {		
 		$userId = isLoggedIn();
 		$this->set('spTextTools', $this->getLanguageTexts('seotools', $_SESSION['lang_code']));
 		$userCtrler = New UserController();
@@ -941,10 +951,93 @@ class WebsiteController extends Controller{
 			showErrorMsg($result['msg'], false);
 		}
 		
-		$this->listSitemap(array('website_id' => $sitemapInfo['website_id']));
+		$this->listSitemap(array('website_id' => $sitemapInfo['website_id']));	
+	}	
 	
+	function syncGoogleAnalyticProperties($userId) {
+	    $userId = intval($userId);
+	    $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");
+	    $propertyList = createSelectList($analyticList, "ALL", 'property_id');
+	    
+	    $GoogleCtrl  = new GoogleAPIController();
+	    [$status, $result, $errMsg] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    if($status && !empty($result)) {
+	        foreach ($result as $data) {
+	            $propertyId = $data['property_id'];
+	            
+	            if (!empty($propertyList[$propertyId])) {
+	                $propertyDbId = $propertyList[$propertyId]['id'];
+	                $dataList = [
+	                    'user_id' => $userId,
+	                    'account_name' => $data['account_name'],
+	                    'account_id' => $data['account_id'],
+	                    'property_name' => $data['property_name'],
+	                    'datetime_updated' => date('Y-m-d H:i:s'),
+	                ];
+	                
+	                $this->dbHelper->updateRow('analytics_properties', $dataList, "id=$propertyDbId");
+	            } else {
+	                $dataList = [
+	                    'user_id' => $userId,
+	                    'account_name' => $data['account_name'],
+	                    'account_id' => $data['account_id'],
+	                    'property_name' => $data['property_name'],
+	                    'property_id' => $data['property_id'],
+	                ];
+	                
+	                $this->dbHelper->insertRow('analytics_properties', $dataList);
+	            }
+	        }
+	    }
+	    
+	    return [$status, $errMsg];
 	}
 	
-		
+	function fetchGoogleAnalyticProperties() {
+	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error"];
+	    $userId = isLoggedIn();
+	    
+	    // sync google analytics properties using the connectin
+	    [$status, $errMsg] = $this->syncGoogleAnalyticProperties($userId);
+	    if ($status) {
+	        $propertyList = $this->__getAllAnalyticProperties(TRUE);
+	        $response['data'] = $propertyList;
+	        $response['status'] = TRUE;
+	    } else {
+	        $response['msg'] = $errMsg;
+	    }
+	    
+	    return $response;
+	}
+	
+	function __getUserAnalyticProperties($userId) {
+	    $userId = intval($userId);
+	    $sql = "SELECT *
+                FROM analytics_properties
+                WHERE user_id= $userId ORDER BY account_name, property_name, property_id";
+	    $list = $this->db->select($sql);
+	    return $list;
+	}
+	
+	function __getAllAnalyticProperties($asSelectList=FALSE) {
+	    $sql = "SELECT *
+                FROM analytics_properties
+                ORDER BY account_name, property_name, property_id";
+	    $list = $this->db->select($sql);
+	    
+	    // if return as property list
+	    if ($asSelectList) {
+	        $propertyList = [];
+	        foreach ($list as $item) {
+	            if (empty($item['view_id'])) {
+	                $propertyList[$item['property_id']] = $item['account_name'].' - '.$item['property_name'] ."({$item['property_id']})";
+	            }
+	        }
+	        
+	        return $propertyList;
+	    } else {
+	        return $list;
+	    }
+	}
 }
 ?>
