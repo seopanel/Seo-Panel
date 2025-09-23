@@ -34,7 +34,7 @@ class Spider{
 	var $_CURLOPT_TIMEOUT = 15;	
 	var $_CURLOPT_POST = true;
 	var $_CURLOPT_POSTFIELDS = null;
-	var $_CURLOPT_USERAGENT = "Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))";
+	var $_CURLOPT_USERAGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0";
 	var $_CURLOPT_USERPWD = null;
 	var $_CURLOPT_COOKIEJAR = '';
 	var $_CURLOPT_COOKIEFILE = '';
@@ -59,7 +59,7 @@ class Spider{
 		if(!empty($_SERVER['HTTP_USER_AGENT'])) $this->_CURLOPT_USERAGENT = $_SERVER['HTTP_USER_AGENT'];
 
 		// user agents
-		$this->userAgentList['google'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
+		$this->userAgentList['google'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0";
 		$this->userAgentList['bing'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
 		$this->userAgentList['pinterest'] = "Mozilla/5.0 (X11; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0";
 		$this->userAgentList['default'] = defined('SP_USER_AGENT') ? SP_USER_AGENT : $this->_CURLOPT_USERAGENT;
@@ -282,7 +282,6 @@ class Spider{
 	
 	# get contents of a web page	
 	function getContent( $url, $enableProxy=true, $logCrawl = true)	{
-		
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_URL , $url );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FAILONERROR , $this -> _CURLOPT_FAILONERROR );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_MAXREDIRS , $this -> _CURLOPT_MAXREDIRS );
@@ -317,9 +316,9 @@ class Spider{
 		}
 		
 		// set custom headers for google domains
-		if (stristr($url, 'google.')) {
+		/*if (stristr($url, 'google.')) {
 			$this->setCustomHeaders();
-		}
+		}*/
 
 		// to add the curl http headers
 		if (!empty($this ->_CURL_HTTPHEADER)) {
