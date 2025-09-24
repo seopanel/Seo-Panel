@@ -295,11 +295,11 @@ class Spider {
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_TIMEOUT , $this -> _CURLOPT_TIMEOUT );
 		
 		if (!empty($this -> _CURLOPT_COOKIEJAR)) {
-		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEJAR , $this -> _CURLOPT_COOKIEJAR );
+		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEJAR, $this -> _CURLOPT_COOKIEJAR );
 		}
 		
 		if (!empty($this -> _CURLOPT_COOKIEFILE)) {
-		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEFILE , $this -> _CURLOPT_COOKIEFILE );
+		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEFILE, $this -> _CURLOPT_COOKIEFILE );
 		}
 		
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_HEADER , $this -> _CURLOPT_HEADER);
@@ -337,7 +337,10 @@ class Spider {
 			curl_setopt($this->_CURL_RESOURCE, CURLOPT_HTTPHEADER, $this ->_CURL_HTTPHEADER);
 		}
 		
-		if(!empty($this -> _CURLOPT_COOKIE)) curl_setopt( $this -> _CURL_RESOURCE, CURLOPT_COOKIE , $this -> _CURLOPT_COOKIE );
+		if(!empty($this -> _CURLOPT_COOKIE)) {
+		    curl_setopt( $this -> _CURL_RESOURCE, CURLOPT_COOKIE , $this -> _CURLOPT_COOKIE );
+		}
+		
 		if(!empty($this-> _CURLOPT_REFERER)){
 			curl_setopt($this -> _CURL_RESOURCE, CURLOPT_REFERER, $this-> _CURLOPT_REFERER); 
 		}		
@@ -395,7 +398,6 @@ class Spider {
 		
 		// disable proxy if not working
 		if ($enableProxy && SP_ENABLE_PROXY && !empty($ret['error']) && !empty($proxyInfo['id'])) {
-			
 			// deactivate proxy
 			if (PROXY_DEACTIVATE_CRAWL) {
 				$proxyCtrler->__changeStatus($proxyInfo['id'], 0);

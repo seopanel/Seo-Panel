@@ -684,8 +684,10 @@ class ReportController extends Controller {
 			$isGoogle = false;
 			if (stristr($seInfo['url'], 'google')) {
 			    $isGoogle = true;
-			    $seUrl .= "&ie=utf-8&gl=".$keywordInfo['country_code'];
-			    $seUrl = str_replace('[--lang--]', '', $seUrl);
+			    //$seUrl .= "&ie=utf-8&gl=".$keywordInfo['country_code'];
+			    
+			    $replaces = ['[--lang--]', 'hl=&', 'start=0&', 'cr=country&', '&gl='];
+			    $seUrl = str_ireplace($replaces, '', $seUrl);
 			    
 			    if(!empty($seInfo['cookie_send'])) {
 			        $cookieSend = str_replace('[--lang--]', $keywordInfo['lang_code'], $seInfo['cookie_send']);
@@ -695,11 +697,11 @@ class ReportController extends Controller {
 			    // visit main domain link and save cookies and use it for the next fetch
 			    $mainSeUrl = getMainDomainLink($seUrl);
 			    $this->spider->proxyInfo = $this->spider->getSpiderProxy();
-			    $cookieFile = tempnam(sys_get_temp_dir(), 'cookie');
+			    $cookieFile = tempnam(sys_get_temp_dir(), 'sp_cookie_');			    
 			    $this->spider->_CURLOPT_COOKIEJAR = $cookieFile;
 			    $mainSeRes = $this->spider->getContent($mainSeUrl);
 			    if(!empty($mainSeRes['error']) || empty($mainSeRes['page'])) {
-			        return $crawlResult;
+			        continue;
 			    }
 			    
 			    $this->spider->_CURLOPT_REFERER = $mainSeUrl;
@@ -714,19 +716,17 @@ class ReportController extends Controller {
 				}
 			}
 			
-			debugVar($seUrl);
-			
 			$result = $this->spider->getContent($seUrl);
 			$pageContent = $this->formatPageContent($seInfoId, $result['page']);
 			
 			// testing code for regex
-            $testFileName = SP_TMPPATH . "/google.html";
+            /*$testFileName = SP_TMPPATH . "/google.html";
             $myfile = fopen($testFileName, "w") or die("Unable to open file!");
             fwrite($myfile, $pageContent);
             fclose($myfile);
             exit;
             
-            /*$myfile = fopen($testFileName, "r") or die("Unable to open file!");
+            $myfile = fopen($testFileName, "r") or die("Unable to open file!");
             $pageContent = fread($myfile,filesize($testFileName));
             fclose($myfile);*/
 			
@@ -850,8 +850,7 @@ class ReportController extends Controller {
 			if (!$crawlResult[$seInfoId]['status'] && SP_ENABLE_PROXY && CHECK_WITH_ANOTHER_PROXY_IF_FAILED) {
 				
 				// max proxy checked in one execution is exeeded
-				if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {
-				
+				if ($this->proxyCheckCount < CHECK_MAX_PROXY_COUNT_IF_FAILED) {				
 					// if proxy is available for execution
 					$proxyCtrler = New ProxyController();
 					if ($proxyCtrler->getRandomProxy()) {
