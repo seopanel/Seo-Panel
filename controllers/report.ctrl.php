@@ -614,6 +614,7 @@ class ReportController extends Controller {
 	
 	# function to format pagecontent
 	function formatPageContent($seInfoId, $pageContent) {
+	    $matches = [];
 	    if (!empty($this->seList[$seInfoId]['from_pattern']) && $this->seList[$seInfoId]['to_pattern']) {
 	        $pattern = $this->seList[$seInfoId]['from_pattern']."(.*?)".$this->seList[$seInfoId]['to_pattern'];
 	        if (preg_match("/$pattern/is", $pageContent, $matches)) {
@@ -627,7 +628,6 @@ class ReportController extends Controller {
 	
 	# func to crawl keyword
 	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true) {
-	    
 	    // check whether any api source is enabled for crawl keyword
 	    list($resDataStatus, $resData) = SettingsController::getSearchResults($keywordInfo, $this->showAll, $seId, $cron);
 	    if ($resDataStatus) {
@@ -641,62 +641,92 @@ class ReportController extends Controller {
 	    
 		$crawlResult = array();
 		$websiteUrl = formatUrl($keywordInfo['url'], false);
-		if(empty($websiteUrl)) return $crawlResult;
-		if(empty($keywordInfo['name'])) return $crawlResult;
+		if(empty($websiteUrl)) {
+		    return $crawlResult;
+		}
 		
-		$websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);
+		if(empty($keywordInfo['name'])) {
+		    return $crawlResult;
+		}
 		
+		$websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);		
 		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$seList = explode(':', $keywordInfo['searchengines']);
-		foreach($seList as $seInfoId) {
-			
+		foreach($seList as $seInfoId) {		    
 			// function to execute only passed search engine
-			if(!empty($seId) && ($seInfoId != $seId)) continue;
+		    if(!empty($seId) && ($seInfoId != $seId)) {
+		        continue;
+		    }
 			
 			// if search engine not found continue
-			if (empty($this->seList[$seInfoId])) continue;
-			
+		    if (empty($this->seList[$seInfoId])) {
+		        continue;
+		    }
+		    
+		    $this->spider =  new Spider();
 			$this->seFound = 1;
+			$seInfo = $this->seList[$seInfoId];
 			
 			// if execution from cron check whether cron already executed
 			/*if ($cron) {
 			    if (SP_MULTIPLE_CRON_EXEC && $this->isCronExecuted($keywordInfo['id'], $seInfoId, $time)) continue;
 			}*/			
 			
-			$searchUrl = str_replace('[--keyword--]', urlencode(stripslashes($keywordInfo['name'])), $this->seList[$seInfoId]['url']);
+			$searchUrl = str_replace('[--keyword--]', urlencode(stripslashes($keywordInfo['name'])), $seInfo['url']);
 			$searchUrl = str_replace('[--country--]', $keywordInfo['country_code'], $searchUrl);
 			if (empty($keywordInfo['country_code']) && stristr($searchUrl, '&cr=country&')) {
 			    $searchUrl = str_replace('&cr=country&', '&cr=&', $searchUrl);
 			}
 			
-			$seUrl = str_replace('[--start--]', $this->seList[$seInfoId]['start'], $searchUrl);
+			$seUrl = str_replace('[--start--]', $seInfo['start'], $searchUrl);
 			
 			// if google add special parameters
 			$isGoogle = false;
-			if (stristr($this->seList[$seInfoId]['url'], 'google')) {
+			if (stristr($seInfo['url'], 'google')) {
 			    $isGoogle = true;
-			    $seUrl .= "&ie=utf-8&pws=0&gl=".$keywordInfo['country_code'];
+			    $seUrl .= "&ie=utf-8&gl=".$keywordInfo['country_code'];
 			    $seUrl = str_replace('[--lang--]', '', $seUrl);
+			    
+			    if(!empty($seInfo['cookie_send'])) {
+			        $cookieSend = str_replace('[--lang--]', $keywordInfo['lang_code'], $seInfo['cookie_send']);
+			        $this->spider->_CURLOPT_COOKIE = $cookieSend;
+			    }
+			    
+			    // visit main domain link and save cookies and use it for the next fetch
+			    $mainSeUrl = getMainDomainLink($seUrl);
+			    $this->spider->proxyInfo = $this->spider->getSpiderProxy();
+			    $cookieFile = tempnam(sys_get_temp_dir(), 'cookie');
+			    $this->spider->_CURLOPT_COOKIEJAR = $cookieFile;
+			    $mainSeRes = $this->spider->getContent($mainSeUrl);
+			    if(!empty($mainSeRes['error']) || empty($mainSeRes['page'])) {
+			        return $crawlResult;
+			    }
+			    
+			    $this->spider->_CURLOPT_REFERER = $mainSeUrl;
+			    $this->spider->_CURLOPT_COOKIEFILE = $cookieFile;
+			    $this->spider->resetCurlResourceCookie();
+			    sleep(SP_CRAWL_DELAY);
 			} else {
 				$seUrl = str_replace('[--lang--]', $keywordInfo['lang_code'], $seUrl);
+				if(!empty($seInfo['cookie_send'])) {
+				    $seInfo['cookie_send'] = str_replace('[--lang--]', $keywordInfo['lang_code'], $seInfo['cookie_send']);
+				    $this->spider->_CURLOPT_COOKIE = $seInfo['cookie_send'];
+				}
 			}
 			
-			if(!empty($this->seList[$seInfoId]['cookie_send'])){
-				$this->seList[$seInfoId]['cookie_send'] = str_replace('[--lang--]', $keywordInfo['lang_code'], $this->seList[$seInfoId]['cookie_send']);
-				$this->spider->_CURLOPT_COOKIE = $this->seList[$seInfoId]['cookie_send'];				
-			}
+			debugVar($seUrl);
 			
 			$result = $this->spider->getContent($seUrl);
 			$pageContent = $this->formatPageContent($seInfoId, $result['page']);
 			
 			// testing code for regex
-            /*$testFileName = SP_TMPPATH . "/google.html";
+            $testFileName = SP_TMPPATH . "/google.html";
             $myfile = fopen($testFileName, "w") or die("Unable to open file!");
             fwrite($myfile, $pageContent);
             fclose($myfile);
             exit;
             
-            $myfile = fopen($testFileName, "r") or die("Unable to open file!");
+            /*$myfile = fopen($testFileName, "r") or die("Unable to open file!");
             $pageContent = fread($myfile,filesize($testFileName));
             fclose($myfile);*/
 			
@@ -706,36 +736,37 @@ class ReportController extends Controller {
 			$crawlInfo['ref_id'] = empty($keywordInfo['id']) ? $keywordInfo['name'] : $keywordInfo['id'];
 			$crawlInfo['subject'] = $seInfoId;
 			
-			$seStart = $this->seList[$seInfoId]['start'] + $this->seList[$seInfoId]['start_offset'];
-			while(empty($result['error']) && ($seStart < $this->seList[$seInfoId]['max_results']) ){
+			$seStart = $seInfo['start'] + $seInfo['start_offset'];
+			while(empty($result['error']) && ($seStart < $seInfo['max_results'])) {
 				$logId = $result['log_id'];
-				if(SP_DEBUG){
+				if(SP_DEBUG) {
 					$crawlInfo['log_message'] = "Started at: $seStart";
 				}
+				
 				$crawlLogCtrl->updateCrawlLog($logId, $crawlInfo);
 				sleep(SP_CRAWL_DELAY);
 				$seUrl = str_replace('[--start--]', $seStart, $searchUrl);
 				$result = $this->spider->getContent($seUrl);
 				$pageContent .= $this->formatPageContent($seInfoId, $result['page']);
-				$seStart += $this->seList[$seInfoId]['start_offset'];
+				$seStart += $seInfo['start_offset'];
 			}
 
-			# to check whether utf8 conversion needed
-			if(!empty($this->seList[$seInfoId]['encoding'])){
-				$pageContent = mb_convert_encoding($pageContent, "UTF-8", $this->seList[$seInfoId]['encoding']);
+			// to check whether utf8 conversion needed
+			if(!empty($seInfo['encoding'])) {
+				$pageContent = mb_convert_encoding($pageContent, "UTF-8", $seInfo['encoding']);
 			}
 			
 			$crawlStatus = 0;
-			if(empty($result['error'])){
-			    
+			if(empty($result['error'])) {			    
 			    // to update cron that report executed for akeyword on a search engine
 			    if (SP_MULTIPLE_CRON_EXEC && $cron) $this->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
 			    
 			    // verify the urls existing in the result
-			    preg_match_all($this->seList[$seInfoId]['regex'], $pageContent, $matches);
-			    if (!empty($matches[$this->seList[$seInfoId]['url_index']])) {
+			    $matches = [];
+			    preg_match_all($seInfo['regex'], $pageContent, $matches);
+			    if (!empty($matches[$seInfo['url_index']])) {
 			    	
-					$urlList = $matches[$this->seList[$seInfoId]['url_index']];
+					$urlList = $matches[$seInfo['url_index']];
 					$crawlResult[$seInfoId]['matched'] = array();
 					$rank = 1;
 					$previousDomain = "";
@@ -743,7 +774,7 @@ class ReportController extends Controller {
 						$url = urldecode(strip_tags($url));
 						
 						// add special condition for baidu
-						if (stristr($this->seList[$seInfoId]['domain'], "baidu")) {
+						if (stristr($seInfo['domain'], "baidu")) {
 							$url =  addHttpToUrl($url);
 							$url = str_replace("...", "", $url);
 						}
@@ -764,13 +795,14 @@ class ReportController extends Controller {
 						    if ($previousDomain == $currentDomain) {
 						        continue;        
 						    }
+						    
 						    $previousDomain = $currentDomain;
 						}
 						
 						if($this->showAll || ( 
 						      stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
 						      stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
-						    )){
+						    )) {
 
 							if ($this->showAll && (
                                     stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
@@ -782,8 +814,8 @@ class ReportController extends Controller {
 							}
 							
 							$matchInfo['url'] = $url;
-							$matchInfo['title'] = strip_tags($matches[$this->seList[$seInfoId]['title_index']][$i]);
-							$matchInfo['description'] = strip_tags($matches[$this->seList[$seInfoId]['description_index']][$i]);
+							$matchInfo['title'] = strip_tags($matches[$seInfo['title_index']][$i]);
+							$matchInfo['description'] = strip_tags($matches[$seInfo['description_index']][$i]);
 							$matchInfo['rank'] = $rank;
 							$crawlResult[$seInfoId]['matched'][] = $matchInfo;
 						}
@@ -792,9 +824,7 @@ class ReportController extends Controller {
 					}
 					
 					$crawlStatus = 1;					
-					
-				} else {
-					
+				} else {					
 					// set crawl log info
 					$crawlInfo['crawl_status'] = 0;
 					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
@@ -807,7 +837,8 @@ class ReportController extends Controller {
 				if (SP_DEBUG) {
 					echo "<p class='note' style='text-align:left;'>Error occured while crawling $seUrl ".formatErrorMsg($result['errmsg']."<br>\n")."</p>";
 				}
-			}			
+			}
+			
 			$crawlResult[$seInfoId]['status'] = $crawlStatus;			
 			sleep(SP_CRAWL_DELAY);
 			
@@ -823,17 +854,15 @@ class ReportController extends Controller {
 				
 					// if proxy is available for execution
 					$proxyCtrler = New ProxyController();
-					if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
+					if ($proxyCtrler->getRandomProxy()) {
 						$this->proxyCheckCount++;
 						sleep(SP_CRAWL_DELAY);
 						$crawlResult = array_merge($crawlResult, $this->crawlKeyword($keywordInfo, $seInfoId, $cron, $removeDuplicate));
 					}
-					
 				} else {
 					$this->proxyCheckCount = 1;
 				}
-			}
-		
+			}		
 		}
 		
 		return  $crawlResult;
@@ -872,13 +901,12 @@ class ReportController extends Controller {
 	}
 	
 	# func to check keyword rank
-	function quickRankChecker() {
-		
+	function quickRankChecker($searchInfo=[]) {		
 		$seController = New SearchEngineController();
 		$seList = $seController->__getAllSearchEngines();
 		$this->set('seList', $seList);
 		$this->set('seStyle', 230);		
-		$seId = empty ($searchInfo['se_id']) ? '' : $searchInfo['se_id'];
+		$seId = empty($searchInfo['se_id']) ? '' : $searchInfo['se_id'];
 		$this->set('seId', $seId);
 		
 		$langController = New LanguageController();
@@ -895,8 +923,7 @@ class ReportController extends Controller {
 	}
 	
 	# func to show quick rank report
-	function showQuickRankChecker($keywordInfo='') {
-		
+	function showQuickRankChecker($keywordInfo=[]) {		
 		$keywordInfo['searchengines'] = $keywordInfo['se_id'];
 		$this->showAll = $keywordInfo['show_all'];
 		
@@ -1149,7 +1176,7 @@ class ReportController extends Controller {
 			// pagination setup
 			if (!in_array($searchInfo['doc_type'], array('export', 'pdf')) && !$cronUserId) {
 				$scriptPath .= "&report_type=website-stats";
-				$info['pageno'] = intval($info['pageno']);
+				$searchInfo['pageno'] = intval($searchInfo['pageno']);
 				$sql = "select * from websites w where w.status=1";
 				$sql .= isAdmin() ? "" : $websiteCtrler->getWebsiteUserAccessCondition($userId);
     			$sql .= !empty($websiteId) ? " and w.id=$websiteId" : "";
@@ -1461,8 +1488,7 @@ class ReportController extends Controller {
 	
 	# func to save Report Schedule
 	function saveReportSchedule($info) {	    
-		$userId = isAdmin() ? $info['user_id'] : isLoggedIn();		
-		$repSetInfo = $this->getUserReportSettings($userId);
+		$userId = isAdmin() ? $info['user_id'] : isLoggedIn();
 	    $this->updateUserReportSetting($userId, 'report_interval', $info['report_interval']);
 	    $this->updateUserReportSetting($userId, 'email_notification', $info['email_notification']);
 	    $this->showReportsScheduler(true, $info);
@@ -1528,7 +1554,7 @@ class ReportController extends Controller {
 	}
 	
 	# func to show user report generation logs
-	function showReportGenerationLogs($searchInfo = '') {
+	function showReportGenerationLogs($searchInfo=[]) {
 	
 		$userCtrler = New UserController();
 		$fromTimeDate = !empty ($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));

@@ -59,7 +59,6 @@ function showDiv($divId) {
 	exit;
 }
 
-
 # func to show no results
 function showNoRecordsList($colspan, $msg='', $plain=false) {
 	$msg = empty($msg) ? $_SESSION['text']['common']['No Records Found'] : $msg;
@@ -176,7 +175,6 @@ function confirmScriptAJAXLinkHref($file, $area, $args='', $linkText='Click', $t
 	return $link;
 }
 
-
 #post functions
 function scriptPostAJAXLink($file, $form, $area, $trigger='OnClick'){
 	$link = ' '.$trigger.'="scriptDoLoadPost('."'$file', '$form', '$area')".'"';
@@ -188,13 +186,17 @@ function confirmPostAJAXLink($file, $form, $area, $trigger='OnClick'){
 	return $link;
 }
 
-function formatUrl( $url, $removeWWW=true ) {
+function formatUrl( $url, $removeWWW=true, $removeLastSlash=false) {
 	$url = str_replace('http://', '', $url);
 	$url = str_replace('https://', '', $url);
 	
 	// if ww needs to be removed
 	if ($removeWWW) {
 		$url = preg_replace('/^www./i', '', $url);
+	}
+	
+	if ($removeLastSlash) {
+	    $url = rtrim($url, '/');
 	}
 	
 	return $url;
@@ -205,11 +207,71 @@ function formatDate($date) {
 	return $date;
 }
 
-function addHttpToUrl($url){
-	if(!stristr($url, 'http://') && !stristr($url, 'https://')){
+function addHttpToUrl($url) {
+	if(!stristr($url, 'http://') && !stristr($url, 'https://')) {
 		$url = 'http://'.trim($url);
 	}
+	
 	return trim($url);
+}
+
+function isDomainUrl($url) {
+    $parsedUrl = parse_url($url);
+    
+    // Check if the URL has a scheme (e.g., http, https) and a host
+    return isset($parsedUrl['scheme']) && isset($parsedUrl['host']) && !isset($parsedUrl['path']);
+}
+
+function getMainDomainLink($url) {
+    $parsedUrl = parse_url($url);
+    $mainLink = "";
+    
+    // Check if the URL has a scheme (e.g., http, https) and a host
+    if (isset($parsedUrl['scheme']) && isset($parsedUrl['host'])) {
+        $mainLink = $parsedUrl['scheme'] . "://" . $parsedUrl['host'];
+    }
+    
+    return $mainLink;
+}
+
+function isImageFile($filename) {
+    // Get the file extension in lowercase
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    // Convert the allowed types constant into an array
+    $allowedTypes = array_map('trim', explode(',', SP_IMG_FILE_TYPES));
+    
+    // Return true if extension is in the allowed types
+    return in_array($ext, $allowedTypes);
+}
+
+function generateFileNameFromTitle($title, $extension='txt', $maxChars=50) {
+    // Convert to lowercase
+    $title = strtolower($title);
+    
+    // Replace spaces and underscores with hyphens
+    $title = preg_replace('/[\s_]+/', '-', $title);
+    
+    // Remove all non-alphanumeric and non-hyphen characters
+    $title = preg_replace('/[^a-z0-9\-]/', '', $title);
+    
+    // Trim hyphens from beginning and end
+    $title = trim($title, '-');
+    
+    // Limit to 60 characters
+    $title = substr($title, 0, $maxChars);
+    
+    // Remove trailing hyphen if cut in the middle
+    $title = rtrim($title, '-');
+    
+    return $title . '.' . $extension;
+}
+
+function isPageUrl($url) {
+    $parsedUrl = parse_url($url);
+    
+    // Check if the URL has a scheme, a host, and a path (page)
+    return isset($parsedUrl['scheme']) && isset($parsedUrl['host']) && isset($parsedUrl['path']);
 }
 
 function formatFileName( $fileName ) {
@@ -217,6 +279,13 @@ function formatFileName( $fileName ) {
 	$replace = array('_', '', '');
 	$fileName = str_replace($search, $replace, $fileName);
 	return $fileName;
+}
+
+function formatCommaSeparatedString($commaStr) {
+    $parts = preg_split('/\s*,\s*/', $commaStr);
+    $parts = array_filter($parts);
+    $commaStr = implode(',', $parts);
+    return $commaStr;
 }
 
 function showActionLog($msg, $area='subcontent'){
