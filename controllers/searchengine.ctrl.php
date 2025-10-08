@@ -102,16 +102,6 @@ class SearchEngineController extends Controller{
 	// func to change status of search engine
 	function __changeStatus($seId, $status){		
 		$seId = intval($seId);
-// 		$sql = "update searchengines 
-//                 set status=$status 
-//                 where id=$seId";
-		
-		
-		
-		
-// 		$this->db->query($sql);
-		
-		
 		$dataList = [
 		    'status|int' => $status,
 		    'updated' => "NOW()",
