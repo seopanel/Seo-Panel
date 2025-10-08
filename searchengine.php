@@ -72,6 +72,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    $controller->showSyncSearchEngines();
 		    break;
+		    
+		case "updateSearchEngine":
+		    $controller->updateSearchEngine($_POST);
+		    break;		    
 
 		default:
 			$controller->listSE($_POST);
@@ -99,6 +103,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "sync-se":
 		    $controller->showSyncSearchEngines($_GET);
 		    break;
+		    
+		case "edit":
+		    $controller->editSearchEngine($_GET['seId']);
+		    break;		    
 
 		default:
 			$controller->listSE($_GET);

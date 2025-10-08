@@ -684,9 +684,8 @@ class ReportController extends Controller {
 			$isGoogle = false;
 			if (stristr($seInfo['url'], 'google')) {
 			    $isGoogle = true;
-			    //$seUrl .= "&ie=utf-8&gl=".$keywordInfo['country_code'];
-			    
-			    $replaces = ['[--lang--]', 'hl=&', 'start=0&', 'cr=country&', '&gl='];
+			    $seUrl .= "&ie=utf-8&gl=".$keywordInfo['country_code'];			    
+			    $replaces = ['[--lang--]', 'hl=&', 'start=0&', 'cr=country&'];
 			    $seUrl = str_ireplace($replaces, '', $seUrl);
 			    
 			    if(!empty($seInfo['cookie_send'])) {
@@ -770,7 +769,7 @@ class ReportController extends Controller {
 					$crawlResult[$seInfoId]['matched'] = array();
 					$rank = 1;
 					$previousDomain = "";
-					foreach($urlList as $i => $url){
+					foreach($urlList as $i => $url) {
 						$url = urldecode(strip_tags($url));
 						
 						// add special condition for baidu
@@ -784,10 +783,14 @@ class ReportController extends Controller {
 							$url = preg_replace(array('/\/url\?q=/i', '/\&amp;sa=U.*$/i'), array("", ""), $url);
 						}
 						
-						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) continue;
+						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) {
+						    continue;
+						}
 						
 						// check for to remove bing ad links in page
-						if(stristr($url, 'bat.bing.com')) continue;
+						if(stristr($url, 'bat.bing.com')) {
+						    continue;
+						}
 
 						// check to remove duplicates from same domain if google is the search engine
 						if ($removeDuplicate && $isGoogle) {

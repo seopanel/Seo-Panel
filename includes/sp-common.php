@@ -935,4 +935,25 @@ function createSelectBox($optList, $nameAtr, $selectedVal, $labelCol='name', $id
     $selectStr .= "<select>";
     return $selectStr;
 }
+
+function __assign($info, $col='id', $default="", $isset=false) {
+    if ($isset) {
+        return isset($info[$col]) ? $info[$col] : $default;
+    } else {
+        return !empty($info[$col]) ? $info[$col] : $default;
+    }
+}
+
+function showStatusBadge($statusVal) {
+    $spText = $_SESSION['text'];
+    $statusClass = "badge bg-danger";
+    $statusLabel = $spText['common']["Inactive"];
+    if (!empty($statusVal)) {
+        $statusClass = "badge bg-success";
+        $statusLabel = $spText['common']["Active"];
+    }
+    
+    $statusHtml = "<span class='$statusClass py-2 px-3'>$statusLabel</span>";
+    return  $statusHtml;
+}
 ?>
