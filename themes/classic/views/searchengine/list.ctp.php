@@ -7,7 +7,7 @@
 		<td>
 			<input type="text" name="se_name" value="<?php echo htmlentities($info['se_name'], ENT_QUOTES)?>" class="form-control">
 		</td>
-		<th><?php echo $spText['common']['Status']?>: </th>
+		<th style="padding-left: 25px;"><?php echo $spText['common']['Status']?>: </th>
 		<td>
 			<select name="stscheck" class="form-select" onchange="<?php echo $submitLink?>">
 				<?php foreach($statusList as $key => $val){?>
@@ -26,7 +26,6 @@
 		</td>
 	</tr>
 </table>
-<br>
 <?php echo $pagingDiv?>
 <table class="list">
 	<tr class="listHead">

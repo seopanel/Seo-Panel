@@ -41,7 +41,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__changeStatus($id, 1);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE(['stscheck' => 1]);
 		    break;
 			
 		case "inactivateall":
@@ -50,7 +51,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__changeStatus($id, 0);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE(['stscheck' => 0]);
 		    break;
 		    
 		case "deleteall":		    
@@ -59,7 +61,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__deleteSearchEngine($id);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE();
 		    break;
 		    
 		case "do-sync-se":

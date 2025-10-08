@@ -99,11 +99,24 @@ class SearchEngineController extends Controller{
 		$this->render('searchengine/list', 'ajax');
 	}
 	
-	# func to change status of search engine
+	// func to change status of search engine
 	function __changeStatus($seId, $status){		
 		$seId = intval($seId);
-		$sql = "update searchengines set status=$status where id=$seId";
-		$this->db->query($sql);
+// 		$sql = "update searchengines 
+//                 set status=$status 
+//                 where id=$seId";
+		
+		
+		
+		
+// 		$this->db->query($sql);
+		
+		
+		$dataList = [
+		    'status|int' => $status,
+		    'updated' => "NOW()",
+		];
+		$this->dbHelper->updateRow($this->seTable, $dataList, "id=$seId");
 	}
 	
 	# func to delete search engine

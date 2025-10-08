@@ -953,7 +953,7 @@ function showStatusBadge($statusVal) {
         $statusLabel = $spText['common']["Active"];
     }
     
-    $statusHtml = "<span class='$statusClass py-2 px-3'>$statusLabel</span>";
+    $statusHtml = "<span class='$statusClass py-2 px-3 text-light'>$statusLabel</span>";
     return  $statusHtml;
 }
 ?>
