@@ -5,11 +5,11 @@
 	<tr>
 		<th><?php echo $spText['common']['Keyword']?>: </th>
 		<td>
-			<input type="text" name="user_name" value="<?php echo htmlentities($info['user_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>">
+			<input type="text" name="user_name" value="<?php echo htmlentities($info['user_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
 		</td>
-		<th><?php echo $spText['common']['Status']?>: </th>
+		<th class="pl-4"><?php echo $spText['common']['Status']?>: </th>
 		<td>
-			<select name="stscheck" onchange="<?php echo $submitLink?>">
+			<select name="stscheck" onchange="<?php echo $submitLink?>" class="custom-select">
 				<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($statusList as $key => $val){?>
 					<?php if(isset($info['stscheck']) && $info['stscheck'] === $val){?>
@@ -20,9 +20,9 @@
 				<?php }?>
 			</select>
 		</td>
-		<th><?php echo $spText['login']['User Type']?>: </th>
+		<th class="pl-4"><?php echo $spText['login']['User Type']?>: </th>
 		<td>
-			<select name="user_type_id" onchange="<?php echo $submitLink?>">
+			<select name="user_type_id" onchange="<?php echo $submitLink?>" class="custom-select">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($userTypeList as $key => $val){?>
 					<?php if(isset($info["user_type_id"]) && ($info["user_type_id"] == $key)){?>
@@ -34,7 +34,7 @@
 			</select>
 		</td>
 		<td style="text-align: center;">
-			<a href="javascript:void(0);" onclick="<?php echo $submitLink; ?>" class="actionbut">
+			<a href="javascript:void(0);" onclick="<?php echo $submitLink; ?>" class="btn btn-secondary">
 				<?php echo $spText['button']['Search']?>
 			</a>
 		</td>
@@ -44,14 +44,13 @@
 <table class="list">
 	<tr class="listHead">
 		<td><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['login']['Username']?></td>
 		<td><?php echo $spText['login']['User Type']?></td>
 		<td><?php echo $spText['common']['Name']?></td>
 		<td><?php echo $spText['login']['Email']?></td>
 		<td><?php echo $spTextUser['Expiry Date']?></td>
 		<td><?php echo $spText['common']['Status']?></td>
-		<td><?php echo $spText['common']['Action']?></td>
+		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
 	$colCount = 9; 
@@ -61,7 +60,6 @@
 			?>
 			<tr>				
 				<td><input type="checkbox" name="ids[]" value="<?php echo $userInfo['id']?>"></td>
-				<td><?php echo $userInfo['id']?></td>
 				<td><?php echo $usernameLink?></td>
 				<td><?php echo $userTypeList[$userInfo['utype_id']]['user_type']?></td>
 				<td><?php echo $userInfo['first_name']." ".$userInfo['last_name']?></td>
@@ -78,7 +76,8 @@
 							$statLabel = $spText['common']["Activate"];
 						} 
 					?>
-					<select name="action" id="action<?php echo $userInfo['id']?>" onchange="doAction('users.php', 'content', 'userId=<?php echo $userInfo['id']?>&pageno=<?php echo $pageNo?>', 'action<?php echo $userInfo['id']?>')" style="width: 180px;">
+					<select name="action" id="action<?php echo $userInfo['id']?>" class="custom-select" 
+						onchange="doAction('users.php', 'content', 'userId=<?php echo $userInfo['id']?>&pageno=<?php echo $pageNo?>', 'action<?php echo $userInfo['id']?>')" style="width: 180px;">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>
 						<option value="edit"><?php echo $spText['common']['Edit']?></option>
@@ -105,19 +104,19 @@ if (SP_DEMO) {
     $delFun = "confirmSubmit('users.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
 }   
 ?>
-<table class="actionSec">
+<table class="actionSec mt-2">
 	<tr>
-    	<td style="padding-top: 6px;">
-         	<a onclick="scriptDoLoad('users.php', 'content', 'sec=new')" href="javascript:void(0);" class="actionbut">
+    	<td>
+         	<a onclick="scriptDoLoad('users.php', 'content', 'sec=new')" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spTextPanel['New User']?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-success">
          		<?php echo $spText['common']["Activate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['common']["Inactivate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="btn btn-danger">
          		<?php echo $spText['common']['Delete']?>
          	</a>
     	</td>

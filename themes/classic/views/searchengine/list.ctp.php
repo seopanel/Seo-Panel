@@ -7,9 +7,9 @@
 		<td>
 			<input type="text" name="se_name" value="<?php echo htmlentities($info['se_name'], ENT_QUOTES)?>" class="form-control">
 		</td>
-		<th style="padding-left: 25px;"><?php echo $spText['common']['Status']?>: </th>
+		<th class="pl-4"><?php echo $spText['common']['Status']?>: </th>
 		<td>
-			<select name="stscheck" class="form-select" onchange="<?php echo $submitLink?>">
+			<select name="stscheck" class="custom-select" onchange="<?php echo $submitLink?>">
 				<?php foreach($statusList as $key => $val){?>
 					<?php if($info['stscheck'] == $val){?>
 						<option value="<?php echo $val?>" selected><?php echo $key?></option>
@@ -34,7 +34,7 @@
 		<td><?php echo $spTextSE['no_of_results_page']?></td>
 		<td><?php echo $spTextSE['max_results']?></td>
 		<td><?php echo $spText['common']['Status']?></td>
-		<td class="right"><?php echo $spText['common']['Action']?></td>
+		<td><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
 	$colCount = 6; 
@@ -50,7 +50,7 @@
 				<td>
 					<?php echo showStatusBadge($seInfo['status']);?>
 				</td>
-				<td class="<?php echo $rightBotClass?>" width="100px">
+				<td>
 					<?php
 					if($seInfo['status']) {
 						$statVal = "Inactivate";
@@ -60,7 +60,8 @@
 						$statLabel = $spText['common']["Activate"];
 					}
 					?>
-					<select name="action" id="action<?php echo $seInfo['id']?>" onchange="doAction('<?php echo $pageScriptPath?>', 'content', 'seId=<?php echo $seInfo['id']?>&pageno=<?php echo $pageNo?>', 'action<?php echo $seInfo['id']?>')">
+					<select name="action" id="action<?php echo $seInfo['id']?>" class="custom-select"
+						onchange="doAction('<?php echo $pageScriptPath?>', 'content', 'seId=<?php echo $seInfo['id']?>&pageno=<?php echo $pageNo?>', 'action<?php echo $seInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>
 						<option value="edit"><?php echo $spText['common']['Edit']?></option>

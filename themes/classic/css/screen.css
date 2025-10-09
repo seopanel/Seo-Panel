@@ -590,3 +590,17 @@ div.tab button.active {	background-color: #ccc;}
     margin-left: 2px;
 }
 .sub_menu_link:hover{color: black;}
+
+.btn-secondary {
+	background-color: #6c757d !important;
+}
+
+.btn-danger {
+	background-color: #8B0000 !important; /* DarkRed */
+	border-color: #8B0000 !important;
+}
+
+.btn-danger:hover {
+  	background-color: #660000 !important; /* even darker on hover */
+  	border-color: #660000 !important;
+}
