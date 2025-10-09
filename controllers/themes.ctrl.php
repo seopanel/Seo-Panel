@@ -91,15 +91,14 @@ class ThemesController extends Controller{
 	}
 	
 	# func to list  theme info
-	function listThemeInfo($themeId){
-	    $themeId = intval($themeId);		
+	function listThemeInfo($themeId) {
+	    $themeId = intval($themeId);
 		$this->set('themeInfo', $this->__getThemeInfo($themeId));	
 		$this->set('pageNo', $_GET['pageno']);	
 		$this->render('theme/listthemeinfo');
 	}
 	
-	function updateThemeInfo($themeId, $themeInfo){
-		
+	function updateThemeInfo($themeId, $themeInfo){		
 		$themeId = intval($themeId);
 		$sql = "update $this->tableName set
 					name='".addslashes($themeInfo['name'])."',
