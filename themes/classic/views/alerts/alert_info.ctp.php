@@ -1,4 +1,4 @@
-<?php 
+<?php
 echo showSectionHead($spTextPanel["Alerts"]);
 
 $alertUrl = "";
@@ -6,29 +6,29 @@ if (!empty($listInfo['alert_url'])) {
     $alertUrl = stristr($listInfo['alert_url'], 'http') ? $listInfo['alert_url'] : Spider::addTrailingSlash(SP_WEBPATH) . $listInfo['alert_url'];
 }
 ?>
-<table id="cust_tab">
-	<tr class="form_head">
-		<th width='30%'><?php echo $spTextPanel["Alerts"]?></th>
-		<th>&nbsp;</th>
+<table class="list">
+	<tr class="listHead">
+		<td width='30%'><?php echo $spTextPanel["Alerts"]?></td>
+		<td>&nbsp;</td>
 	</tr>
-	<tr class="form_data table-<?php echo $listInfo['alert_type']?>">
-		<td><?php echo $spText['label']['Subject']?>:</td>
-		<td><?php echo $listInfo['alert_subject']?>
+	<tr class="table-<?php echo $listInfo['alert_type']?>">
+		<td class="td_left_col"><strong><?php echo $spText['label']['Subject']?>:</strong></td>
+		<td class="td_right_col"><?php echo $listInfo['alert_subject']?></td>
 	</tr>
-	<tr class="form_data table-<?php echo $listInfo['alert_type']?>">
-		<td><?php echo $spText['common']['Details']?>:</td>
-		<td><?php echo $listInfo['alert_message']?>
+	<tr class="table-<?php echo $listInfo['alert_type']?>">
+		<td class="td_left_col"><strong><?php echo $spText['common']['Details']?>:</strong></td>
+		<td class="td_right_col"><?php echo $listInfo['alert_message']?></td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['common']['Url']?>:</td>
-		<td><a target="_blank" href="<?php echo $alertUrl?>"><?php echo $alertUrl?></a></td>
+	<tr>
+		<td class="td_left_col"><strong><?php echo $spText['common']['Url']?>:</strong></td>
+		<td class="td_right_col"><a target="_blank" href="<?php echo $alertUrl?>"><?php echo $alertUrl?></a></td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['common']['Category']?>:</td>
-		<td><?php echo $alertCategory[$listInfo['alert_category']]?>
+	<tr>
+		<td class="td_left_col"><strong><?php echo $spText['common']['Category']?>:</strong></td>
+		<td class="td_right_col"><?php echo $alertCategory[$listInfo['alert_category']]?></td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['label']['Updated']?>:</td>
-		<td><?php echo $listInfo['alert_time']?>
+	<tr>
+		<td class="td_left_col"><strong><?php echo $spText['label']['Updated']?>:</strong></td>
+		<td class="td_right_col"><?php echo $listInfo['alert_time']?></td>
 	</tr>
 </table>

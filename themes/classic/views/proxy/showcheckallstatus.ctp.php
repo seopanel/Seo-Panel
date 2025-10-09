@@ -1,16 +1,16 @@
 <form name="listform" id="listform">
 <input type="hidden" name="sec" value="checkAllstatus">
-<?php 
+<?php
 echo showSectionHead($spText['button']["Check Status"]);
-$searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'subcontent', '')"; 
+$searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'subcontent', '')";
 ?>
-<table width="70%" border="0" cellspacing="0" cellpadding="0" class="search">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['label']["Proxy"]?>: </th>
-		<td width="20%">
-			<select name="status">
+		<td>
+			<select name="status" class="custom-select">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
-				<?php				
+				<?php
 				$inactCheck = $actCheck = "";
 				if ($statVal == 'active') {
 				    $actCheck = "selected";
@@ -23,7 +23,7 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'subcontent', '')";
 			</select>
 		</td>
 		<td>
-			<a href="javascript:void(0);" onclick="<?php echo $searchFun?>" class="actionbut"><?php echo $spText['button']["Check Status"]?> &gt;&gt;</a>
+			<a href="javascript:void(0);" onclick="<?php echo $searchFun?>" class="btn btn-secondary"><?php echo $spText['button']["Check Status"]?> &gt;&gt;</a>
 		</td>
 	</tr>
 </table>
