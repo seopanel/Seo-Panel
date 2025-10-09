@@ -65,7 +65,9 @@
 				<td><?php echo $userInfo['first_name']." ".$userInfo['last_name']?></td>
 				<td><?php echo $userInfo['email']?></td>
 				<td><?php echo formatDate($userInfo['expiry_date']); ?></td>
-				<td><?php echo $userInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
+				<td class="text-center">					
+					<?php echo showStatusBadge($userInfo['status']);?>
+				</td>
 				<td>
 					<?php
 						if($userInfo['status']){

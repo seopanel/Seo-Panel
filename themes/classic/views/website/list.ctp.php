@@ -71,7 +71,7 @@
 				<td>
 					<?php echo !empty($listInfo['analytics_view_id']) ? $propertyList[$listInfo['analytics_view_id']] : ""?>
 				</td>
-				<td>					
+				<td class="text-center">					
 					<?php echo showStatusBadge($listInfo['status']);?>
 				</td>
 				<td>
