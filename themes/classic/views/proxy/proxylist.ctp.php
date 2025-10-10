@@ -29,11 +29,9 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 	</tr>
 </table>
 
-<div class="alert alert-info mb-3">
-	<a class="btn btn-link" href="http://www.squidproxies.com/billing/aff.php?aff=249" target="_blank">
-		<?php echo $spTextProxy['click-to-get-proxy']; ?> &gt;&gt;
-	</a>
-</div>
+<a class="btn btn-info my-4" href="http://www.squidproxies.com/billing/aff.php?aff=249" target="_blank">
+	<?php echo $spTextProxy['click-to-get-proxy']; ?> &gt;&gt;
+</a>
 
 <?php echo $pagingDiv?>
 <table class="list">

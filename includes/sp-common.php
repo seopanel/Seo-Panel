@@ -944,13 +944,39 @@ function __assign($info, $col='id', $default="", $isset=false) {
     }
 }
 
-function showStatusBadge($statusVal) {
+function showStatusBadge($statusVal, $badgeType="") {
     $spText = $_SESSION['text'];
-    $statusClass = "badge bg-danger";
-    $statusLabel = $spText['common']["Inactive"];
+    $statusClass = "badge bg-danger";    
+    switch ($badgeType) {        
+        case "yesno":
+            $statusLabel = $spText['common']["No"];
+            break;
+            
+        case "successfail":
+            $statusLabel = $spText['label']["Fail"];
+            break;
+            
+        default:            
+            $statusLabel = $spText['common']["Inactive"];
+            break;
+    }
+    
     if (!empty($statusVal)) {
-        $statusClass = "badge bg-success";
-        $statusLabel = $spText['common']["Active"];
+        $statusClass = "badge bg-success";        
+        switch ($badgeType) {
+            case "yesno":
+                $statusLabel = $spText['common']["Yes"];
+                break;
+                
+            case "successfail":
+                $statusLabel = $spText['label']["Success"];
+                break;
+                
+            default:
+                $statusLabel = $spText['common']["Active"];
+                break;
+        }
+        
     }
     
     $statusHtml = "<span class='$statusClass py-2 px-3 text-light'>$statusLabel</span>";

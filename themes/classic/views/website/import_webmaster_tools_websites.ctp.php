@@ -61,4 +61,5 @@ if(!empty($validationMsg)){
 	</tr>
 </table>
 </form>
-<div id="import_result_div"></div>
+<br>
+<div id="import_result_div" class="mt-4 pt-4"></div>

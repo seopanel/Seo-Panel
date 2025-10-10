@@ -1,6 +1,6 @@
 <?php echo showSectionHead($spTextPanel['Directory Manager']); ?>
 <form id='search_form'>
-<table class="search">
+<table class="search" style="width: 98%">
 	<?php $submitLink = "scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=directorymgr')";?>
 	<tr>
 		<th><?php echo $spText['common']['Directory']?>: </th>
@@ -47,7 +47,7 @@
 			</select>
 		</td>
 		<th class="pl-4"><?php echo $spText['common']['lang']?>: </th>
-		<td>
+		<td colspan="2">
 			<select name="lang_code" onchange="<?php echo $submitLink?>" class="custom-select">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php
@@ -60,7 +60,7 @@
 				?>
 			</select>
 		</td>
-		<td colspan="2" style="text-align: center;">
+		<td class="text-center">
 			<a href="javascript:void(0);" onclick="scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=directorymgr')" class="btn btn-secondary">
 				<?php echo $spText['button']['Show Records']?>
 			</a>
@@ -71,7 +71,6 @@
 <?php echo $pagingDiv?>
 <table class="list">
 	<tr class="listHead">
-		<td><?php echo $spText['common']['Id']?></td>
 		<td><?php echo $spText['common']['Website']?></td>
 		<td>PR</td>
 		<td><?php echo $spText['common']['Domain Authority']?></td>
@@ -82,29 +81,23 @@
 		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 9;
+	$colCount = 8;
 	if(count($list) > 0){
-		foreach($list as $i => $listInfo){
-
+		foreach($list as $listInfo) {
             $statusLink = $ctrler->getStatusLink($listInfo['id'], $listInfo['working']);
-            $checkLink = scriptAJAXLinkHref('directories.php', "status_{$listInfo['id']}", "sec=checkdir&dir_id={$listInfo['id']}&nodebug=1&checkpr=1", $spText['button']["Check Status"]);
+            $checkLink = scriptAJAXLinkHref('directories.php', "status_{$listInfo['id']}", "sec=checkdir&dir_id={$listInfo['id']}&nodebug=1&checkpr=1", $spText['button']["Check Status"], "btn btn-info");
 			?>
 			<tr>
-				<td><?php echo $listInfo['id']?></td>
-
 				<td><a target="_blank" href="<?php echo $listInfo['submit_url']?>"><?php echo str_replace('http://', '', $listInfo['domain']); ?></a></td>
 				<td id="pr_<?php echo $listInfo['id']?>"><?php echo $listInfo['pagerank']?></td>
 				<td id="da_<?php echo $listInfo['id']?>"><?php echo $listInfo['domain_authority']?></td>
 				<td id="pa_<?php echo $listInfo['id']?>"><?php echo $listInfo['page_authority']?></td>
 				<td class="text-center" id="captcha_<?php echo $listInfo['id']?>">
-					<?php echo $listInfo['is_captcha'] ?
-						"<span class='badge badge-warning py-2 px-3 text-light'>{$spText['common']['Yes']}</span>" :
-						"<span class='badge badge-success py-2 px-3 text-light'>{$spText['common']['No']}</span>";
-					?>
+					<?php echo showStatusBadge($listInfo['is_captcha'], "yesno");?>
 				</td>
 				<td><?php echo $listInfo['lang_name']?></td>
-				<td id="status_<?php echo $listInfo['id']?>"><?php echo $statusLink; ?></td>
-				<td><?php echo $checkLink; ?></td>
+				<td id="status_<?php echo $listInfo['id']?>" class="text-center"><?php echo $statusLink; ?></td>
+				<td class="text-center"><?php echo $checkLink; ?></td>
 			</tr>
 			<?php
 		}

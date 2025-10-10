@@ -893,14 +893,16 @@ class DirectoryController extends Controller{
 		if($status){
 			$statLabel = "Active";
 			$statVal = 0;
+			$statClass = "btn btn-success";
 		}else{
 			$statLabel = "Inactive";
 			$statVal = 1;
+			$statClass = "btn btn-danger";
 		}
 		if (SP_DEMO) {
 			$statusLink = scriptAJAXLinkHref('demo', "", "", $_SESSION['text']['common'][$statLabel]);
 		} else {			
-			$statusLink = scriptAJAXLinkHref('directories.php', 'status_'.$dirId, "sec=dirstatus&dir_id=$dirId&status=$statVal", $_SESSION['text']['common'][$statLabel]);
+		    $statusLink = scriptAJAXLinkHref('directories.php', 'status_'.$dirId, "sec=dirstatus&dir_id=$dirId&status=$statVal", $_SESSION['text']['common'][$statLabel], $statClass);
 		}
 		
 		return $statusLink;

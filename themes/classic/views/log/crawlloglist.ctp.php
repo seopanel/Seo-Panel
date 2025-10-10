@@ -27,8 +27,8 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 	<tr>
 		<th><?php echo $spText['common']['Period']?>:</th>
     	<td>
-    		<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control"/>
-    		<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control mt-1"/>
+    		<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+    		<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
 			<script>
 			$(function() {
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});

@@ -21,23 +21,23 @@ $searchFun = "scriptDoLoadPost('$pgScriptPath', 'listform', 'content')";
 				?>
 			</select>
 		</td>
-	</tr>
-	<tr>
-		<th><?php echo $spText['common']['Period']?>:</th>
-    	<td colspan="3">
-    		<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control"/>
-    		<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control mt-1"/>
+		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
+    	<td>
+    		<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+    		<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
 			<script>
 			$(function() {
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
 			});
 		  	</script>
-			<a href="javascript:void(0);" onclick="<?php echo $searchFun?>" class="btn btn-secondary mt-2"><?php echo $spText['button']['Show Records']?></a>
+		</td>
+		<td style="text-align: center;">
+			<a href="javascript:void(0);" onclick="<?php echo $searchFun?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
 		</td>
 	</tr>
 </table>
 
-<div class="mt-3 mb-2">
+<div class="mt-4 mb-2">
 	<strong><?php echo $spTextPanel["Current Time"]?>:</strong> <?php echo date("Y-m-d H:i:s <b>T(P)</b>"); ?>
 </div>
 <?php echo $pagingDiv?>

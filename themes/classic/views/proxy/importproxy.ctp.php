@@ -43,4 +43,5 @@
 	</tr>
 </table>
 </form>
-<div id="subcontent"></div>
+<br>
+<div id="subcontent" class="mt-4 pt-4"></div>
