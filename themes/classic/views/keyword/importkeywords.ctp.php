@@ -21,9 +21,11 @@
 				<?php }?>
 			</select>
 			<span id="weburlarea"><input type="hidden" name="weburl" id="weburl" value="<?php echo $websiteUrl?>"></span>
-			<a href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta&keyinput=keywords', 'crawlstats')" class="btn btn-info btn-sm">&#171&#171 <?php echo $spText['common']['Crawl Meta Data']?></a>
-			<div id="crawlstats" style="float: right;padding-right:100px;"></div>
 			<?php echo $errMsg['website_id']?>
+			<div class="float-right mt-2">
+				<a href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta&keyinput=keywords', 'crawlstats')" class="btn btn-info btn-sm">&#171&#171 <?php echo $spText['common']['Crawl Meta Data']?></a>
+				<span id="crawlstats" class="ml-2"></span>
+			</div>
 		</td>
 	</tr>
 	<tr class="white_row">
