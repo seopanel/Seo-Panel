@@ -591,16 +591,95 @@ div.tab button.active {	background-color: #ccc;}
 }
 .sub_menu_link:hover{color: black;}
 
-.btn-secondary {
-	background-color: #6c757d !important;
+/* === PRIMARY === */
+.btn-primary {
+  background: linear-gradient(180deg, #0a66d1, #0056b3);
+  border-color: #004a99 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(0, 86, 179, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+.btn-primary:hover {
+  background: linear-gradient(180deg, #0056b3, #00408f);
+  border-color: #003873 !important;
+  box-shadow: 0 6px 12px rgba(0, 64, 143, 0.35);
+  color: #fff !important;
 }
 
+/* === SUCCESS === */
+.btn-success {
+  background: linear-gradient(180deg, #28a745, #198754);
+  border-color: #157347 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(25, 135, 84, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+.btn-success:hover {
+  background: linear-gradient(180deg, #198754, #146c43);
+  border-color: #0f5132 !important;
+  box-shadow: 0 6px 12px rgba(20, 108, 67, 0.35);
+  color: #fff !important;
+}
+
+/* === WARNING === */
+.btn-warning {
+  background: linear-gradient(180deg, #e6b200, #e0a800);
+  border-color: #d39e00 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(224, 168, 0, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+.btn-warning:hover {
+  background: linear-gradient(180deg, #e0a800, #c69500);
+  border-color: #b88600 !important;
+  box-shadow: 0 6px 12px rgba(198, 149, 0, 0.35);
+  color: #fff !important;
+}
+
+/* === DANGER === */
 .btn-danger {
-	background-color: #8B0000 !important; /* DarkRed */
-	border-color: #8B0000 !important;
+  background: linear-gradient(180deg, #a50000, #8b0000);
+  border-color: #7a0000 !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(139, 0, 0, 0.35);
+  transition: all 0.2s ease-in-out;
+}
+.btn-danger:hover {
+  background: linear-gradient(180deg, #8b0000, #660000);
+  border-color: #590000 !important;
+  box-shadow: 0 6px 12px rgba(102, 0, 0, 0.45);
+  color: #fff !important;
 }
 
-.btn-danger:hover {
-  	background-color: #660000 !important; /* even darker on hover */
-  	border-color: #660000 !important;
+/* === SECONDARY === */
+.btn-secondary {
+  background: linear-gradient(180deg, #6c757d, #545b62);
+  border-color: #4e555b !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+  transition: all 0.2s ease-in-out;
 }
+.btn-secondary:hover {
+  background: linear-gradient(180deg, #545b62, #3e444a);
+  border-color: #343a40 !important;
+  box-shadow: 0 6px 12px rgba(84, 91, 98, 0.35);
+  color: #fff !important;
+}
+
+/* === INFO === */
+.btn-info {
+  background: linear-gradient(180deg, #0dcaf0, #0aa2c0);
+  border-color: #0990ac !important;
+  color: #fff !important;
+  box-shadow: 0 4px 8px rgba(13, 202, 240, 0.3);
+  transition: all 0.2s ease-in-out;
+}
+.btn-info:hover {
+  background: linear-gradient(180deg, #0aa2c0, #087990);
+  border-color: #066b82 !important;
+  box-shadow: 0 6px 12px rgba(8, 121, 144, 0.35);
+  color: #fff !important;
+}
+
+
+

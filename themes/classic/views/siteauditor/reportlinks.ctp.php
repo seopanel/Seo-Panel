@@ -108,7 +108,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				</td>
 				<?php if (empty($pdfVersion) && empty($printVersion)) {?>
 					<td>
-					    <select style="width: 80px;" name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('siteauditor.php', 'subcontent', 'report_id=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&order_col=<?php echo $orderCol?>&order_val=<?php echo $orderVal?>', 'action<?php echo $listInfo['id']?>')">
+					    <select name="action" id="action<?php echo $listInfo['id']?>" class="custom-select" style="width: 120px;" onchange="doAction('siteauditor.php', 'subcontent', 'report_id=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&order_col=<?php echo $orderCol?>&order_val=<?php echo $orderVal?>', 'action<?php echo $listInfo['id']?>')">
 							<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 							<option value="pagedetails"><?php echo $spTextSA['Page Details']?></option>
 							<option value="checkscore"><?php echo $spTextSA['Check Score']?></option>
@@ -128,10 +128,10 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 if(!empty($printVersion) || !empty($pdfVersion)) {
 	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
 } else if(empty($printVersion)) {?>
-    <table class="actionSec">
+    <table class="actionSec mt-2">
     	<tr>
-        	<td style="padding-top: 6px;">
-             	<a onclick="scriptDoLoad('siteauditor.php?sec=importlinks&project_id=<?php echo $projectId?>', 'content')" href="javascript:void(0);" class="actionbut">
+        	<td>
+             	<a onclick="scriptDoLoad('siteauditor.php?sec=importlinks&project_id=<?php echo $projectId?>', 'content')" href="javascript:void(0);" class="btn btn-primary">
              		<?php echo $spTextSA['Import Project Links']?>
              	</a>
         	</td>
