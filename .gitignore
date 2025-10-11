@@ -8,3 +8,4 @@
 plugins/*
 themes/odbox*
 tmp/*
+config/sp-config.php
