@@ -5,10 +5,10 @@ echo showSectionHead($headText);
 // if error occured
 if(!empty($validationMsg)){
 	?>
-	<p class="dirmsg">
-		<font class="error"><?php echo $validationMsg?></font>
-	</p>
-	<?php 
+	<div class="alert alert-danger">
+		<i class="fas fa-exclamation-circle me-2"></i><?php echo $validationMsg?>
+	</div>
+	<?php
 }
 ?>
 <form id="edit_form" onsubmit="return false;">
@@ -16,30 +16,30 @@ if(!empty($validationMsg)){
 <?php if ($editAction == 'updateSocialMediaLink') {?>
 	<input type="hidden" name="id" value="<?php echo $post['id']?>"/>
 <?php }?>
-<table id="cust_tab">
-	<tr class="form_head">
-		<th width='30%'><?php echo $headText?></th>
-		<th>&nbsp;</th>
+<table class="list">
+	<tr class="listHead">
+		<td class="left" width='30%'><?php echo $headText?></td>
+		<td class="right">&nbsp;</td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['common']['Website']?>:</td>
-		<td>
-			<select name="website_id">
+	<tr class="white_row">
+		<td class="td_left_col"><?php echo $spText['common']['Website']?>:</td>
+		<td class="td_right_col">
+			<select name="website_id" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $post['website_id']){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
 					<?php }else{?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
-					<?php }?>						
+					<?php }?>
 				<?php }?>
 			</select>
 			<?php echo $errMsg['website_id']?>
 		</td>
-	</tr>	
-	<tr class="form_data">
-		<td><?php echo $spText['label']['Type']?>:</td>
-		<td>
-			<select name="type" id="sm_type">
+	</tr>
+	<tr class="blue_row">
+		<td class="td_left_col"><?php echo $spText['label']['Type']?>:</td>
+		<td class="td_right_col">
+			<select name="type" id="sm_type" class="custom-select">
 				<?php foreach($serviceList as $serviceName => $serviceInfo){?>
 					<?php if($serviceName == $post['type']){?>
 						<option value="<?php echo $serviceName?>" selected><?php echo $serviceInfo['label']?></option>
@@ -51,13 +51,13 @@ if(!empty($validationMsg)){
 			<?php echo $errMsg['service_name']?>
 		</td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['common']['Name']?>:</td>
-		<td><input type="text" name="name" value="<?php echo $post['name']?>" class="form-control"><?php echo $errMsg['name']?></td>
+	<tr class="white_row">
+		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
+		<td class="td_right_col"><input type="text" name="name" value="<?php echo $post['name']?>" class="form-control"><?php echo $errMsg['name']?></td>
 	</tr>
-	<tr class="form_data">
-		<td id='sm_url_label'><?php echo $spText['common']['Link']?>:</td>
-		<td>
+	<tr class="blue_row">
+		<td class="td_left_col" id='sm_url_label'><?php echo $spText['common']['Link']?>:</td>
+		<td class="td_right_col">
 			<input type="text" name="url" value="<?php echo $post['url']?>" class="form-control"><?php echo $errMsg['url']?>
 			<?php
 			$serviceSelName = !empty($post['type']) ? $post['type'] : "facebook";
@@ -67,25 +67,25 @@ if(!empty($validationMsg)){
 				<?php
 			}?>
 			<div style="padding: 10px 6px; display: none;" id="sm_url_note">
-    			<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
-    				<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
-    			</a>
-    		</div>
+				<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
+					<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
+				</a>
+			</div>
 		</td>
 	</tr>
 </table>
-<br>
-<table width="100%" class="actionSec">
+
+<table class="actionSec float-right mt-2">
 	<tr>
-    	<td style="padding-top: 6px;text-align:right;">
-    		<a onclick="scriptDoLoad('<?php echo $pageScriptPath?>', 'content')" href="javascript:void(0);" class="actionbut">
-         		<?php echo $spText['button']['Cancel']?>
-         	</a>&nbsp;
-         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('$pageScriptPath', 'edit_form', 'content')"; ?>
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
-         		<?php echo $spText['button']['Proceed']?>
-         	</a>
-    	</td>
+		<td>
+			<a onclick="scriptDoLoad('<?php echo $pageScriptPath?>', 'content')" href="javascript:void(0);" class="btn btn-warning">
+				<?php echo $spText['button']['Cancel']?>
+			</a>&nbsp;
+			<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('$pageScriptPath', 'edit_form', 'content')"; ?>
+			<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
+				<?php echo $spText['button']['Proceed']?>
+			</a>
+		</td>
 	</tr>
 </table>
 </form>

@@ -1,10 +1,10 @@
 <?php echo showSectionHead($spTextTools['Detailed Reports']); ?>
 <form id='search_form'>
-<table width="100%" class="search">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" id="website_id" onchange="doLoad('website_id', '<?php echo $pageScriptPath ?>', 'link_area', 'sec=linkSelectBox')">
+			<select name="website_id" id="website_id" onchange="doLoad('website_id', '<?php echo $pageScriptPath ?>', 'link_area', 'sec=linkSelectBox')" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -14,30 +14,28 @@
 				<?php }?>
 			</select>
 		</td>
-		<th><?php echo $spText['common']['Period']?>:</th>
+		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 		<td>
-			<input type="text" value="<?php echo $fromTime?>" name="from_time"/>
-			<input type="text" value="<?php echo $toTime?>" name="to_time"/>
-			<script>
+			<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+			<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+			<script type="text/javascript">
 			$(function() {
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
 			});
-		  	</script>
+			</script>
 		</td>
-	</tr>
-	<tr>
-		<th><?php echo $spText['common']['Url']?>: </th>
+		<th class="pl-4"><?php echo $spText['common']['Url']?>: </th>
 		<td id="link_area">
 			<?php echo $this->render('socialmedia/social_media_link_select_box', 'ajax'); ?>
 		</td>
-		<td colspan="2">
-			<a href="javascript:void(0);" onclick="scriptDoLoadPost('<?php echo $pageScriptPath ?>', 'search_form', 'content', '&sec=viewDetailedReports')" class="actionbut"><?php echo $spText['button']['Show Records']?></a>
+		<td style="text-align: center;">
+			<a href="javascript:void(0);" onclick="scriptDoLoadPost('<?php echo $pageScriptPath ?>', 'search_form', 'content', '&sec=viewDetailedReports')" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
 		</td>
 	</tr>
 </table>
 </form>
 
-<br><br>
+
 <div id='subcontent'>
 <table id="cust_tab">	
 	<tr>

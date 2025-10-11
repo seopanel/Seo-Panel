@@ -1,25 +1,21 @@
-<?php 
+<?php
 echo showSectionHead($spTextTools['Quick Checker']);
 $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('$pageScriptPath', 'search_form', 'subcontent', '&sec=doQuickChecker')";
 ?>
 <form id='search_form' onsubmit="<?php echo $actFun; ?>;return false;">
-<table id="cust_tab">
-	<tr class="form_head">
-		<th width="30%"><?php echo $spTextTools['Quick Checker'];?></th>
-		<th>&nbsp;</th>
-	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['label']['Type']?>: </td>
+<table class="search" style="width: 60%">
+	<tr>
+		<th width="30%"><?php echo $spText['label']['Type']?>: </th>
 		<td>
-			<select name="type" id="sm_type">
+			<select name="type" id="sm_type" class="custom-select">
 				<?php foreach($serviceList as $serviceName => $serviceInfo){?>
 					<option value="<?php echo $serviceName?>"><?php echo $serviceInfo['label']?></option>
 				<?php }?>
 			</select>
 		</td>
 	</tr>
-	<tr class="form_data">
-		<td id="sm_url_label"><?php echo $spText['common']['Link']?>: </td>		
+	<tr>
+		<th id="sm_url_label"><?php echo $spText['common']['Link']?>: </th>
 		<td>
 			<input type="text" value="" name="url" class="form-control" required="required"/>
 			<?php
@@ -29,24 +25,22 @@ $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('$pageScriptPath', 'sea
 				<p><b>Eg:</b> <span id="ex_review_link"><?php echo $serviceList[$serviceSelName]['example']?></span></p>
 				<?php
 			}?>
-			<div style="padding: 10px 6px; display: none;" id="sm_url_note">				
-    			<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
-    				<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
-    			</a>
-    		</div>
+			<div style="padding: 10px 6px; display: none;" id="sm_url_note">
+				<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
+					<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
+				</a>
+			</div>
 		</td>
 	</tr>
-	<tr class="form_data">
-		<td style="border-right: 0px;">&nbsp;</td>
-		<td style="border-left: 0px;">
-			<br>
-			<a href="javascript:void(0);" onclick="<?php echo $actFun?>" class="actionbut"><?php echo $spText['button']['Proceed']?></a>
-			<br><br>
+	<tr>
+		<th>&nbsp;</th>
+		<td>
+			<a href="javascript:void(0);" onclick="<?php echo $actFun?>" class="btn btn-secondary"><?php echo $spText['button']['Proceed']?></a>
 		</td>
 	</tr>
 </table>
 </form>
-<br><br>
+
 <div id='subcontent'></div>
 
 <script type="text/javascript">
