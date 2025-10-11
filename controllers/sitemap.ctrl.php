@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -187,7 +187,7 @@ class SitemapController extends Controller{
 		<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
 		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-		http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"><!-- created with Seo Panel:www.seopanel.in -->';	
+		http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd"><!-- created with Seo Panel:www.seopanel.org -->';	
 		$this->smfooter = '</urlset>';
 		$index = 1;
 		$rowcount = 0;

@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -158,7 +158,7 @@ function scriptAJAXLinkHref($file, $area, $args='', $linkText='Click', $class=''
 	return $link;
 }
 
-function scriptAJAXLinkHrefDialog($file, $area, $args='', $linkText='Click', $class='', $trigger='OnClick', $widthVal = 900, $heightVal = 600){
+function scriptAJAXLinkHrefDialog($file, $area, $args='', $linkText='Click', $class='', $trigger='OnClick', $widthVal=1100, $heightVal=600){
 	if ($file == 'demo') {
 		$link = ' '.$trigger.'="alertDemoMsg()"';
 	} else {
@@ -693,7 +693,7 @@ function showPdfFooter($spText) {
 	if (!empty($custSiteInfo['footer_copyright'])) {
 		$copyrightTxt = str_replace('[year]', date('Y'), $custSiteInfo['footer_copyright']);
 	} else {
-		$copyrightTxt = str_replace("www.seopanel.in", "<a href='https://www.seopanel.org'>www.seopanel.org</a>", $spText['common']['copyright']);
+		$copyrightTxt = str_replace("www.seopanel.org", "<a href='https://www.seopanel.org'>www.seopanel.org</a>", $spText['common']['copyright']);
 	}
     ?>
     <div style="clear: both; margin-top: 30px;font-size: 12px; text-align: center;"><?php echo str_replace('[year]', date('Y'), $copyrightTxt)?></div>

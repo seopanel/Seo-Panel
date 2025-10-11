@@ -3,7 +3,7 @@ echo showSectionHead($spTextPanel["Crawl Log Manager"]);
 $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 ?>
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>">
-<table class="search">
+<table class="search" style="width: 100%">
 	<tr>
 		<th><?php echo $spText['button']['Search']?>: </th>
 		<td>
