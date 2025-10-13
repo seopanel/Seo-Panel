@@ -681,5 +681,132 @@ div.tab button.active {	background-color: #ccc;}
   color: #fff !important;
 }
 
+/* === CARD HEADERS === */
+.card-header-gradient-blue {
+  background: linear-gradient(135deg, #4a5ad4 0%, #5a2d82 100%);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 12px rgba(74, 90, 212, 0.4);
+}
+
+.card-header-gradient-blue h4 {
+  color: #ffffff !important;
+  margin: 0;
+  font-weight: 600;
+}
+
+.card-header-gradient-green {
+  background: linear-gradient(135deg, #0c6b63 0%, #24a85a 100%);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 12px rgba(12, 107, 99, 0.4);
+}
+
+.card-header-gradient-green h4 {
+  color: #ffffff !important;
+  margin: 0;
+  font-weight: 600;
+}
+
+.card-header-gradient-orange {
+  background: linear-gradient(135deg, #c25fc7 0%, #c7324a 100%);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 12px rgba(194, 95, 199, 0.4);
+}
+
+.card-header-gradient-orange h4 {
+  color: #ffffff !important;
+  margin: 0;
+  font-weight: 600;
+}
+
+.card-header-gradient-teal {
+  background: linear-gradient(135deg, #2b7ac7 0%, #00a8b5 100%);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 12px rgba(43, 122, 199, 0.4);
+}
+
+.card-header-gradient-teal h4 {
+  color: #ffffff !important;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* === ATTRACTIVE NAV TABS === */
+.nav-tabs {
+  background: linear-gradient(180deg, #6c757d 0%, #495057 100%);
+  padding: 8px 8px 0 8px;
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.nav-tabs .nav-item {
+  margin-bottom: -3px;
+  margin-right: 4px;
+}
+
+.nav-tabs .nav-link {
+  border-radius: 8px 8px 0 0;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 15px;
+  color: #e9ecef;
+  background: transparent;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nav-tabs .nav-link:hover {
+  background: linear-gradient(180deg, #5a6268 0%, #495057 100%);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.nav-tabs .nav-link.active {
+  background: linear-gradient(135deg, #2d3561 0%, #3d2261 100%);
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(45, 53, 97, 0.6);
+  transform: translateY(-2px);
+}
+
+.nav-tabs .nav-link.active:hover {
+  background: linear-gradient(135deg, #1f2545 0%, #2d1845 100%);
+  color: #ffffff !important;
+}
+
+.nav-tabs .sub_menu_link {
+  background-color: transparent;
+}
+
+/* === SMALLER NAV TABS FOR REPORTS === */
+.nav-tabs-sm {
+  background: linear-gradient(180deg, #343a40 0%, #23272b 100%) !important;
+}
+
+.nav-tabs-sm .nav-link {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #ced4da;
+}
+
+.nav-tabs-sm .nav-link.active {
+  background: linear-gradient(135deg, #0c6b63 0%, #24a85a 100%);
+  transform: translateY(-1px);
+}
+
+.nav-tabs-sm .nav-link.active:hover {
+  background: linear-gradient(135deg, #0a5249 0%, #1d8647 100%);
+}
+
+.nav-tabs-sm .nav-link:hover {
+  background: linear-gradient(180deg, #2c3136 0%, #1d2024 100%);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 
 

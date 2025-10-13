@@ -25,16 +25,16 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 <?php } else {?>
 	<?php echo showSectionHead($sectionHead); ?>
 	<form id='search_form'>
-	<table width="100%" class="search">		
+	<table class="search" style="width: 80%">
 		<tr>
 			<th><?php echo $spText['common']['Name']?>: </th>
 			<td>
-				<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>">
-			</td>			
-			<th><?php echo $spText['common']['Period']?>:</th>
+				<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
+			</td>
+			<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
     		<td colspan="2">
-    			<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time_summary"/>
-    			<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time_summary"/>
+    			<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time_summary" class="form-control" style="display: inline-block; width: 45%;"/>
+    			<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time_summary" class="form-control" style="display: inline-block; width: 45%;"/>
 				<script>
 				  $( function() {
 				    $( "#from_time_summary, #to_time_summary").datepicker({dateFormat: "yy-mm-dd"});
@@ -43,9 +43,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
     		</td>
     	<tr>
     	<tr>
-		    <th><?php echo $spText['common']['Website']?>: </th>
+		    <th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 			<td>
-    			<select name="website_id" id="website_id"  onchange="scriptDoLoadPost('archive.php', 'search_form', 'content')" style="width: 180px;">
+    			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('archive.php', 'search_form', 'content')" class="custom-select">
     				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
     				<?php foreach($siteList as $websiteInfo){?>
     					<?php if($websiteInfo['id'] == $websiteId){?>
@@ -54,11 +54,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
     						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
     					<?php }?>
     				<?php }?>
-    			</select>				
+    			</select>
 			</td>
-			<th><?php echo $spText['label']['Report Type']?>: </th>
+			<th class="pl-4"><?php echo $spText['label']['Report Type']?>: </th>
 			<td>
-				<select name="report_type" id="report_type" onchange="scriptDoLoadPost('archive.php', 'search_form', 'content')" style="width: 210px;">
+				<select name="report_type" id="report_type" onchange="scriptDoLoadPost('archive.php', 'search_form', 'content')" class="custom-select">
 					<option value="">-- <?php echo $spText['common']['Select']?> --</option>
     				<?php foreach($reportTypes as $type => $info){?>
 						<?php if($type == $searchInfo['report_type']){?>
@@ -68,7 +68,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 						<?php }?>
 					<?php }?>
 				</select>
-				<a href="javascript:void(0);" onclick="scriptDoLoadPost('archive.php', 'search_form', 'content')" class="actionbut"><?php echo $spText['button']['Search']?></a>
+			</td>
+			<td>
+				<a href="javascript:void(0);" onclick="scriptDoLoadPost('archive.php', 'search_form', 'content')" class="btn btn-secondary">
+					<?php echo $spText['button']['Search']?>
+				</a>
 			</td>
 		</tr>
 	</table>
