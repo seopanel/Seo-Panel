@@ -6,10 +6,10 @@
 <?php 
 foreach($menuList as $i => $menuInfo){
     if($menuSelected == $menuInfo['id']){
-		$menuClass = "fa-caret-up";
+		$menuClass = "fa-bars";
         $style = "";
     }else{
-		$menuClass = "fa-caret-down";
+		$menuClass = "fa-bars";
         $style = "none";
 	}
 	$button = "img".$menuInfo['id'];

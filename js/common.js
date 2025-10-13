@@ -210,25 +210,15 @@ function doLoadUrl(argVal, scriptUrl) {
 }
 
 function showMenu(button, scriptPos){
-	var downClass = 'fa-caret-down';
-	var upClass = 'fa-caret-up';
 	for (var i=0; i<menuList.length; i++) {
-		if(menuList[i] == scriptPos){
-			if ($('#' + button).hasClass(downClass ) ) {
-				$('#' + button).addClass(upClass).removeClass(downClass);
-				$('#' + scriptPos).show();
-				$('#' + scriptPos + " a:first").trigger("click");
-	        	$('#' + scriptPos + " a:first").addClass("menu_active");				
-			} else {
-				$('#' + button).addClass(downClass).removeClass(upClass);
-				$('#' + scriptPos).hide();
-			}		
-		}else{
-			$('#' + buttonList[i]).addClass(downClass).removeClass(upClass);
+		if(menuList[i] == scriptPos) {
+			$('#' + scriptPos).show();
+			$('#' + scriptPos + " a:first").trigger("click");
+        	$('#' + scriptPos + " a:first").addClass("menu_active");		
+		} else {
 			$('#' + menuList[i]).hide();
 		}	
 	}
-	
 }
 
 function updateArea(scriptPos, content) {
@@ -376,14 +366,19 @@ function openTab(tabName, dialog = false) {
 	$(dialogId + '#' + tabName + "Link").addClass('active');
 }
 
-$(function() {
-	
-	// submenu click function
-	$("#subui a").click(function() {
-		$("#subui a").removeClass("menu_active");
-		$(this).addClass("menu_active");
-		$('.navbar-collapse').collapse('hide');	
-	});
-	
+$(function() {	
+	// Submenu click function
+	$("#subui a").click(function () {
+	    // Remove active classes first
+	    $("#subui a").removeClass("menu_active");
+	    $("#subui li").removeClass("menu_active");
+	    
+	    // Add class to clicked <a> and its parent <li>
+	    $(this).addClass("menu_active");
+	    $(this).parent("li").addClass("menu_active");
+	    
+	    // Collapse the navbar (for mobile)
+	    $(".navbar-collapse").collapse("hide");
+	});	
 });
 
