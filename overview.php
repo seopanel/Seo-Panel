@@ -65,14 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 			
 	}
 } elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-	switch($_POST['sec']){
+	switch($_POST['sec']) {	    
+	    case "reports_dashboard":
+	        $controller->layout = 'default';
+	        $controller->showOverView($_POST);
+	        break;
 	    
 	    default:
 	        $controller->layout = 'default';
 	        $controller->showOverView($_POST);
-			break;
-			
+			break;			
 	}
 }
 ?>

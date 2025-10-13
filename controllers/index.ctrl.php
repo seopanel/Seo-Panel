@@ -24,10 +24,10 @@
 class IndexController extends Controller{
 	
 	# index function
-	function index($searchInfo=''){		
-		
+	function index($searchInfo=[]) {
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$this->set('spTextHome', $spTextHome);
+		$this->set('post', $searchInfo);
 		if(isLoggedIn()){
 			$this->render('user/userhome');
 		}else{

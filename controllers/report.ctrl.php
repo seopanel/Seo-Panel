@@ -957,7 +957,7 @@ class ReportController extends Controller {
 	}
 	
     # function to show system reports 
-	function showOverallReportSummary($searchInfo='', $cronUserId=false) {
+	function showOverallReportSummary($searchInfo=[], $cronUserId=false) {
 	    $searchInfo['type'] = htmlentities($searchInfo['type'], ENT_QUOTES);
 	    $searchInfo['search_name'] = htmlentities($searchInfo['search_name'], ENT_QUOTES);
 	    $searchInfo['order_col'] = str_replace([' ', '*'], '', $searchInfo['order_col']);
@@ -1002,8 +1002,8 @@ class ReportController extends Controller {
 		        break;    
 		    }
 		}
-		$this->set('websiteUrl', $websiteUrl);
-				
+		
+		$this->set('websiteUrl', $websiteUrl);				
 		$reportTypes = array(
 			'keyword-position' => $this->spTextTools["Keyword Position Summary"],
 			'website-stats' => $spTextHome["Website Statistics"],
@@ -1119,8 +1119,8 @@ class ReportController extends Controller {
         		    asort($indexList);
         		}
     		}
-    		$this->set('indexList', $indexList);
-    
+    		
+    		$this->set('indexList', $indexList);    
     		if ($exportVersion) {
     			$spText = $_SESSION['text'];
     			$reportHeading =  $this->spTextTools['Keyword Position Summary']."($fromTimeShort - $toTimeShort)";
@@ -1168,8 +1168,7 @@ class ReportController extends Controller {
     		} else {
 				$this->set('list', $keywordList);
 				$this->set('keywordPos', true);	
-    		}
-			
+    		}			
 		}
 		
 		# website report section

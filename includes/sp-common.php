@@ -725,10 +725,17 @@ if (!function_exists('curl_reset')) {
 	
 }
 
-function getRequestParamStr() {
+function getRequestParamStr($requestType="REQUEST") {
 	$paramStr = "";
 	
-	foreach ($_REQUEST as $item => $value) {
+	$items = $_REQUEST;
+	if ($requestType == 'GET') {
+	    $items = $_GET;
+	} else if ($requestType == 'POST') {
+	    $items = $_POST;
+	}
+	
+	foreach ($items as $item => $value) {
 		$item = htmlentities($item, ENT_QUOTES);
 		$value = htmlentities($value, ENT_QUOTES);
 		$paramStr .= "&$item=" . urlencode($value);
