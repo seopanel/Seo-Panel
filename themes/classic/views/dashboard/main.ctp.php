@@ -31,37 +31,161 @@
 
 <div class="dashboard-container" style="margin-top: 40px;">
 
-	<!-- Statistics Cards Row -->
+	<!-- Website Overview Stats -->
 	<div class="row mb-4">
-		<div class="col-md-3">
-			<div class="card text-white bg-primary mb-3">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><?php echo $spTextHome['Website Statistics']?></h4>
+				</div>
 				<div class="card-body">
-					<h5 class="card-title"><?php echo $spText['common']['Total']?> <?php echo $spText['common']['Keywords']?></h5>
-					<h2 class="card-text"><?php echo $keywordStats['total']?></h2>
+					<div class="row">
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3"><?php echo $spTextHome['Backlinks']?></h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['backlinks'])?></span></h3>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3"><?php echo $spTextHome['Pages Indexed']?></h6>
+							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['indexed_pages'])?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">Moz Rank</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['mozrank']?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3"><?php echo $spText['common']['Domain Authority']?></h6>
+							<h3><span class="badge bg-warning" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['domain_authority']?></span></h3>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3"><?php echo $spText['common']['Page Authority']?></h6>
+							<h3><span class="badge bg-danger" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['page_authority']?></span></h3>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="col-md-3">
-			<div class="card text-white bg-success mb-3">
+	</div>
+
+	<!-- Keyword Statistics -->
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4>Keyword Statistics</h4>
+				</div>
 				<div class="card-body">
-					<h5 class="card-title"><?php echo $spTextKeyword['Keywords Tracked']?></h5>
-					<h2 class="card-text"><?php echo $keywordStats['tracked']?></h2>
+					<div class="row">
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3"><?php echo $spText['common']['Total']?> <?php echo $spText['common']['Keywords']?></h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['total']?></span></h3>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3"><?php echo $spTextKeyword['Keywords Tracked']?></h6>
+							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['tracked']?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">Top 3 <?php echo $spText['common']['Rankings']?></h6>
+							<h3><span class="badge bg-warning" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top3']?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">Top 10 <?php echo $spText['common']['Rankings']?></h6>
+							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top10']?></span></h3>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3">Not Ranked</h6>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['total'] - $keywordStats['tracked']?></span></h3>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div class="col-md-3">
-			<div class="card text-white bg-info mb-3">
+	</div>
+
+	<!-- Pie Charts Row -->
+	<div class="row mb-4">
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4>Keyword Distribution by Rank</h4>
+				</div>
 				<div class="card-body">
-					<h5 class="card-title">Top 10 <?php echo $spText['common']['Rankings']?></h5>
-					<h2 class="card-text"><?php echo $keywordStats['top10']?></h2>
+					<?php if (!empty($keywordStats) && $keywordStats['total'] > 0) { ?>
+						<script type="text/javascript">
+							google.charts.load('current', {'packages':['corechart']});
+							google.charts.setOnLoadCallback(drawKeywordDistChart);
+
+							function drawKeywordDistChart() {
+								var data = google.visualization.arrayToDataTable([
+									['Rank Range', 'Number of Keywords'],
+									['Top 3 (1-3)', <?php echo $keywordStats['top3']?>],
+									['Top 10 (4-10)', <?php echo $keywordStats['top10'] - $keywordStats['top3']?>],
+									['Beyond Top 10', <?php echo $keywordStats['tracked'] - $keywordStats['top10']?>],
+									['Not Ranked', <?php echo $keywordStats['total'] - $keywordStats['tracked']?>]
+								]);
+
+								var options = {
+									title: 'Keywords by Ranking Position',
+									pieHole: 0.4,
+									height: 350,
+									colors: ['#28a745', '#17a2b8', '#ffc107', '#6c757d'],
+									legend: { position: 'bottom' },
+									chartArea: { width: '90%', height: '75%' }
+								};
+
+								var chart = new google.visualization.PieChart(document.getElementById('keyword_dist_chart'));
+								chart.draw(data, options);
+							}
+						</script>
+						<div id="keyword_dist_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+						<div class="alert alert-info">
+							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
+						</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
-		<div class="col-md-3">
-			<div class="card text-white bg-warning mb-3">
+
+		<div class="col-md-6">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4>Search Engine Distribution</h4>
+				</div>
 				<div class="card-body">
-					<h5 class="card-title">Top 3 <?php echo $spText['common']['Rankings']?></h5>
-					<h2 class="card-text"><?php echo $keywordStats['top3']?></h2>
+					<?php if (!empty($searchEngineStats)) { ?>
+						<script type="text/javascript">
+							google.charts.load('current', {'packages':['corechart']});
+							google.charts.setOnLoadCallback(drawSearchEngineChart);
+
+							function drawSearchEngineChart() {
+								var data = google.visualization.arrayToDataTable([
+									['Search Engine', 'Keywords'],
+									<?php
+									foreach ($searchEngineStats as $seName => $count) {
+										echo "['" . addslashes($seName) . "', " . $count . "],\n";
+									}
+									?>
+								]);
+
+								var options = {
+									title: 'Keywords by Search Engine',
+									pieHole: 0.4,
+									height: 350,
+									colors: ['#4285F4', '#EA4335', '#FBBC04', '#34A853', '#5F6368', '#9AA0A6'],
+									legend: { position: 'bottom' },
+									chartArea: { width: '90%', height: '75%' }
+								};
+
+								var chart = new google.visualization.PieChart(document.getElementById('search_engine_chart'));
+								chart.draw(data, options);
+							}
+						</script>
+						<div id="search_engine_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+						<div class="alert alert-info">
+							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
+						</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
@@ -127,46 +251,11 @@
 		</div>
 	</div>
 
-	<!-- Website Overview Stats -->
-	<div class="row mb-4">
-		<div class="col-md-12">
-			<div class="card">
-				<div class="card-header card-header-gradient-green">
-					<h4><?php echo $spTextHome['Website Statistics']?></h4>
-				</div>
-				<div class="card-body">
-					<div class="row">
-						<div class="col-md-2 text-center">
-							<h6><?php echo $spText['common']['Backlinks']?></h6>
-							<h3 class="text-primary"><?php echo number_format($websiteStats['backlinks'])?></h3>
-						</div>
-						<div class="col-md-2 text-center">
-							<h6><?php echo $spTextHome['Pages Indexed']?></h6>
-							<h3 class="text-success"><?php echo number_format($websiteStats['indexed_pages'])?></h3>
-						</div>
-						<div class="col-md-3 text-center">
-							<h6>Moz Rank</h6>
-							<h3 class="text-info"><?php echo $websiteStats['mozrank']?></h3>
-						</div>
-						<div class="col-md-3 text-center">
-							<h6><?php echo $spText['common']['Domain Authority']?></h6>
-							<h3 class="text-warning"><?php echo $websiteStats['domain_authority']?></h3>
-						</div>
-						<div class="col-md-2 text-center">
-							<h6><?php echo $spText['common']['Page Authority']?></h6>
-							<h3 class="text-danger"><?php echo $websiteStats['page_authority']?></h3>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<!-- Top Keywords and Recent Activity -->
 	<div class="row">
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-orange">
+				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spTextKeyword['Top Keywords']?></h4>
 				</div>
 				<div class="card-body">
@@ -209,7 +298,7 @@
 
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-teal">
+				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spText['label']['Recent Activity']?></h4>
 				</div>
 				<div class="card-body">

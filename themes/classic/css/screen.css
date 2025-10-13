@@ -749,16 +749,18 @@ div.tab button.active {	background-color: #ccc;}
 
 /* === CARD HEADERS === */
 .card-header-gradient-blue {
-  background: linear-gradient(135deg, #4a5ad4 0%, #5a2d82 100%);
+  background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
   color: #ffffff !important;
   border: none;
-  box-shadow: 0 4px 12px rgba(74, 90, 212, 0.4);
+  box-shadow: 0 4px 12px rgba(30, 58, 95, 0.5);
+  padding: 0.5rem 1rem;
 }
 
 .card-header-gradient-blue h4 {
   color: #ffffff !important;
   margin: 0;
   font-weight: 600;
+  font-size: 1rem;
 }
 
 .card-header-gradient-green {
