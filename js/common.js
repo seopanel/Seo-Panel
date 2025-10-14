@@ -138,17 +138,84 @@ function showLoadingIcon(scriptPos,noLoading){
 	}
 }
 
+function spCustomConfirm(message, callback) {
+	// Remove any existing confirm dialogs
+	$('.sp-confirm-overlay').remove();
+
+	// Create the confirm dialog HTML
+	var confirmHtml = `
+		<div class="sp-confirm-overlay">
+			<div class="sp-confirm-box">
+				<div class="sp-confirm-header">
+					<i class="fa fa-question-circle"></i>
+					<span>Confirm Action</span>
+				</div>
+				<div class="sp-confirm-body">${message}</div>
+				<div class="sp-confirm-footer">
+					<button class="sp-confirm-btn sp-confirm-btn-cancel">Cancel</button>
+					<button class="sp-confirm-btn sp-confirm-btn-confirm">Confirm</button>
+				</div>
+			</div>
+		</div>
+	`;
+
+	// Append to body
+	$('body').append(confirmHtml);
+
+	// Show the dialog
+	$('.sp-confirm-overlay').fadeIn(200);
+
+	// Handle confirm button
+	$('.sp-confirm-btn-confirm').on('click', function() {
+		$('.sp-confirm-overlay').fadeOut(200, function() {
+			$(this).remove();
+		});
+		callback(true);
+	});
+
+	// Handle cancel button
+	$('.sp-confirm-btn-cancel').on('click', function() {
+		$('.sp-confirm-overlay').fadeOut(200, function() {
+			$(this).remove();
+		});
+		callback(false);
+	});
+
+	// Handle overlay click (close)
+	$('.sp-confirm-overlay').on('click', function(e) {
+		if ($(e.target).hasClass('sp-confirm-overlay')) {
+			$(this).fadeOut(200, function() {
+				$(this).remove();
+			});
+			callback(false);
+		}
+	});
+
+	// Handle ESC key
+	$(document).on('keydown.spconfirm', function(e) {
+		if (e.key === 'Escape') {
+			$('.sp-confirm-overlay').fadeOut(200, function() {
+				$(this).remove();
+			});
+			$(document).off('keydown.spconfirm');
+			callback(false);
+		}
+	});
+}
+
 function confirmLoad(scriptUrl, scriptPos, scriptArgs) {
 
 	if (chkObject('wantproceed')) {
 		wantproceed = "Do you really want to proceed?";
 	}
-	
-	var agree = confirm(wantproceed);
-	if (agree)
-		return scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
-	else
-		return false;
+
+	spCustomConfirm(wantproceed, function(agreed) {
+		if (agreed) {
+			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+		}
+	});
+
+	return false;
 }
 
 function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
@@ -157,11 +224,14 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 	if (chkObject('wantproceed')) {
 		wantproceed = "Do you really want to proceed?";
 	}
-	var agree = confirm(wantproceed);
-	if (agree)
-		return scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs);
-	else
-		return false;
+
+	spCustomConfirm(wantproceed, function(agreed) {
+		if (agreed) {
+			scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs);
+		}
+	});
+
+	return false;
 }
 
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {

@@ -523,25 +523,61 @@ div.tab button.active {	background-color: #ccc;}
 }
 
 #cust_tab, .list {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
-    margin-top: 2px;
+    margin-top: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 #cust_tab td, #cust_tab th, .list td, .list th  {
-    border: 1px solid #b0c2cc;
-    padding: 8px;
+    border-right: 1px solid #f0f4f8;
+    border-bottom: 1px solid #f0f4f8;
+    padding: 8px 10px;
+    transition: all 0.2s ease;
 }
 
-#cust_tab tr:nth-child(odd), .list tr:nth-child(odd){background-color: #f4f7fa;}
-#cust_tab tr:hover, .list tr:hover {background-color: #f2f2f2;}
+#cust_tab td:last-child, #cust_tab th:last-child, .list td:last-child, .list th:last-child {
+    border-right: none;
+}
+
+#cust_tab tr:nth-child(odd), .list tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+#cust_tab tr:nth-child(even), .list tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+#cust_tab tr:hover, .list tr:hover {
+    background: linear-gradient(90deg, #f5f8fa 0%, #f6f9fb 100%) !important;
+    transform: scale(1.001);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.list tr.listHead:hover {
+    background: linear-gradient(90deg, #6faee0 0%, #75b3e3 100%) !important;
+    transform: none;
+}
+
 #cust_tab th, .list .listHead td, .list .listHead th {
     text-align: left;
-    background-color: #DAE5EE;
+    background: linear-gradient(90deg, #6faee0 0%, #75b3e3 100%);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 10px;
+    border-bottom: 1px solid #5a9dd1;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .list .listHead td {
-	font-weight: bold;
+	font-weight: 600;
 }
 
 .list .listBot td, .list .tab_left_bot_noborder, .list .tab_left_bot_noborder + td {
@@ -553,7 +589,8 @@ div.tab button.active {	background-color: #ccc;}
 
 #cust_tab th#head, .list th#head {
     text-align: left;
-    background-color: #bfd5e7;
+    background: linear-gradient(90deg, #87c3eb 0%, #95cdef 100%);
+    color: #fafbfc;
     font-weight: bold;
 }
 
@@ -563,10 +600,37 @@ div.tab button.active {	background-color: #ccc;}
 
 #cust_tab td p, .list td p {
     font-size: 12px;
-    color: #676B50;
+    color: #4a5568;
     margin: 0px;
     padding-left: 5px;
     padding-bottom: 4px;
+}
+
+.list td {
+    color: #2d3748;
+    font-size: 14px;
+}
+
+.list tr td:first-child {
+    border-left: none;
+}
+
+.list td input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.list td a {
+    color: #2c5282;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.list td a:hover {
+    color: #1a365d;
+    text-decoration: underline;
 }
 
 .tablesorter th {
@@ -649,6 +713,112 @@ div.tab button.active {	background-color: #ccc;}
 .ui-dialog-title{color: white;}
 
 #content{padding-top: 6px;}
+
+/* Custom Confirm Dialog */
+.sp-confirm-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+
+.sp-confirm-box {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    min-width: 400px;
+    max-width: 500px;
+    z-index: 10000;
+    animation: slideDown 0.3s ease;
+}
+
+.sp-confirm-header {
+    background: linear-gradient(135deg, #6faee0 0%, #75b3e3 100%);
+    color: #ffffff;
+    padding: 16px 20px;
+    border-radius: 8px 8px 0 0;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+}
+
+.sp-confirm-header i {
+    margin-right: 10px;
+    font-size: 18px;
+}
+
+.sp-confirm-body {
+    padding: 24px 20px;
+    font-size: 14px;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.sp-confirm-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-radius: 0 0 8px 8px;
+}
+
+.sp-confirm-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 80px;
+}
+
+.sp-confirm-btn-cancel {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.sp-confirm-btn-cancel:hover {
+    background: #cbd5e0;
+}
+
+.sp-confirm-btn-confirm {
+    background: linear-gradient(180deg, #0a66d1, #0056b3);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 86, 179, 0.3);
+}
+
+.sp-confirm-btn-confirm:hover {
+    background: linear-gradient(180deg, #0056b3, #00408f);
+    box-shadow: 0 4px 8px rgba(0, 64, 143, 0.35);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -55%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
 
 .sub_menu_link{
     background-color: #c7cbce;
