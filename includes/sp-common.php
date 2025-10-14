@@ -21,9 +21,10 @@
  ***************************************************************************/
 
 # func to format error message
-function formatErrorMsg($msg, $class='error', $star="*"){
+function formatErrorMsg($msg, $class='error', $star=""){
 	if(!empty($msg)){
-		$msg = "<font class='$class'> $star $msg</font>";
+		$iconHtml = '<i class="fas fa-exclamation-circle"></i> ';
+		$msg = "<span class='$class'>{$iconHtml}{$msg}</span>";
 	}
 	return $msg;
 }
