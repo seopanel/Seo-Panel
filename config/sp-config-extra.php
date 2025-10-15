@@ -79,10 +79,10 @@ define('SP_API_LANG_CODE', 'en');
 define('SP_HELP_LINK', 'https://www.seopanel.org/docs/');
 
 # The seo panel forum page
-define('SP_FORUM_LINK', 'http://forum.seopanel.in/');
+define('SP_FORUM_LINK', '');
 
 # The seo panel support page
-define('SP_SUPPORT_LINK', 'http://support.seofreetools.net/');
+define('SP_SUPPORT_LINK', 'https://www.seopanel.org/support/');
 
 # The seo panel contact page
 define('SP_CONTACT_LINK', SP_MAIN_SITE . '/contact/');
