@@ -19,7 +19,7 @@
             }
         }
         ?>
-		<ul class="nav nav-tabs">
+		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
             	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/">
             		<i class="fas fa-tachometer-alt"></i> <?php echo $spText['common']['Dashboard']?>
