@@ -53,6 +53,7 @@ select{padding: 4px 4px 5px;}
 	border: none;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 	margin-bottom: 20px;
+	margin-top: 10px;
 	font-size: 15px;
 }
 
@@ -811,14 +812,31 @@ div.tab button.active {	background-color: #ccc;}
     text-align: center;
 }
 
-#cust_tab td:first-child, .list tr td:first-child {
+/* For 2-column tables: first column right-aligned, second left-aligned */
+#cust_tab tr td:first-child:nth-last-child(2),
+#cust_tab tr td:first-child:nth-last-child(2) ~ td,
+.list tr td:first-child:nth-last-child(2),
+.list tr td:first-child:nth-last-child(2) ~ td {
     border-left: none;
-    text-align: left;
+}
+
+#cust_tab tr td:first-child:nth-last-child(2),
+.list tr td:first-child:nth-last-child(2) {
+    text-align: right;
     font-weight: 500;
 }
 
-.list tr td:nth-child(2) {
+#cust_tab tr td:nth-child(2):last-child,
+.list tr td:nth-child(2):last-child {
     text-align: left;
+}
+
+/* For tables with more than 2 columns: only first column left-aligned, rest center-aligned */
+#cust_tab td:first-child:not(:nth-last-child(2)),
+.list tr td:first-child:not(:nth-last-child(2)) {
+    border-left: none;
+    text-align: left;
+    font-weight: 500;
 }
 
 .list td input[type="checkbox"] {
