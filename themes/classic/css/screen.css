@@ -28,7 +28,23 @@ select{padding: 4px 4px 5px;}
 .squareSubHead td.left {border-left:1px solid #B0C2CC;}
 .squareSubHead td.right {border-right:1px solid #B0C2CC;}
 
-.SectionHeader {margin: 20px 0px 32px; text-align: left;}
+.SectionHeader {
+    margin: 16px 0px 20px;
+    text-align: left;
+}
+
+.SectionHeader h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #2d3748;
+}
+
+.SectionHeader h3 i {
+    font-size: 16px;
+    color: #4a8fc7;
+    margin-right: 8px;
+}
 
 .actionSec {margin: 10px 0px;}
 
@@ -1199,7 +1215,7 @@ div.tab button.active {	background-color: #ccc;}
 .export_div a{font-size: 18px;margin-right: 8px;}
 
 .dashboard {margin-top: 20px;}
-.dashboard .SectionHeader{margin: 20px 0px 0px;}
+.dashboard .SectionHeader{margin: 16px 0px 0px;}
 
 /* Dialog Styling */
 .ui-dialog {
@@ -2429,9 +2445,6 @@ a.btn, a.btn:hover {
 .nav-tabs-sm .nav-link.active:hover {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
 }
-
-
-
 
 /* === HOME PAGE STYLES === */
 
