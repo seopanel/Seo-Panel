@@ -91,6 +91,10 @@ class DashboardController extends Controller {
         $recentActivity = $this->getRecentActivity($websiteId, 10);
         $this->set('recentActivity', $recentActivity);
 
+        // Get search engine distribution stats
+        $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
+        $this->set('searchEngineStats', $searchEngineStats);
+
         $this->render('dashboard/main');
     }
 
@@ -218,6 +222,29 @@ class DashboardController extends Controller {
         $results = $this->db->select($sql);
         return $results ? $results : [];
     }
-	
+
+    // Get search engine distribution statistics
+    private function getSearchEngineStats($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT se.domain as search_engine, COUNT(DISTINCT k.id) as keyword_count
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY se.id, se.domain
+                ORDER BY keyword_count DESC";
+
+        $results = $this->db->select($sql);
+
+        $stats = [];
+        if ($results) {
+            foreach ($results as $row) {
+                $stats[$row['search_engine']] = intval($row['keyword_count']);
+            }
+        }
+
+        return $stats;
+    }
+
 }
 ?>
