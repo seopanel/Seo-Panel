@@ -32,7 +32,8 @@ function formatErrorMsg($msg, $class='error', $star=""){
 # func to format success message
 function formatSuccessMsg($msg, $class='success'){
 	if(!empty($msg)){
-		$msg = "<font class='$class'>$msg</font>";
+		$iconHtml = '<i class="fas fa-check-circle"></i> ';
+		$msg = "<span class='$class'>{$iconHtml}{$msg}</span>";
 	}
 	return $msg;
 }

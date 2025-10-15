@@ -1,4 +1,4 @@
-<table  width="98%" border="0" cellspacing="0px" cellpadding="0px" align="center" class="report_head">
+<table class="report_head" style="width: 98%;">
 	<tr>
 		<td align="left" valign="bottom">
 			<div><b><?php echo $spTextSA['Project Url']?></b>: <?php echo $projectInfo['url']?></div>
@@ -19,11 +19,11 @@ foreach ($headArr as $col => $val) {
     } else {
         $oVal = $orderVal;
     }
+    
     $$linkName = "<a id='sortLink' class='$linkClass' href='javascript:void(0)' onclick=\"scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&order_col=$col&order_val=$oVal')\">$val</a>";
 }
 
 if(!empty($pdfVersion) || !empty($printVersion)) {
-
 	// if pdf report to be generated
 	if ($pdfVersion) {
 		showPdfHeader($spTextTools['Auditor Reports']);
@@ -32,7 +32,6 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	} else {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
-
 } else {    
     ?>	
 	<td align="right" valign="bottom">
@@ -41,15 +40,15 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		$csvLink = "$mainLink&sec=showreport&report_type=rp_links&doc_type=export";
 		$printLink = "$mainLink&sec=showreport&report_type=rp_links&doc_type=print";
 		showExportDiv($pdfLink, $csvLink, $printLink);
-		echo $pagingDiv;
 		?>
 	</td>
 <?php }?>
 	</tr>
 </table>
 
+<?php echo $pagingDiv;?>
 <table class="list">
-	<tr class="plainHead">
+	<tr class="listHead">
 		<td class="left" style="width: 30%;"><?php echo $page_urlLink?></td>
 		<td><?php echo $pagerankLink?></td>
 		<td><?php echo $page_authorityLink?></td>
@@ -62,7 +61,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		<td><?php echo $scoreLink?></td>
 		<td><?php echo $brockenLink?></td>
 		<?php if (empty($pdfVersion) && empty($printVersion)) {?>
-			<td class="right"><?php echo $spText['common']['Action']?></td>
+			<td class="right" style="width: 10%;"><?php echo $spText['common']['Action']?></td>
 		<?php }?>
 	</tr>
 	<?php
@@ -127,7 +126,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 <?php
 if(!empty($printVersion) || !empty($pdfVersion)) {
 	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
-} else if(empty($printVersion)) {?>
+} else if(empty($printVersion)) {
+    ?>
     <table class="actionSec mt-2">
     	<tr>
         	<td>
@@ -137,4 +137,5 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
         	</td>
     	</tr>
     </table>
-<?php } ?>
+	<?php 
+}?>

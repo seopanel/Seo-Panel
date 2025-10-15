@@ -112,6 +112,7 @@ class Spider {
 		$pageInfo = array(
 			'external' => 0,
 			'total_links' => 0,
+		    'site_links' => [],
 		);
 		
 		$checkUrl = formatUrl($domainUrl);
@@ -205,6 +206,7 @@ class Spider {
 			}			
 		}
 		
+		$pageInfo = __assign($pageInfo, "site_links", []);
 		return $pageInfo;
 	}
 	

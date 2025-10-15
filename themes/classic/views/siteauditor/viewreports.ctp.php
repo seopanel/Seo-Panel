@@ -6,11 +6,11 @@ if(empty($projectId)) {
 $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport')";
 ?>
 <form id='search_form' onsubmit="<?php echo $submitJsFunc; ?>; return false;">
-<table class="search">
+<table class="search" style="width: 90%;">
 	<tr>
 		<th><?php echo $spText['label']['Project']?>: </th>
 		<td>
-			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" class="custom-select" style="width: 180px;">
+			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" class="custom-select">
 				<?php foreach($projectList as $list) {?>
 					<?php if($list['id'] == $projectId) {?>
 						<option value="<?php echo $list['id']?>" selected="selected"><?php echo $list['name']?></option>
@@ -42,7 +42,7 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 	<tr>
 		<th><?php echo $spTextSA['Page Link']?>: </th>
 		<td>
-			<input type="text" name="page_url" value="" onblur="<?php echo $submitJsFunc?>" class="form-control" style="width: 180px;">
+			<input type="text" name="page_url" value="" onblur="<?php echo $submitJsFunc?>" class="form-control">
 		</td>
 		<th class="pl-4"><?php echo $spText['common']['MOZ Rank']?>: </th>
 		<td>

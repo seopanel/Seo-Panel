@@ -325,33 +325,46 @@ select{padding: 4px 4px 5px;}
 .red {color: #990000;}
 
 .note{
-	margin-top: 15px;
-	text-align:center;
-	background-color: #F4F7FA;
+	margin: 15px 0;
+	text-align: center;
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 	vertical-align: middle;
-	border: 1px solid #B0C2CC;
+	border: 1px solid #cbd5e0;
+	border-radius: 6px;
 	min-height: 20px;
 	height: auto !important;
-	padding: 6px 4px 4px 4px;
+	padding: 12px 16px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+	font-size: 15px;
+	line-height: 1.5;
 }
 
-.note A:HOVER{	
+.note A:HOVER{
 	color:#000000;
 }
 
 .notesuccess{
 	text-align: left;
-	color: green;
+	color: #155724;
+	font-weight: 500;
 }
 
 .noteleft{
 	text-align: left;
-	color: black;
+	color: #2d3748;
+	background: linear-gradient(135deg, #e8f4f8 0%, #dbeef5 100%);
+	border-left: 4px solid #4299e1;
+	padding: 14px 18px;
+	border-radius: 6px;
+	box-shadow: 0 2px 6px rgba(66, 153, 225, 0.15);
+	font-size: 15px;
+	line-height: 1.6;
 }
 
 .notefailed{
 	text-align: left;
-	color: #da3838;
+	color: #c53030;
+	font-weight: 500;
 }
 
 .dirmsg {
@@ -535,48 +548,76 @@ A.graphicon{
 }
 
 .summary_tab {
-	margin-top: 5px;
-	border: 1px solid #B0C2CC;
+	border-collapse: separate;
+	border-spacing: 0;
+	width: 100%;
+	margin-top: 8px;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .summary_tab .topheader {
-	background-color:#DAE5EE;
-	color:#000000;
-	font-size:13px;
-	font-weight:bold;
-	margin:0;
-	padding:1px;
-	text-align:center;
-	height:30px;
+	background: linear-gradient(90deg, #4a8fc7 0%, #5a9dd1 100%);
+	color: #282222;
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin: 0;
+	padding: 10px;
+	text-align: center;
+	border-bottom: 1px solid #5a9dd1;
 	border: none 0px;
 }
 
 .summary_tab th {
-	background-color:#ECF3FA;
-	border-left:1px solid #B0C2CC;
-	border-top:1px solid #B0C2CC;
-	color:#000000;
-	font-size:11px;
-	font-weight:bold;
-	margin:0;
-	padding:1px 1px 1px 5px;
-	text-align:right;
-	height:30px;
+	background: linear-gradient(90deg, #6faee0 0%, #75b3e3 100%);
+	border-right: 1px solid rgba(255, 255, 255, 0.15);
+	border-bottom: 1px solid #f0f4f8;
+	color: #282222;
+	font-size: 14px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin: 0;
+	padding: 10px;
+	text-align: center;
 }
 
 .summary_tab td {
-	border-left:1px solid #B0C2CC;
-	border-top:1px solid #B0C2CC;
-	color:#000000;
-	font-size:11px;
-	margin:0;
-	padding:1px 1px 1px 5px;
-	text-align:center;
-	height:30px;
+	border-right: 1px solid #f0f4f8;
+	border-bottom: 1px solid #f0f4f8;
+	color: #2d3748;
+	font-size: 16px;
+	margin: 0;
+	padding: 8px 10px;
+	text-align: center;
+	transition: all 0.2s ease;
+}
+
+.summary_tab th:last-child,
+.summary_tab td:last-child {
+	border-right: none;
 }
 
 .summary_tab th.leftcell {
 	border-left: none;
+}
+
+.summary_tab tr:nth-child(odd) {
+	background-color: #ffffff;
+}
+
+.summary_tab tr:nth-child(even) {
+	background-color: #fafbfc;
+}
+
+.summary_tab tr:hover {
+	background: linear-gradient(90deg, #f5f8fa 0%, #f6f9fb 100%) !important;
+	transform: scale(1.001);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .summary A { text-decoration: none;}
@@ -605,7 +646,7 @@ A.graphicon{
 }
 
 #sortLink { text-decoration: none;color: black;}
-#sortLink:HOVER { text-decoration: underline;background-color: #bfd5e7;}
+#sortLink:HOVER { text-decoration: none;background-color: transparent;}
 .sort_asc{background:transparent url(../../../images/sort_asc.gif) no-repeat scroll right center;padding-right: 18px;}
 .sort_desc{background:transparent url(../../../images/sort_desc.gif) no-repeat scroll right center;padding-right: 18px;}
 
@@ -705,7 +746,7 @@ div.tab button.active {	background-color: #ccc;}
 #cust_tab th, .list .listHead td, .list .listHead th {
     text-align: center;
     background: linear-gradient(90deg, #6faee0 0%, #75b3e3 100%);
-    color: black;
+    color: #282222;
     font-weight: 600;
     font-size: 14px;
     text-transform: uppercase;
@@ -729,7 +770,7 @@ div.tab button.active {	background-color: #ccc;}
 #cust_tab th#head, .list th#head {
     text-align: center;
     background: linear-gradient(90deg, #4a8fc7 0%, #5a9dd1 100%);
-    color: black;
+    color: #282222;
     font-weight: bold;
 }
 
@@ -759,6 +800,7 @@ div.tab button.active {	background-color: #ccc;}
 #cust_tab td:first-child, .list tr td:first-child {
     border-left: none;
     text-align: left;
+    font-weight: 500;
 }
 
 .list tr td:nth-child(2) {
@@ -784,12 +826,12 @@ div.tab button.active {	background-color: #ccc;}
 }
 
 #cust_tab th a {
-    color: black;
+    color: #282222;
     text-decoration: none;
 }
 
 #cust_tab th a:hover {
-    color: black;
+    color: #282222;
     text-decoration: none;
     background-color: transparent;
 }
