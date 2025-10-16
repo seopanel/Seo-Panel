@@ -55,25 +55,43 @@ class DashboardController extends Controller {
         switch ($period) {
             case 'day':
                 $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                $prevToTime = date('Y-m-d', strtotime('-1 day'));
                 break;
             case 'week':
                 $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                $prevToTime = date('Y-m-d', strtotime('-7 days'));
                 break;
             case 'year':
                 $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                $prevToTime = date('Y-m-d', strtotime('-1 year'));
                 break;
             case 'month':
             default:
                 $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                $prevToTime = date('Y-m-d', strtotime('-30 days'));
                 break;
         }
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
 
         // Get keyword statistics
         $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $toTime);
         $this->set('keywordStats', $keywordStats);
+
+        // Get previous period keyword statistics for comparison
+        $prevKeywordStats = $this->getKeywordStats($websiteId, $prevFromTime, $prevToTime);
+        $this->set('prevKeywordStats', $prevKeywordStats);
+
+        // Calculate keyword stats comparison
+        $keywordComparison = $this->calculateComparison($keywordStats, $prevKeywordStats);
+        $this->set('keywordComparison', $keywordComparison);
 
         // Get ranking trends data for graph
         $rankingTrends = $this->getRankingTrends($websiteId, $fromTime, $toTime);
@@ -82,6 +100,14 @@ class DashboardController extends Controller {
         // Get website overview stats
         $websiteStats = $this->getWebsiteOverviewStats($websiteId, $fromTime, $toTime);
         $this->set('websiteStats', $websiteStats);
+
+        // Get previous period website stats for comparison
+        $prevWebsiteStats = $this->getWebsiteOverviewStats($websiteId, $prevFromTime, $prevToTime);
+        $this->set('prevWebsiteStats', $prevWebsiteStats);
+
+        // Calculate website stats comparison
+        $websiteComparison = $this->calculateComparison($websiteStats, $prevWebsiteStats);
+        $this->set('websiteComparison', $websiteComparison);
 
         // Get top keywords
         $topKeywords = $this->getTopKeywords($websiteId, $toTime, 10);
@@ -94,6 +120,14 @@ class DashboardController extends Controller {
         // Get search engine distribution stats
         $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
         $this->set('searchEngineStats', $searchEngineStats);
+
+        // Get ranking volatility stats
+        $rankingVolatility = $this->getRankingVolatility($websiteId, $fromTime, $toTime);
+        $this->set('rankingVolatility', $rankingVolatility);
+
+        // Get detailed keyword distribution by rank ranges
+        $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $toTime);
+        $this->set('keywordDistribution', $keywordDistribution);
 
         $this->render('dashboard/main');
     }
@@ -135,6 +169,36 @@ class DashboardController extends Controller {
                 AND sr.rank <= 3 AND sr.rank > 0";
         $result = $this->db->select($sql, true);
         $stats['top3'] = $result['top3'];
+
+        // Top 11-20 rankings
+        $sql = "SELECT COUNT(DISTINCT k.id) as top20
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$toTime'
+                AND sr.rank BETWEEN 11 AND 20";
+        $result = $this->db->select($sql, true);
+        $stats['top20'] = $result['top20'];
+
+        // Top 21-50 rankings
+        $sql = "SELECT COUNT(DISTINCT k.id) as top50
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$toTime'
+                AND sr.rank BETWEEN 21 AND 50";
+        $result = $this->db->select($sql, true);
+        $stats['top50'] = $result['top50'];
+
+        // Top 51-100 rankings
+        $sql = "SELECT COUNT(DISTINCT k.id) as top100
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$toTime'
+                AND sr.rank BETWEEN 51 AND 100";
+        $result = $this->db->select($sql, true);
+        $stats['top100'] = $result['top100'];
 
         return $stats;
     }
@@ -244,6 +308,186 @@ class DashboardController extends Controller {
         }
 
         return $stats;
+    }
+
+    // Calculate comparison between current and previous period
+    private function calculateComparison($current, $previous) {
+        $comparison = [];
+
+        foreach ($current as $key => $currentValue) {
+            $prevValue = isset($previous[$key]) ? $previous[$key] : 0;
+            $diff = $currentValue - $prevValue;
+
+            // Calculate percentage change
+            if ($prevValue > 0) {
+                $percentChange = round(($diff / $prevValue) * 100, 1);
+            } else {
+                $percentChange = ($currentValue > 0) ? 100 : 0;
+            }
+
+            $comparison[$key] = [
+                'diff' => $diff,
+                'percent' => $percentChange,
+                'direction' => $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral')
+            ];
+        }
+
+        return $comparison;
+    }
+
+    // Get ranking volatility - keywords with most rank changes
+    private function getRankingVolatility($websiteId, $fromTime, $toTime) {
+        // Get rank changes for each keyword within the period
+        $sql = "SELECT k.id, k.name,
+                MAX(sr.rank) as max_rank,
+                MIN(CASE WHEN sr.rank > 0 THEN sr.rank END) as min_rank,
+                COUNT(DISTINCT sr.result_date) as check_count,
+                AVG(CASE WHEN sr.rank > 0 THEN sr.rank END) as avg_rank,
+                STDDEV(CASE WHEN sr.rank > 0 THEN sr.rank END) as rank_stddev
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY k.id, k.name
+                HAVING check_count >= 2 AND min_rank > 0
+                ORDER BY rank_stddev DESC, max_rank DESC
+                LIMIT 10";
+
+        $results = $this->db->select($sql);
+
+        $volatilityData = [];
+        if ($results) {
+            foreach ($results as $row) {
+                $volatilityData[] = [
+                    'keyword' => $row['name'],
+                    'rank_change' => intval($row['max_rank']) - intval($row['min_rank']),
+                    'max_rank' => intval($row['max_rank']),
+                    'min_rank' => intval($row['min_rank']),
+                    'avg_rank' => round($row['avg_rank'], 1),
+                    'volatility_score' => round($row['rank_stddev'], 2)
+                ];
+            }
+        }
+
+        return $volatilityData;
+    }
+
+    // Get detailed keyword distribution by rank ranges
+    private function getKeywordDistributionDetails($websiteId, $date) {
+        $distribution = [
+            'top3' => [],
+            'top10' => [],
+            'top20' => [],
+            'top50' => [],
+            'top100' => [],
+            'beyond_top100' => [],
+            'not_ranked' => []
+        ];
+
+        // Get Top 3 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank BETWEEN 1 AND 3
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['top3'] = $results;
+        }
+
+        // Get Top 4-10 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank BETWEEN 4 AND 10
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['top10'] = $results;
+        }
+
+        // Get Top 11-20 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank BETWEEN 11 AND 20
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['top20'] = $results;
+        }
+
+        // Get Top 21-50 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank BETWEEN 21 AND 50
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['top50'] = $results;
+        }
+
+        // Get Top 51-100 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank BETWEEN 51 AND 100
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['top100'] = $results;
+        }
+
+        // Get Beyond Top 100 keywords
+        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                FROM keywords k
+                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND sr.result_date='$date'
+                AND sr.rank > 100
+                ORDER BY sr.rank ASC
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['beyond_top100'] = $results;
+        }
+
+        // Get Not Ranked keywords
+        $sql = "SELECT k.name
+                FROM keywords k
+                LEFT JOIN searchresults sr ON k.id = sr.keyword_id AND sr.result_date='$date'
+                WHERE k.website_id=" . intval($websiteId) . "
+                AND (sr.rank IS NULL OR sr.rank = 0 OR sr.rank > 100)
+                GROUP BY k.id, k.name
+                LIMIT 20";
+        $results = $this->db->select($sql);
+        if ($results) {
+            $distribution['not_ranked'] = $results;
+        }
+
+        return $distribution;
     }
 
 }
