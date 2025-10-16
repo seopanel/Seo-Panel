@@ -80,6 +80,14 @@ class DashboardController extends Controller {
         $this->set('toTime', $toTime);
         $this->set('prevFromTime', $prevFromTime);
         $this->set('prevToTime', $prevToTime);
+        
+        // get keyword last generated report date in between $fromTime and $toTime
+        $kwResultLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
+        $kwResultLastDate = !empty($kwResultLastDate) ? $kwResultLastDate : $toTime;
+        
+        // Get detailed keyword distribution by rank ranges        
+        $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $kwResultLastDate);        
+        $this->set('keywordDistribution', $keywordDistribution);
 
         // Get keyword statistics
         $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $toTime);
@@ -125,11 +133,24 @@ class DashboardController extends Controller {
         $rankingVolatility = $this->getRankingVolatility($websiteId, $fromTime, $toTime);
         $this->set('rankingVolatility', $rankingVolatility);
 
-        // Get detailed keyword distribution by rank ranges
-        $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $toTime);
-        $this->set('keywordDistribution', $keywordDistribution);
-
         $this->render('dashboard/main');
+    }
+    
+    function __getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime) {
+        // Find the latest date within the date range where keywords have results with rank > 0
+        $sql = "SELECT MAX(sr.result_date) as last_report_date
+                FROM keywords k
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                    AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                    AND sr.rank > 0";
+
+        $result = $this->db->select($sql, true);
+        if ($result && !empty($result['last_report_date'])) {
+            return $result['last_report_date'];
+        }
+
+        return null;
     }
 
     // Get keyword statistics
@@ -144,59 +165,59 @@ class DashboardController extends Controller {
         // Keywords with results in period
         $sql = "SELECT COUNT(DISTINCT k.id) as tracked
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'";
+                    AND sr.result_date BETWEEN '$fromTime' AND '$toTime'";
         $result = $this->db->select($sql, true);
         $stats['tracked'] = $result['tracked'];
 
         // Top 10 rankings
         $sql = "SELECT COUNT(DISTINCT k.id) as top10
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$toTime'
-                AND sr.rank <= 10 AND sr.rank > 0";
+                    AND sr.result_date='$toTime'
+                    AND sr.rank <= 10 AND sr.rank > 0";
         $result = $this->db->select($sql, true);
         $stats['top10'] = $result['top10'];
 
         // Top 3 rankings
         $sql = "SELECT COUNT(DISTINCT k.id) as top3
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$toTime'
-                AND sr.rank <= 3 AND sr.rank > 0";
+                    AND sr.result_date='$toTime'
+                    AND sr.rank <= 3 AND sr.rank > 0";
         $result = $this->db->select($sql, true);
         $stats['top3'] = $result['top3'];
 
         // Top 11-20 rankings
         $sql = "SELECT COUNT(DISTINCT k.id) as top20
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$toTime'
-                AND sr.rank BETWEEN 11 AND 20";
+                    AND sr.result_date='$toTime'
+                    AND sr.rank BETWEEN 11 AND 20";
         $result = $this->db->select($sql, true);
         $stats['top20'] = $result['top20'];
 
         // Top 21-50 rankings
         $sql = "SELECT COUNT(DISTINCT k.id) as top50
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$toTime'
-                AND sr.rank BETWEEN 21 AND 50";
+                    AND sr.result_date='$toTime'
+                    AND sr.rank BETWEEN 21 AND 50";
         $result = $this->db->select($sql, true);
         $stats['top50'] = $result['top50'];
 
         // Top 51-100 rankings
         $sql = "SELECT COUNT(DISTINCT k.id) as top100
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$toTime'
-                AND sr.rank BETWEEN 51 AND 100";
+                    AND sr.result_date='$toTime'
+                    AND sr.rank BETWEEN 51 AND 100";
         $result = $this->db->select($sql, true);
         $stats['top100'] = $result['top100'];
 
@@ -206,13 +227,13 @@ class DashboardController extends Controller {
     // Get ranking trends for graph
     private function getRankingTrends($websiteId, $fromTime, $toTime) {
         $sql = "SELECT DATE(sr.result_date) as date,
-                ROUND(AVG(CASE WHEN sr.rank > 0 THEN sr.rank ELSE NULL END), 2) as avg_rank,
-                COUNT(DISTINCT CASE WHEN sr.rank <= 10 AND sr.rank > 0 THEN k.id END) as top10_count,
-                COUNT(DISTINCT CASE WHEN sr.rank <= 3 AND sr.rank > 0 THEN k.id END) as top3_count
+                    ROUND(AVG(CASE WHEN sr.rank > 0 THEN sr.rank ELSE NULL END), 2) as avg_rank,
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 10 AND sr.rank > 0 THEN k.id END) as top10_count,
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 3 AND sr.rank > 0 THEN k.id END) as top3_count
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                    AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
                 GROUP BY DATE(sr.result_date)
                 ORDER BY date ASC";
 
@@ -261,11 +282,11 @@ class DashboardController extends Controller {
     private function getTopKeywords($websiteId, $date, $limit = 10) {
         $sql = "SELECT k.name, k.id, sr.rank, se.domain as search_engine
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank > 0
+                    AND sr.result_date='$date'
+                    AND sr.rank > 0
                 ORDER BY sr.rank ASC
                 LIMIT " . intval($limit);
 
@@ -277,8 +298,8 @@ class DashboardController extends Controller {
     private function getRecentActivity($websiteId, $limit = 10) {
         $sql = "SELECT k.name as keyword, sr.rank, sr.result_date, se.domain as search_engine
                 FROM searchresults sr
-                INNER JOIN keywords k ON sr.keyword_id = k.id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                    INNER JOIN keywords k ON sr.keyword_id = k.id
+                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
                 WHERE k.website_id=" . intval($websiteId) . "
                 ORDER BY sr.result_date DESC, sr.id DESC
                 LIMIT " . intval($limit);
@@ -291,10 +312,10 @@ class DashboardController extends Controller {
     private function getSearchEngineStats($websiteId, $fromTime, $toTime) {
         $sql = "SELECT se.domain as search_engine, COUNT(DISTINCT k.id) as keyword_count
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                    AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
                 GROUP BY se.id, se.domain
                 ORDER BY keyword_count DESC";
 
@@ -339,15 +360,15 @@ class DashboardController extends Controller {
     private function getRankingVolatility($websiteId, $fromTime, $toTime) {
         // Get rank changes for each keyword within the period
         $sql = "SELECT k.id, k.name,
-                MAX(sr.rank) as max_rank,
-                MIN(CASE WHEN sr.rank > 0 THEN sr.rank END) as min_rank,
-                COUNT(DISTINCT sr.result_date) as check_count,
-                AVG(CASE WHEN sr.rank > 0 THEN sr.rank END) as avg_rank,
-                STDDEV(CASE WHEN sr.rank > 0 THEN sr.rank END) as rank_stddev
+                    MAX(sr.rank) as max_rank,
+                    MIN(CASE WHEN sr.rank > 0 THEN sr.rank END) as min_rank,
+                    COUNT(DISTINCT sr.result_date) as check_count,
+                    AVG(CASE WHEN sr.rank > 0 THEN sr.rank END) as avg_rank,
+                    STDDEV(CASE WHEN sr.rank > 0 THEN sr.rank END) as rank_stddev
                 FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
+                    AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
                 GROUP BY k.id, k.name
                 HAVING check_count >= 2 AND min_rank > 0
                 ORDER BY rank_stddev DESC, max_rank DESC
@@ -371,120 +392,70 @@ class DashboardController extends Controller {
 
         return $volatilityData;
     }
+    
+    function __generateKeywordDistributionResult($websiteId, $date, $dstType="top10", $limit=10) {
+        $dstResults = [
+            "count" => 0,
+            "rows" => [],
+        ];
+        switch ($dstType) {            
+            case "top10":
+            default:
+                $rankCond = "sr.rank BETWEEN 1 AND 10";
+                break;
+                
+            case "top20":
+                $rankCond = "sr.rank BETWEEN 11 AND 20";
+                break;
+                
+            case "top50":
+                $rankCond = "sr.rank BETWEEN 21 AND 50";
+                break;
+            
+            case "top100":
+                $rankCond = "sr.rank BETWEEN 51 AND 100";
+                break;
+                
+            case "not_ranked":
+                $rankCond = "(sr.rank IS NULL OR sr.rank <= 0 OR sr.rank > 100)";
+                break;
+        }
+        
+        // Get Top 10 keywords
+        $countSel = "count(*) as count";
+        $rowSel = "k.name, sr.rank, se.domain as search_engine";
+        $sql = "SELECT [SELECT_COLS]
+                FROM keywords k
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                WHERE k.website_id=" . intval($websiteId) . "
+                    AND sr.result_date='$date'
+                    AND $rankCond
+                ORDER BY sr.rank ASC
+                LIMIT $limit";
+        
+        $countRes = $this->db->select(str_replace("[SELECT_COLS]", $countSel, $sql), true);
+        if ($countRes['count'] > 0) {
+            $dstResults['count'] = $countRes['count'];
+            $results = $this->db->select(str_replace("[SELECT_COLS]", $rowSel, $sql));
+            $dstResults['rows'] = $results;
+        }        
+        
+        return $dstResults;
+    }
 
     // Get detailed keyword distribution by rank ranges
     private function getKeywordDistributionDetails($websiteId, $date) {
         $distribution = [
-            'top3' => [],
             'top10' => [],
             'top20' => [],
             'top50' => [],
             'top100' => [],
-            'beyond_top100' => [],
             'not_ranked' => []
         ];
-
-        // Get Top 3 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank BETWEEN 1 AND 3
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['top3'] = $results;
-        }
-
-        // Get Top 4-10 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank BETWEEN 4 AND 10
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['top10'] = $results;
-        }
-
-        // Get Top 11-20 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank BETWEEN 11 AND 20
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['top20'] = $results;
-        }
-
-        // Get Top 21-50 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank BETWEEN 21 AND 50
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['top50'] = $results;
-        }
-
-        // Get Top 51-100 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank BETWEEN 51 AND 100
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['top100'] = $results;
-        }
-
-        // Get Beyond Top 100 keywords
-        $sql = "SELECT k.name, sr.rank, se.domain as search_engine
-                FROM keywords k
-                INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND sr.result_date='$date'
-                AND sr.rank > 100
-                ORDER BY sr.rank ASC
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['beyond_top100'] = $results;
-        }
-
-        // Get Not Ranked keywords
-        $sql = "SELECT k.name
-                FROM keywords k
-                LEFT JOIN searchresults sr ON k.id = sr.keyword_id AND sr.result_date='$date'
-                WHERE k.website_id=" . intval($websiteId) . "
-                AND (sr.rank IS NULL OR sr.rank = 0 OR sr.rank > 100)
-                GROUP BY k.id, k.name
-                LIMIT 20";
-        $results = $this->db->select($sql);
-        if ($results) {
-            $distribution['not_ranked'] = $results;
+        
+        foreach (array_keys($distribution) as $distCol) {
+            $distribution[$distCol] = $this->__generateKeywordDistributionResult($websiteId, $date, $distCol, 5);
         }
 
         return $distribution;

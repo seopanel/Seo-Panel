@@ -190,7 +190,7 @@
 					<h4>Keyword Distribution by Rank</h4>
 				</div>
 				<div class="card-body">
-					<?php if (!empty($keywordStats) && $keywordStats['total'] > 0) { ?>
+					<?php if (!empty($keywordDistribution)) { ?>
 						<script type="text/javascript">
 							google.charts.load('current', {'packages':['corechart']});
 							google.charts.setOnLoadCallback(drawKeywordDistChart);
@@ -198,11 +198,11 @@
 							function drawKeywordDistChart() {
 								var data = google.visualization.arrayToDataTable([
 									['Rank Range', 'Number of Keywords'],
-									['Top 10 (1-10)', <?php echo $keywordStats['top10']?>],
-									['Top 20 (11-20)', <?php echo $keywordStats['top20']?>],
-									['Top 50 (21-50)', <?php echo $keywordStats['top50']?>],
-									['Top 100 (51-100)', <?php echo $keywordStats['top100']?>],
-									['Not Ranked', <?php echo $keywordStats['total'] - $keywordStats['tracked']?>]
+									['Top 10 (1-10)', <?php echo $keywordDistribution['top10']['count']?>],
+									['Top 20 (11-20)', <?php echo $keywordDistribution['top20']['count']?>],
+									['Top 50 (21-50)', <?php echo $keywordDistribution['top50']['count']?>],
+									['Top 100 (51-100)', <?php echo $keywordDistribution['top100']['count']?>],
+									['Not Ranked', <?php echo $keywordDistribution['not_ranked']['count']?>]
 								]);
 
 								var options = {
@@ -225,27 +225,27 @@
 							<ul class="nav nav-tabs" id="distTab" role="tablist">
 								<li class="nav-item">
 									<a class="nav-link active" id="top10-tab" data-toggle="tab" href="#top10" role="tab" onclick="showDistTab('top10'); return false;">
-										<span class="badge bg-info"><?php echo $keywordStats['top10']?></span> Top 1-10
+										<span class="badge bg-info"><?php echo $keywordDistribution['top10']['count']?></span> Top 1-10
 									</a>
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="top20-tab" data-toggle="tab" href="#top20" role="tab" onclick="showDistTab('top20'); return false;">
-										<span class="badge" style="background-color: #fd7e14;"><?php echo $keywordStats['top20']?></span> Top 11-20
+										<span class="badge" style="background-color: #fd7e14;"><?php echo $keywordDistribution['top20']['count']?></span> Top 11-20
 									</a>
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="top50-tab" data-toggle="tab" href="#top50" role="tab" onclick="showDistTab('top50'); return false;">
-										<span class="badge" style="background-color: #e83e8c;"><?php echo $keywordStats['top50']?></span> Top 21-50
+										<span class="badge" style="background-color: #e83e8c;"><?php echo $keywordDistribution['top50']['count']?></span> Top 21-50
 									</a>
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="top100-tab" data-toggle="tab" href="#top100" role="tab" onclick="showDistTab('top100'); return false;">
-										<span class="badge bg-danger"><?php echo $keywordStats['top100']?></span> Top 51-100
+										<span class="badge bg-danger"><?php echo $keywordDistribution['top100']['count']?></span> Top 51-100
 									</a>
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="notranked-tab" data-toggle="tab" href="#notranked" role="tab" onclick="showDistTab('notranked'); return false;">
-										<span class="badge bg-secondary"><?php echo $keywordStats['total'] - $keywordStats['tracked']?></span> Not Ranked
+										<span class="badge bg-secondary"><?php echo $keywordDistribution['not_ranked']['count']?></span> Not Ranked
 									</a>
 								</li>
 							</ul>
@@ -253,12 +253,7 @@
 								<!-- Top 1-10 Tab -->
 								<div class="tab-pane fade show active" id="top10" role="tabpanel">
 									<?php
-									// Merge top3 and top10 arrays for combined 1-10 display
-									$combined_top10 = array_merge(
-										!empty($keywordDistribution['top3']) ? $keywordDistribution['top3'] : [],
-										!empty($keywordDistribution['top10']) ? $keywordDistribution['top10'] : []
-									);
-									if (!empty($combined_top10)): ?>
+									if (!empty($keywordDistribution['top10']['rows'])): ?>
 										<div class="table-responsive">
 											<table class="table table-sm table-hover">
 												<thead>
@@ -269,11 +264,11 @@
 													</tr>
 												</thead>
 												<tbody>
-													<?php foreach($combined_top10 as $kw): ?>
+													<?php foreach($keywordDistribution['top10']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
 															<td><span class="badge bg-info"><?php echo $kw['rank']?></span></td>
-															<td><?php echo htmlspecialchars($kw['search_engine'])?></td>
+															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
 												</tbody>
@@ -286,7 +281,7 @@
 
 								<!-- Top 11-20 Tab -->
 								<div class="tab-pane fade" id="top20" role="tabpanel">
-									<?php if (!empty($keywordDistribution['top20'])): ?>
+									<?php if (!empty($keywordDistribution['top20']['rows'])): ?>
 										<div class="table-responsive">
 											<table class="table table-sm table-hover">
 												<thead>
@@ -297,11 +292,11 @@
 													</tr>
 												</thead>
 												<tbody>
-													<?php foreach($keywordDistribution['top20'] as $kw): ?>
+													<?php foreach($keywordDistribution['top20']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
 															<td><span class="badge" style="background-color: #fd7e14;"><?php echo $kw['rank']?></span></td>
-															<td><?php echo htmlspecialchars($kw['search_engine'])?></td>
+															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
 												</tbody>
@@ -314,7 +309,7 @@
 
 								<!-- Top 21-50 Tab -->
 								<div class="tab-pane fade" id="top50" role="tabpanel">
-									<?php if (!empty($keywordDistribution['top50'])): ?>
+									<?php if (!empty($keywordDistribution['top50']['rows'])): ?>
 										<div class="table-responsive">
 											<table class="table table-sm table-hover">
 												<thead>
@@ -325,11 +320,11 @@
 													</tr>
 												</thead>
 												<tbody>
-													<?php foreach($keywordDistribution['top50'] as $kw): ?>
+													<?php foreach($keywordDistribution['top50']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
 															<td><span class="badge" style="background-color: #e83e8c;"><?php echo $kw['rank']?></span></td>
-															<td><?php echo htmlspecialchars($kw['search_engine'])?></td>
+															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
 												</tbody>
@@ -342,7 +337,7 @@
 
 								<!-- Top 51-100 Tab -->
 								<div class="tab-pane fade" id="top100" role="tabpanel">
-									<?php if (!empty($keywordDistribution['top100'])): ?>
+									<?php if (!empty($keywordDistribution['top100']['rows'])): ?>
 										<div class="table-responsive">
 											<table class="table table-sm table-hover">
 												<thead>
@@ -353,11 +348,11 @@
 													</tr>
 												</thead>
 												<tbody>
-													<?php foreach($keywordDistribution['top100'] as $kw): ?>
+													<?php foreach($keywordDistribution['top100']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
 															<td><span class="badge bg-danger"><?php echo $kw['rank']?></span></td>
-															<td><?php echo htmlspecialchars($kw['search_engine'])?></td>
+															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
 												</tbody>
@@ -370,7 +365,7 @@
 
 								<!-- Not Ranked Tab -->
 								<div class="tab-pane fade" id="notranked" role="tabpanel">
-									<?php if (!empty($keywordDistribution['not_ranked'])): ?>
+									<?php if (!empty($keywordDistribution['not_ranked']['rows'])): ?>
 										<div class="table-responsive">
 											<table class="table table-sm table-hover">
 												<thead>
@@ -380,7 +375,7 @@
 													</tr>
 												</thead>
 												<tbody>
-													<?php foreach($keywordDistribution['not_ranked'] as $kw): ?>
+													<?php foreach($keywordDistribution['not_ranked']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
 															<td><span class="badge bg-secondary">Not Ranked</span></td>
@@ -678,7 +673,7 @@
 											<td><?php echo htmlspecialchars($activity['keyword'])?></td>
 											<td><?php echo $activity['rank'] > 0 ? $activity['rank'] : '-'?></td>
 											<td><?php echo date('M d, Y', strtotime($activity['result_date']))?></td>
-											<td><?php echo htmlspecialchars($activity['search_engine'])?></td>
+											<td><?php echo htmlspecialchars(formatUrl($activity['search_engine']))?></td>
 										</tr>
 									<?php } ?>
 								</tbody>
