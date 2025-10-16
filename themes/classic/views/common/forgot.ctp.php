@@ -9,7 +9,7 @@
 					<h2 class="forgot-title">
 						<?php echo $spText['login']['Forgot password?']?>
 					</h2>
-					<p class="forgot-subtitle">Enter your email address and we'll send you instructions to reset your password</p>
+					<p class="forgot-subtitle"><?php echo $spText['login']['Forgot subtitle']?></p>
 				</div>
 
 				<div class="forgot-body">
@@ -21,14 +21,14 @@
 								<i class="fas fa-envelope"></i>
 								<?php echo $spText['login']['Email']?>
 							</label>
-							<input type="email" name="email" value="<?php echo htmlentities($post['email'], ENT_QUOTES)?>" required="required" class="form-control forgot-input" id="email" placeholder="your@email.com" autocomplete="email">
+							<input type="email" name="email" value="<?php echo htmlentities($post['email'], ENT_QUOTES)?>" required="required" class="form-control forgot-input" id="email" placeholder="<?php echo $spText['login']['Email placeholder']?>" autocomplete="email">
 							<?php echo $errMsg['email']?>
 						</div>
 
 						<div class="form-group">
 							<label class="forgot-label">
 								<i class="fas fa-shield-alt"></i>
-								Verification
+								<?php echo $spText['login']['Verification']?>
 							</label>
 							<?php if (SP_ENABLE_RECAPTCHA && !empty(SP_RECAPTCHA_SITE_KEY) && !empty(SP_RECAPTCHA_SECRET_KEY)) {?>
 								<script src="https://www.google.com/recaptcha/api.js" async defer></script>
@@ -62,8 +62,8 @@
 				<div class="forgot-footer">
 					<p class="footer-text">
 						<i class="fas fa-info-circle"></i>
-						Remember your password?
-						<a href="<?php echo SP_WEBPATH?>/login.php" class="signin-link">Sign In</a>
+						<?php echo $spText['login']['Remember password text']?>
+						<a href="<?php echo SP_WEBPATH?>/login.php" class="signin-link"><?php echo $spText['login']['Sign In']?></a>
 					</p>
 				</div>
 			</div>

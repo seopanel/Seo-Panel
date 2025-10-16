@@ -31,6 +31,8 @@ class IndexController extends Controller{
 		if(isLoggedIn()){
 			$this->render('user/userhome');
 		}else{
+		    $spTextGuest = $this->getLanguageTexts('guest', $_SESSION['lang_code']);
+		    $this->set('spTextGuest', $spTextGuest);
 			$this->render('home');
 		}
 	}

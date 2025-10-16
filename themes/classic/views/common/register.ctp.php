@@ -9,7 +9,7 @@
 					<h2 class="register-title">
 						<?php echo $spText['login']['Create New Account']?>
 					</h2>
-					<p class="register-subtitle">Join us today and start optimizing your SEO</p>
+					<p class="register-subtitle"><?php echo $spTextRegister['Register subtitle']?></p>
 				</div>
 
 				<div class="register-body">
@@ -31,7 +31,7 @@
 							?>
 							<div class="register-section-title">
 								<i class="fas fa-credit-card"></i>
-								Subscription Details
+								<?php echo $spTextRegister['Subscription Details']?>
 							</div>
 
 							<div class="form-group">
@@ -109,7 +109,7 @@
 
 						<div class="register-section-title">
 							<i class="fas fa-user-circle"></i>
-							Account Information
+							<?php echo $spTextRegister['Account Information']?>
 						</div>
 
 						<div class="form-group">
@@ -117,7 +117,7 @@
 								<i class="fas fa-user"></i>
 								<?php echo $spText['login']['Username']?>
 							</label>
-							<input type="text" name="userName" value="<?php echo $post['userName']?>" class="form-control register-input" id="userName" required="required" placeholder="Choose a username" autocomplete="username">
+							<input type="text" name="userName" value="<?php echo $post['userName']?>" class="form-control register-input" id="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
 							<?php echo $errMsg['userName']?>
 						</div>
 
@@ -128,7 +128,7 @@
 										<i class="fas fa-lock"></i>
 										<?php echo $spText['login']['Password']?>
 									</label>
-									<input type="password" name="password" value="" class="form-control register-input" id="password" required="required" placeholder="Enter password" autocomplete="new-password">
+									<input type="password" name="password" value="" class="form-control register-input" id="password" required="required" placeholder="<?php echo $spText['login']['Password placeholder']?>" autocomplete="new-password">
 									<?php echo $errMsg['password']?>
 								</div>
 							</div>
@@ -138,14 +138,14 @@
 										<i class="fas fa-lock"></i>
 										<?php echo $spText['login']['Confirm Password']?>
 									</label>
-									<input type="password" name="confirmPassword" value="" class="form-control register-input" id="confirmPassword" required="required" placeholder="Confirm password" autocomplete="new-password">
+									<input type="password" name="confirmPassword" value="" class="form-control register-input" id="confirmPassword" required="required" placeholder="<?php echo $spText['login']['Confirm Password']?>" autocomplete="new-password">
 								</div>
 							</div>
 						</div>
 
 						<div class="register-section-title">
 							<i class="fas fa-id-card"></i>
-							Personal Information
+							<?php echo $spTextRegister['Personal Information']?>
 						</div>
 
 						<div class="row">
@@ -155,7 +155,7 @@
 										<i class="fas fa-user"></i>
 										<?php echo $spText['login']['First Name']?>
 									</label>
-									<input type="text" name="firstName" value="<?php echo $post['firstName']?>" class="form-control register-input" id="firstName" required="required" placeholder="First name" autocomplete="given-name">
+									<input type="text" name="firstName" value="<?php echo $post['firstName']?>" class="form-control register-input" id="firstName" required="required" placeholder="<?php echo $spTextRegister['First name placeholder']?>" autocomplete="given-name">
 									<?php echo $errMsg['firstName']?>
 								</div>
 							</div>
@@ -165,7 +165,7 @@
 										<i class="fas fa-user"></i>
 										<?php echo $spText['login']['Last Name']?>
 									</label>
-									<input type="text" name="lastName" value="<?php echo $post['lastName']?>" class="form-control register-input" id="lastName" required="required" placeholder="Last name" autocomplete="family-name">
+									<input type="text" name="lastName" value="<?php echo $post['lastName']?>" class="form-control register-input" id="lastName" required="required" placeholder="<?php echo $spTextRegister['Last name placeholder']?>" autocomplete="family-name">
 									<?php echo $errMsg['lastName']?>
 								</div>
 							</div>
@@ -182,7 +182,7 @@
 
 						<div class="register-section-title">
 							<i class="fas fa-shield-alt"></i>
-							Verification
+							<?php echo $spText['login']['Verification']?>
 						</div>
 
 						<div class="form-group">
@@ -219,10 +219,10 @@
 
 				<div class="register-footer">
 					<p class="footer-text">
-						Already have an account?
+						<?php echo $spTextRegister['Already have account']?>
 						<a href="<?php echo SP_WEBPATH?>/login.php" class="login-link">
 							<i class="fas fa-sign-in-alt"></i>
-							Sign In
+							<?php echo $spText['login']['Sign In']?>
 						</a>
 					</p>
 				</div>

@@ -9,7 +9,7 @@
 					<h2 class="login-title">
 						<?php echo ucwords($spText['common']['signin'])?>
 					</h2>
-					<p class="login-subtitle">Welcome back! Please login to your account</p>
+					<p class="login-subtitle"><?php echo $spText['login']['Welcome message']?></p>
 				</div>
 
 				<div class="login-body">
@@ -22,7 +22,7 @@
 								<i class="fas fa-user"></i>
 								<?php echo $spText['login']['Username']?>
 							</label>
-							<input type="text" class="form-control login-input" id="userName" name="userName" required="required" placeholder="Enter your username" autocomplete="username">
+							<input type="text" class="form-control login-input" id="userName" name="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
 							<?php echo $errMsg['userName']?>
 						</div>
 
@@ -31,7 +31,7 @@
 								<i class="fas fa-lock"></i>
 								<?php echo $spText['login']['Password']?>
 							</label>
-							<input type="password" class="form-control login-input" id="password" name="password" required="required" placeholder="Enter your password" autocomplete="current-password">
+							<input type="password" class="form-control login-input" id="password" name="password" required="required" placeholder="<?php echo $spText['login']['Password placeholder']?>" autocomplete="current-password">
 							<?php echo $errMsg['password'] ? $errMsg['password']."<br>" : ""?>
 						</div>
 
@@ -49,7 +49,7 @@
 
 						<?php if(!isLoggedIn() && SP_USER_REGISTRATION){ ?>
 							<div class="register-section">
-								<span class="register-text">Don't have an account?</span>
+								<span class="register-text"><?php echo $spText['login']['No account text']?></span>
 								<a href="<?php echo SP_WEBPATH?>/register.php" class="register-link">
 									<i class="fas fa-user-plus"></i>
 									<?php echo $spText['login']['Register']?>
@@ -62,7 +62,7 @@
 				<div class="login-footer">
 					<p class="footer-text">
 						<i class="fas fa-lock"></i>
-						Your information is secure and encrypted
+						<?php echo $spText['login']['Security message']?>
 					</p>
 				</div>
 			</div>
