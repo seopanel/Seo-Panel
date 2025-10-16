@@ -224,32 +224,32 @@
 						<div class="mt-4">
 							<ul class="nav nav-tabs" id="distTab" role="tablist">
 								<li class="nav-item">
-									<a class="nav-link active" id="top10-tab" data-toggle="tab" href="#top10" role="tab" onclick="showDistTab('top10'); return false;">
+									<a class="nav-link active" id="top10-tab" data-toggle="tab" href="#top10" role="tab" onclick="showDistTab('top10'); return false;" style="padding: 0.5rem 1rem;">
 										<span class="badge bg-info"><?php echo $keywordDistribution['top10']['count']?></span> Top 1-10
 									</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="top20-tab" data-toggle="tab" href="#top20" role="tab" onclick="showDistTab('top20'); return false;">
+									<a class="nav-link" id="top20-tab" data-toggle="tab" href="#top20" role="tab" onclick="showDistTab('top20'); return false;" style="padding: 0.5rem 1rem;">
 										<span class="badge" style="background-color: #fd7e14;"><?php echo $keywordDistribution['top20']['count']?></span> Top 11-20
 									</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="top50-tab" data-toggle="tab" href="#top50" role="tab" onclick="showDistTab('top50'); return false;">
+									<a class="nav-link" id="top50-tab" data-toggle="tab" href="#top50" role="tab" onclick="showDistTab('top50'); return false;" style="padding: 0.5rem 1rem;">
 										<span class="badge" style="background-color: #e83e8c;"><?php echo $keywordDistribution['top50']['count']?></span> Top 21-50
 									</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="top100-tab" data-toggle="tab" href="#top100" role="tab" onclick="showDistTab('top100'); return false;">
+									<a class="nav-link" id="top100-tab" data-toggle="tab" href="#top100" role="tab" onclick="showDistTab('top100'); return false;" style="padding: 0.5rem 1rem;">
 										<span class="badge bg-danger"><?php echo $keywordDistribution['top100']['count']?></span> Top 51-100
 									</a>
 								</li>
 								<li class="nav-item">
-									<a class="nav-link" id="notranked-tab" data-toggle="tab" href="#notranked" role="tab" onclick="showDistTab('notranked'); return false;">
+									<a class="nav-link" id="notranked-tab" data-toggle="tab" href="#notranked" role="tab" onclick="showDistTab('notranked'); return false;" style="padding: 0.5rem 1rem;">
 										<span class="badge bg-secondary"><?php echo $keywordDistribution['not_ranked']['count']?></span> Not Ranked
 									</a>
 								</li>
 							</ul>
-							<div class="tab-content border border-top-0 p-3" id="distTabContent">
+							<div class="tab-content border-0 p-0" id="distTabContent">
 								<!-- Top 1-10 Tab -->
 								<div class="tab-pane fade show active" id="top10" role="tabpanel">
 									<?php
