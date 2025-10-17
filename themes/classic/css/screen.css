@@ -889,6 +889,32 @@ div.tab button.active {	background-color: #ccc;}
 	background-image: url(../../../images/bg.gif);
     background-position: right center;
     background-repeat: no-repeat;
+	padding-right: 24px !important;
+	position: relative;
+}
+
+.tablesorter th::after {
+	content: "\f0dc";
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	opacity: 0.4;
+	font-size: 12px;
+}
+
+.tablesorter th.headerSortUp::after {
+	content: "\f0de";
+	opacity: 1;
+	color: #28a745;
+}
+
+.tablesorter th.headerSortDown::after {
+	content: "\f0dd";
+	opacity: 1;
+	color: #dc3545;
 }
 
 .blog_section{margin: 26px 20px; padding: 10px 6px;}

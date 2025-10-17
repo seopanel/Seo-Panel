@@ -63,15 +63,15 @@
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td><?php echo $websiteLink?></td>
+				<td class="text-left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
 					<td><?php echo $listInfo['username']?></td>
 				<?php } ?>
-				<td><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
+				<td class="text-left"><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
 				<td>
 					<?php echo !empty($listInfo['analytics_view_id']) ? $propertyList[$listInfo['analytics_view_id']] : ""?>
 				</td>
-				<td class="text-center">					
+				<td class="text-center">
 					<?php echo showStatusBadge($listInfo['status']);?>
 				</td>
 				<td>

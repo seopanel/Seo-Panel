@@ -60,7 +60,7 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td><?php echo $keywordLink?></td>
+				<td class="text-left"><?php echo $keywordLink?></td>
 				<td><?php echo $listInfo['website']?></td>
 				<td><?php echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
 				<td><?php echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>

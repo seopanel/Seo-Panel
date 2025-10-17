@@ -21,9 +21,9 @@ $(document).ready(function() {
 		    foreach($pageResultList as $i => $listInfo){
     			?>
     			<tr>
-    				<td><?php echo $listInfo['url'];?></td>
+    				<td class="text-left"><?php echo $listInfo['url'];?></td>
     				<td><?php echo $listInfo['rank'];?></td>
-    				<td><?php echo $listInfo['keyword'];?></td>
+    				<td class="text-left"><?php echo $listInfo['keyword'];?></td>
     				<td><?php echo $listInfo['result_date'];?></td>
     			</tr>
     			<?php

@@ -16,10 +16,10 @@
 		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 		<td>
 			<select name="period" id="period" onchange="scriptDoLoadPost('dashboard.php', 'dashboard_form', 'content')" class="custom-select">
-				<option value="day" <?php echo (isset($period) && $period == 'day') ? 'selected' : ''?>>Day</option>
-				<option value="week" <?php echo (isset($period) && $period == 'week') ? 'selected' : ''?>>Week</option>
-				<option value="month" <?php echo (!isset($period) || $period == 'month') ? 'selected' : ''?>>Month</option>
-				<option value="year" <?php echo (isset($period) && $period == 'year') ? 'selected' : ''?>>Year</option>
+				<option value="day" <?php echo (isset($period) && $period == 'day') ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+				<option value="week" <?php echo (isset($period) && $period == 'week') ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+				<option value="month" <?php echo (!isset($period) || $period == 'month') ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+				<option value="year" <?php echo (isset($period) && $period == 'year') ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
 			</select>
 		</td>
 		<td style="text-align: center;">
@@ -116,7 +116,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Keyword Statistics</h4>
+					<h4><?php echo $spTextDashboard['Keyword Statistics']?></h4>
 				</div>
 				<div class="card-body">
 					<div class="row">
@@ -147,7 +147,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-3 text-center">
-							<h6 class="mb-3">Top 3 <?php echo $spText['common']['Rankings']?></h6>
+							<h6 class="mb-3"><?php echo $spTextDashboard['Top 3']?> <?php echo $spText['common']['Rankings']?></h6>
 							<h3><span class="badge bg-warning" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top3']?></span></h3>
 							<?php if (isset($keywordComparison['top3'])):
 								$comp = $keywordComparison['top3'];
@@ -160,7 +160,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-3 text-center">
-							<h6 class="mb-3">Top 10 <?php echo $spText['common']['Rankings']?></h6>
+							<h6 class="mb-3"><?php echo $spTextDashboard['Top 10']?> <?php echo $spText['common']['Rankings']?></h6>
 							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top10']?></span></h3>
 							<?php if (isset($keywordComparison['top10'])):
 								$comp = $keywordComparison['top10'];
@@ -173,7 +173,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-2 text-center">
-							<h6 class="mb-3">Not Ranked</h6>
+							<h6 class="mb-3"><?php echo $spTextDashboard['Not Ranked']?></h6>
 							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['total'] - $keywordStats['tracked']?></span></h3>
 						</div>
 					</div>
@@ -187,7 +187,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Keyword Distribution by Rank</h4>
+					<h4><?php echo $spTextDashboard['Keyword Distribution by Rank']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($keywordDistribution)) { ?>
@@ -197,7 +197,7 @@
 
 							function drawKeywordDistChart() {
 								var data = google.visualization.arrayToDataTable([
-									['Rank Range', 'Number of Keywords'],
+									['<?php echo $spText['common']['Rank']?> <?php echo $spText['common']['Range']?>', '<?php echo $spText['common']['Number']?> <?php echo $spText['common']['Keywords']?>'],
 									['Top 10 (1-10)', <?php echo $keywordDistribution['top10']['count']?>],
 									['Top 20 (11-20)', <?php echo $keywordDistribution['top20']['count']?>],
 									['Top 50 (21-50)', <?php echo $keywordDistribution['top50']['count']?>],
@@ -206,7 +206,7 @@
 								]);
 
 								var options = {
-									title: 'Keywords by Ranking Position',
+									title: '<?php echo $spTextDashboard['Keywords by Ranking Position']?>',
 									pieHole: 0.4,
 									height: 350,
 									colors: ['#17a2b8', '#fd7e14', '#e83e8c', '#dc3545', '#6c757d'],
@@ -258,9 +258,9 @@
 											<table class="table table-sm table-hover">
 												<thead>
 													<tr>
-														<th>Keyword</th>
-														<th>Rank</th>
-														<th>Search Engine</th>
+														<th><?php echo $spText['common']['Keyword']?></th>
+														<th><?php echo $spText['common']['Rank']?></th>
+														<th><?php echo $spText['common']['Search Engine']?></th>
 													</tr>
 												</thead>
 												<tbody>
@@ -286,9 +286,9 @@
 											<table class="table table-sm table-hover">
 												<thead>
 													<tr>
-														<th>Keyword</th>
-														<th>Rank</th>
-														<th>Search Engine</th>
+														<th><?php echo $spText['common']['Keyword']?></th>
+														<th><?php echo $spText['common']['Rank']?></th>
+														<th><?php echo $spText['common']['Search Engine']?></th>
 													</tr>
 												</thead>
 												<tbody>
@@ -314,9 +314,9 @@
 											<table class="table table-sm table-hover">
 												<thead>
 													<tr>
-														<th>Keyword</th>
-														<th>Rank</th>
-														<th>Search Engine</th>
+														<th><?php echo $spText['common']['Keyword']?></th>
+														<th><?php echo $spText['common']['Rank']?></th>
+														<th><?php echo $spText['common']['Search Engine']?></th>
 													</tr>
 												</thead>
 												<tbody>
@@ -342,9 +342,9 @@
 											<table class="table table-sm table-hover">
 												<thead>
 													<tr>
-														<th>Keyword</th>
-														<th>Rank</th>
-														<th>Search Engine</th>
+														<th><?php echo $spText['common']['Keyword']?></th>
+														<th><?php echo $spText['common']['Rank']?></th>
+														<th><?php echo $spText['common']['Search Engine']?></th>
 													</tr>
 												</thead>
 												<tbody>
@@ -370,8 +370,8 @@
 											<table class="table table-sm table-hover">
 												<thead>
 													<tr>
-														<th>Keyword</th>
-														<th>Status</th>
+														<th><?php echo $spText['common']['Keyword']?></th>
+														<th><?php echo $spText['common']['Status']?></th>
 													</tr>
 												</thead>
 												<tbody>
@@ -430,8 +430,8 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Ranking Volatility</h4>
-					<small class="text-white">Keywords with most ranking fluctuations</small>
+					<h4><?php echo $spTextDashboard['Ranking Volatility']?></h4>
+					<small class="text-white"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($rankingVolatility)) { ?>
@@ -441,7 +441,7 @@
 
 							function drawVolatilityChart() {
 								var data = google.visualization.arrayToDataTable([
-									['Keyword', 'Volatility Score', { role: 'style' }, { role: 'annotation' }],
+									['<?php echo $spText['common']['Keyword']?>', '<?php echo $spTextDashboard['Volatility Score']?>', { role: 'style' }, { role: 'annotation' }],
 									<?php
 									foreach ($rankingVolatility as $row) {
 										// Color based on volatility score - higher = more red
@@ -463,16 +463,16 @@
 								]);
 
 								var options = {
-									title: 'Top 10 Most Volatile Keywords',
+									title: '<?php echo $spTextDashboard['Top 10 Most Volatile Keywords']?>',
 									height: 350,
 									legend: { position: 'none' },
 									chartArea: { width: '70%', height: '70%' },
 									hAxis: {
-										title: 'Volatility Score (Standard Deviation)',
+										title: '<?php echo $spTextDashboard['Volatility Score (Standard Deviation)']?>',
 										minValue: 0
 									},
 									vAxis: {
-										title: 'Keywords'
+										title: '<?php echo $spText['common']['Keywords']?>'
 									},
 									annotations: {
 										alwaysOutside: true,
@@ -496,20 +496,58 @@
 							<table class="table table-sm table-hover">
 								<thead>
 									<tr>
-										<th>Keyword</th>
-										<th>Min Rank</th>
-										<th>Max Rank</th>
-										<th>Avg Rank</th>
-										<th>Volatility</th>
+										<th><?php echo $spText['common']['Keyword']?></th>
+										<th><?php echo $spText['common']['Search Engine']?></th>
+										<th><?php echo $spTextDashboard['Best Rank']?></th>
+										<th><?php echo $spTextDashboard['Worst Rank']?></th>
+										<th><?php echo $spTextDashboard['Avg Rank']?></th>
+										<th><?php echo $spTextDashboard['Trend']?></th>
+										<th><?php echo $spTextDashboard['Volatility']?></th>
 									</tr>
 								</thead>
 								<tbody>
 									<?php foreach($rankingVolatility as $row): ?>
 										<tr>
 											<td><?php echo htmlspecialchars($row['keyword'])?></td>
+											<td>
+												<?php
+												// Display search engine - now single engine per row
+												$engine = !empty($row['search_engine']) ? $row['search_engine'] : '-';
+												echo '<small>' . htmlspecialchars($engine) . '</small>';
+												?>
+											</td>
 											<td><span class="badge bg-success"><?php echo $row['min_rank']?></span></td>
 											<td><span class="badge bg-danger"><?php echo $row['max_rank']?></span></td>
 											<td><?php echo $row['avg_rank']?></td>
+											<td>
+												<?php
+												// Show trend with direction indicator
+												// Negative change = improvement (rank decreased)
+												// Positive change = decline (rank increased)
+												$change = $row['rank_change'];
+												$changeAbs = $row['rank_change_abs'];
+												$trendDir = $row['trend_direction'];
+
+												if ($trendDir == 'improving') {
+													// Rank decreased = better position
+													$trendBadge = 'bg-success';
+													$trendIcon = '↑'; // Up arrow for improvement
+													$trendText = "{$changeAbs} {$spTextDashboard['positions']}";
+												} elseif ($trendDir == 'declining') {
+													// Rank increased = worse position
+													$trendBadge = 'bg-danger';
+													$trendIcon = '↓'; // Down arrow for decline
+													$trendText = "{$changeAbs} {$spTextDashboard['positions']}";
+												} else {
+													$trendBadge = 'bg-secondary';
+													$trendIcon = '→';
+													$trendText = 'No change';
+												}
+												?>
+												<span class="badge <?php echo $trendBadge?>" title="From rank <?php echo $row['first_rank']?> to <?php echo $row['last_rank']?>">
+													<?php echo $trendIcon?> <?php echo $trendText?>
+												</span>
+											</td>
 											<td>
 												<?php
 												$score = $row['volatility_score'];
@@ -537,7 +575,7 @@
 					<?php } else { ?>
 						<div class="alert alert-info">
 							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
-							<p class="mb-0 mt-2"><small>Volatility data requires at least 2 ranking checks within the selected period.</small></p>
+							<p class="mb-0 mt-2"><small><?php echo $spTextDashboard['Volatility data requires at least 2 ranking checks within the selected period']?></small></p>
 						</div>
 					<?php } ?>
 				</div>

@@ -10,7 +10,9 @@ UPDATE searchengines SET url = REPLACE(url, '&num=[--num--]', '') WHERE  url LIK
 
 UPDATE searchengines SET url = REPLACE(url, '&as_qdr=all&gws_rd=cr&nfpr=1', '') WHERE  url LIKE '%google%';
 
-ALTER TABLE `searchengines` ADD `updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP; 
+ALTER TABLE `searchengines` ADD `updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL; 
 
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
@@ -27,6 +29,15 @@ VALUES (NULL, 'en', 'keyword', 'Top Keywords', 'Top Keywords', CURRENT_TIMESTAMP
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'label', 'Recent Activity', 'Recent Activity', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'common', 'Rankings', 'Rankings', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'common', 'Range', 'Range', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'common', 'Number', 'Number', CURRENT_TIMESTAMP);
 
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
@@ -185,5 +196,61 @@ VALUES (NULL, 'en', 'guest', 'Cloud Hosted', 'Cloud Hosted', CURRENT_TIMESTAMP);
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'guest', 'Support Development', 'Support Development', CURRENT_TIMESTAMP);
+
+
+-- Dashboard page texts
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Keyword Statistics', 'Keyword Statistics', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Top 3', 'Top 3', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Top 10', 'Top 10', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Not Ranked', 'Not Ranked', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Keyword Distribution by Rank', 'Keyword Distribution by Rank', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Keywords by Ranking Position', 'Keywords by Ranking Position', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Ranking Volatility', 'Ranking Volatility', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Keywords with most ranking fluctuations', 'Keywords with most ranking fluctuations', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Top 10 Most Volatile Keywords', 'Top 10 Most Volatile Keywords', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Volatility Score', 'Volatility Score', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Volatility Score (Standard Deviation)', 'Volatility Score (Standard Deviation)', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Best Rank', 'Best Rank', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Worst Rank', 'Worst Rank', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Avg Rank', 'Avg Rank', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Trend', 'Trend', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Volatility', 'Volatility', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'Volatility data requires at least 2 ranking checks within the selected period', 'Volatility data requires at least 2 ranking checks within the selected period.', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'dashboard', 'positions', 'positions', CURRENT_TIMESTAMP);
 
 

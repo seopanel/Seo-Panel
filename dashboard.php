@@ -38,6 +38,8 @@ $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lan
 $controller->set('spTextPanel', $controller->spTextPanel);
 $controller->spTextHome = $controller->getLanguageTexts('home', $_SESSION['lang_code']);
 $controller->set('spTextHome', $controller->spTextHome);
+$controller->spTextDashboard = $controller->getLanguageTexts('dashboard', $_SESSION['lang_code']);
+$controller->set('spTextDashboard', $controller->spTextDashboard);
 
 if(!empty($_SERVER['REQUEST_METHOD'])) {
 	switch($_REQUEST['sec']) {			

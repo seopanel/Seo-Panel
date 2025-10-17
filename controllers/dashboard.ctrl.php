@@ -33,6 +33,9 @@ class DashboardController extends Controller {
     function showMainDashboard($info=[]) {
         $userId = isLoggedIn();
 
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+
         // Get user websites
         $websiteCtrler = New WebsiteController();
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
@@ -84,26 +87,24 @@ class DashboardController extends Controller {
         // get keyword last generated report date in between $fromTime and $toTime
         $kwResultLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
         $kwResultLastDate = !empty($kwResultLastDate) ? $kwResultLastDate : $toTime;
+        $kwResultPreLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $prevFromTime, $prevToTime);
+        $kwResultPreLastDate = !empty($kwResultPreLastDate) ? $kwResultPreLastDate : $prevToTime;
         
         // Get detailed keyword distribution by rank ranges        
         $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $kwResultLastDate);        
         $this->set('keywordDistribution', $keywordDistribution);
 
         // Get keyword statistics
-        $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $toTime);
+        $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $kwResultLastDate);
         $this->set('keywordStats', $keywordStats);
 
         // Get previous period keyword statistics for comparison
-        $prevKeywordStats = $this->getKeywordStats($websiteId, $prevFromTime, $prevToTime);
+        $prevKeywordStats = $this->getKeywordStats($websiteId, $prevFromTime, $kwResultPreLastDate);
         $this->set('prevKeywordStats', $prevKeywordStats);
 
         // Calculate keyword stats comparison
         $keywordComparison = $this->calculateComparison($keywordStats, $prevKeywordStats);
         $this->set('keywordComparison', $keywordComparison);
-
-        // Get ranking trends data for graph
-        $rankingTrends = $this->getRankingTrends($websiteId, $fromTime, $toTime);
-        $this->set('rankingTrends', $rankingTrends);
 
         // Get website overview stats
         $websiteStats = $this->getWebsiteOverviewStats($websiteId, $fromTime, $toTime);
@@ -116,22 +117,26 @@ class DashboardController extends Controller {
         // Calculate website stats comparison
         $websiteComparison = $this->calculateComparison($websiteStats, $prevWebsiteStats);
         $this->set('websiteComparison', $websiteComparison);
+                
+        // Get ranking volatility stats
+        $rankingVolatility = $this->getRankingVolatility($websiteId, $fromTime, $toTime);
+        $this->set('rankingVolatility', $rankingVolatility);
+        
+        // Get ranking trends data for graph
+        $rankingTrends = $this->getRankingTrends($websiteId, $fromTime, $toTime);
+        $this->set('rankingTrends', $rankingTrends);
 
         // Get top keywords
-        $topKeywords = $this->getTopKeywords($websiteId, $toTime, 10);
+        $topKeywords = $this->getTopKeywords($websiteId, $kwResultLastDate, 15);
         $this->set('topKeywords', $topKeywords);
 
         // Get recent activity
-        $recentActivity = $this->getRecentActivity($websiteId, 10);
+        $recentActivity = $this->getRecentActivity($websiteId, 15);
         $this->set('recentActivity', $recentActivity);
 
         // Get search engine distribution stats
         $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
         $this->set('searchEngineStats', $searchEngineStats);
-
-        // Get ranking volatility stats
-        $rankingVolatility = $this->getRankingVolatility($websiteId, $fromTime, $toTime);
-        $this->set('rankingVolatility', $rankingVolatility);
 
         $this->render('dashboard/main');
     }
@@ -150,6 +155,22 @@ class DashboardController extends Controller {
             return $result['last_report_date'];
         }
 
+        return null;
+    }
+    
+    function __getWebsiteLastReportGeneratedDate($websiteId, $fromTime, $toTime) {
+        // Find the latest date within the date range where keywords have results with rank > 0
+        $sql = "SELECT MAX(rr.result_date) as last_report_date
+                FROM rankresults rr
+                WHERE rr.website_id=" . intval($websiteId) . "
+                    AND rr.result_date BETWEEN '$fromTime' AND '$toTime'
+                    AND rr.domain_authority > 0";
+        
+        $result = $this->db->select($sql, true);
+        if ($result && !empty($result['last_report_date'])) {
+            return $result['last_report_date'];
+        }
+        
         return null;
     }
 
@@ -249,7 +270,8 @@ class DashboardController extends Controller {
         $sql = "SELECT google, msn
                 FROM backlinkresults
                 WHERE website_id=" . intval($websiteId) . "
-                ORDER BY result_date DESC, result_time DESC LIMIT 1";
+                ORDER BY result_date DESC
+                LIMIT 1";
         $result = $this->db->select($sql, true);
         $stats['backlinks'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
         $stats['google_backlinks'] = $result['google'] ?? 0;
@@ -259,7 +281,8 @@ class DashboardController extends Controller {
         $sql = "SELECT google, msn
                 FROM saturationresults
                 WHERE website_id=" . intval($websiteId) . "
-                ORDER BY result_date DESC, result_time DESC LIMIT 1";
+                ORDER BY result_date DESC
+                LIMIT 1";
         $result = $this->db->select($sql, true);
         $stats['indexed_pages'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
         $stats['google_indexed'] = $result['google'] ?? 0;
@@ -269,7 +292,8 @@ class DashboardController extends Controller {
         $sql = "SELECT moz_rank, domain_authority, page_authority
                 FROM rankresults
                 WHERE website_id=" . intval($websiteId) . "
-                ORDER BY result_date DESC, result_time DESC LIMIT 1";
+                ORDER BY result_date DESC 
+                LIMIT 1";
         $result = $this->db->select($sql, true);
         $stats['mozrank'] = $result['moz_rank'] ?? 0;
         $stats['domain_authority'] = $result['domain_authority'] ?? 0;
@@ -357,19 +381,40 @@ class DashboardController extends Controller {
     }
 
     // Get ranking volatility - keywords with most rank changes
+    // Group by both keyword and search engine to track volatility per search engine
     private function getRankingVolatility($websiteId, $fromTime, $toTime) {
-        // Get rank changes for each keyword within the period
-        $sql = "SELECT k.id, k.name,
+        // Get rank changes for each keyword per search engine within the period
+        // Also get first and last rank to determine trend direction
+        $sql = "SELECT k.id as keyword_id, k.name as keyword_name,
+                    se.id as searchengine_id, se.domain as search_engine,
                     MAX(sr.rank) as max_rank,
                     MIN(CASE WHEN sr.rank > 0 THEN sr.rank END) as min_rank,
                     COUNT(DISTINCT sr.result_date) as check_count,
                     AVG(CASE WHEN sr.rank > 0 THEN sr.rank END) as avg_rank,
-                    STDDEV(CASE WHEN sr.rank > 0 THEN sr.rank END) as rank_stddev
+                    STDDEV(CASE WHEN sr.rank > 0 THEN sr.rank END) as rank_stddev,
+                    (SELECT sr2.rank
+                     FROM searchresults sr2
+                     WHERE sr2.keyword_id = k.id
+                        AND sr2.searchengine_id = se.id
+                        AND sr2.result_date BETWEEN '$fromTime' AND '$toTime'
+                        AND sr2.rank > 0
+                     ORDER BY sr2.result_date ASC
+                     LIMIT 1) as first_rank,
+                    (SELECT sr3.rank
+                     FROM searchresults sr3
+                     WHERE sr3.keyword_id = k.id
+                        AND sr3.searchengine_id = se.id
+                        AND sr3.result_date BETWEEN '$fromTime' AND '$toTime'
+                        AND sr3.rank > 0
+                     ORDER BY sr3.result_date DESC
+                     LIMIT 1) as last_rank
                 FROM keywords k
                     INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
                 WHERE k.website_id=" . intval($websiteId) . "
                     AND sr.result_date BETWEEN '$fromTime' AND '$toTime'
-                GROUP BY k.id, k.name
+                    AND sr.rank > 0
+                GROUP BY k.id, k.name, se.id, se.domain
                 HAVING check_count >= 2 AND min_rank > 0
                 ORDER BY rank_stddev DESC, max_rank DESC
                 LIMIT 10";
@@ -379,13 +424,32 @@ class DashboardController extends Controller {
         $volatilityData = [];
         if ($results) {
             foreach ($results as $row) {
+                // Calculate rank change: negative means improvement (rank went down in number)
+                // positive means decline (rank went up in number)
+                $rankChange = intval($row['last_rank']) - intval($row['first_rank']);
+
+                // Determine if overall trend is improving or declining
+                // Improvement = rank number decreased (e.g., 14 -> 4)
+                // Decline = rank number increased (e.g., 4 -> 14)
+                $trendDirection = 'neutral';
+                if ($rankChange < 0) {
+                    $trendDirection = 'improving'; // Rank number decreased = better position
+                } elseif ($rankChange > 0) {
+                    $trendDirection = 'declining'; // Rank number increased = worse position
+                }
+
                 $volatilityData[] = [
-                    'keyword' => $row['name'],
-                    'rank_change' => intval($row['max_rank']) - intval($row['min_rank']),
+                    'keyword' => $row['keyword_name'],
+                    'search_engine' => formatUrl($row['search_engine']),
+                    'rank_change' => $rankChange,
+                    'rank_change_abs' => abs($rankChange),
                     'max_rank' => intval($row['max_rank']),
                     'min_rank' => intval($row['min_rank']),
+                    'first_rank' => intval($row['first_rank']),
+                    'last_rank' => intval($row['last_rank']),
                     'avg_rank' => round($row['avg_rank'], 1),
-                    'volatility_score' => round($row['rank_stddev'], 2)
+                    'volatility_score' => round($row['rank_stddev'], 2),
+                    'trend_direction' => $trendDirection
                 ];
             }
         }
