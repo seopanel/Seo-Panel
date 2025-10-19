@@ -17,7 +17,7 @@
     <input type="hidden" name="phpsessid" value="<?php echo $phpsessid?>">
 <?php }?>
 
-<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
+<table class="list">
 	<tr class="listHead">
 		<td class="left" style="width: 30%"><?php echo $spTextTools['directory-submission']?></td>
 		<td class="right">&nbsp;</td>
@@ -46,10 +46,10 @@
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Reciprocal Link']?>:</td>
 			<td class="td_right_col">
-				<input type="text" name="reciprocal_url" value="<?php echo $reciprocalUrl?>" style="width: 300px;">
+				<input type="text" name="reciprocal_url" value="<?php echo $reciprocalUrl?>" class="form-control">
 			</td>
 		</tr>
-	<?php } ?>	
+	<?php } ?>
 	<?php if(!empty($captchaUrl)){ ?>
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spTextDir['Enter the code shown']?>:</td>
@@ -64,7 +64,7 @@
 				    $captchaCode = "";
 				}
 				?>
-				<input type="text" name="<?php echo $dirInfo['cptcha_col']?>" value="<?php echo $captchaCode;?>" id='captcha'>
+				<input type="text" name="<?php echo $dirInfo['cptcha_col']?>" value="<?php echo $captchaCode;?>" id='captcha' class="form-control">
 				<p><img src='<?php echo $captchaUrl?>'></p>
 				<?php echo $captchaCodeError?>
 			</td>
@@ -79,19 +79,19 @@
 		<td class="right"></td>
 	</tr>
 </table>
-<table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
+<table class="actionSec float-right mt-2">
 	<tr>
-    	<td style="padding-top: 6px;text-align:right;">
-    		<a onclick="scriptDoLoad('directories.php', 'content')" href="javascript:void(0);" class="actionbut">
+    	<td>
+    		<a onclick="scriptDoLoad('directories.php', 'content')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
-         	<a onclick="scriptDoLoad('directories.php?sec=skip&website_id=<?php echo $websiteId?>&dir_id=<?php echo $dirInfo['id']?>', 'subcontent')" href="javascript:void(0);" class="actionbut">
+         	<a onclick="scriptDoLoad('directories.php?sec=skip&website_id=<?php echo $websiteId?>&dir_id=<?php echo $dirInfo['id']?>', 'subcontent')" href="javascript:void(0);" class="btn btn-secondary">
          		<?php echo $spText['button']['Skip']?>
          	</a>&nbsp;
-         	<a onclick="scriptDoLoad('directories.php?sec=reload&website_id=<?php echo $websiteId?>&dir_id=<?php echo $dirInfo['id']?>', 'subcontent')" href="javascript:void(0);" class="actionbut">
+         	<a onclick="scriptDoLoad('directories.php?sec=reload&website_id=<?php echo $websiteId?>&dir_id=<?php echo $dirInfo['id']?>', 'subcontent')" href="javascript:void(0);" class="btn btn-info">
          		<?php echo $spText['button']['Reload']?>
          	</a>&nbsp;
-         	<a onclick="checkSubmitInfo('directories.php', 'submissionForm', 'subcontent', '<?php echo $dirInfo['category_col']?>')" href="javascript:void(0);" class="actionbut" id="dir_submit_but">
+         	<a onclick="checkSubmitInfo('directories.php', 'submissionForm', 'subcontent', '<?php echo $dirInfo['category_col']?>')" href="javascript:void(0);" class="btn btn-primary" id="dir_submit_but">
          		<?php echo $spText['button']['Submit']?>
          	</a>
     	</td>

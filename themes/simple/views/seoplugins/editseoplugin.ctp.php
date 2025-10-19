@@ -3,29 +3,34 @@
 <input type="hidden" name="sec" value="update"/>
 <input type="hidden" name="id" value="<?php echo $post['id']?>"/>
 
-<table id="cust_tab" >
-	<tr class="form_head">
-		<th><?php echo $spTextPlugin['Edit Seo Plugin']?></th>
-		<th>&nbsp;</th>
+<table class="list">
+	<tr class="listHead">
+		<td class="left" width='30%'><?php echo $spTextPlugin['Edit Seo Plugin']?></td>
+		<td class="right">&nbsp;</td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spTextPlugin['Plugin Name']?>:</td>
-		<td><input type="text" name="plugin_name" value="<?php echo $post['label']?>"><?php echo $errMsg['plugin_name']?></td>
+	<tr class="white_row">
+		<td class="td_left_col"><?php echo $spTextPlugin['Plugin Name']?>:</td>
+		<td class="td_right_col">
+			<input type="text" name="plugin_name" value="<?php echo $post['label']?>" class="form-control">
+			<?php echo $errMsg['plugin_name']?>
+		</td>
 	</tr>
-	<tr class="form_data">
-		<td><?php echo $spText['common']['Priority']?>:</td>
-		<td><input type="text" name="priority" value="<?php echo $post['priority']?>"><?php echo $errMsg['priority']?></td>
+	<tr class="blue_row">
+		<td class="td_left_col"><?php echo $spText['common']['Priority']?>:</td>
+		<td class="td_right_col">
+			<input type="text" name="priority" value="<?php echo $post['priority']?>" class="form-control">
+			<?php echo $errMsg['priority']?>
+		</td>
 	</tr>
 </table>
-<br>
-<table width="100%" class="actionSec">
+<table class="actionSec float-right mt-2">
 	<tr>
-    	<td style="padding-top: 6px;text-align:right;">
-    		<a onclick="scriptDoLoad('seo-plugins-manager.php', 'content')" href="javascript:void(0);" class="actionbut">
+    	<td>
+    		<a onclick="scriptDoLoad('seo-plugins-manager.php', 'content')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
          	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('seo-plugins-manager.php', 'updateplugin', 'content')"; ?>
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spText['button']['Proceed']?>
          	</a>
     	</td>

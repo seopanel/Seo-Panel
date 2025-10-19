@@ -1,4 +1,4 @@
-<select name="website_id" id="website_id" style="width:150px;" onchange="<?php echo $onChange?>">
+<select name="website_id" id="website_id" style="width:150px;" onchange="<?php echo $onChange?>" class="custom-select">
 	<?php if($websiteNull){ ?>
 		<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 	<?php } ?>

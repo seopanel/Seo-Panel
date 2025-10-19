@@ -1,6 +1,6 @@
 <div class="col-sm-12">
 
-	<ul class="nav nav-tabs" role="tablist">
+	<ul class="nav nav-tabs nav-tabs-sm" role="tablist">
     	<?php
     	$i = 0;
     	foreach ($seList as $seInfo) {

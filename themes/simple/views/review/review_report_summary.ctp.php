@@ -30,15 +30,15 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	    ?>
 		<form id='search_form'>
 		<?php $submitLink = "scriptDoLoadPost('$scriptName', 'search_form', 'content', '&sec=reportSummary')";?>
-		<table width="100%" class="search">
+		<table class="search">
 			<tr>
 				<th><?php echo $spText['common']['Name']?>: </th>
 				<td>
-					<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>">
+					<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
 				</td>
-				<th width="100px"><?php echo $spText['common']['Website']?>: </th>
-				<td width="160px">
-					<select name="website_id" id="website_id" style='width:100px;' onchange="<?php echo $submitLink?>">
+				<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
+				<td>
+					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>" class="custom-select">
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
@@ -49,9 +49,9 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 						<?php }?>
 					</select>
 				</td>
-				<th><?php echo $spText['label']['Type']?>:</th>
+				<th class="pl-4"><?php echo $spText['label']['Type']?>:</th>
 				<td>
-					<select name="type" onchange="<?php echo $submitLink?>">
+					<select name="type" onchange="<?php echo $submitLink?>" class="custom-select">
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($serviceList as $serviceName => $serviceInfo){?>
 							<?php if($serviceName == $searchInfo['type']){?>
@@ -63,17 +63,17 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 					</select>
 					<?php echo $errMsg['service_name']?>
 				</td>
-				<th width="100px;"><?php echo $spText['common']['Period']?>:</th>
-	    		<td width="236px">
-	    			<input type="text" value="<?php echo $fromTime?>" name="from_time"/>
-	    			<input type="text" value="<?php echo $toTime?>" name="to_time"/>
-        			<script>
-        			$(function() {
-        				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
-        			});
-        		  	</script>
-	    		</td>
-				<td><a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="actionbut"><?php echo $spText['button']['Search']?></a></td>
+				<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
+				<td>
+					<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+					<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+					<script type="text/javascript">
+					$(function() {
+						$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
+					});
+					</script>
+				</td>
+				<td style="text-align: center;"><a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="btn btn-secondary"><?php echo $spText['button']['Search']?></a></td>
 			</tr>
 		</table>
 		</form>

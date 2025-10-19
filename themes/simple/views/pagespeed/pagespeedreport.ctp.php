@@ -1,15 +1,15 @@
-<?php 
+<?php
 echo showSectionHead($spTextTools['PageSpeed Reports']);
 $webUrl = "";
 ?>
 <form id='search_form'>
-<table width="100%" class="search">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" id="website_id" style='width:190px;' onchange="scriptDoLoadPost('pagespeed.php', 'search_form', 'content', '&sec=reports')">
+			<select name="website_id" id="website_id" class="custom-select" onchange="scriptDoLoadPost('pagespeed.php', 'search_form', 'content', '&sec=reports')">
 				<?php foreach($websiteList as $websiteInfo){?>
-					<?php 
+					<?php
 					if($websiteInfo['id'] == $websiteId){
 						$webUrl = $websiteInfo['url'];
 						?>
@@ -20,17 +20,17 @@ $webUrl = "";
 				<?php }?>
 			</select>
 		</td>
-		<th><?php echo $spText['common']['Period']?>:</th>
+		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 		<td>
-			<input type="text" value="<?php echo $fromTime?>" name="from_time"/> 
-			<input type="text" value="<?php echo $toTime?>" name="to_time"/>
+			<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+			<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
 			<script type="text/javascript">
 			$(function() {
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
 			});
 		  	</script>
 		</td>
-		<td colspan="2"><a href="javascript:void(0);" onclick="scriptDoLoadPost('pagespeed.php', 'search_form', 'content', '&sec=reports')" class="actionbut"><?php echo $spText['button']['Show Records']?></a></td>
+		<td style="text-align: center;"><a href="javascript:void(0);" onclick="scriptDoLoadPost('pagespeed.php', 'search_form', 'content', '&sec=reports')" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a></td>
 	</tr>
 </table>
 </form>
@@ -38,7 +38,9 @@ $webUrl = "";
 <?php
 if(empty($websiteId)){
 	?>
-	<p class='note error'><?php echo $spText['common']['No Records Found']?>!</p>
+	<div class="alert alert-danger">
+		<i class="fas fa-exclamation-circle me-2"></i><?php echo $spText['common']['No Records Found']?>!
+	</div>
 	<?php
 	exit;
 }

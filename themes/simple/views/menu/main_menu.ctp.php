@@ -2,18 +2,14 @@
 $userInfo = @Session::readSession('userInfo');
 $userType = empty($userInfo['userType']) ? "guest" : $userInfo['userType'];
 $homeClass = "";
-$supportClass = "";
-$loginClass = "";	
+$loginClass = "";
 $registerClass = "";
 $pricingClass = "";
 $blogClass = "";
 $adminClass = "";
 $seoToolsClass = "";
 $seoPluginsClass = "";
-switch($this->menu){
-	case "support":
-		$supportClass = "active";
-		break;			
+switch($this->menu){			
 	
 	case "register":
 		$registerClass = "active";
@@ -98,12 +94,7 @@ if (!empty($menuInfo['item_list'])) {
 			<i class="fas fa-wrench"></i> <?php echo $spText['common']['Plugins']?>
 		</a>
 	</li>
-	<li class="nav-item <?php echo $supportClass?>">
-		<a class="nav-link" href="<?php echo SP_WEBPATH?>/support.php">
-			<i class="fas fa-question"></i> <?php echo $spText['common']['Support']?>
-		</a>
-	</li>
-	
+
 	<?php if (SP_DEMO) {?>
 		<li class="nav-item">
 			<a class="nav-link" href="<?php echo SP_DOWNLOAD_LINK?>" target="_blank"><i class="fas fa-download"></i> <?php echo $spText['label']['Download']?></a>
