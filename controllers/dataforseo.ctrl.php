@@ -105,7 +105,7 @@ class DataForSEOController extends Controller {
         return $seDomianCat;
     }    
     
-    function doSERPAPICall($keywordInfo, $seachEngine, $cat='organic', $subCat='live', $dataType='regular') {
+    function doSERPAPICall($keywordInfo, $seachEngine, $cat='lite', $subCat='live', $dataType='advanced') {
         $connResult = [
             'status' => false,
             'message' => $_SESSION['text']['common']['Internal error occured'],
