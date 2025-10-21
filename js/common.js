@@ -409,9 +409,8 @@ function urlencode(str) {
 }
 
 function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
-	accessId = $('input:text[name=SP_MOZ_API_ACCESS_ID]').val();
-	secretKey = $('input:text[name=SP_MOZ_API_SECRET]').val();
-	scriptArgs += "&access_id=" + accessId + "&secret_key=" + secretKey;
+	apiToken = $('input:text[name=SP_MOZ_API_SECRET]').val();
+	scriptArgs += "&api_token=" + apiToken;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 

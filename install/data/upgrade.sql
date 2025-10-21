@@ -14,6 +14,8 @@ ALTER TABLE `searchengines` ADD `updated` DATETIME NOT NULL DEFAULT CURRENT_TIME
 
 ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL; 
 
+update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
+
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'keyword', 'Ranking Trends', 'Ranking Trends', CURRENT_TIMESTAMP);

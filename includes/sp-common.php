@@ -211,7 +211,7 @@ function formatDate($date) {
 
 function addHttpToUrl($url) {
 	if(!stristr($url, 'http://') && !stristr($url, 'https://')) {
-		$url = 'http://'.trim($url);
+		$url = 'https://'.trim($url);
 	}
 	
 	return trim($url);
@@ -990,5 +990,16 @@ function showStatusBadge($statusVal, $badgeType="") {
     
     $statusHtml = "<span class='$statusClass py-2 px-3 text-light'>$statusLabel</span>";
     return  $statusHtml;
+}
+
+function generateUuidV4() {
+    return sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000, // version 4
+        mt_rand(0, 0x3fff) | 0x8000, // variant
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
 }
 ?>

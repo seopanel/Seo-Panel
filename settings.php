@@ -83,23 +83,21 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showTestEmailSettings();
 			break;
 		
-		case "checkMozCon":
-			
-			if (empty($_GET['access_id']) || empty($_GET['secret_key'])) {
+		case "checkMozCon":			
+			if (empty($_GET['api_token'])) {
 				print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
 			} else {
-			
-				include_once(SP_CTRLPATH."/rank.ctrl.php");
-				$urlList = array("http://moz.com");
-				$mozCtrler = new MozController();
-				list($rankInfo, $logInfo) = $mozCtrler->__getMozRankInfo($urlList, $_GET['access_id'], $_GET['secret_key'], true);
-				
-				// if error occured
-				if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
-					print "<span class='error'>{$logInfo['log_message']}</span>";
-				} else {
-					print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
-				}
+			    $mozCtrler = new MozController();
+			    list($usageData, $logInfo) = $mozCtrler->__getMozUsageData($_GET['api_token'], true);
+			    
+			    // if error occured
+			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
+			        print "<span class='error'>{$logInfo['log_message']}</span>";
+			    } else {
+			        $rowsAllotted = $usageData['quota']['allotted'] ?? 0;
+			        $rowsConsumed = $usageData['quota']['used'] ?? 0;
+			        print "<span class='success'>{$_SESSION['text']['label']['Success']}<br>Monthly Token Usage: <b>$rowsConsumed/$rowsAllotted</b></span>";
+			    }
 			}
 			
 			break;

@@ -311,11 +311,8 @@ class DataForSEOController extends Controller {
             return $crawlResult;
         }
         
-        $countryCtrl = new CountryController();
-        $countryList = $countryCtrl->__getAllCountryAsList();
-        $keywordInfo['location_name'] = $countryList[SP_DEFAULT_COUNTRY];
-        
-        $result = $this->doSERPAPICall($keywordInfo, $keywordInfo['engine']);
+        $keywordInfo['depth'] = 10;
+        $result = $this->doSERPAPICall($keywordInfo, $keywordInfo['engine'], "organic", "live", "regular");
         
         // check crawl status
         if(!empty($result['status'])) {
