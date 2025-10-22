@@ -105,7 +105,7 @@ class DataForSEOController extends Controller {
         return $seDomianCat;
     }    
     
-    function doSERPAPICall($keywordInfo, $seachEngine, $cat='lite', $subCat='live', $dataType='advanced') {
+    function doSERPAPICall($keywordInfo, $seachEngine, $cat='organic', $subCat='live', $dataType='regular') {
         $connResult = [
             'status' => false,
             'message' => $_SESSION['text']['common']['Internal error occured'],
@@ -126,6 +126,12 @@ class DataForSEOController extends Controller {
             if (stristr($seachEngine, ".")) {
                 $searchInfo['se_domain'] = $seachEngine;
             }
+        }
+        
+        // if google use dataforseo lite method
+        if (($seDomianCat == "google") && ($searchInfo['depth'] > 10)) {
+            $cat = "lite";
+            $dataType = "advanced";
         }
         
         try {
