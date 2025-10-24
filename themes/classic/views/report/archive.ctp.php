@@ -239,7 +239,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
     			<th id="head" colspan="2"><?php echo $spTextHome['Directory Submission']?></th>
     		</tr>		
     		<tr>
-    			<th>Moz</th>
+    			<th><?php echo $spText['common']['Spam Score']?></th>
     			<th><?php echo $spText['common']['Domain Authority']?></th>
     			<th><?php echo $spText['common']['Page Authority']?></th>
     			<th>Google</th>
@@ -257,7 +257,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
 				foreach($websiteRankList as $websiteInfo){
 					$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
     				$timeArg = "&from_time=$rangeFromTime&to_time=$toTime";
-    				$googleRankLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['mozrank']);
+    				$spamScoreLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['spam_score']);
     				$daLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['domain_authority']);
     				$paLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['page_authority']);
     				$googleBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['google']['backlinks']);
@@ -273,7 +273,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
     					<td>
     						<a href="javascript:void(0)"><?php echo $websiteInfo['name'];?></a>
     					</td>
-    					<td><?php echo $googleRankLink;?></td>
+    					<td><?php echo $spamScoreLink;?></td>
 						<td><?php echo $daLink; ?></td>
 						<td><?php echo $paLink; ?></td>
 						<td><?php echo $googleBackLInk; ?></td>

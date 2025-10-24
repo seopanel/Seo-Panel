@@ -1002,4 +1002,72 @@ function generateUuidV4() {
         mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
     );
 }
+
+/**
+ * Get color class for spam score based on risk level
+ * @param float $score Spam score (0-100)
+ * @return string CSS class name
+ */
+function getSpamScoreColor($score) {
+    $score = floatval($score);
+    if ($score <= 30) {
+        return 'success'; // Green - Low risk
+    } elseif ($score <= 60) {
+        return 'warning'; // Yellow/Orange - Medium risk
+    } else {
+        return 'danger'; // Red - High risk
+    }
+}
+
+/**
+ * Get color class for Domain/Page Authority based on strength
+ * @param float $score DA or PA score (0-100)
+ * @return string CSS class name
+ */
+function getAuthorityColor($score) {
+    $score = floatval($score);
+    if ($score <= 20) {
+        return 'danger'; // Red - Weak
+    } elseif ($score <= 50) {
+        return 'warning'; // Yellow - Moderate
+    } elseif ($score <= 70) {
+        return 'info'; // Blue - Strong
+    } else {
+        return 'success'; // Green - Very strong
+    }
+}
+
+/**
+ * Get spam score risk level label
+ * @param float $score Spam score (0-100)
+ * @return string Risk level label
+ */
+function getSpamScoreLabel($score) {
+    $score = floatval($score);
+    if ($score <= 30) {
+        return 'Low Risk';
+    } elseif ($score <= 60) {
+        return 'Medium Risk';
+    } else {
+        return 'High Risk';
+    }
+}
+
+/**
+ * Get authority strength label
+ * @param float $score DA or PA score (0-100)
+ * @return string Strength label
+ */
+function getAuthorityLabel($score) {
+    $score = floatval($score);
+    if ($score <= 20) {
+        return 'Weak';
+    } elseif ($score <= 50) {
+        return 'Moderate';
+    } elseif ($score <= 70) {
+        return 'Strong';
+    } else {
+        return 'Very Strong';
+    }
+}
 ?>

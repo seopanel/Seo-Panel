@@ -1222,7 +1222,7 @@ class ReportController extends Controller {
 				# rank reports
 				$report = $rankCtrler->__getWebsiteRankReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
-				$listInfo['mozrank'] = empty($report['moz_rank']) ? "-" : $report['moz_rank']." ".$report['rank_diff_moz'];
+				$listInfo['spam_score'] = empty($report['spam_score']) ? "-" : $report['spam_score']." ".$report['rank_diff_spam_score'];
 				$listInfo['domain_authority'] = empty($report['domain_authority']) ? "-" : $report['domain_authority']." ".$report['rank_diff_domain_authority'];
 				$listInfo['page_authority'] = empty($report['page_authority']) ? "-" : $report['page_authority']." ".$report['rank_diff_page_authority'];
 				

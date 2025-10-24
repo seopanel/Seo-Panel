@@ -104,7 +104,7 @@ class AuditorComponent extends Controller{
             if ($projectInfo['check_pr']) {
             	$mozCtrler = $this->createController('Moz');
             	$mozRankList = $mozCtrler->__getMozRankInfo(array($reportUrl));
-            	$reportInfo['pagerank'] = !empty($mozRankList[0]['moz_rank']) ? $mozRankList[0]['moz_rank'] : 0;
+            	$reportInfo['spam_score'] = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
             	$reportInfo['page_authority'] = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
             }
             

@@ -289,13 +289,13 @@ class DashboardController extends Controller {
         $stats['msn_indexed'] = $result['msn'] ?? 0;
 
         // Get Moz rank (latest)
-        $sql = "SELECT moz_rank, domain_authority, page_authority
+        $sql = "SELECT spam_score, domain_authority, page_authority
                 FROM rankresults
                 WHERE website_id=" . intval($websiteId) . "
-                ORDER BY result_date DESC 
+                ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
-        $stats['mozrank'] = $result['moz_rank'] ?? 0;
+        $stats['spam_score'] = $result['spam_score'] ?? 0;
         $stats['domain_authority'] = $result['domain_authority'] ?? 0;
         $stats['page_authority'] = $result['page_authority'] ?? 0;
 
@@ -370,10 +370,17 @@ class DashboardController extends Controller {
                 $percentChange = ($currentValue > 0) ? 100 : 0;
             }
 
+            // For spam_score, lower is better, so invert the direction
+            if ($key === 'spam_score') {
+                $direction = $diff > 0 ? 'down' : ($diff < 0 ? 'up' : 'neutral');
+            } else {
+                $direction = $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral');
+            }
+
             $comparison[$key] = [
                 'diff' => $diff,
                 'percent' => $percentChange,
-                'direction' => $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral')
+                'direction' => $direction
             ];
         }
 

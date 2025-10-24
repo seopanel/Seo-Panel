@@ -439,8 +439,8 @@ class CronController extends Controller {
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
 		$mozCtrler = new MozController();
 		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
-		
-		$websiteInfo['moz_rank'] = !empty($mozRankInfo[0]['moz_rank']) ? $mozRankInfo[0]['moz_rank'] : 0;
+
+		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
 		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;$mozRankInfo[0]['page_authority'];
 		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;$mozRankInfo[0]['domain_authority'];
 		$rankCtrler->saveRankResults($websiteInfo, true);			
