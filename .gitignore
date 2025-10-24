@@ -7,5 +7,6 @@
 *.sublime-project
 plugins/*
 themes/odbox*
+themes/business/
 tmp/*
 config/sp-config.php
