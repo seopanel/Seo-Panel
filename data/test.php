@@ -1,5 +1,5 @@
 <?php
-$data = array(
+$MozUrlMetricsData = array(
     "results_by_site" => array(
         array(
             "site_query" => array(
@@ -134,6 +134,4 @@ $data = array(
     ),
     "errors_by_site" => array()
 );
-
-print_r($data);
 ?>

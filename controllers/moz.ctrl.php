@@ -89,10 +89,10 @@ class MozController extends Controller {
     }
     
     // function to get moz url metrics using JSON-RPC API
-    function __getMozUrlMetrics($url, $returnLog = false, $scope = 'page') {
+    function __getMozRankInfo($urlList, $returnLog=false, $scope='url') {
         $mozUrlMetrics = array();
         $crawlInfo = array();
-        if (empty($url)) {
+        if (empty($urlList)) {
             return $returnLog ? array($mozUrlMetrics, []) : $mozUrlMetrics;
         }
 
@@ -106,16 +106,20 @@ class MozController extends Controller {
         $requestData = array(
             'jsonrpc' => '2.0',
             'id' => $uniqueId,
-            'method' => 'data.site.metrics.fetch',
+            'method' => 'data.site.metrics.fetch.multiple',
             'params' => array(
                 'data' => array(
-                    'site_query' => array(
-                        'query' => $url,
-                        'scope' => $scope // 'page', 'domain', or 'subdomain'
-                    )
+                    'site_queries' => [],
                 )
             )
         );
+        
+        foreach ($urlList as $url) {
+            $requestData['params']['data']['site_queries'][] = [
+                'query' => $url,
+                'scope' => $scope // 'url', 'domain', or 'subdomain'
+            ];
+        }
 
         // call api using spider
         $spider = new Spider();
@@ -130,8 +134,12 @@ class MozController extends Controller {
             $response = json_decode($ret['page'], TRUE);
 
             // Check for JSON-RPC success response
-            if (isset($response['result'])) {
-                $mozUrlMetrics = $response['result'];
+            if (isset($response['results_by_site'])) {
+                $rankList = !empty($response['results_by_site']) ? $response['results_by_site'] : [];
+                foreach ($rankList as $rankInfo) {
+                    $mozUrlMetrics[] = $rankInfo['site_metrics'];
+                }
+                
                 $crawlInfo['crawl_status'] = 1;
                 $crawlInfo['log_message'] = "moz url_metrics api call success via JSON-RPC.";
             } elseif (isset($response['error'])) {
@@ -147,7 +155,7 @@ class MozController extends Controller {
         } else {
             $crawlInfo['crawl_status'] = 0;
             $crawlInfo['log_message'] = $ret['errmsg'];
-        }
+        }        
 
         // update crawl log
         $crawlLogCtrl = new CrawlLogController();
@@ -159,7 +167,7 @@ class MozController extends Controller {
     }
 	
 	// function to get moz rank
-	function __getMozRankInfo ($urlList = array(), $accessID = "", $secretKey = "", $returnLog = false) {
+	function __getMozRankInfoOld ($urlList = array(), $accessID = "", $secretKey = "", $returnLog = false) {
 		$mozRankList = array();
 		
 		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return $mozRankList;
