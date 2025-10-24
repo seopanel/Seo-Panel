@@ -83,28 +83,26 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showTestEmailSettings();
 			break;
 		
-		case "checkMozCon":			
+		case "checkMozCon":
 			if (empty($_GET['api_token'])) {
-				print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);
 			} else {
 			    $mozCtrler = new MozController();
 			    list($usageData, $logInfo) = $mozCtrler->__getMozUsageData($_GET['api_token'], true);
 			    
 			    // if error occured
 			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
-			        print "<span class='error'>{$logInfo['log_message']}</span>";
+			        showErrorMsg($logInfo['log_message']);
 			    } else {
 			        $rowsAllotted = $usageData['quota']['allotted'] ?? 0;
 			        $rowsConsumed = $usageData['quota']['used'] ?? 0;
-			        print "<span class='success'>{$_SESSION['text']['label']['Success']}<br>Monthly Token Usage: <b>$rowsConsumed/$rowsAllotted</b></span>";
+			        showSuccessMsg("{$_SESSION['text']['label']['Success']}<br>Monthly Token Usage: <b>$rowsConsumed/$rowsAllotted</b>");
 			    }
 			}
 			
 			break;
 		
 		case "checkGoogleAPI":
-			
-			
 			if (empty($_GET['api_key'])) {
 				print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
 			} else {
@@ -126,7 +124,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "checkDataForSEOAPI":
-		    
 		    if (empty($_GET['api_login']) || empty($_GET['api_password'])) {
 		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
 		    } else {

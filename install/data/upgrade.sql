@@ -255,4 +255,7 @@ VALUES (NULL, 'en', 'dashboard', 'Volatility data requires at least 2 ranking ch
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'dashboard', 'positions', 'positions', CURRENT_TIMESTAMP);
 
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'common', 'API Token', 'API Token', CURRENT_TIMESTAMP);
+
 
