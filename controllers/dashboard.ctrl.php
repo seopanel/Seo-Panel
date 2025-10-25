@@ -266,16 +266,16 @@ class DashboardController extends Controller {
     private function getWebsiteOverviewStats($websiteId, $fromTime, $toTime) {
         $stats = [];
 
-        // Get backlinks count (latest - sum of google and msn)
-        $sql = "SELECT google, msn
+        // Get backlinks count (latest - external_pages_to_page)
+        $sql = "SELECT external_pages_to_page, external_pages_to_root_domain
                 FROM backlinkresults
                 WHERE website_id=" . intval($websiteId) . "
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
-        $stats['backlinks'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
-        $stats['google_backlinks'] = $result['google'] ?? 0;
-        $stats['msn_backlinks'] = $result['msn'] ?? 0;
+        $stats['backlinks'] = $result['external_pages_to_page'] ?? 0;
+        $stats['external_pages_to_page'] = $result['external_pages_to_page'] ?? 0;
+        $stats['external_pages_to_root_domain'] = $result['external_pages_to_root_domain'] ?? 0;
 
         // Get indexed pages (latest - sum of google and msn)
         $sql = "SELECT google, msn

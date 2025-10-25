@@ -44,8 +44,8 @@
 <table width="100%" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
-		<td>Google</td>
-		<td class="right">Bing</td>
+		<td><?php echo $spTextBack['Backlink Count']?></td>
+		<td class="right"><?php echo $spTextBack['Domain Backlink Count']?></td>
 	</tr>
 	<?php
 	$colCount = 3; 
@@ -64,8 +64,8 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['google']?>" target="_blank"><?php echo $listInfo['google'].'</a> '. $listInfo['rank_diff_google']?></td>
-				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['msn']?>" target="_blank"><?php echo $listInfo['msn'].'</a> '. $listInfo['rank_diff_msn']?></td>
+				<td class='td_br_right' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_page'].' '. $listInfo['rank_diff_external_pages_to_page']?></td>
+				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_root_domain'].' '. $listInfo['rank_diff_external_pages_to_root_domain']?></td>
 			</tr>
 			<?php
 			$i++;

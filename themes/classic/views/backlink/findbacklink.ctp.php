@@ -1,8 +1,8 @@
 <table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Url']?></td>
-		<td>Google</td>
-		<td class="right">Bing</td>
+		<td><?php echo $spTextBack['Backlink Count']?></td>
+		<td class="right"><?php echo $spTextBack['Domain Backlink Count']?></td>
 	</tr>
 	<?php
 	$colCount = 3; 
@@ -26,14 +26,14 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo $url?></td>
-				<td class="td_br_right" width="<?php echo $tdWidth?>" id='googlerank<?php echo $i?>'>
+				<td class="td_br_right" width="<?php echo $tdWidth?>" id='external_pages_to_page<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=backlink&engine=google&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'external_pages_to_page<?php echo $i?>', 'sec=backlink&engine=external_pages_to_page&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
-				<td class="<?php echo $rightBotClass?>" width="<?php echo $tdWidth?>" id='msnrank<?php echo $i?>'>
+				<td class="<?php echo $rightBotClass?>" width="<?php echo $tdWidth?>" id='external_pages_to_root_domain<?php echo $i?>'>
 					<script type="text/javascript">
-						scriptDoLoadPost('backlinks.php', 'tmp', 'msnrank<?php echo $i?>', 'sec=backlink&engine=msn&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
+						scriptDoLoadPost('backlinks.php', 'tmp', 'external_pages_to_root_domain<?php echo $i?>', 'sec=backlink&engine=external_pages_to_root_domain&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
 					</script>
 				</td>
 			</tr>

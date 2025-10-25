@@ -242,8 +242,8 @@ if (!empty($keywordPos) && !empty($seCount)) {
     			<th><?php echo $spText['common']['Spam Score']?></th>
     			<th><?php echo $spText['common']['Domain Authority']?></th>
     			<th><?php echo $spText['common']['Page Authority']?></th>
-    			<th>Google</th>
-    			<th>Bing</th>			
+    			<th><?php echo $spTextBack['Backlink Count']?></th>
+    			<th><?php echo $spTextBack['Domain Backlink Count']?></th>
     			<th>Google</th>
     			<th>Bing</th>
     			<th><?php echo $spTextPS['Desktop Speed']?></th>
@@ -260,8 +260,8 @@ if (!empty($keywordPos) && !empty($seCount)) {
     				$spamScoreLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['spam_score']);
     				$daLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['domain_authority']);
     				$paLink = scriptAJAXLinkHrefDialog('rank.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['page_authority']);
-    				$googleBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['google']['backlinks']);
-    				$bingBackLInk = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['msn']['backlinks']);
+    				$externalPagesToPageLink = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['external_pages_to_page']['backlinks']);
+    				$externalPagesToRootDomainLink = scriptAJAXLinkHrefDialog('backlinks.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['external_pages_to_root_domain']['backlinks']);
     				$googleIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['google']['indexed']);
     				$bingIndexLInk = scriptAJAXLinkHrefDialog('saturationchecker.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['msn']['indexed']);
     				$totaldirLink = scriptAJAXLinkHrefDialog('directories.php', 'content', "sec=reports&website_id=".$websiteInfo['id'] . $timeArg, $websiteInfo['dirsub']['total']);
@@ -276,8 +276,8 @@ if (!empty($keywordPos) && !empty($seCount)) {
     					<td><?php echo $spamScoreLink;?></td>
 						<td><?php echo $daLink; ?></td>
 						<td><?php echo $paLink; ?></td>
-						<td><?php echo $googleBackLInk; ?></td>
-						<td><?php echo $bingBackLInk; ?></td>
+						<td><?php echo $externalPagesToPageLink; ?></td>
+						<td><?php echo $externalPagesToRootDomainLink; ?></td>
 						<td><?php echo $googleIndexLInk; ?></td>
 						<td><?php echo $bingIndexLInk; ?></td>
 						<td><?php echo $desktopPageSpeedLink; ?></td>
