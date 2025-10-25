@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -91,15 +91,14 @@ class ThemesController extends Controller{
 	}
 	
 	# func to list  theme info
-	function listThemeInfo($themeId){
-	    $themeId = intval($themeId);		
+	function listThemeInfo($themeId) {
+	    $themeId = intval($themeId);
 		$this->set('themeInfo', $this->__getThemeInfo($themeId));	
 		$this->set('pageNo', $_GET['pageno']);	
 		$this->render('theme/listthemeinfo');
 	}
 	
-	function updateThemeInfo($themeId, $themeInfo){
-		
+	function updateThemeInfo($themeId, $themeInfo){		
 		$themeId = intval($themeId);
 		$sql = "update $this->tableName set
 					name='".addslashes($themeInfo['name'])."',

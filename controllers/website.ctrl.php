@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -461,10 +461,10 @@ class WebsiteController extends Controller{
 	        $ret['page'] = $pageContent;
 	        $metaInfo = array();
 	    }
-		if(!empty($ret['page'])){
-			
-		    if (empty($keyInput)) {
-		    
+	    
+	    $matches = [];
+		if(!empty($ret['page'])) {			
+		    if (empty($keyInput)) {		    
     			# meta title
     			preg_match('/<TITLE>(.*?)<\/TITLE>/si', $ret['page'], $matches);
     			if(!empty($matches[1])){
@@ -480,9 +480,11 @@ class WebsiteController extends Controller{
     			if(empty($matches[1])){
     				preg_match("/<META.*?name='description'.*?content='(.*?)'/si", $ret['page'], $matches);			
     			}
+    			
     			if(empty($matches[1])){
     				preg_match('/<META content="(.*?)" name="description"/si', $ret['page'], $matches);					
     			}
+    			
     			if(!empty($matches[1])){
     			    if ($returVal) {
     			        $metaInfo['page_description'] = $matches[1];
@@ -497,6 +499,7 @@ class WebsiteController extends Controller{
 			if(empty($matches[1])){
 				preg_match("/<META.*?name='keywords'.*?content='(.*?)'/si", $ret['page'], $matches);			
 			}
+			
 			if(empty($matches[1])){
 				preg_match('/<META content="(.*?)" name="keywords"/si', $ret['page'], $matches);			
 			}
@@ -509,6 +512,7 @@ class WebsiteController extends Controller{
     			}
 			}			
 		}
+		
 		return $metaInfo; 
 	}
 	

@@ -64,7 +64,42 @@ class MetaTagGenerator extends SeoPluginsController{
 		if(!empty($info['revisit-after'])) $this->highLight('<meta name="Revisit-after" content="'.$info['revisit-after'].'">');
 		if(!empty($info['expires'])) $this->highLight('<meta name="expires" content="'.$info['expires'].'">');
 		$this->highLight('</head>', false);
-		print "<textarea style='width:600px;' rows='15'>$this->metaTags</textarea>";
+		print "<div style='position: relative;'>";
+		print "<textarea id='metaTagsTextarea' class='form-control' rows='15'>$this->metaTags</textarea>";
+		print "<button type='button' class='btn btn-sm btn-primary' style='position: absolute; top: 5px; right: 5px;' onclick='copyMetaTags()' title='Copy to clipboard'>";
+		print "<i class='fa fa-copy'></i> Copy";
+		print "</button>";
+		print "</div>";
+		print "<script>
+		function copyMetaTags() {
+			var textarea = document.getElementById('metaTagsTextarea');
+			var text = textarea.value;
+
+			// Try modern Clipboard API first
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(text).then(function() {
+					alert('Meta tags copied to clipboard!');
+				}).catch(function(err) {
+					// Fallback to old method
+					copyFallback(textarea);
+				});
+			} else {
+				// Fallback for older browsers
+				copyFallback(textarea);
+			}
+		}
+
+		function copyFallback(textarea) {
+			textarea.select();
+			textarea.setSelectionRange(0, 99999);
+			try {
+				document.execCommand('copy');
+				alert('Meta tags copied to clipboard!');
+			} catch (err) {
+				alert('Failed to copy. Please manually select and copy the text.');
+			}
+		}
+		</script>";
 		print "</p>";
 	}
 	

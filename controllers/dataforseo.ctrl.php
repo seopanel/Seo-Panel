@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -37,7 +37,6 @@ class DataForSEOController extends Controller {
     }
     
     function __checkAPIConnection($apiLogin, $apiPassword) {
-        
         $connResult = [
             'status' => false, 
             'message' => $_SESSION['text']['common']['Internal error occured'], 
@@ -113,19 +112,26 @@ class DataForSEOController extends Controller {
             'data' => [],
         ];
         
-        $seDomianCat = DataForSEOController::getSERPDomainCategory($seachEngine);        
         $searchInfo = array(
             "keyword" => mb_convert_encoding($keywordInfo['name'], "UTF-8"),
-            "location_name" => $keywordInfo['location_name'],
+            "location_name" => __assign($keywordInfo, 'location_name', "United States"),
+            "language_name" => __assign($keywordInfo, 'language_name', "English"),
+            "priority" => __assign($keywordInfo, "priority", 1),
+            "depth" => __assign($keywordInfo, "depth", 100),
         );
         
         // exceptions for baidu
+        $seDomianCat = DataForSEOController::getSERPDomainCategory($seachEngine);
         if ($seDomianCat != "baidu") {
-            $searchInfo['language_code'] = !empty($keywordInfo['lang_code']) ? $keywordInfo['lang_code'] : SP_DEFAULTLANG;
-        
             if (stristr($seachEngine, ".")) {
                 $searchInfo['se_domain'] = $seachEngine;
             }
+        }
+        
+        // if google use dataforseo lite method
+        if (($seDomianCat == "google") && ($searchInfo['depth'] > 10)) {
+            $cat = "lite";
+            $dataType = "advanced";
         }
         
         try {
@@ -160,39 +166,76 @@ class DataForSEOController extends Controller {
         return $connResult;
     }
     
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getLocationName($countryCode, $required=TRUE) {
+        $locationName = "";
+        $countryCtrl = new CountryController();
+        $countryList = $countryCtrl->__getAllCountryAsList();
+        if (!empty($countryCode)) {
+            $locationName = $countryList[$countryCode];
+        }
         
+        // if location name is required
+        if ($required && empty($locationName)) {
+            $locationName = __assign($countryList, SP_DEFAULT_COUNTRY, "United States");
+        }
+        
+        return $locationName;
+    }
+    
+    function __getLanguageName($langCode, $required=TRUE) {
+        $langName = "";
+        $langCtrl = new LanguageController();
+        $langList = $langCtrl->__getAllLanguages();
+        $langList = createSelectList($langList, 'lang_name', 'lang_code');
+        if (!empty($langCode)) {
+            $langName = $langList[$langCode];
+        }
+        
+        // if language name is required
+        if ($required && empty($langName)) {
+            $langName = __assign($langList, SP_DEFAULTLANG, "English");
+        }
+        
+        return $langName;
+    }
+    
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
         $crawlResult = array();
         $seFound = false;
         $websiteUrl = formatUrl($keywordInfo['url'], false);
-        if(empty($websiteUrl)) return $crawlResult;
-        if(empty($keywordInfo['name'])) return $crawlResult;
+        if(empty($websiteUrl)) {
+            return $crawlResult;
+        }
+        
+        if(empty($keywordInfo['name'])) {
+            return $crawlResult;
+        }
         
         $time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
         $seController = New SearchEngineController();
         $seList = $seController->__getAllCrawlFormatedSearchEngines();        
         $websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);
         
-        $countryCtrl = new CountryController();
-        $countryList = $countryCtrl->__getAllCountryAsList();
+        // set country and language details
+        $keywordInfo['location_name'] = $this->__getLocationName($keywordInfo['country_code']);
+        $keywordInfo['language_name'] = $this->__getLanguageName($keywordInfo['lang_code']);
         
-        $reportCtrler = new ReportController();
-        
-        // set country name as location
-        if (!empty($keywordInfo['country_code'])) {
-            $keywordInfo['location_name'] = $countryList[$keywordInfo['country_code']];
-        } else {
-            $keywordInfo['location_name'] = $countryList[SP_DEFAULT_COUNTRY];
-        }
-        
+        $reportCtrler = new ReportController();        
         $keySeList = explode(':', $keywordInfo['searchengines']);
         foreach($keySeList as $seInfoId) {
             
             // function to execute only passed search engine
-            if(!empty($seId) && ($seInfoId != $seId)) continue;
+            if(!empty($seId) && ($seInfoId != $seId)) {
+                continue;
+            }
             
             // if search engine not found continue
-            if (empty($seList[$seInfoId])) continue;
+            if (empty($seList[$seInfoId])) {
+                continue;
+            }            
+            
+            // set number of search results per page
+            $keywordInfo['depth'] = $seList[$seInfoId]['max_results'];
             
             // call serp api to get the results
             $seFound = true;
@@ -201,8 +244,7 @@ class DataForSEOController extends Controller {
             $result = $this->doSERPAPICall($keywordInfo, $seachEngine);
             
             // check crawl status
-            if(!empty($result['status'])) {
-                
+            if(!empty($result['status'])) {                
                 // to update cron that report executed for akeyword on a search engine
                 if ($cron) {
                     $reportCtrler->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
@@ -267,14 +309,16 @@ class DataForSEOController extends Controller {
     
     function __getSERPResultCount($keywordInfo, $cron = false) {
         $crawlResult = array();
-        if(empty($keywordInfo['name'])) return $crawlResult;
-        if(empty($keywordInfo['engine'])) return $crawlResult;
+        if(empty($keywordInfo['name'])) {
+            return $crawlResult;
+        }
         
-        $countryCtrl = new CountryController();
-        $countryList = $countryCtrl->__getAllCountryAsList();
-        $keywordInfo['location_name'] = $countryList[SP_DEFAULT_COUNTRY];
+        if(empty($keywordInfo['engine'])) {
+            return $crawlResult;
+        }
         
-        $result = $this->doSERPAPICall($keywordInfo, $keywordInfo['engine']);
+        $keywordInfo['depth'] = 10;
+        $result = $this->doSERPAPICall($keywordInfo, $keywordInfo['engine'], "organic", "live", "regular");
         
         // check crawl status
         if(!empty($result['status'])) {
@@ -302,6 +346,5 @@ class DataForSEOController extends Controller {
         
         return  $crawlResult;
     }
-    
 }
 ?>

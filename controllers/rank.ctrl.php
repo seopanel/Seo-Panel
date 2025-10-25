@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,7 +23,7 @@
 # class defines all rank controller functions
 class RankController extends Controller{
 	
-	var $colList = array('moz' => 'moz_rank', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
+	var $colList = array('spam_score' => 'spam_score', 'domain_authority' => 'domain_authority', 'page_authority' => 'page_authority');
 	
 	# func to show quick rank checker
 	function showQuickRankChecker() {
@@ -47,6 +47,7 @@ class RankController extends Controller{
 		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+		
 		/*mozRankList = $this->__getMozRank($list);*/
 		$this->set('mozRankList', $mozRankList);
 
@@ -234,13 +235,13 @@ class RankController extends Controller{
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($urlList);
 				
-		// loop through each websites			
+		// loop through each websites
 		foreach ( $websiteList as $i => $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
-			$websiteInfo['moz_rank'] = !empty($mozRankList[$i]['moz_rank']) ? $mozRankList[$i]['moz_rank'] : 0;
+			$websiteInfo['spam_score'] = !empty($mozRankList[$i]['spam_score']) ? $mozRankList[$i]['spam_score'] : 0;
 			$websiteInfo['domain_authority'] = !empty($mozRankList[$i]['domain_authority']) ? $mozRankList[$i]['domain_authority'] : 0;
 			$websiteInfo['page_authority'] = !empty($mozRankList[$i]['page_authority']) ? $mozRankList[$i]['page_authority'] : 0;
-			
+
 			$this->saveRankResults($websiteInfo, true);			
 			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
 		}	
@@ -255,11 +256,11 @@ class RankController extends Controller{
 			$this->db->query($sql);
 		}
 		
-		$mozRank = floatval($matchInfo['moz_rank']);
+		$spamScore = floatval($matchInfo['spam_score']);
 		$domainAuthority = floatval($matchInfo['domain_authority']);
 		$pageAuthority = floatval($matchInfo['page_authority']);
-		$sql = "insert into rankresults(website_id, moz_rank, domain_authority, page_authority, result_date)
-			values({$matchInfo['id']}, $mozRank, $domainAuthority, $pageAuthority, '$resultDate')";
+		$sql = "insert into rankresults(website_id, spam_score, domain_authority, page_authority, result_date)
+			values({$matchInfo['id']}, $spamScore, $domainAuthority, $pageAuthority, '$resultDate')";
 		$this->db->query($sql);
 	}
 	
@@ -319,16 +320,17 @@ class RankController extends Controller{
 					$signVal = -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					if($col == 'alexa'){						
+					// For Alexa and spam_score, lower is better, so invert the sign
+					if($col == 'alexa' || $col == 'spam_score'){
 						$signVal = 1;
 						$greaterClass = 'green';
 						$lessClass = 'red';
 					}
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * $signVal;
 					if ($rankDiff[$col] > 0) {
-						$rankDiff[$col] = "<font class='$greaterClass'>($rankDiff[$col])</font>";
+						$rankDiff[$col] = "<font class='$greaterClass'>(" . round($rankDiff[$col], 2) . ")</font>";
 					}elseif ($rankDiff[$col] < 0) {
-						$rankDiff[$col] = "<font class='$lessClass'>($rankDiff[$col])</font>";
+						$rankDiff[$col] = "<font class='$lessClass'>(" . round($rankDiff[$col], 2) . ")</font>";
 					}
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
@@ -378,18 +380,19 @@ class RankController extends Controller{
 					$signVal = -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					if($col == 'alexa'){						
+					// For Alexa and spam_score, lower is better, so invert the sign
+					if($col == 'alexa' || $col == 'spam_score'){
 						$signVal = 1;
 						$greaterClass = 'green';
 						$lessClass = 'red';
 					}
-					
+
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * $signVal;
-					
+
 					if ($rankDiff[$col] > 0) {
-						$rankDiff[$col] = "<font class='$greaterClass'>($rankDiff[$col])</font>";
+						$rankDiff[$col] = "<font class='$greaterClass'>(" . round($rankDiff[$col], 2) . ")</font>";
 					} elseif ($rankDiff[$col] < 0) {
-						$rankDiff[$col] = "<font class='$lessClass'>($rankDiff[$col])</font>";
+						$rankDiff[$col] = "<font class='$lessClass'>(" . round($rankDiff[$col], 2) . ")</font>";
 					}
 				}
 				
@@ -421,7 +424,7 @@ class RankController extends Controller{
         $websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
         $this->set('websiteId', $websiteId);
         
-        $searchEngine = !empty($searchInfo['search_engine']) ? $searchInfo['search_engine'] : "moz";
+        $searchEngine = !empty($searchInfo['search_engine']) ? $searchInfo['search_engine'] : "spam_score";
         $this->set('searchEngine', $searchEngine);
         
         $conditions = empty($websiteId) ? "" : " and s.website_id=$websiteId";
@@ -430,30 +433,20 @@ class RankController extends Controller{
         $reportList = $this->db->select($sql);
         
         $colLabelList = array(
-        	'moz_rank' => $_SESSION['text']['common']['MOZ Rank'],
+        	'spam_score' => $_SESSION['text']['common']['Spam Score'],
         	'domain_authority' => $_SESSION['text']['common']['Domain Authority'],
         	'page_authority' => $_SESSION['text']['common']['Page Authority'],
         );    
         
-        // loop through col list
+        // loop through col list - only show the selected metric
         $colList = array();
         foreach ($this->colList as $seId => $seVal) {
-        	
-        	// if slected i search engine
-        	if ($searchEngine == 'alexa') {
-        		
-        		if ($seId == 'alexa') {
-        			$colList[$seVal] = $colLabelList[$seVal];
-        		}
-        		
-        	} else {
-        		
-        		if ($seId != 'alexa') {
-        			$colList[$seVal] = $colLabelList[$seVal];
-        		}
-        		
+
+        	// only include the selected search engine metric
+        	if ($seId == $searchEngine) {
+        		$colList[$seVal] = $colLabelList[$seVal];
         	}
-        	
+
         }
 		
 		// if reports not empty
@@ -473,8 +466,8 @@ class RankController extends Controller{
 	            $dataArr .= ", ['{$dataInfo['result_date']}' $valStr]";
 	        }
 	       
-	        // if alexa, use reverse ranking
-	        if ($searchEngine == 'alexa') {
+	        // if alexa or spam_score, use reverse ranking (lower is better)
+	        if ($searchEngine == 'alexa' || $searchEngine == 'spam_score') {
 	        	$this->set('reverseDir', true);
 	        }
 	        

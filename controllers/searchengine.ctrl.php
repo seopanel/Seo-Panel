@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -22,6 +22,7 @@
 
 # class defines all search engine controller functions
 class SearchEngineController extends Controller{
+    var $seTable = "searchengines";
 	
 	# func to get all search engines
 	function __getAllSearchEngines(){
@@ -56,7 +57,8 @@ class SearchEngineController extends Controller{
 			$replace = array($seInfo['no_of_results_page']);
 			$seInfo['url'] = str_replace($search, $replace, $seInfo['url']);
 			$seList[$seId] = $seInfo;
-		}	
+		}
+		
 		return $seList;
 	}
 	
@@ -97,11 +99,14 @@ class SearchEngineController extends Controller{
 		$this->render('searchengine/list', 'ajax');
 	}
 	
-	# func to change status of search engine
+	// func to change status of search engine
 	function __changeStatus($seId, $status){		
 		$seId = intval($seId);
-		$sql = "update searchengines set status=$status where id=$seId";
-		$this->db->query($sql);
+		$dataList = [
+		    'status|int' => $status,
+		    'updated' => "NOW()",
+		];
+		$this->dbHelper->updateRow($this->seTable, $dataList, "id=$seId");
 	}
 	
 	# func to delete search engine
@@ -110,11 +115,10 @@ class SearchEngineController extends Controller{
 		$sql = "delete from searchengines where id=$seId";
 		$this->db->query($sql);
 		
-		
 		$sql = "select id from searchresults where searchengine_id=$seId";
 		$recordList = $this->db->select($sql);
 		
-		if(count($recordList) > 0){
+		if(count($recordList) > 0) {
 			foreach($recordList as $recordInfo){
 				$sql = "delete from searchresultdetails where searchresult_id=".$recordInfo['id'];
 				$this->db->query($sql);
@@ -122,13 +126,11 @@ class SearchEngineController extends Controller{
 			
 			$sql = "delete from searchresults where searchengine_id=$seId";
 			$this->db->query($sql);
-		}		
-		
+		}
 	}
 	
 	# function to check whether captcha found in search engine results
 	public static function isCaptchInSearchResults($searchContent) {
-
 		$captchFound = false;
 		
 		// if captcha input field is found
@@ -168,8 +170,7 @@ class SearchEngineController extends Controller{
 	}
 	
 	// func to show sync search engines
-	function showSyncSearchEngines($info=[]) {
-	    
+	function showSyncSearchEngines($info=[]) {	    
 	    $pageScriptPath = 'searchengine.php?sec=sync-se';
 	    $sql = "select * from sync_searchengines order by sync_time DESC";
 	    
@@ -190,7 +191,6 @@ class SearchEngineController extends Controller{
 	
 	// do sync search engines from sp main website
 	function doSyncSearchEngines($checkAlreadyExecuted = false, $cronJob = false) {
-	    
 	    // check whether already executed sync
 	    if ($checkAlreadyExecuted) {
 	        $row = $this->dbHelper->getRow("sync_searchengines", "sync_time>TIMESTAMP(DATE_SUB(NOW(), INTERVAL ". SP_SYNC_SE_INTERVAL ." day))");
@@ -231,12 +231,10 @@ class SearchEngineController extends Controller{
 	                    'alert_url' => SP_WEBPATH,
 	                );
 	                $alertCtrl->createAlert($alertInfo, false, true);
-	            }
-	            
+	            }	            
 	        } else {
 	            $dataList['result'] = "Internal error occured during search engine sync.";
-	        }
-	        
+	        }	        
 	    } else {
 	        $dataList['result'] = $ret['errmsg'];
 	    }
@@ -245,5 +243,48 @@ class SearchEngineController extends Controller{
 	    return $dataList;
 	}
 	
+	function editSearchEngine($seId, $listInfo=[]) {
+	    $seId = intval($seId);
+	    $this->set('editAction', "updateSearchEngine");
+	    if(!empty($seId)) {
+	        if(empty($listInfo)) {
+	            $listInfo = $this->__getsearchEngineInfo($seId);
+	        }
+	        
+	        $this->set('post', $listInfo);
+	        $this->render('searchengine/edit_searchengine');
+	        exit;
+	    }
+	    
+	    $this->listSE();
+	}
+	
+	function updateSearchEngine($listInfo) {
+	    $seId = intval($listInfo['id']);
+	    $seInfo = $this->__getsearchEngineInfo($seId);
+	    $this->set("post", $seInfo);
+	    $errMsg = [];
+	    
+	    // validate form
+	    $errMsg['max_results'] = formatErrorMsg($this->validate->checkNumber($listInfo['max_results']));
+	    if ( ($listInfo['max_results'] < 1) || ($listInfo['max_results'] > 100)) {
+	        $this->validate->flagErr = TRUE;
+	        $errMsg['max_results'] = formatErrorMsg("Please enter value in between 1 to 100");
+	    }
+	    
+	    if (!$this->validate->flagErr && !empty($seInfo)) {
+	        $dataList = [
+	            'max_results|int' => $listInfo['max_results'],
+	            'updated' => "NOW()",
+	        ];
+	        
+	        $this->dbHelper->updateRow($this->seTable, $dataList, "id=$seId");
+	        $this->listSE(['se_name' => $seInfo['domain']]);
+	        return TRUE;
+	    }
+	    
+	    $this->set('errMsg', $errMsg);
+	    $this->editSearchEngine($seId, $listInfo);
+	}
 }
 ?>

@@ -1,53 +1,53 @@
 <form name="listform" id="listform">
 <?php echo showSectionHead($spTextPanel['User Type Manager']); ?>
-<?php 
-if ($isPluginSubsActive) { 
+<?php
+if ($isPluginSubsActive) {
 	$currencySymbol = $currencyList[SP_PAYMENT_CURRENCY]['symbol'];
 } else {
 	?>
 	<div id="topnewsbox">
-		<a class="bold_link" href="<?php echo SP_MAIN_SITE?>/plugin/l/65/membership-subscription/" target="_blank">
+		<a class="btn btn-info" href="<?php echo SP_MAIN_SITE?>/plugin/l/65/membership-subscription/" target="_blank">
 			<?php echo $spTextSubscription['click-activate-pay-plugin']; ?> &gt;&gt;
 		</a>
 	</div>
-	<?php 
+	<?php
 }
 ?>
 <?php echo $pagingDiv?>
 
-<table id="cust_tab">
-	<tr>
-		<th><input type="checkbox" id="checkall" onclick="checkList('checkall')"></th>
-		<th><?php echo $spText['common']['Id']?></th>			
-		<th><?php echo $spText['common']['User Type']?></th>
-		<th><?php echo $spText['label']['Description']?></th>
-		<th><?php echo $spText['common']['Keywords Count']?></th>
-		<th><?php echo $spText['common']['Websites Count']?></th>
-		<th><?php echo $spTextSubscription['Social Media Link Count']?></th>
-		<th><?php echo $spTextSubscription['Review Link Count']?></th>
-		<th><?php echo $spTextSubscription['Directory Submit Limit']?></th>
+<table class="list">
+	<tr class="listHead">
+		<td><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
+		<td><?php echo $spText['common']['Id']?></td>
+		<td><?php echo $spText['common']['User Type']?></td>
+		<td><?php echo $spText['label']['Description']?></td>
+		<td><?php echo $spText['common']['Keywords Count']?></td>
+		<td><?php echo $spText['common']['Websites Count']?></td>
+		<td><?php echo $spTextSubscription['Social Media Link Count']?></td>
+		<td><?php echo $spTextSubscription['Review Link Count']?></td>
+		<td><?php echo $spTextSubscription['Directory Submit Limit']?></td>
 		<?php if ($isPluginSubsActive) {?>
-			<th><?php echo $spText['common']['Price']?></th>
-			<th><?php echo $spTextSubscription['Access Type']?></th>
+			<td><?php echo $spText['common']['Price']?></td>
+			<td><?php echo $spTextSubscription['Access Type']?></td>
 		<?php }?>
-		<th><?php echo $spText['common']['Status']?></th>
-		<th><?php echo $spText['common']['Action']?></th>
+		<td><?php echo $spText['common']['Status']?></td>
+		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = $isPluginSubsActive ? 13 : 11; 
+	$colCount = $isPluginSubsActive ? 13 : 11;
 	if(count($list) > 0){
-		foreach($list as $i => $listInfo){            
+		foreach($list as $i => $listInfo){
             $userTypeLink = scriptAJAXLinkHref('user-types-manager.php', 'content', "sec=edit&userTypeId={$listInfo['id']}", "{$listInfo['user_type']}")
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td><?php echo $listInfo['id']?></td>								
-				<td><?php echo $userTypeLink?></td>		
-				<td><?php echo $listInfo['description']?></td>		
-				<td><?php echo $listInfo['keywordcount']?></td>	
-				<td><?php echo $listInfo['websitecount']?></td>	
-				<td><?php echo $listInfo['social_media_link_count']?></td>	
-				<td><?php echo $listInfo['review_link_count']?></td>	
+				<td><?php echo $listInfo['id']?></td>
+				<td><?php echo $userTypeLink?></td>
+				<td><?php echo $listInfo['description']?></td>
+				<td><?php echo $listInfo['keywordcount']?></td>
+				<td><?php echo $listInfo['websitecount']?></td>
+				<td><?php echo $listInfo['social_media_link_count']?></td>
+				<td><?php echo $listInfo['review_link_count']?></td>
 				<td><?php echo $listInfo['directory_submit_limit']?></td>
 				<?php if ($isPluginSubsActive) {?>
 					<td>
@@ -55,7 +55,9 @@ if ($isPluginSubsActive) {
 					</td>
 					<td><?php echo $accessTypeList[$listInfo['access_type']]; ?></td>
 				<?php }?>
-				<td><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
+				<td class="text-center">
+					<?php echo showStatusBadge($listInfo['status']);?>
+				</td>
 				<td>
 					<?php
 						if($listInfo['status']){
@@ -64,9 +66,10 @@ if ($isPluginSubsActive) {
 						}else{
 							$statVal = "Activate";
 							$statLabel = $spText['common']["Activate"];
-						} 
+						}
 					?>
-					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('user-types-manager.php', 'content', 'userTypeId=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')">
+					<select name="action" id="action<?php echo $listInfo['id']?>" class="custom-select"
+						onchange="doAction('user-types-manager.php', 'content', 'userTypeId=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')" style="width: 180px;">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>
 						<option value="edit"><?php echo $spText['common']['Edit']?></option>
@@ -76,12 +79,10 @@ if ($isPluginSubsActive) {
 			</tr>
 			<?php
 		}
-		
+
 	} else {
-	    ?>
-		<tr><td colspan="<?php echo $colCount?>"><b><?php echo $_SESSION['text']['common']['No Records Found']?></b></tr>
-		<?php		
-	} 
+	    echo showNoRecordsList($colCount-2);
+	}
 	?>
 </table>
 <?php
@@ -93,20 +94,19 @@ if (SP_DEMO) {
 	$delFun = "confirmSubmit('user-types-manager.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
 }
 ?>
-<br>
-<table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
+<table class="actionSec mt-2">
 	<tr>
-    	<td style="padding-top: 6px;">
-         	<a onclick="scriptDoLoad('user-types-manager.php', 'content', 'sec=new')" href="javascript:void(0);" class="actionbut">
+    	<td>
+         	<a onclick="scriptDoLoad('user-types-manager.php', 'content', 'sec=new')" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spTextPanel['New User Type']?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-success">
          		<?php echo $spText['common']["Activate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['common']["Inactivate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="btn btn-danger">
          		<?php echo $spText['common']['Delete']?>
          	</a>
     	</td>

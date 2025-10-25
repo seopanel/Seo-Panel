@@ -1,16 +1,16 @@
 <form name="listform" id="listform">
 <?php echo showSectionHead($spTextPanel['Website Manager']); ?>
 <?php $submitLink = "scriptDoLoadPost('websites.php', 'listform', 'content')";?>
-<table width="80%" border="0" cellspacing="0" cellpadding="0" class="search">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Name']?>: </th>
-		<td width="100px">
-			<input type="text" name="search_name" value="<?php echo htmlentities($info['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>">
+		<td>
+			<input type="text" name="search_name" value="<?php echo htmlentities($info['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
 		</td>
 		<?php if(!empty($isAdmin)){ ?>
-			<th><?php echo $spText['common']['User']?>: </th>
+			<th class="pl-4"><?php echo $spText['common']['User']?>: </th>
 			<td>
-				<select name="userid" id="userid" onchange="<?php echo $submitLink?>">
+				<select name="userid" id="userid" onchange="<?php echo $submitLink?>" class="custom-select">
 					<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] === $userId){?>
@@ -22,9 +22,9 @@
 				</select>
 			</td>
 		<?php }?>
-		<th><?php echo $spText['common']['Status']?>: </th>
+		<th class="pl-4"><?php echo $spText['common']['Status']?>: </th>
 		<td>
-			<select name="stscheck" onchange="<?php echo $submitLink?>">
+			<select name="stscheck" onchange="<?php echo $submitLink?>" class="custom-select">
 				<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($statusList as $key => $val){?>
 					<?php if(isset($info['stscheck']) && $info['stscheck'] === $val){?>
@@ -35,18 +35,17 @@
 				<?php }?>
 			</select>
 		</td>
-		<td style="text-align: center;">
-			<a href="javascript:void(0);" onclick="<?php echo $submitLink; ?>" class="actionbut">
+		<td class="pl-4">
+			<a href="javascript:void(0);" onclick="<?php echo $submitLink; ?>" class="btn btn-secondary">
 				<?php echo $spText['button']['Search']?>
 			</a>
 		</td>
 	</tr>
 </table>
 <?php echo $pagingDiv?>
-<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
+<table class="list">
 	<tr class="listHead">
 		<td class="leftid"><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>		
 		<td><?php echo $spText['common']['Website']?></td>
 		<?php if(!empty($isAdmin)){ ?>		
 			<td><?php echo $spText['common']['User']?></td>
@@ -54,36 +53,28 @@
 		<td><?php echo $spText['common']['Url']?></td>
 		<td><?php echo $spTextWeb['Google Analytics Property']?></td>
 		<td><?php echo $spText['common']['Status']?></td>
-		<td class="right"><?php echo $spText['common']['Action']?></td>
+		<td style="width: 15%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = empty($isAdmin) ? 7 : 8; 
+	$colCount = empty($isAdmin) ? 6 : 7; 
 	if(count($list) > 0){
-		$catCount = count($list);
-		foreach($list as $i => $listInfo){
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
-                $leftBotClass = "tab_left_bot";
-                $rightBotClass = "tab_right_bot";
-            }else{
-                $leftBotClass = "td_left_border td_br_right";
-                $rightBotClass = "td_br_right";
-            }
-            $websiteLink = scriptAJAXLinkHref('websites.php', 'content', "sec=edit&websiteId={$listInfo['id']}", "{$listInfo['name']}")
+		foreach($list as $listInfo) {
+            $websiteLink = scriptAJAXLinkHref('websites.php', 'content', "sec=edit&websiteId={$listInfo['id']}", "{$listInfo['name']}");
 			?>
-			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>"><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td class="td_br_right"><?php echo $listInfo['id']?></td>
-				<td class="td_br_right left"><?php echo $websiteLink?></td>
+			<tr>
+				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
+				<td class="text-left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
-					<td class="td_br_right left"><?php echo $listInfo['username']?></td>
+					<td><?php echo $listInfo['username']?></td>
 				<?php } ?>
-				<td class="td_br_right left"><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
-				<td class="td_br_right">
+				<td class="text-left"><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
+				<td>
 					<?php echo !empty($listInfo['analytics_view_id']) ? $propertyList[$listInfo['analytics_view_id']] : ""?>
 				</td>
-				<td class="td_br_right"><?php echo $listInfo['status'] ? $spText['common']["Active"] : $spText['common']["Inactive"];	?></td>
-				<td class="<?php echo $rightBotClass?>" width="100px">
+				<td class="text-center">
+					<?php echo showStatusBadge($listInfo['status']);?>
+				</td>
+				<td>
 					<?php
 						if($listInfo['status']){
 							$statVal = "Inactivate";
@@ -93,7 +84,8 @@
 							$statLabel = $spText['common']["Activate"];
 						} 
 					?>
-					<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('websites.php', 'content', 'websiteId=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&userid=<?php echo $userId?>', 'action<?php echo $listInfo['id']?>')">
+					<select name="action" id="action<?php echo $listInfo['id']?>" class="custom-select" 
+						onchange="doAction('websites.php', 'content', 'websiteId=<?php echo $listInfo['id']?>&pageno=<?php echo $pageNo?>&userid=<?php echo $userId?>', 'action<?php echo $listInfo['id']?>')">
 						<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 						<option value="addToWebmasterTools"><?php echo $spTextWeb['Add to Webmaster Tools']?></option>
 						<option value="<?php echo $statVal?>"><?php echo $statLabel?></option>
@@ -104,14 +96,10 @@
 			</tr>
 			<?php
 		}
-	}else{	 
+	} else {	 
 		echo showNoRecordsList($colCount-2);		
 	} 
 	?>
-	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
-		<td class="right"></td>
-	</tr>
 </table>
 <?php
 if (SP_DEMO) {
@@ -122,19 +110,19 @@ if (SP_DEMO) {
     $delFun = "confirmSubmit('websites.php', 'listform', 'content', '&sec=deleteall&pageno=$pageNo')";
 }   
 ?>
-<table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
+<table class="actionSec mt-3">
 	<tr>
-    	<td style="padding-top: 6px;">
-         	<a onclick="scriptDoLoad('websites.php', 'content', 'sec=new')" href="javascript:void(0);" class="actionbut">
+    	<td>
+         	<a onclick="scriptDoLoad('websites.php', 'content', 'sec=new')" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spTextPanel['New Website']?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-success">
          		<?php echo $spText['common']["Activate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $inactFun?>" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['common']["Inactivate"]?>
          	</a>&nbsp;&nbsp;
-         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $delFun?>" href="javascript:void(0);" class="btn btn-danger">
          		<?php echo $spText['common']['Delete']?>
          	</a>
     	</td>

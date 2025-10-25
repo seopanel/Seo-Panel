@@ -3,9 +3,9 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
 ?>
 <br>
 <div id="run_project">
-	<div>&nbsp;<a href="javascript:void(0)" onclick="<?php echo $backLink?>" class="back">&#171&#171 Back</a></div>
+	<div>&nbsp;<a href="javascript:void(0)" onclick="<?php echo $backLink?>" class="btn btn-info"><i class="fas fa-arrow-left"></i> Back</a></div>
 	<div id="run_info">
-		<table width="100%" border="0" cellspacing="0" cellpadding="0px" class="summary_tab">
+		<table class="summary_tab">
         	<tr>
         		<td class="topheader" colspan="10"><?php echo $spTextSA['Page Details']?></td>
         	</tr>
@@ -74,9 +74,9 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
 	<br><br>
 	<?php echo showSectionHead($spTextSA['Page Links']); ?>
 	<div>		
-		<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
+		<table class="list">
         	<tr class="listHead">
-        		<td class="leftid"><?php echo $spText['common']['No']?></td>		
+        		<td class="leftid">#</td>		
         		<td><?php echo $spText['common']['Url']?></td>		
         		<td><?php echo $spTextSA['Anchor']?></td>		
         		<td><?php echo $spTextSA['Link Title']?></td>		
@@ -85,17 +85,8 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         	</tr>
         	<?php
         	$colCount = 6; 
-        	if(count($linkList) > 0){
-        		$catCount = count($list);
-        		foreach($linkList as $i => $listInfo){
-        			$class = ($i % 2) ? "blue_row" : "white_row";
-                    if($catCount == ($i + 1)){
-                        $leftBotClass = "tab_left_bot";
-                        $rightBotClass = "tab_right_bot";
-                    }else{
-                        $leftBotClass = "td_left_border td_br_right";
-                        $rightBotClass = "td_br_right";
-                    }
+        	if(count($linkList) > 0) {
+        		foreach($linkList as $i => $listInfo) {
         			?>
         			<tr class="<?php echo $class?>">
         				<td class="<?php echo $leftBotClass?>"><?php echo $i+1?></td>				
@@ -117,10 +108,6 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         		echo showNoRecordsList($colCount-2);		
         	} 
         	?>
-        	<tr class="listBot">
-        		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
-        		<td class="right"></td>
-        	</tr>
         </table>
 	</div>
 </div>

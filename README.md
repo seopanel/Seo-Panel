@@ -70,9 +70,7 @@ Follow below steps to install seo panel as docker container.
 ## Online Seo Panel Resources:
 
 
-a) Seo Panel Help Guide: http://docs.seopanel.in/
-
-b) Seo Panel Forum: http://forum.seopanel.in/
+a) Seo Panel Help Guide: https://www.seopanel.org/docs/
 
 b) Seo Panel Support: https://www.seopanel.org/support/
 

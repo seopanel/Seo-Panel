@@ -29,7 +29,7 @@ if(!empty($validationMsg)){
 		<tr class="form_data">
 			<td><?php echo $spText['common']['User']?>:</td>
 			<td>
-				<select name="userid" style="width:150px;">
+				<select name="userid" class="custom-select">
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $userSelected){?>
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
@@ -47,19 +47,19 @@ if(!empty($validationMsg)){
 		</tr>
 	<?php }?>
 </table>
-<br>
-<table width="100%" class="actionSec">
+<table class="actionSec float-right mt-2">
 	<tr>
-    	<td style="padding-top: 6px;text-align:right;">
-    		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="actionbut">
+    	<td>
+    		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
          	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('websites.php', 'projectform', 'import_result_div')"; ?>
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spText['button']['Proceed']?>
          	</a>
     	</td>
 	</tr>
 </table>
 </form>
-<div id="import_result_div"></div>
+<br>
+<div id="import_result_div" class="mt-4 pt-4"></div>

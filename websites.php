@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -98,10 +98,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->listWebsites($_POST);
 			break;
 	}
-
-}else{
-	switch($_GET['sec']){
-		
+} else {
+	switch($_GET['sec']) {		
 		case "Activate":
 			$controller->__changeStatus($_GET['websiteId'], 1);			
 			$controller->listWebsites($_GET);

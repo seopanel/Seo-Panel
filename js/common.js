@@ -138,17 +138,84 @@ function showLoadingIcon(scriptPos,noLoading){
 	}
 }
 
+function spCustomConfirm(message, callback) {
+	// Remove any existing confirm dialogs
+	$('.sp-confirm-overlay').remove();
+
+	// Create the confirm dialog HTML
+	var confirmHtml = `
+		<div class="sp-confirm-overlay">
+			<div class="sp-confirm-box">
+				<div class="sp-confirm-header">
+					<i class="fa fa-question-circle"></i>
+					<span>Confirm Action</span>
+				</div>
+				<div class="sp-confirm-body">${message}</div>
+				<div class="sp-confirm-footer">
+					<button class="sp-confirm-btn sp-confirm-btn-cancel">Cancel</button>
+					<button class="sp-confirm-btn sp-confirm-btn-confirm">Confirm</button>
+				</div>
+			</div>
+		</div>
+	`;
+
+	// Append to body
+	$('body').append(confirmHtml);
+
+	// Show the dialog
+	$('.sp-confirm-overlay').fadeIn(200);
+
+	// Handle confirm button
+	$('.sp-confirm-btn-confirm').on('click', function() {
+		$('.sp-confirm-overlay').fadeOut(200, function() {
+			$(this).remove();
+		});
+		callback(true);
+	});
+
+	// Handle cancel button
+	$('.sp-confirm-btn-cancel').on('click', function() {
+		$('.sp-confirm-overlay').fadeOut(200, function() {
+			$(this).remove();
+		});
+		callback(false);
+	});
+
+	// Handle overlay click (close)
+	$('.sp-confirm-overlay').on('click', function(e) {
+		if ($(e.target).hasClass('sp-confirm-overlay')) {
+			$(this).fadeOut(200, function() {
+				$(this).remove();
+			});
+			callback(false);
+		}
+	});
+
+	// Handle ESC key
+	$(document).on('keydown.spconfirm', function(e) {
+		if (e.key === 'Escape') {
+			$('.sp-confirm-overlay').fadeOut(200, function() {
+				$(this).remove();
+			});
+			$(document).off('keydown.spconfirm');
+			callback(false);
+		}
+	});
+}
+
 function confirmLoad(scriptUrl, scriptPos, scriptArgs) {
 
 	if (chkObject('wantproceed')) {
 		wantproceed = "Do you really want to proceed?";
 	}
-	
-	var agree = confirm(wantproceed);
-	if (agree)
-		return scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
-	else
-		return false;
+
+	spCustomConfirm(wantproceed, function(agreed) {
+		if (agreed) {
+			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+		}
+	});
+
+	return false;
 }
 
 function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
@@ -157,11 +224,14 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 	if (chkObject('wantproceed')) {
 		wantproceed = "Do you really want to proceed?";
 	}
-	var agree = confirm(wantproceed);
-	if (agree)
-		return scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs);
-	else
-		return false;
+
+	spCustomConfirm(wantproceed, function(agreed) {
+		if (agreed) {
+			scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs);
+		}
+	});
+
+	return false;
 }
 
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
@@ -210,25 +280,15 @@ function doLoadUrl(argVal, scriptUrl) {
 }
 
 function showMenu(button, scriptPos){
-	var downClass = 'fa-caret-down';
-	var upClass = 'fa-caret-up';
 	for (var i=0; i<menuList.length; i++) {
-		if(menuList[i] == scriptPos){
-			if ($('#' + button).hasClass(downClass ) ) {
-				$('#' + button).addClass(upClass).removeClass(downClass);
-				$('#' + scriptPos).show();
-				$('#' + scriptPos + " a:first").trigger("click");
-	        	$('#' + scriptPos + " a:first").addClass("menu_active");				
-			} else {
-				$('#' + button).addClass(downClass).removeClass(upClass);
-				$('#' + scriptPos).hide();
-			}		
-		}else{
-			$('#' + buttonList[i]).addClass(downClass).removeClass(upClass);
+		if(menuList[i] == scriptPos) {
+			$('#' + scriptPos).show();
+			$('#' + scriptPos + " a:first").trigger("click");
+        	$('#' + scriptPos + " a:first").addClass("menu_active");		
+		} else {
 			$('#' + menuList[i]).hide();
 		}	
 	}
-	
 }
 
 function updateArea(scriptPos, content) {
@@ -349,9 +409,8 @@ function urlencode(str) {
 }
 
 function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
-	accessId = $('input:text[name=SP_MOZ_API_ACCESS_ID]').val();
-	secretKey = $('input:text[name=SP_MOZ_API_SECRET]').val();
-	scriptArgs += "&access_id=" + accessId + "&secret_key=" + secretKey;
+	apiToken = $('input:text[name=SP_MOZ_API_SECRET]').val();
+	scriptArgs += "&api_token=" + apiToken;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 
@@ -376,14 +435,19 @@ function openTab(tabName, dialog = false) {
 	$(dialogId + '#' + tabName + "Link").addClass('active');
 }
 
-$(function() {
-	
-	// submenu click function
-	$("#subui a").click(function() {
-		$("#subui a").removeClass("menu_active");
-		$(this).addClass("menu_active");
-		$('.navbar-collapse').collapse('hide');	
-	});
-	
+$(function() {	
+	// Submenu click function
+	$("#subui a").click(function () {
+	    // Remove active classes first
+	    $("#subui a").removeClass("menu_active");
+	    $("#subui li").removeClass("menu_active");
+	    
+	    // Add class to clicked <a> and its parent <li>
+	    $(this).addClass("menu_active");
+	    $(this).parent("li").addClass("menu_active");
+	    
+	    // Collapse the navbar (for mobile)
+	    $(".navbar-collapse").collapse("hide");
+	});	
 });
 

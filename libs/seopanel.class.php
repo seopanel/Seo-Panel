@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -50,6 +50,7 @@ class Seopanel{
 		include_once(SP_CTRLPATH.'/country.ctrl.php');
 		include_once(SP_CTRLPATH.'/language.ctrl.php');
 		include_once(SP_CTRLPATH.'/website.ctrl.php');
+		include_once(SP_CTRLPATH.'/keyword.ctrl.php');
 		include_once(SP_CTRLPATH.'/user.ctrl.php');
 		include_once(SP_CTRLPATH.'/user-type.ctrl.php');
 		include_once(SP_CTRLPATH.'/settings.ctrl.php');

@@ -1,14 +1,14 @@
 <?php echo showSectionHead($sectionHead); ?>
 <form id='search_form'>
-<table width="56%" border="0" cellspacing="0" cellpadding="0" class="search">
-	<tr>				
+<table class="search">
+	<tr>
 		<th>Website: </th>
 		<td>
 			<?php echo $this->render('website/websiteselectbox', 'ajax'); ?>
 		</td>
-		<td align='left'>
-			<a onclick="<?php echo pluginPOSTMethod('search_form', 'subcontent', 'action=show'); ?>" href="javascript:void(0);">
-         		<img border="0" alt="" src="<?php echo SP_IMGPATH?>/show_records.gif"/>
+		<td>
+			<a onclick="<?php echo pluginPOSTMethod('search_form', 'subcontent', 'action=show'); ?>" href="javascript:void(0);" class="btn btn-secondary">
+         		<?php echo $spText['button']['Show Records']?>
          	</a>
          </td>
 	</tr>

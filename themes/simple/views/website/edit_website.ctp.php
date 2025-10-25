@@ -33,7 +33,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		<tr class="blue_row">
 			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
 			<td class="td_right_col">
-				<select name="userid" class="form-control">
+				<select name="userid" class="custom-select">
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $userSelected){?>
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
@@ -59,7 +59,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 					<input type="text" id='weburl' name="url" value="<?php echo $post['url']?>" class="form-control">
 				</div>
 				<div class="col-sm-3">
-    				<a  class="btn btn-primary" href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta', 'crawlstats')">
+    				<a  class="btn btn-info" href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta', 'crawlstats')">
     					<?php echo $spText['common']['Crawl Meta Data']?>
     				</a>
 				</div>
@@ -88,7 +88,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 					<?php echo createSelectBoxFromList($propertyList, "analytics_view_id", $post['analytics_view_id'], $spText['common']['Select']);?>
     	        </div>
     	        <div class="col-sm-4">
-    	        	<a href="javascript:void(0);" class="btn btn-primary" id="connection_refresh">
+    	        	<a href="javascript:void(0);" class="btn btn-info" id="connection_refresh">
     	        		<?php echo $spTextWeb['Sync Google Analytics Properties']?>  
 	        		</a>
     	        </div>
@@ -100,14 +100,14 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		</td>
 	</tr>
 </table>
-<table class="actionSec">
+<table class="actionSec float-right mt-2">
 	<tr>
-    	<td style="padding-top: 6px;text-align:right;">
-    		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="actionbut">
+    	<td>
+    		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
          	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('websites.php', 'edit_website', 'content')"; ?>
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="actionbut">
+         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spText['button']['Proceed']?>
          	</a>
     	</td>

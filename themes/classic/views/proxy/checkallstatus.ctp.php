@@ -1,17 +1,20 @@
 <div id="run_project">
 	<div id="run_info">
-		<table width="100%" border="0" cellspacing="0" cellpadding="0px" class="summary_tab">
-        	<tr>
-        		<th class="leftcell" width="20%"><?php echo $spText['common']['Total']?>:</th>
-        		<td width="40%" style="text-align: left;"><?php echo count($proxyList)?></td>
-        		<th width="20%"><?php echo $spText['common']['Checked']?>:</th>
-        		<td id='checked_count'>0</td>
+		<table class="list">
+        	<tr class="listHead">
+        		<td colspan="4"><?php echo $spText['button']['Check Status']?></td>
         	</tr>
-        	<tr>
-        		<th class="leftcell"><?php echo $spText['common']["Active"]?>:</th>
-        		<td style="text-align: left;" id="active_count"><?php echo $activeCount?></td>
-        		<th><?php echo $spText['common']["Inactive"]?>:</th>
-        		<td id="inactive_count"><?php echo $inActiveCount?></td>
+        	<tr class="white_row">
+        		<td class="td_left_col" width="20%"><strong><?php echo $spText['common']['Total']?>:</strong></td>
+        		<td class="td_right_col" width="30%"><?php echo count($proxyList)?></td>
+        		<td class="td_left_col" width="20%"><strong><?php echo $spText['common']['Checked']?>:</strong></td>
+        		<td class="td_right_col" id='checked_count'>0</td>
+        	</tr>
+        	<tr class="blue_row">
+        		<td class="td_left_col"><strong><?php echo $spText['common']["Active"]?>:</strong></td>
+        		<td class="td_right_col" id="active_count"><?php echo $activeCount?></td>
+        		<td class="td_left_col"><strong><?php echo $spText['common']["Inactive"]?>:</strong></td>
+        		<td class="td_right_col" id="inactive_count"><?php echo $inActiveCount?></td>
         	</tr>
         </table>
 	</div>
@@ -20,9 +23,9 @@
 		$statusVar = isset($status) ? "&status=$status" : "";
 		$scriptUrl = "proxy.php?sec=runcheckstatus&id=".$proxyInfo['id'].$statusVar;
 		?>
-		<p class='note'>
+		<p class='alert alert-info mt-3'>
 			<?php echo $spTextSA['pressescapetostopexecution']?>.
-			<a <?php echo scriptPostAJAXLink('proxy.php', 'listform', 'subcontent')?> href='javascript:void(0);'>
+			<a <?php echo scriptPostAJAXLink('proxy.php', 'listform', 'subcontent')?> href='javascript:void(0);' class="btn btn-link">
 				<?php echo $spText['label']['Click Here']?>
 			</a>
 			<?php echo $spTextSA['to run project again if you stopped execution']?>.

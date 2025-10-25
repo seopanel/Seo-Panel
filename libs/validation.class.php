@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -199,16 +199,18 @@ class Validation{
         return $msg;
     }
     
-    function checkNumber($entry){
+    function checkNumber($entry) {
         $entry = stripslashes(trim($entry));
-        if(!preg_match($this->Filters['floatnumber'],$entry)){
+        if(!preg_match($this->Filters['floatnumber'], $entry)) {
             $msg = $_SESSION['text']['common']['Invalid characters'];
             $this->flagErr = true;
         }
-        if(strlen($entry) == 0){
+        
+        if(strlen($entry) == 0) {
             $msg = $_SESSION['text']['common']['Entry cannot be blank'];
             $this->flagErr = true;
         }
+        
         return $msg;
     }
     
