@@ -17,8 +17,12 @@ ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLA
 ALTER TABLE `rankresults` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `moz_rank`;
 
 ALTER TABLE `rankresults` CHANGE `moz_rank` `moz_rank` FLOAT NOT NULL DEFAULT '0';
-ALTER TABLE `rankresults` CHANGE `domain_authority` `domain_authority` FLOAT NOT NULL DEFAULT '0', 
-CHANGE `page_authority` `page_authority` FLOAT NOT NULL DEFAULT '0'; 
+ALTER TABLE `rankresults` CHANGE `domain_authority` `domain_authority` FLOAT NOT NULL DEFAULT '0',
+CHANGE `page_authority` `page_authority` FLOAT NOT NULL DEFAULT '0';
+
+ALTER TABLE `directories` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `pagerank`;
+
+ALTER TABLE `auditorreports` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `page_authority`; 
 
 update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
 

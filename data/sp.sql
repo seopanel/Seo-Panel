@@ -775,6 +775,7 @@ CREATE TABLE `directories` (
   `rank` int NOT NULL DEFAULT '0',
   `is_reciprocal` tinyint(1) NOT NULL DEFAULT '0',
   `pagerank` float NOT NULL DEFAULT '0',
+  `spam_score` float NOT NULL DEFAULT '0',
   `domain_authority` float NOT NULL,
   `page_authority` float NOT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
