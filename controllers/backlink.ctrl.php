@@ -39,7 +39,10 @@ class BacklinkController extends Controller{
 		$i = 1;
 		foreach ($urlList as $url) {
 		    $url = sanitizeData($url);
-			if(!preg_match('/\w+/', $url)) continue;
+		    if(!preg_match('/\w+/', $url)) {
+		        continue;
+		    }
+		    
 			if (SP_DEMO) {
 			    if ($i++ > 10) break;
 			}
@@ -48,6 +51,10 @@ class BacklinkController extends Controller{
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 
+		$mozCtrler = new MozController();
+		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+
+		$this->set('mozRankList', $mozRankList);
 		$this->set('list', $list);
 		$this->render('backlink/findbacklink');
 	}
@@ -182,15 +189,13 @@ class BacklinkController extends Controller{
 		
 		$sql .= " order by name";
 		$websiteList = $this->db->select($sql);
-		if(count($websiteList) <= 0){
+		if(count($websiteList) <= 0) {
 			echo "<p class='note'>".$_SESSION['text']['common']['nowebsites']."!</p>";
 			exit;
 		}
 
 		# loop through each websites
-		include_once(SP_CTRLPATH."/rank.ctrl.php");
 		$rankCtrler = New RankController();
-
 		foreach ( $websiteList as $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 
@@ -210,7 +215,6 @@ class BacklinkController extends Controller{
 			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
 			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
 			$rankCtrler->saveRankResults($websiteInfo, true);
-			echo "<p class='note notesuccess'>Saved rank results of <b>$websiteUrl</b>.....</p>";
 		}
 	}
 	
@@ -371,8 +375,7 @@ class BacklinkController extends Controller{
 	}
 	
 	# func to show graphical reports
-	function showGraphicalReports($searchInfo = '') {
-	
+	function showGraphicalReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 		$fromTime = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
 		$toTime = !empty ($searchInfo['to_time']) ? $searchInfo['to_time'] : date("Y-m-d");
@@ -393,14 +396,18 @@ class BacklinkController extends Controller{
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {
-				
-			$dataArr = "['Date', '" . implode("', '", array_values($colList)) . "']";
+			// Create readable labels for graph
+			$graphLabels = array(
+				'external_pages_to_page' => $this->spTextBack['Backlink Count'],
+				'external_pages_to_root_domain' => $this->spTextBack['Domain Backlink Count']
+			);
+
+			$dataArr = "['Date', '" . implode("', '", array_values($graphLabels)) . "']";
 			 
 			// loop through data list
-			foreach ($reportList as $dataInfo) {
-	
+			foreach ($reportList as $dataInfo) {	
 				$valStr = "";
-				foreach ($colList as $seId => $seVal) {
+				foreach (array_keys($colList) as $seId) {
 					$valStr .= ", ";
 					$valStr .= !empty($dataInfo[$seId])    ? $dataInfo[$seId] : 0;
 				}

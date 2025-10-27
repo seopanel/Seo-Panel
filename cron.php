@@ -92,7 +92,6 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 		if (!empty($argv[2])) {
 			$includeList[] = intval($argv[2]);
 		}
-		
 	}
 	
 	// call cronjob function

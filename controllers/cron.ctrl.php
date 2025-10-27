@@ -238,7 +238,7 @@ class CronController extends Controller {
 		} else {
 		    $isAdmin = false;
 		    $toolAccessList = $userTypeCtrler->getSeoToolAccessSettings($userInfo['utype_id']);
-		}		
+		}
 		
 		foreach ($seoTools as $cronInfo) {
 		    

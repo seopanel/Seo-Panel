@@ -120,7 +120,7 @@ class MozController extends Controller {
                 'scope' => $scope // 'url', 'domain', or 'subdomain'
             ];
         }
-
+        
         // call api using spider
         $spider = new Spider();
         $requestUrl = $this->v3Endpoint;
@@ -128,6 +128,9 @@ class MozController extends Controller {
         array_push($spider->_CURL_HTTPHEADER, 'Content-Type: application/json');
         $spider->_CURLOPT_POSTFIELDS = json_encode($requestData);
         $ret = $spider->getContent($requestUrl, FALSE);
+        
+        // test daa to fill
+        /*include(SP_ABSPATH . "/data/test.php");*/
 
         // parse response from the page
         if (!empty($ret['page'])) {

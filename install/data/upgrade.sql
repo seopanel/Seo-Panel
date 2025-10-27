@@ -28,6 +28,8 @@ ALTER TABLE `backlinkresults` ADD `external_pages_to_page` INT NOT NULL DEFAULT 
 
 ALTER TABLE `backlinkresults` ADD `external_pages_to_root_domain` INT NOT NULL DEFAULT '0' AFTER `external_pages_to_page`;
 
+ALTER TABLE `backlinkresults` CHANGE `google` `google` INT NOT NULL DEFAULT '0', CHANGE `msn` `msn` INT NOT NULL DEFAULT '0'; 
+
 update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
 
 
