@@ -1524,8 +1524,6 @@ UPDATE searchengines SET url = REPLACE(url, '&as_qdr=all&gws_rd=cr&nfpr=1', '') 
 
 ALTER TABLE `searchengines` ADD `updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
-ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL;
-
 ALTER TABLE `rankresults` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `moz_rank`;
 
 ALTER TABLE `rankresults` CHANGE `moz_rank` `moz_rank` FLOAT NOT NULL DEFAULT '0';

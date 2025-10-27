@@ -70,6 +70,8 @@ CREATE TABLE `texts` (
   `changed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL;
+
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`) VALUES
 (1, 'en', 'common', 'lang', 'Language', '2019-08-06 06:09:56'),
 (2, 'de', 'common', 'lang', 'Sprache', '2021-06-14 21:46:19'),
