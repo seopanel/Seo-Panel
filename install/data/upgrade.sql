@@ -286,4 +286,7 @@ VALUES (NULL, 'en', 'backlink', 'Backlink Count', 'Backlink Count', CURRENT_TIME
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'backlink', 'Domain Backlink Count', 'Domain Backlink Count', CURRENT_TIMESTAMP);
 
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'backlink', 'Domain Backlinks', 'Domain Backlinks', CURRENT_TIMESTAMP);
+
 
