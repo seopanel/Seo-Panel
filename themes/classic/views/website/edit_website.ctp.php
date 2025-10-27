@@ -1,6 +1,11 @@
 <?php 
 $headText = ($editAction == 'update') ? $spTextPanel['New Website'] : $spTextWeb['Edit Website'];
 echo showSectionHead($headText);
+
+if (!empty($warningMsg)) {
+    showWarningMsg($warningMsg, FALSE);
+}
+
 if(!empty($msg)){
 	?>
 	<p class="dirmsg">

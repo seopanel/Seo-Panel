@@ -90,6 +90,18 @@ function showSuccessMsg($successMsg, $exit=true) {
 	if($exit) exit;
 }
 
+# func to show success msg
+function showWarningMsg($warningMsg, $exit=true) {
+    $warningHtml = '<div class="alert alert-warning">
+	                   <button type="button" class="close" data-dismiss="alert">&times;</button>
+                       ' . $warningMsg . '
+                    </div>';
+    print $warningHtml;
+    if($exit) {
+        exit;
+    }
+}
+
 # func to show no results
 function showSectionHead($sectionHead) {
 	$data['sectionHead'] = $sectionHead;
