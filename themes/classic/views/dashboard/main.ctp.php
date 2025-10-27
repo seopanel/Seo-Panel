@@ -94,6 +94,32 @@
 						</div>
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
+								<?php echo $spText['common']['Spam Score']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Spam likelihood (0-100%). Lower is better. Green: 0-30% (Low Risk), Yellow: 31-60% (Medium Risk), Red: 61-100% (High Risk)"></i>
+							</h6>
+							<?php
+							$spamScore = floatval($websiteStats['spam_score']);
+							$spamScoreColor = getSpamScoreColor($spamScore);
+							$spamScoreLabel = getSpamScoreLabel($spamScore);
+							?>
+							<h3>
+								<span class="badge bg-<?php echo $spamScoreColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $spamScoreLabel?>">
+									<?php echo round($spamScore, 2)?>%
+								</span>
+							</h3>
+							<small class="text-muted"><?php echo $spamScoreLabel?></small>
+							<?php if (isset($websiteComparison['spam_score'])):
+								$comp = $websiteComparison['spam_score'];
+								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
+								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
+							?>
+							<br><small class="text-<?php echo $color?>">
+								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
+							</small>
+							<?php endif; ?>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3">
 								<?php echo $spTextHome['Backlinks']?>
 								<i class="fas fa-info-circle" data-toggle="tooltip" title="External pages linking to this page"></i>
 							</h6>
@@ -137,32 +163,6 @@
 							?>
 							<small class="text-<?php echo $color?>">
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
-						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spText['common']['Spam Score']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Spam likelihood (0-100%). Lower is better. Green: 0-30% (Low Risk), Yellow: 31-60% (Medium Risk), Red: 61-100% (High Risk)"></i>
-							</h6>
-							<?php
-							$spamScore = floatval($websiteStats['spam_score']);
-							$spamScoreColor = getSpamScoreColor($spamScore);
-							$spamScoreLabel = getSpamScoreLabel($spamScore);
-							?>
-							<h3>
-								<span class="badge bg-<?php echo $spamScoreColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $spamScoreLabel?>">
-									<?php echo round($spamScore, 2)?>%
-								</span>
-							</h3>
-							<small class="text-muted"><?php echo $spamScoreLabel?></small>
-							<?php if (isset($websiteComparison['spam_score'])):
-								$comp = $websiteComparison['spam_score'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<br><small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
 							</small>
 							<?php endif; ?>
 						</div>
