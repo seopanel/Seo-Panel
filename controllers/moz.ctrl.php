@@ -131,14 +131,14 @@ class MozController extends Controller {
         
         // test daa to fill
         /*include(SP_ABSPATH . "/data/test.php");*/
-
+        
         // parse response from the page
         if (!empty($ret['page'])) {
             $response = json_decode($ret['page'], TRUE);
 
             // Check for JSON-RPC success response
-            if (isset($response['results_by_site'])) {
-                $rankList = !empty($response['results_by_site']) ? $response['results_by_site'] : [];
+            if (isset($response['result']['results_by_site'])) {
+                $rankList = !empty($response['result']['results_by_site']) ? $response['result']['results_by_site'] : [];
                 foreach ($rankList as $rankInfo) {
                     $mozUrlMetrics[] = $rankInfo['site_metrics'];
                 }

@@ -55,47 +55,31 @@
 <div id='subcontent'>
 <table width="100%" class="list">
 	<tr class="listHead">
-		<td class="left"><?php echo $spText['common']['Date']?></td>
+		<td width="10%"><?php echo $spText['common']['Date']?></td>
 		<td><?php echo $seInfo['domain']?> <?php echo $spText['common']['Results']?></td>
-		<td class="right"><?php echo $spText['common']['Rank']?></td>
+		<td><?php echo $spText['common']['Rank']?></td>
 	</tr>
 	<?php
 	$colCount = 3; 
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $listInfo){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
-                $leftBotClass = "tab_left_bot";
-                $rightBotClass = "tab_right_bot";
-            }else{
-                $leftBotClass = "td_left_border td_br_right";
-                $rightBotClass = "td_br_right";
-            }
+	if(count($list) > 0) {
+		foreach($list as $listInfo) {
             $scriptLink = "sec=show-info&keyId={$listInfo['keyword_id']}&time={$listInfo['time']}&seId=$seId";
             $dateLink = scriptAJAXLinkHref('reports.php', 'subcontent', $scriptLink, date('Y-m-d', $listInfo['time']) );
 			?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>" width='100px;'><?php echo $dateLink; ?></td>
-				<td class='td_br_right' id='seresult'>
+				<td><?php echo $dateLink; ?></td>
+				<td id='seresult'>
 					<a href='<?php echo $listInfo['url']?>' target='_blank'><?php echo stripslashes($listInfo['title']);?></a>
 					<p><?php echo stripslashes($listInfo['description']);?><p>
 					<label><?php echo $listInfo['url']?></label>
 				</td>
-				<td class="<?php echo $rightBotClass?>" width="100px" style='text-align:left;'><b><?php echo $listInfo['rank'].'</b> '. $listInfo['rank_diff']?></td>
+				<td class="fw-bold"><?php echo $listInfo['rank'].'</b> '. $listInfo['rank_diff']?></td>
 			</tr>
 			<?php
-			$i++;
 		}
-	}else{
+	} else {
 		echo showNoRecordsList($colCount-2);
-	} 
+	}
 	?>
-	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
-		<td class="right"></td>
-	</tr>
 </table>
 </div>
