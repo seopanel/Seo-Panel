@@ -22,7 +22,13 @@ CHANGE `page_authority` `page_authority` FLOAT NOT NULL DEFAULT '0';
 
 ALTER TABLE `directories` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `pagerank`;
 
-ALTER TABLE `auditorreports` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `page_authority`; 
+ALTER TABLE `auditorreports` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `page_authority`;
+
+ALTER TABLE `backlinkresults` ADD `external_pages_to_page` INT NOT NULL DEFAULT '0' AFTER `alexa`;
+
+ALTER TABLE `backlinkresults` ADD `external_pages_to_root_domain` INT NOT NULL DEFAULT '0' AFTER `external_pages_to_page`;
+
+ALTER TABLE `backlinkresults` CHANGE `google` `google` INT NOT NULL DEFAULT '0', CHANGE `msn` `msn` INT NOT NULL DEFAULT '0'; 
 
 update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
 
@@ -273,5 +279,14 @@ VALUES (NULL, 'en', 'common', 'Spam Score', 'Spam Score', CURRENT_TIMESTAMP);
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
 VALUES (NULL, 'en', 'common', 'Metric', 'Metric', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'backlink', 'Backlink Count', 'Backlink Count', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'backlink', 'Domain Backlink Count', 'Domain Backlink Count', CURRENT_TIMESTAMP);
+
+INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`)
+VALUES (NULL, 'en', 'backlink', 'Domain Backlinks', 'Domain Backlinks', CURRENT_TIMESTAMP);
 
 

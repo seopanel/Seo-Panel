@@ -276,19 +276,21 @@ CREATE TABLE `backlinkresults` (
   `google` int NOT NULL,
   `msn` int NOT NULL,
   `alexa` int NOT NULL DEFAULT '0',
+  `external_pages_to_page` int NOT NULL DEFAULT '0',
+  `external_pages_to_root_domain` int NOT NULL DEFAULT '0',
   `result_time` int NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_unicode_ci;
 
-INSERT INTO `backlinkresults` (`id`, `website_id`, `google`, `msn`, `alexa`, `result_time`, `result_date`) VALUES
-(1, 1, 1250, 890, 1100, 1759919514, '2025-10-08'),
-(2, 1, 1320, 920, 1150, 1760005914, '2025-10-09'),
-(3, 1, 1380, 950, 1200, 1760092314, '2025-10-10'),
-(4, 1, 1450, 980, 1250, 1760178714, '2025-10-11'),
-(5, 1, 1520, 1010, 1300, 1760265114, '2025-10-12'),
-(6, 1, 1590, 1040, 1350, 1760351514, '2025-10-13'),
-(7, 1, 1650, 1070, 1400, 1760437914, '2025-10-14'),
-(8, 1, 1720, 1100, 1450, 1760524314, '2025-10-15');
+INSERT INTO `backlinkresults` (`id`, `website_id`, `google`, `msn`, `alexa`, `external_pages_to_page`, `external_pages_to_root_domain`, `result_time`, `result_date`) VALUES
+(1, 1, 1250, 890, 1100, 450, 1200, 1759919514, '2025-10-08'),
+(2, 1, 1320, 920, 1150, 480, 1250, 1760005914, '2025-10-09'),
+(3, 1, 1380, 950, 1200, 510, 1300, 1760092314, '2025-10-10'),
+(4, 1, 1450, 980, 1250, 540, 1350, 1760178714, '2025-10-11'),
+(5, 1, 1520, 1010, 1300, 570, 1400, 1760265114, '2025-10-12'),
+(6, 1, 1590, 1040, 1350, 600, 1450, 1760351514, '2025-10-13'),
+(7, 1, 1650, 1070, 1400, 630, 1500, 1760437914, '2025-10-14'),
+(8, 1, 1720, 1100, 1450, 660, 1550, 1760524314, '2025-10-15');
 
 DROP TABLE IF EXISTS `country`;
 CREATE TABLE `country` (

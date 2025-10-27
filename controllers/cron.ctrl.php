@@ -238,7 +238,7 @@ class CronController extends Controller {
 		} else {
 		    $isAdmin = false;
 		    $toolAccessList = $userTypeCtrler->getSeoToolAccessSettings($userInfo['utype_id']);
-		}		
+		}
 		
 		foreach ($seoTools as $cronInfo) {
 		    
@@ -405,46 +405,63 @@ class CronController extends Controller {
 	}	
 	
 	# func to generate backlink reports from cron
-	function backlinkCheckerCron($websiteId){
-		
+	function backlinkCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/backlink.ctrl.php");
+		include_once(SP_CTRLPATH."/rank.ctrl.php");
 		$this->debugMsg("Starting Backlink Checker cron for website: {$this->websiteInfo['name']}....<br>\n");
-		
+
 		$backlinkCtrler = New BacklinkController();
 		$websiteInfo = $this->websiteInfo;
-		
+
 		if (SP_MULTIPLE_CRON_EXEC && $backlinkCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) return;
-		
-		$backlinkCtrler->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);			
-		foreach ($backlinkCtrler->colList as $col => $dbCol) {
-			$websiteInfo[$col] = $backlinkCtrler->__getBacklinks($col);
-		}
-		
-		$backlinkCtrler->saveRankResults($websiteInfo, true);			
-		echo "Saved backlink results of <b>$websiteUrl</b>.....</br>\n";
-		
+
+		$websiteUrl = addHttpToUrl($websiteInfo['url']);
+		$mozCtrler = new MozController();
+		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+
+		// Extract backlink data from Moz API
+		$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+		$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+		$backlinkCtrler->saveRankResults($websiteInfo, true);
+		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+
+		// Also save rank data from Moz API
+		$rankCtrler = New RankController();
+		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+		$rankCtrler->saveRankResults($websiteInfo, true);
+		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
 	}	
 	
 	// func to generate rank reports from cron
 	function rankCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/rank.ctrl.php");
+		include_once(SP_CTRLPATH."/backlink.ctrl.php");
 		$this->debugMsg("Starting Rank Checker cron for website: {$this->websiteInfo['name']}....<br>\n");
-		
+
 		$rankCtrler = New RankController();
 		$websiteInfo = $this->websiteInfo;
 		if (SP_MULTIPLE_CRON_EXEC && $rankCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) {
 		    return;
 		}
-		
+
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
 		$mozCtrler = new MozController();
 		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
 
 		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;$mozRankInfo[0]['page_authority'];
-		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;$mozRankInfo[0]['domain_authority'];
-		$rankCtrler->saveRankResults($websiteInfo, true);			
+		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+		$rankCtrler->saveRankResults($websiteInfo, true);
 		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+
+		// Save backlink results from Moz data
+		$backlinkCtrler = New BacklinkController();
+		$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+		$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+		$backlinkCtrler->saveRankResults($websiteInfo, true);
+		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 	}
 	
 	# func to find the keyword position checker

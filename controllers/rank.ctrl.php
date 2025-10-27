@@ -244,7 +244,13 @@ class RankController extends Controller{
 
 			$this->saveRankResults($websiteInfo, true);			
 			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
-		}	
+
+			// Also save backlink data from Moz API
+			$backlinkCtrler = New BacklinkController();
+			$websiteInfo['external_pages_to_page'] = !empty($mozRankList[$i]['external_pages_to_page']) ? $mozRankList[$i]['external_pages_to_page'] : 0;
+			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankList[$i]['external_pages_to_root_domain']) ? $mozRankList[$i]['external_pages_to_root_domain'] : 0;
+			$backlinkCtrler->saveRankResults($websiteInfo, true);
+		}
 	}
 	
 	# function to save rank details

@@ -134,4 +134,7 @@ $MozUrlMetricsData = array(
     ),
     "errors_by_site" => array()
 );
+
+$ret = [];
+$ret['page'] = json_encode($MozUrlMetricsData);
 ?>

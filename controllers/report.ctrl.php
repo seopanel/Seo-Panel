@@ -956,13 +956,15 @@ class ReportController extends Controller {
 	    return empty($info['keyword_id']) ? false : true;
 	}
 	
-    # function to show system reports 
+    # function to show system reports
 	function showOverallReportSummary($searchInfo=[], $cronUserId=false) {
 	    $searchInfo['type'] = htmlentities($searchInfo['type'], ENT_QUOTES);
 	    $searchInfo['search_name'] = htmlentities($searchInfo['search_name'], ENT_QUOTES);
 	    $searchInfo['order_col'] = str_replace([' ', '*'], '', $searchInfo['order_col']);
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
         $this->set('spTextHome', $spTextHome);
+		$spTextBack = $this->getLanguageTexts('backlink', $_SESSION['lang_code']);
+		$this->set('spTextBack', $spTextBack);
         $this->set('cronUserId', $cronUserId);
 		
 		$exportVersion = false;
@@ -1229,8 +1231,8 @@ class ReportController extends Controller {
 				# back links reports
 				$report = $backlinlCtrler->__getWebsitebacklinkReport($listInfo['id'], $fromTime, $toTime);
 				$report = $report[0];
-				$listInfo['google']['backlinks'] = empty($report['google']) ? "-" : $report['google']." ".$report['rank_diff_google'];
-				$listInfo['msn']['backlinks'] = empty($report['msn']) ? "-" : $report['msn']." ".$report['rank_diff_msn'];
+				$listInfo['external_pages_to_page']['backlinks'] = empty($report['external_pages_to_page']) ? "-" : $report['external_pages_to_page']." ".$report['rank_diff_external_pages_to_page'];
+				$listInfo['external_pages_to_root_domain']['backlinks'] = empty($report['external_pages_to_root_domain']) ? "-" : $report['external_pages_to_root_domain']." ".$report['rank_diff_external_pages_to_root_domain'];
 				
 				# rank reports
 				$report = $saturationCtrler->__getWebsiteSaturationReport($listInfo['id'], $fromTime, $toTime);
@@ -1269,8 +1271,8 @@ class ReportController extends Controller {
 					$_SESSION['text']['common']['MOZ Rank'],
 					$_SESSION['text']['common']['Domain Authority'],
 					$_SESSION['text']['common']['Page Authority'],
-					'Google '.$spTextHome['Backlinks'],
-					'Bing '.$spTextHome['Backlinks'],
+					$_SESSION['text']['backlink']['Backlink Count'],
+					$_SESSION['text']['backlink']['Domain Backlink Count'],
 					'Google '.$spTextHome['Indexed'],
 					'Bing '.$spTextHome['Indexed'],
 					$spTextPS['Desktop Speed'],
@@ -1286,13 +1288,13 @@ class ReportController extends Controller {
 						strip_tags($websiteInfo['mozrank']),
 						strip_tags($websiteInfo['domain_authority']),
 						strip_tags($websiteInfo['page_authority']),
-						strip_tags($websiteInfo['google']['backlinks']),
-						strip_tags($websiteInfo['msn']['backlinks']),
-						strip_tags($websiteInfo['google']['indexed']),					
+						strip_tags($websiteInfo['external_pages_to_page']['backlinks']),
+						strip_tags($websiteInfo['external_pages_to_root_domain']['backlinks']),
+						strip_tags($websiteInfo['google']['indexed']),
 						strip_tags($websiteInfo['msn']['indexed']),
 						strip_tags($websiteInfo['desktop_speed_score']),
 						strip_tags($websiteInfo['mobile_speed_score']),
-						$websiteInfo['dirsub']['total'],					
+						$websiteInfo['dirsub']['total'],
 						$websiteInfo['dirsub']['active'],
 					);
 					$exportContent .= createExportContent( $valueList);

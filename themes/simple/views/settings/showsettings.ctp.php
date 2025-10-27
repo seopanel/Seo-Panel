@@ -96,7 +96,9 @@ if ($category == "moz") {
 				if ($listInfo['set_name'] == 'SP_PAYMENT_CURRENCY') {
 				    echo $spTextSubscription["Currency"] . ":";
 				} elseif ($listInfo['set_name'] == 'SP_DEFAULT_COUNTRY') {
-			        echo $spText['common']["Country"] . ":";
+				    echo $spText['common']["Country"] . ":";
+				} elseif ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {
+				    echo $spText['common']["API Token"] . ":";
 				} else {
 					echo $spTextSettings[$listInfo['set_name']] . ":";
 				}
@@ -166,17 +168,17 @@ if ($category == "moz") {
 							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo stripslashes($listInfo['set_val'])?>" <?php echo $styleOpt?>>
 							<?php if ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {?>
 								<div class="mt-2">
-									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" class="btn btn-link"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php } else if ($listInfo['set_name'] == 'SP_GOOGLE_API_KEY') {?>
 								<div class="mt-2">
-									<a href="javascript:void(0);" onclick="checkGoogleAPIConnection('settings.php?sec=checkGoogleAPI', 'show_conn_res')" class="btn btn-link"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+									<a href="javascript:void(0);" onclick="checkGoogleAPIConnection('settings.php?sec=checkGoogleAPI', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php } else if ($listInfo['set_name'] == 'SP_DFS_API_PASSWORD') {?>
 								<div class="mt-2">
-									<a href="javascript:void(0);" onclick="checkDataForSEOAPIConnection('settings.php?sec=checkDataForSEOAPI', 'show_conn_res')" class="btn btn-link"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+									<a href="javascript:void(0);" onclick="checkDataForSEOAPIConnection('settings.php?sec=checkDataForSEOAPI', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php }?>

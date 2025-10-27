@@ -40,6 +40,8 @@ $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lan
 $controller->set('spTextPanel', $controller->spTextPanel);
 $controller->spTextReport = $controller->getLanguageTexts('report', $_SESSION['lang_code']);
 $controller->set('spTextReport', $controller->spTextReport);
+$controller->spTextBack = $controller->getLanguageTexts('backlink', $_SESSION['lang_code']);
+$controller->set('spTextBack', $controller->spTextBack);
 
 $controller->layout = 'ajax';
 

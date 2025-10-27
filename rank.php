@@ -27,6 +27,7 @@ checkLoggedIn();
 isUserHaveAccessToSeoTool("rank-checker");
 
 include_once(SP_CTRLPATH."/rank.ctrl.php");
+include_once(SP_CTRLPATH."/backlink.ctrl.php");
 include_once(SP_CTRLPATH."/moz.ctrl.php");
 $controller = New RankController();
 $controller->view->menu = 'seotools';

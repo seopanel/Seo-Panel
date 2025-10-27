@@ -2713,3 +2713,1028 @@ a.btn, a.btn:hover {
         font-size: 20px;
     }
 }
+/* ========================================
+   SIMPLE THEME - CUSTOM ICON STYLES
+   ======================================== */
+
+/* === Icon Color Variations === */
+.fas, .far, .fab, .fa {
+    transition: all 0.3s ease;
+}
+
+/* Dashboard Icons - Teal accent */
+.dashboard .fas,
+.dashboard .far {
+    color: #0891b2;
+}
+
+/* Section Header Icons - Orange */
+.SectionHeader .fas {
+    color: #f59e0b;
+    text-shadow: 0 1px 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Table Icons */
+.list .fas,
+.list .far {
+    color: #6366f1;
+}
+
+/* Success Icons - Green */
+.badge.bg-success .fas,
+.btn-success .fas {
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Warning Icons - Amber */
+.badge.bg-warning .fas,
+.btn-warning .fas {
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Danger Icons - Red */
+.badge.bg-danger .fas,
+.btn-danger .fas {
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* Info Icons - Cyan */
+.badge.bg-info .fas,
+.btn-info .fas {
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* === Icon Size Variations === */
+.fa-lg {
+    font-size: 1.33333em;
+}
+
+.fa-2x {
+    font-size: 2em;
+}
+
+.fa-3x {
+    font-size: 3em;
+}
+
+/* === Icon Animations === */
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes iconBounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-6px);
+    }
+    60% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes iconRotate {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Apply pulse animation to notification icons */
+.fa-bell,
+.fa-envelope {
+    animation: iconPulse 2s infinite;
+}
+
+/* Apply rotation to loading/refresh icons */
+.fa-sync,
+.fa-spinner,
+.fa-circle-notch {
+    animation: iconRotate 1.5s linear infinite;
+}
+
+/* === Navigation Icons === */
+.navbar .fas,
+.navbar .far {
+    font-size: 1.2em;
+    color: #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.navbar .nav-link:hover .fas,
+.navbar .nav-link:hover .far {
+    color: #ffffff;
+    transform: scale(1.15);
+}
+
+/* === Tooltip Icons === */
+.fa-info-circle,
+.fa-question-circle {
+    color: #6366f1;
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.fa-info-circle:hover,
+.fa-question-circle:hover {
+    color: #4f46e5;
+    transform: scale(1.2);
+}
+
+/* === Action Button Icons === */
+.btn .fas,
+.btn .far {
+    margin-right: 6px;
+    transition: transform 0.2s ease;
+}
+
+.btn:hover .fas,
+.btn:hover .far {
+    transform: translateX(2px);
+}
+
+.btn-primary .fas {
+    color: #bfdbfe;
+}
+
+/* === Link Icons === */
+a .fas,
+a .far {
+    transition: all 0.25s ease;
+}
+
+a:hover .fas,
+a:hover .far {
+    transform: scale(1.1);
+}
+
+/* === Status Icons === */
+.fa-check-circle {
+    color: #10b981;
+}
+
+.fa-times-circle {
+    color: #ef4444;
+}
+
+.fa-exclamation-triangle {
+    color: #f59e0b;
+}
+
+.fa-clock {
+    color: #6366f1;
+}
+
+/* === Icon Backgrounds === */
+.icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(8, 145, 178, 0.3);
+}
+
+.icon-square {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: #ffffff;
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.3);
+}
+
+/* === Card Header Icons === */
+.card-header .fas,
+.card-header .far {
+    margin-right: 8px;
+    color: #ffffff;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+/* === Form Icons === */
+.form-label .fas,
+.form-label .far {
+    color: #0891b2;
+    margin-right: 6px;
+}
+
+/* === Export Icons === */
+.export_div .fas {
+    color: #10b981;
+    font-size: 1.3em;
+    transition: all 0.3s ease;
+}
+
+.export_div a:hover .fas {
+    color: #059669;
+    transform: scale(1.2) rotate(5deg);
+}
+
+/* === Search Icons === */
+.search .fas {
+    color: #6366f1;
+}
+
+/* === Alert Icons === */
+.alert .fas {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.alert-success .fas {
+    color: #059669;
+}
+
+.alert-danger .fas {
+    color: #dc2626;
+}
+
+.alert-warning .fas {
+    color: #d97706;
+}
+
+.alert-info .fas {
+    color: #0284c7;
+}
+
+/* === Icon Hover Effects === */
+.icon-hover {
+    transition: all 0.3s ease;
+}
+
+.icon-hover:hover {
+    transform: rotate(10deg) scale(1.15);
+}
+
+/* === Specialty Icon Styles === */
+.fa-chart-line,
+.fa-chart-bar,
+.fa-chart-pie {
+    color: #8b5cf6;
+}
+
+.fa-cog,
+.fa-sliders-h {
+    color: #64748b;
+}
+
+.fa-download,
+.fa-upload {
+    color: #10b981;
+}
+
+.fa-trash,
+.fa-trash-alt {
+    color: #ef4444;
+}
+
+.fa-edit,
+.fa-pen {
+    color: #3b82f6;
+}
+
+.fa-plus,
+.fa-plus-circle {
+    color: #10b981;
+}
+
+.fa-minus,
+.fa-minus-circle {
+    color: #ef4444;
+}
+
+/* === Icon Spacing === */
+.icon-left {
+    margin-right: 8px;
+}
+
+.icon-right {
+    margin-left: 8px;
+}
+
+/* === Badge Icons === */
+.badge .fas {
+    margin-right: 4px;
+    font-size: 0.9em;
+}
+
+/* === Menu Icons === */
+#menu .fas,
+#menu .far {
+    margin-right: 10px;
+    color: #0891b2;
+    font-size: 1.1em;
+}
+
+#menu a:hover .fas,
+#menu a:hover .far {
+    color: #06b6d4;
+    transform: translateX(3px);
+}
+
+/* === Breadcrumb Icons === */
+.breadcrumb .fas {
+    color: #94a3b8;
+    font-size: 0.85em;
+    margin: 0 6px;
+}
+
+/* === Loading States === */
+.loading .fas {
+    animation: iconRotate 1s linear infinite;
+    color: #6366f1;
+}
+
+/* === Icon Gradients === */
+.icon-gradient-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.icon-gradient-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.icon-gradient-orange {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === Icon Shadows === */
+.icon-shadow {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.15));
+}
+
+.icon-shadow-lg {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+/* === Responsive Icon Sizes === */
+@media screen and (max-width: 768px) {
+    .navbar .fas,
+    .navbar .far {
+        font-size: 1.1em;
+    }
+    
+    .export_div .fas {
+        font-size: 1.2em;
+    }
+    
+    #menu .fas,
+    #menu .far {
+        font-size: 1em;
+    }
+}
+
+/* === Icon Combinations === */
+.icon-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-text .fas,
+.icon-text .far {
+    flex-shrink: 0;
+}
+
+/* === Special Effects === */
+.icon-glow {
+    text-shadow: 0 0 8px currentColor;
+}
+
+.icon-3d {
+    text-shadow: 
+        1px 1px 0 rgba(0,0,0,0.1),
+        2px 2px 0 rgba(0,0,0,0.08),
+        3px 3px 0 rgba(0,0,0,0.06);
+}
+
+/* === Icon States === */
+.icon-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.icon-active {
+    color: #10b981;
+    animation: iconPulse 1.5s infinite;
+}
+
+/* ========================================
+   SIMPLE THEME - ADVANCED ICON EFFECTS
+   ======================================== */
+
+/* === Advanced Icon Animations === */
+@keyframes iconWiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+
+@keyframes iconFlip {
+    0% { transform: perspective(400px) rotateY(0); }
+    100% { transform: perspective(400px) rotateY(360deg); }
+}
+
+@keyframes iconTada {
+    0% { transform: scale(1) rotate(0deg); }
+    10%, 20% { transform: scale(0.9) rotate(-3deg); }
+    30%, 50%, 70%, 90% { transform: scale(1.1) rotate(3deg); }
+    40%, 60%, 80% { transform: scale(1.1) rotate(-3deg); }
+    100% { transform: scale(1) rotate(0); }
+}
+
+@keyframes iconHeartbeat {
+    0% { transform: scale(1); }
+    14% { transform: scale(1.3); }
+    28% { transform: scale(1); }
+    42% { transform: scale(1.3); }
+    70% { transform: scale(1); }
+}
+
+@keyframes iconRubberBand {
+    0% { transform: scale(1); }
+    30% { transform: scaleX(1.25) scaleY(0.75); }
+    40% { transform: scaleX(0.75) scaleY(1.25); }
+    50% { transform: scaleX(1.15) scaleY(0.85); }
+    65% { transform: scaleX(0.95) scaleY(1.05); }
+    75% { transform: scaleX(1.05) scaleY(0.95); }
+    100% { transform: scale(1); }
+}
+
+@keyframes iconShake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes iconGlow {
+    0%, 100% { filter: drop-shadow(0 0 2px currentColor); }
+    50% { filter: drop-shadow(0 0 10px currentColor); }
+}
+
+/* === Apply Advanced Animations === */
+.fa-heart:hover {
+    animation: iconHeartbeat 1.3s infinite;
+    color: #ef4444;
+}
+
+.fa-star:hover {
+    animation: iconTada 1s;
+    color: #f59e0b;
+}
+
+.fa-thumbs-up:hover {
+    animation: iconWiggle 0.6s;
+    color: #10b981;
+}
+
+.fa-certificate:hover,
+.fa-award:hover {
+    animation: iconFlip 0.8s;
+    color: #8b5cf6;
+}
+
+.fa-rocket:hover {
+    animation: iconFloat 2s infinite;
+    color: #3b82f6;
+}
+
+.fa-exclamation-circle:hover,
+.fa-exclamation-triangle:hover {
+    animation: iconShake 0.5s;
+    color: #f59e0b;
+}
+
+/* === Icon Backdrop Effects === */
+.list tr:hover .fas,
+.list tr:hover .far {
+    filter: brightness(1.2) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* === Icon Border Effects === */
+.icon-bordered {
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    padding: 8px;
+    transition: all 0.3s ease;
+}
+
+.icon-bordered:hover {
+    border-width: 3px;
+    padding: 10px;
+    transform: rotate(180deg);
+}
+
+/* === Icon with Background Pulse === */
+.icon-pulse-bg {
+    position: relative;
+}
+
+.icon-pulse-bg::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background: currentColor;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: iconPulseBg 2s infinite;
+}
+
+@keyframes iconPulseBg {
+    0% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0.3;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+    }
+}
+
+/* === Duotone Icon Effect === */
+.icon-duotone {
+    position: relative;
+    color: #0891b2;
+}
+
+.icon-duotone::after {
+    content: attr(data-icon);
+    position: absolute;
+    left: 2px;
+    top: 2px;
+    color: #f59e0b;
+    opacity: 0.5;
+    z-index: -1;
+}
+
+/* === Icon Stack Effects === */
+.fa-layers {
+    display: inline-block;
+    height: 1em;
+    line-height: 1;
+    position: relative;
+    vertical-align: middle;
+    width: 1.25em;
+}
+
+/* === Notification Badge on Icons === */
+.icon-notify {
+    position: relative;
+}
+
+.icon-notify::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    animation: iconPulse 2s infinite;
+}
+
+/* === Icon Morphing === */
+.icon-morph {
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.icon-morph:hover {
+    transform: scale(1.3) rotate(20deg);
+}
+
+/* === Navigation Menu Icon Enhancements === */
+#menu li:hover .fas,
+#menu li:hover .far {
+    animation: iconRubberBand 0.8s;
+}
+
+/* === Icon Rainbow Effect === */
+@keyframes iconRainbow {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+
+.icon-rainbow:hover {
+    animation: iconRainbow 3s infinite linear;
+}
+
+/* === Icon Neon Glow === */
+.icon-neon {
+    color: #06b6d4;
+    text-shadow: 
+        0 0 5px #06b6d4,
+        0 0 10px #06b6d4,
+        0 0 20px #06b6d4,
+        0 0 40px #0891b2;
+    animation: iconNeonFlicker 3s infinite;
+}
+
+@keyframes iconNeonFlicker {
+    0%, 100% { opacity: 1; }
+    41%, 43%, 45% { opacity: 0.8; }
+    42%, 44% { opacity: 1; }
+}
+
+/* === Icon Bubble Effect === */
+.icon-bubble {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.icon-bubble:hover {
+    transform: scale(1.2);
+}
+
+.icon-bubble::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(8, 145, 178, 0.3);
+    transition: width 0.4s ease, height 0.4s ease;
+}
+
+.icon-bubble:hover::before {
+    width: 200%;
+    height: 200%;
+}
+
+/* === Icon Flip Card === */
+.icon-flip {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.icon-flip:hover {
+    transform: rotateY(180deg);
+}
+
+/* === Icon Zoom === */
+.icon-zoom:hover {
+    animation: iconZoom 0.5s;
+}
+
+@keyframes iconZoom {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.5); }
+}
+
+/* === Icon Swing === */
+.icon-swing:hover {
+    animation: iconSwing 1s;
+    transform-origin: top center;
+}
+
+@keyframes iconSwing {
+    20% { transform: rotate(15deg); }
+    40% { transform: rotate(-10deg); }
+    60% { transform: rotate(5deg); }
+    80% { transform: rotate(-5deg); }
+    100% { transform: rotate(0deg); }
+}
+
+/* === Icon Jello === */
+.icon-jello:hover {
+    animation: iconJello 0.9s;
+}
+
+@keyframes iconJello {
+    11.1% { transform: none; }
+    22.2% { transform: skewX(-12.5deg) skewY(-12.5deg); }
+    33.3% { transform: skewX(6.25deg) skewY(6.25deg); }
+    44.4% { transform: skewX(-3.125deg) skewY(-3.125deg); }
+    55.5% { transform: skewX(1.5625deg) skewY(1.5625deg); }
+    66.6% { transform: skewX(-0.78125deg) skewY(-0.78125deg); }
+    77.7% { transform: skewX(0.390625deg) skewY(0.390625deg); }
+    88.8% { transform: skewX(-0.1953125deg) skewY(-0.1953125deg); }
+    100% { transform: none; }
+}
+
+/* === Theme-Specific Icon Colors === */
+.btn-primary:hover .fas,
+.btn-primary:hover .far {
+    animation: iconGlow 1.5s infinite;
+    color: #bfdbfe;
+}
+
+.badge:hover .fas,
+.badge:hover .far {
+    animation: iconWiggle 0.5s;
+}
+
+/* === Action Icons with Special Effects === */
+.fa-save:hover {
+    animation: iconFloat 2s infinite;
+    color: #10b981;
+}
+
+.fa-trash:hover,
+.fa-trash-alt:hover {
+    animation: iconShake 0.5s;
+    color: #dc2626;
+}
+
+.fa-search:hover {
+    animation: iconZoom 0.8s;
+    color: #6366f1;
+}
+
+.fa-filter:hover {
+    animation: iconRubberBand 0.8s;
+    color: #8b5cf6;
+}
+
+.fa-download:hover {
+    animation: iconFloat 2s ease-in-out infinite;
+    color: #059669;
+}
+
+.fa-upload:hover {
+    animation: iconFloat 2s ease-in-out infinite reverse;
+    color: #0891b2;
+}
+
+.fa-refresh:hover,
+.fa-sync-alt:hover {
+    animation: iconRotate 1s linear infinite;
+    color: #3b82f6;
+}
+
+/* === Dashboard Specific Icons === */
+.dashboard .card:hover .fas,
+.dashboard .card:hover .far {
+    animation: iconTada 0.8s;
+    filter: brightness(1.3);
+}
+
+/* === Table Row Icons === */
+.list tbody tr:hover .fa-edit {
+    color: #3b82f6;
+    animation: iconWiggle 0.5s;
+}
+
+.list tbody tr:hover .fa-trash {
+    color: #ef4444;
+    animation: iconShake 0.5s;
+}
+
+.list tbody tr:hover .fa-eye {
+    color: #8b5cf6;
+    animation: iconZoom 0.5s;
+}
+
+/* === Icon Gradient Hover === */
+.icon-gradient-hover {
+    transition: all 0.3s ease;
+}
+
+.icon-gradient-hover:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: iconGradientMove 3s infinite;
+}
+
+@keyframes iconGradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* === Success/Error Icon Feedback === */
+.fa-check.icon-success {
+    animation: iconHeartbeat 0.8s, iconGlow 2s infinite;
+    color: #10b981;
+}
+
+.fa-times.icon-error {
+    animation: iconShake 0.5s, iconGlow 2s infinite;
+    color: #ef4444;
+}
+
+/* === Loading Icon Variants === */
+.fa-spinner.icon-loading {
+    animation: iconRotate 0.8s linear infinite;
+    color: #6366f1;
+}
+
+.fa-circle-notch.icon-loading {
+    animation: iconRotate 1.2s linear infinite;
+    color: #0891b2;
+}
+
+.fa-cog.icon-loading {
+    animation: iconRotate 2s linear infinite;
+    color: #64748b;
+}
+
+/* === Social Media Icons === */
+.fa-facebook:hover {
+    color: #1877f2;
+    animation: iconBounce 0.8s;
+}
+
+.fa-twitter:hover {
+    color: #1da1f2;
+    animation: iconFloat 2s infinite;
+}
+
+.fa-linkedin:hover {
+    color: #0a66c2;
+    animation: iconRubberBand 0.8s;
+}
+
+.fa-youtube:hover {
+    color: #ff0000;
+    animation: iconHeartbeat 1.5s;
+}
+
+.fa-instagram:hover {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: iconTada 1s;
+}
+
+/* === Icon Size Variants with Effects === */
+.fa-xs { font-size: 0.75em; }
+.fa-sm { font-size: 0.875em; }
+.fa-lg { font-size: 1.25em; }
+.fa-xl { font-size: 1.5em; }
+.fa-2xl { font-size: 2em; }
+
+/* === Icon Stroke Effect === */
+.icon-stroke {
+    color: transparent;
+    -webkit-text-stroke: 2px #0891b2;
+    text-stroke: 2px #0891b2;
+    transition: all 0.3s ease;
+}
+
+.icon-stroke:hover {
+    color: #0891b2;
+    -webkit-text-stroke: 0px;
+    text-stroke: 0px;
+}
+
+/* === Icon Shadow Variants === */
+.icon-shadow-sm {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+.icon-shadow-md {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+}
+
+.icon-shadow-lg {
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.2));
+}
+
+.icon-shadow-xl {
+    filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.25));
+}
+
+/* === Icon Reflection Effect === */
+.icon-reflect {
+    position: relative;
+}
+
+.icon-reflect::after {
+    content: attr(data-icon);
+    position: absolute;
+    left: 0;
+    top: 100%;
+    transform: scaleY(-1);
+    opacity: 0.2;
+    filter: blur(2px);
+}
+
+/* === Icon Tooltip Enhancement === */
+[data-tooltip]:hover .fas,
+[data-tooltip]:hover .far {
+    animation: iconBounce 0.8s;
+    color: #f59e0b;
+}
+
+/* === Contextual Icon Colors by Section === */
+.card-primary .fas { color: #3b82f6; }
+.card-success .fas { color: #10b981; }
+.card-warning .fas { color: #f59e0b; }
+.card-danger .fas { color: #ef4444; }
+.card-info .fas { color: #06b6d4; }
+
+/* === Icon Hover Lift Effect === */
+.icon-lift:hover {
+    transform: translateY(-4px);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2));
+    transition: all 0.3s ease;
+}
+
+/* === Icon Ripple Effect === */
+@keyframes iconRipple {
+    0% {
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    100% {
+        box-shadow: 0 0 0 20px rgba(0, 0, 0, 0);
+    }
+}
+
+.icon-ripple {
+    animation: iconRipple 2s infinite;
+}
+
+/* === Icon Diagonal Slide === */
+.icon-diagonal:hover {
+    transform: translate(3px, -3px);
+    transition: transform 0.3s ease;
+}
+
+/* === Special Theme Icons === */
+.SectionHeader:hover .fas {
+    animation: iconFloat 2s infinite;
+    transform-origin: center;
+}
+
+/* === Icon Breathing Effect === */
+@keyframes iconBreathe {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+.icon-breathe {
+    animation: iconBreathe 3s infinite ease-in-out;
+}
+
+/* === Mobile Responsive Icon Adjustments === */
+@media screen and (max-width: 768px) {
+    .fas, .far, .fab, .fa {
+        font-size: 0.95em;
+    }
+    
+    .icon-circle, .icon-square {
+        width: 35px;
+        height: 35px;
+    }
+    
+    /* Disable heavy animations on mobile */
+    .icon-rainbow:hover,
+    .icon-neon {
+        animation: none;
+    }
+}
+
+/* === Print-friendly Icons === */
+@media print {
+    .fas, .far, .fab, .fa {
+        color: #000000 !important;
+        text-shadow: none !important;
+        filter: none !important;
+        animation: none !important;
+    }
+}

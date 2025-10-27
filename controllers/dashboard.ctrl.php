@@ -35,6 +35,7 @@ class DashboardController extends Controller {
 
         // Load dashboard language texts
         $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $this->set('spTextBack', $this->getLanguageTexts('backlink', $_SESSION['lang_code']));
 
         // Get user websites
         $websiteCtrler = New WebsiteController();
@@ -59,25 +60,24 @@ class DashboardController extends Controller {
             case 'day':
                 $fromTime = date('Y-m-d', strtotime('-1 day'));
                 $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                $prevToTime = date('Y-m-d', strtotime('-1 day'));
                 break;
             case 'week':
                 $fromTime = date('Y-m-d', strtotime('-7 days'));
                 $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                $prevToTime = date('Y-m-d', strtotime('-7 days'));
                 break;
             case 'year':
                 $fromTime = date('Y-m-d', strtotime('-1 year'));
                 $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                $prevToTime = date('Y-m-d', strtotime('-1 year'));
                 break;
             case 'month':
             default:
                 $fromTime = date('Y-m-d', strtotime('-30 days'));
                 $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                $prevToTime = date('Y-m-d', strtotime('-30 days'));
                 break;
         }
+
+        // Calculate previous period end date (one day before current period start to avoid overlap)
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -266,21 +266,23 @@ class DashboardController extends Controller {
     private function getWebsiteOverviewStats($websiteId, $fromTime, $toTime) {
         $stats = [];
 
-        // Get backlinks count (latest - sum of google and msn)
-        $sql = "SELECT google, msn
+        // Get backlinks count (latest within time range - external_pages_to_page)
+        $sql = "SELECT external_pages_to_page, external_pages_to_root_domain,result_date
                 FROM backlinkresults
                 WHERE website_id=" . intval($websiteId) . "
+                AND result_date >= '$fromTime' AND result_date <= '$toTime'
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
-        $stats['backlinks'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
-        $stats['google_backlinks'] = $result['google'] ?? 0;
-        $stats['msn_backlinks'] = $result['msn'] ?? 0;
+        $stats['backlinks'] = $result['external_pages_to_page'] ?? 0;
+        $stats['external_pages_to_page'] = $result['external_pages_to_page'] ?? 0;
+        $stats['external_pages_to_root_domain'] = $result['external_pages_to_root_domain'] ?? 0;
 
-        // Get indexed pages (latest - sum of google and msn)
-        $sql = "SELECT google, msn
+        // Get indexed pages (latest within time range - sum of google and msn)
+        $sql = "SELECT google, msn, result_date
                 FROM saturationresults
                 WHERE website_id=" . intval($websiteId) . "
+                AND result_date >= '$fromTime' AND result_date <= '$toTime'
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
@@ -288,10 +290,11 @@ class DashboardController extends Controller {
         $stats['google_indexed'] = $result['google'] ?? 0;
         $stats['msn_indexed'] = $result['msn'] ?? 0;
 
-        // Get Moz rank (latest)
-        $sql = "SELECT spam_score, domain_authority, page_authority
+        // Get Moz rank (latest within time range)
+        $sql = "SELECT spam_score, domain_authority, page_authority, result_date
                 FROM rankresults
                 WHERE website_id=" . intval($websiteId) . "
+                AND result_date >= '$fromTime' AND result_date <= '$toTime'
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
