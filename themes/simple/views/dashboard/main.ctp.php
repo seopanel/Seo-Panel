@@ -41,10 +41,65 @@
 				<div class="card-body">
 					<div class="row">
 						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spTextHome['Backlinks']?></h6>
-							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['backlinks'])?></span></h3>
-							<?php if (isset($websiteComparison['backlinks'])):
-								$comp = $websiteComparison['backlinks'];
+							<h6 class="mb-3">
+								<?php echo $spText['common']['Domain Authority']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Domain Authority (0-100). Higher is better. Red: 1-20 (Weak), Yellow: 21-50 (Moderate), Blue: 51-70 (Strong), Green: 71-100 (Very Strong)"></i>
+							</h6>
+							<?php
+							$da = floatval($websiteStats['domain_authority']);
+							$daColor = getAuthorityColor($da);
+							$daLabel = getAuthorityLabel($da);
+							?>
+							<h3>
+								<span class="badge bg-<?php echo $daColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $daLabel?>">
+									<?php echo round($da, 2)?>
+								</span>
+							</h3>
+							<small class="text-muted"><?php echo $daLabel?></small>
+							<?php if (isset($websiteComparison['domain_authority'])):
+								$comp = $websiteComparison['domain_authority'];
+								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
+								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
+							?>
+							<br><small class="text-<?php echo $color?>">
+								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
+							</small>
+							<?php endif; ?>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3">
+								<?php echo $spText['common']['Page Authority']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Page Authority (0-100). Higher is better. Red: 1-20 (Weak), Yellow: 21-50 (Moderate), Blue: 51-70 (Strong), Green: 71-100 (Very Strong)"></i>
+							</h6>
+							<?php
+							$pa = floatval($websiteStats['page_authority']);
+							$paColor = getAuthorityColor($pa);
+							$paLabel = getAuthorityLabel($pa);
+							?>
+							<h3>
+								<span class="badge bg-<?php echo $paColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $paLabel?>">
+									<?php echo round($pa, 2)?>
+								</span>
+							</h3>
+							<small class="text-muted"><?php echo $paLabel?></small>
+							<?php if (isset($websiteComparison['page_authority'])):
+								$comp = $websiteComparison['page_authority'];
+								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
+								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
+							?>
+							<br><small class="text-<?php echo $color?>">
+								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
+							</small>
+							<?php endif; ?>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3">
+								<?php echo $spTextHome['Backlinks']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="External pages linking to this page"></i>
+							</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['external_pages_to_page'])?></span></h3>
+							<?php if (isset($websiteComparison['external_pages_to_page'])):
+								$comp = $websiteComparison['external_pages_to_page'];
 								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
 								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
 							?>
@@ -54,7 +109,26 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spTextHome['Pages Indexed']?></h6>
+							<h6 class="mb-3">
+								<?php echo $spTextBack['Domain Backlinks']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="External pages linking to this root domain"></i>
+							</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['external_pages_to_root_domain'])?></span></h3>
+							<?php if (isset($websiteComparison['external_pages_to_root_domain'])):
+								$comp = $websiteComparison['external_pages_to_root_domain'];
+								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
+								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
+							?>
+							<small class="text-<?php echo $color?>">
+								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
+							</small>
+							<?php endif; ?>
+						</div>
+						<div class="col-md-2 text-center">
+							<h6 class="mb-3">
+								<?php echo $spTextHome['Pages Indexed']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by search engines (Google + Bing)"></i>
+							</h6>
 							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['indexed_pages'])?></span></h3>
 							<?php if (isset($websiteComparison['indexed_pages'])):
 								$comp = $websiteComparison['indexed_pages'];
@@ -66,42 +140,29 @@
 							</small>
 							<?php endif; ?>
 						</div>
-						<div class="col-md-3 text-center">
-							<h6 class="mb-3">Moz Rank</h6>
-							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['mozrank']?></span></h3>
-							<?php if (isset($websiteComparison['mozrank'])):
-								$comp = $websiteComparison['mozrank'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo number_format($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
-						</div>
-						<div class="col-md-3 text-center">
-							<h6 class="mb-3"><?php echo $spText['common']['Domain Authority']?></h6>
-							<h3><span class="badge bg-warning" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['domain_authority']?></span></h3>
-							<?php if (isset($websiteComparison['domain_authority'])):
-								$comp = $websiteComparison['domain_authority'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo number_format($comp['diff'], 1)?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
-						</div>
 						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spText['common']['Page Authority']?></h6>
-							<h3><span class="badge bg-danger" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $websiteStats['page_authority']?></span></h3>
-							<?php if (isset($websiteComparison['page_authority'])):
-								$comp = $websiteComparison['page_authority'];
+							<h6 class="mb-3">
+								<?php echo $spText['common']['Spam Score']?>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Spam likelihood (0-100%). Lower is better. Green: 0-30% (Low Risk), Yellow: 31-60% (Medium Risk), Red: 61-100% (High Risk)"></i>
+							</h6>
+							<?php
+							$spamScore = floatval($websiteStats['spam_score']);
+							$spamScoreColor = getSpamScoreColor($spamScore);
+							$spamScoreLabel = getSpamScoreLabel($spamScore);
+							?>
+							<h3>
+								<span class="badge bg-<?php echo $spamScoreColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $spamScoreLabel?>">
+									<?php echo round($spamScore, 2)?>%
+								</span>
+							</h3>
+							<small class="text-muted"><?php echo $spamScoreLabel?></small>
+							<?php if (isset($websiteComparison['spam_score'])):
+								$comp = $websiteComparison['spam_score'];
 								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
 								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
 							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo number_format($comp['diff'], 1)?> (<?php echo $comp['percent']?>%)</strong>
+							<br><small class="text-<?php echo $color?>">
+								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
 							</small>
 							<?php endif; ?>
 						</div>

@@ -44,9 +44,18 @@
 <table width="100%" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
-		<td><?php echo $spText['common']['MOZ Rank']?></td>
-		<td><?php echo $spText['common']['Domain Authority']?></td>
-		<td class="right"><?php echo $spText['common']['Page Authority']?></td>
+		<td>
+			<?php echo $spText['common']['Spam Score']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Lower is better"></i>
+		</td>
+		<td>
+			<?php echo $spText['common']['Domain Authority']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Higher is better"></i>
+		</td>
+		<td class="right">
+			<?php echo $spText['common']['Page Authority']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Higher is better"></i>
+		</td>
 	</tr>
 	<?php
 	$colCount = 4; 
@@ -66,9 +75,36 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
-				<td class='td_br_right left'><b><?php echo $listInfo['moz_rank'].'</b> '. $listInfo['rank_diff_moz']?></td>
-				<td class='td_br_right left'><b><?php echo $listInfo['domain_authority'].'</b> '. $listInfo['rank_diff_domain_authority']?></td>
-				<td class="<?php echo $rightBotClass?>"><b><?php echo $listInfo['page_authority'].'</b> '. $listInfo['rank_diff_page_authority']?></td>
+				<td class='td_br_right left'>
+					<?php
+					$spamScore = floatval($listInfo['spam_score']);
+					$spamScoreColor = getSpamScoreColor($spamScore);
+					?>
+					<span class="badge bg-<?php echo $spamScoreColor?>">
+						<?php echo round($spamScore, 2)?>%
+					</span>
+					<?php echo $listInfo['rank_diff_spam_score']?>
+				</td>
+				<td class='td_br_right left'>
+					<?php
+					$da = floatval($listInfo['domain_authority']);
+					$daColor = getAuthorityColor($da);
+					?>
+					<span class="badge bg-<?php echo $daColor?>">
+						<?php echo round($da, 2)?>
+					</span>
+					<?php echo $listInfo['rank_diff_domain_authority']?>
+				</td>
+				<td class="<?php echo $rightBotClass?>">
+					<?php
+					$pa = floatval($listInfo['page_authority']);
+					$paColor = getAuthorityColor($pa);
+					?>
+					<span class="badge bg-<?php echo $paColor?>">
+						<?php echo round($pa, 2)?>
+					</span>
+					<?php echo $listInfo['rank_diff_page_authority']?>
+				</td>
 			</tr>
 			<?php
 			$i++;

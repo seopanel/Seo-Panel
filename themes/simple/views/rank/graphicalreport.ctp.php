@@ -4,7 +4,6 @@ $submitAction = "scriptDoLoadPost('rank.php', 'search_form', 'content')";
 ?>
 <form id='search_form'>
 <input type="hidden" name="sec" value="graphical-reports">
-<input type="hidden" name="search_engine" value="moz">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -17,6 +16,20 @@ $submitAction = "scriptDoLoadPost('rank.php', 'search_form', 'content')";
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
 					<?php }?>
 				<?php }?>
+			</select>
+		</td>
+		<th class="pl-4"><?php echo $spText['common']['Metric']?>: </th>
+		<td>
+			<select name="search_engine" class="custom-select" onchange="<?php echo $submitAction;?>">
+				<option value="spam_score" <?php echo ($searchEngine == 'spam_score') ? 'selected' : ''; ?>>
+					<?php echo $spText['common']['Spam Score']?>
+				</option>
+				<option value="domain_authority" <?php echo ($searchEngine == 'domain_authority') ? 'selected' : ''; ?>>
+					<?php echo $spText['common']['Domain Authority']?>
+				</option>
+				<option value="page_authority" <?php echo ($searchEngine == 'page_authority') ? 'selected' : ''; ?>>
+					<?php echo $spText['common']['Page Authority']?>
+				</option>
 			</select>
 		</td>
 		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
