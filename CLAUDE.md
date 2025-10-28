@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SEO Panel is an open-source SEO control panel for managing search engine optimization of multiple websites. It's a PHP-based web application using MySQL for data storage and includes a plugin architecture for extensibility.
 
-Version: 4.12.0
+Version: 5.0.0
 
 ## Core Architecture
 

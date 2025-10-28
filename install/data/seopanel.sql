@@ -974,7 +974,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (40, 'API Secret', 'API_SECRET', '', 'api', 'medium', 1),
 (41, 'Company Name', 'SP_COMPANY_NAME', 'Seo Panel', 'system', 'medium', 1),
 (42, 'Currency', 'SP_PAYMENT_CURRENCY', 'USD', 'system', 'medium', 1),
-(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '4.12.0', 'system', 'medium', 0),
+(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '5.0.0', 'system', 'medium', 0),
 (44, 'Moz API Link', 'SP_MOZ_API_LINK', 'http://lsapi.seomoz.com/linkscape', 'moz', 'medium', 0),
 (45, 'Moz API Link', 'SP_MOZ_API_ACCESS_ID', '', 'moz', 'large', 1),
 (46, 'Moz API Link', 'SP_MOZ_API_SECRET', '', 'moz', 'large', 1),
@@ -1511,10 +1511,10 @@ UPDATE `crawl_engines` SET `regex2` = '/media_result_group.*?\"Rated (\\d+\\.\\d
 UPDATE `searchengines` SET `regex` = '<div.*?class=\"?g.*?>.*?href=\"(.*?)\".*?>.*?<h3.*?>(.*?)<\\/h3>', `from_pattern` = 'id=\"search\"', `to_pattern` = 'id=\"bottomads\"' where  url LIKE '%google%';
 
 --
--- Seo Panel 4.12.0 changes
+-- Seo Panel 5.0.0 changes
 --
 
-update `settings` set set_val='4.12.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
+update `settings` set set_val='5.0.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
 
 UPDATE searchengines SET url = REPLACE(url, 'http://', 'https://') WHERE url LIKE 'http://%';
 
