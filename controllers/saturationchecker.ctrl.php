@@ -68,7 +68,7 @@ class SaturationCheckerController extends Controller{
 		$searchInfo = ['name' => "site:$this->url", "engine" => $engine];
 		list($resDataStatus, $resData) = SettingsController::getSearchResultCount($searchInfo, $cron);
 		if ($resDataStatus) {
-		    return $resData['count'];
+		    return __assign($resData, 'count', 0);
 		}
 		
 		$saturationCount = 0;
@@ -172,6 +172,8 @@ class SaturationCheckerController extends Controller{
 			$this->db->query($sql);
 		}
 		
+		$matchInfo['google'] = __assign($matchInfo, 'google', 0);
+		$matchInfo['msn'] = __assign($matchInfo, 'msn', 0);
 		$sql = "insert into saturationresults(website_id,google,msn,result_date)
 				values({$matchInfo['id']},{$matchInfo['google']},{$matchInfo['msn']}, '$resultDate')";
 		$this->db->query($sql);
