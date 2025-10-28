@@ -30,9 +30,9 @@ if (!empty($menuInfo['item_list'])) {
 	</a><span class="pipe"> | </span>
 	<a href="<?php echo !empty($custSiteInfo['help_url']) ? $custSiteInfo['help_url'] : SP_HELP_LINK?>" target="_blank" rel="nofollow">
 		<?php echo $spText['common']['help']?>
-	</a><span class="pipe">  |</span>
-	<a href="<?php echo !empty($custSiteInfo['forum_url']) ? $custSiteInfo['forum_url'] : SP_FORUM_LINK?>" target="_blank" rel="nofollow">
-		<?php echo $spText['common']['forum']?>
+	</a><span class="pipe"> | </span>
+	<a href="<?php echo !empty($custSiteInfo['support_url']) ? $custSiteInfo['support_url'] : SP_SUPPORT_LINK?>" target="_blank" rel="nofollow">
+		<?php echo $spText['common']['Support']?>
 	</a><span class="pipe"> | </span> 
 	<?php
 }

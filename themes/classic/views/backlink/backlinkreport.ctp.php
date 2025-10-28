@@ -1,10 +1,10 @@
 <?php echo showSectionHead($spTextTools['Backlinks Reports']); ?>
 <form id='search_form'>
-<table width="100%" class="search">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" id="website_id" style='width:190px;' onchange="scriptDoLoadPost('backlinks.php', 'search_form', 'content', '&sec=reports')">
+			<select name="website_id" id="website_id" class="custom-select" onchange="scriptDoLoadPost('backlinks.php', 'search_form', 'content', '&sec=reports')">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -14,17 +14,17 @@
 				<?php }?>
 			</select>
 		</td>
-		<th><?php echo $spText['common']['Period']?>:</th>
+		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 		<td>
-			<input type="text" value="<?php echo $fromTime?>" name="from_time"/>
-			<input type="text" value="<?php echo $toTime?>" name="to_time"/>
+			<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+			<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
 			<script type="text/javascript">
 			$(function() {
 				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
 			});
 		  	</script>
 		</td>
-		<td colspan="2"><a href="javascript:void(0);" onclick="scriptDoLoadPost('backlinks.php', 'search_form', 'content', '&sec=reports')" class="actionbut"><?php echo $spText['button']['Show Records']?></a></td>
+		<td style="text-align: center;"><a href="javascript:void(0);" onclick="scriptDoLoadPost('backlinks.php', 'search_form', 'content', '&sec=reports')" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a></td>
 	</tr>
 </table>
 </form>
@@ -32,18 +32,20 @@
 <?php
 	if(empty($websiteId)){
 		?>
-		<p class='note error'><?php echo $spText['common']['No Records Found']?>!</p>
+		<div class="alert alert-danger">
+			<i class="fas fa-exclamation-circle me-2"></i><?php echo $spText['common']['No Records Found']?>!
+		</div>
 		<?php
 		exit;
-	} 
+	}
 ?>
 
 <div id='subcontent'>
 <table width="100%" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
-		<td>Google</td>
-		<td class="right">Bing</td>
+		<td><?php echo $spTextBack['Backlink Count']?></td>
+		<td class="right"><?php echo $spTextBack['Domain Backlink Count']?></td>
 	</tr>
 	<?php
 	$colCount = 3; 
@@ -62,8 +64,8 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['google']?>" target="_blank"><?php echo $listInfo['google'].'</a> '. $listInfo['rank_diff_google']?></td>
-				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['msn']?>" target="_blank"><?php echo $listInfo['msn'].'</a> '. $listInfo['rank_diff_msn']?></td>
+				<td class='td_br_right' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_page'].' '. $listInfo['rank_diff_external_pages_to_page']?></td>
+				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_root_domain'].' '. $listInfo['rank_diff_external_pages_to_root_domain']?></td>
 			</tr>
 			<?php
 			$i++;

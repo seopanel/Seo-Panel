@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -24,13 +24,15 @@
 class IndexController extends Controller{
 	
 	# index function
-	function index($searchInfo=''){		
-		
+	function index($searchInfo=[]) {
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$this->set('spTextHome', $spTextHome);
+		$this->set('post', $searchInfo);
 		if(isLoggedIn()){
 			$this->render('user/userhome');
 		}else{
+		    $spTextGuest = $this->getLanguageTexts('guest', $_SESSION['lang_code']);
+		    $this->set('spTextGuest', $spTextGuest);
 			$this->render('home');
 		}
 	}

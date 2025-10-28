@@ -1,4 +1,4 @@
-<select name="charset">
+<select name="charset" class="custom-select">
 	<option value=""></option>
 	<option>GB2312</option>
 	<option>US-ASCII</option>

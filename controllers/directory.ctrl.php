@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -855,10 +855,10 @@ class DirectoryController extends Controller{
 				include_once(SP_CTRLPATH."/moz.ctrl.php");
 				$mozCtrler = new MozController();
 				$mozRankList = $mozCtrler->__getMozRankInfo(array($dirInfo['domain']));
-				$pagerank = !empty($mozRankList[0]['moz_rank']) ? $mozRankList[0]['moz_rank'] : 0;
+				$spamScore = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
 				$domainAuthority = !empty($mozRankList[0]['domain_authority']) ? $mozRankList[0]['domain_authority'] : 0;
 				$pageAuthority = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
-				$prUpdate = ",pagerank=$pagerank,domain_authority=$domainAuthority,page_authority=$pageAuthority";
+				$prUpdate = ",spam_score=$spamScore,domain_authority=$domainAuthority,page_authority=$pageAuthority";
 			}
 			
 		}
@@ -893,14 +893,16 @@ class DirectoryController extends Controller{
 		if($status){
 			$statLabel = "Active";
 			$statVal = 0;
+			$statClass = "btn btn-success";
 		}else{
 			$statLabel = "Inactive";
 			$statVal = 1;
+			$statClass = "btn btn-danger";
 		}
 		if (SP_DEMO) {
 			$statusLink = scriptAJAXLinkHref('demo', "", "", $_SESSION['text']['common'][$statLabel]);
 		} else {			
-			$statusLink = scriptAJAXLinkHref('directories.php', 'status_'.$dirId, "sec=dirstatus&dir_id=$dirId&status=$statVal", $_SESSION['text']['common'][$statLabel]);
+		    $statusLink = scriptAJAXLinkHref('directories.php', 'status_'.$dirId, "sec=dirstatus&dir_id=$dirId&status=$statVal", $_SESSION['text']['common'][$statLabel], $statClass);
 		}
 		
 		return $statusLink;

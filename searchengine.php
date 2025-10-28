@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -41,7 +41,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__changeStatus($id, 1);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE(['stscheck' => 1]);
 		    break;
 			
 		case "inactivateall":
@@ -50,7 +51,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__changeStatus($id, 0);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE(['stscheck' => 0]);
 		    break;
 		    
 		case "deleteall":		    
@@ -59,7 +61,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		        $controller->__deleteSearchEngine($id);
     		    }
 		    }
-		    $controller->listSE($_POST);
+		    
+		    $controller->listSE();
 		    break;
 		    
 		case "do-sync-se":
@@ -72,6 +75,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    $controller->showSyncSearchEngines();
 		    break;
+		    
+		case "updateSearchEngine":
+		    $controller->updateSearchEngine($_POST);
+		    break;		    
 
 		default:
 			$controller->listSE($_POST);
@@ -99,6 +106,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "sync-se":
 		    $controller->showSyncSearchEngines($_GET);
 		    break;
+		    
+		case "edit":
+		    $controller->editSearchEngine($_GET['seId']);
+		    break;		    
 
 		default:
 			$controller->listSE($_GET);

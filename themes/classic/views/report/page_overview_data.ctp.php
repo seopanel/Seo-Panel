@@ -9,7 +9,6 @@ $(document).ready(function() {
 <table id="cust_tab" class="tablesorter" style="margin-top: 30px;">
 	<thead>
 		<tr class="listHead">
-			<th class="id_hash">#</th>
 			<th><?php echo $spText['common']['Url']?></th>
 			<th><?php echo $spText['common']['Rank']?></th>
 			<th><?php echo $spText['common']['Keyword']?></th>
@@ -22,10 +21,9 @@ $(document).ready(function() {
 		    foreach($pageResultList as $i => $listInfo){
     			?>
     			<tr>
-    				<td><?php echo intval($i) + 1;?></td>
-    				<td><?php echo $listInfo['url'];?></td>
+    				<td class="text-left"><?php echo $listInfo['url'];?></td>
     				<td><?php echo $listInfo['rank'];?></td>
-    				<td><?php echo $listInfo['keyword'];?></td>
+    				<td class="text-left"><?php echo $listInfo['keyword'];?></td>
     				<td><?php echo $listInfo['result_date'];?></td>
     			</tr>
     			<?php

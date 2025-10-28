@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -27,6 +27,8 @@ checkLoggedIn();
 isUserHaveAccessToSeoTool("backlink-checker");
 
 include_once(SP_CTRLPATH."/backlink.ctrl.php");
+include_once(SP_CTRLPATH."/rank.ctrl.php");
+include_once(SP_CTRLPATH."/moz.ctrl.php");
 $controller = New BacklinkController();
 $controller->view->menu = 'seotools';
 $controller->layout = 'ajax';

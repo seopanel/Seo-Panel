@@ -1,52 +1,65 @@
-<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
+<table class="list">
 	<tr class="listHead">
-		<td class="left"><?php echo $spText['common']['Id']?></td>
-		<td><?php echo $spText['common']['Url']?></td>		
-		<td><?php echo $spText['common']['MOZ Rank']?></td>	
-		<td><?php echo $spText['common']['Domain Authority']?></td>	
-		<td class="right"><?php echo $spText['common']['Page Authority']?></td>
+		<td><?php echo $spText['common']['Id']?></td>
+		<td><?php echo $spText['common']['Url']?></td>
+		<td>
+			<?php echo $spText['common']['Spam Score']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Lower is better. Green: 0-30% (Low), Yellow: 31-60% (Medium), Red: 61-100% (High)"></i>
+		</td>
+		<td>
+			<?php echo $spText['common']['Domain Authority']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Higher is better. Logarithmic scale 0-100"></i>
+		</td>
+		<td>
+			<?php echo $spText['common']['Page Authority']?>
+			<i class="fas fa-info-circle" data-toggle="tooltip" title="Higher is better. Logarithmic scale 0-100"></i>
+		</td>
 	</tr>
 	<?php
 	$colCount = 5;
-	if(count($list) > 0){
-		$catCount = count($list);
-		$i = 0;
-		foreach($list as $url){
-			
-			$class = ($i % 2) ? "blue_row" : "white_row";
-            if($catCount == ($i + 1)){
-                $leftBotClass = "tab_left_bot";
-                $rightBotClass = "tab_right_bot";
-            }else{
-                $leftBotClass = "td_left_border td_br_right";
-                $rightBotClass = "td_br_right";
-            }
-            
+	if(count($list) > 0) {
+		foreach($list as $i => $url) {
             $debugVar = !empty($_POST['debug']) ? "&debug=1" : "";
             $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . $_POST['debug_format'] : ""
 			?>
-			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>"><?php echo ($i+1)?></td>
-				<td class="td_br_right" style="text-align: left;"><?php echo $url?></td>
+			<tr>
+				<td><?php echo ($i+1)?></td>
+				<td class="text-left"><?php echo $url?></td>
 				<td width="150px" id='mozrank<?php echo $i?>' class='td_br_right rankarea'>
-					<b class="success"><?php echo empty($mozRankList[$i]['moz_rank']) ? "-" : $mozRankList[$i]['moz_rank']; ?></b>
+					<?php
+				$spamScore = !empty($mozRankList[$i]['spam_score']) ? floatval($mozRankList[$i]['spam_score']) : 0;
+				$spamScoreColor = getSpamScoreColor($spamScore);
+				$spamScoreLabel = getSpamScoreLabel($spamScore);
+				?>
+				<span class="badge bg-<?php echo $spamScoreColor?>" title="<?php echo $spamScoreLabel?>">
+					<?php echo $spamScore > 0 ? round($spamScore, 2) . '%' : '-'; ?>
+				</span>
 				</td>
 				<td width="150px" class='td_br_right rankarea'>
-					<b class="success"><?php echo empty($mozRankList[$i]['domain_authority']) ? "-" : $mozRankList[$i]['domain_authority']; ?></b>
+					<?php
+				$da = !empty($mozRankList[$i]['domain_authority']) ? floatval($mozRankList[$i]['domain_authority']) : 0;
+				$daColor = getAuthorityColor($da);
+				$daLabel = getAuthorityLabel($da);
+				?>
+				<span class="badge bg-<?php echo $daColor?>" title="<?php echo $daLabel?>">
+					<?php echo $da > 0 ? round($da, 2) : '-'; ?>
+				</span>
 				</td>
-				<td class="<?php echo $rightBotClass?>" width="150px" class='td_br_right rankarea'>
-					<b class="success"><?php echo empty($mozRankList[$i]['page_authority']) ? "-" : $mozRankList[$i]['page_authority']; ?></b>
+				<td width="150px" class='td_br_right rankarea'>
+					<?php
+				$pa = !empty($mozRankList[$i]['page_authority']) ? floatval($mozRankList[$i]['page_authority']) : 0;
+				$paColor = getAuthorityColor($pa);
+				$paLabel = getAuthorityLabel($pa);
+				?>
+				<span class="badge bg-<?php echo $paColor?>" title="<?php echo $paLabel?>">
+					<?php echo $pa > 0 ? round($pa, 2) : '-'; ?>
+				</span>
 				</td>
 			</tr>
 			<?php
-			$i++;
 		}
-	}else{	 
+	} else {
 		echo showNoRecordsList($colCount-2);		
 	} 
 	?>
-	<tr class="listBot">
-		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>
-		<td class="right"></td>
-	</tr>
 </table>

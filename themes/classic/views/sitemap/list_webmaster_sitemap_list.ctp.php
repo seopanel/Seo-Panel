@@ -17,7 +17,7 @@ $(document).ready(function() {
 			<tr>
 				<th><?php echo $spText['common']['Website']?>: </th>
 				<td>
-					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>">
+					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>" class="custom-select">
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){
@@ -29,7 +29,9 @@ $(document).ready(function() {
 							<?php }?>
 						<?php }?>
 					</select>
-					<a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="actionbut"><?php echo $spText['button']['Search']?></a>
+				</td>
+				<td>
+					<a href="javascript:void(0);" onclick="<?php echo $submitLink?>" class="btn btn-secondary"><?php echo $spText['button']['Search']?></a>
 				</td>
 			</tr>
 		</table>
@@ -40,7 +42,6 @@ $(document).ready(function() {
 <table id="cust_tab" class="tablesorter">
 	<thead>
 		<tr class="listHead">
-			<th><?php echo $spText['common']['Id']?></th>
 			<th><?php echo $spText['common']['Url']?></th>
 			<th><?php echo $spText['common']['Total']?></th>
 			<th><?php echo $spTextHome['Indexed']?></th>
@@ -64,7 +65,6 @@ $(document).ready(function() {
 			foreach($list as $listInfo){
 				?>
 				<tr>
-					<td><?php echo $listInfo['id'];?></td>
 					<td><?php echo $listInfo['path'];?></td>
 					<td><?php echo $listInfo['submitted'];?></td>
 					<td><?php echo $listInfo['indexed'];?></td>
@@ -87,7 +87,8 @@ $(document).ready(function() {
 					<td><?php echo $listInfo['last_downloaded'];?></td>
 					<?php if (!$summaryPage) {?>
 						<td>
-							<select name="action" id="action<?php echo $listInfo['id']?>" onchange="doAction('websites.php', 'content', 'id=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')">
+							<select name="action" id="action<?php echo $listInfo['id']?>" class="custom-select" 
+								onchange="doAction('websites.php', 'content', 'id=<?php echo $listInfo['id']?>', 'action<?php echo $listInfo['id']?>')">
 								<option value="select">-- <?php echo $spText['common']['Select']?> --</option>
 								<option value="deleteSitemap"><?php echo $spText['common']['Delete']?></option>
 							</select>
@@ -95,8 +96,7 @@ $(document).ready(function() {
 					<?php }?>
 				</tr>
 				<?php
-			}
-		
+			}		
 		} else{
 			?>
 			<tr><td colspan="<?php echo $colCount?>"><b><?php echo $_SESSION['text']['common']['No Records Found']?></b></tr>
@@ -107,18 +107,17 @@ $(document).ready(function() {
 </table>
 
 <?php if (!$summaryPage) {?>
-	<br>
-	<table class="actionSec">
+	<table class="actionSec mt-2">
 		<tr>
-	    	<td style="padding-top: 6px;text-align:right;">
+	    	<td>
 	    		<?php if (!empty($websiteId) && !SP_HOSTED_VERSION) {?>
 	    			<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmLoad('websites.php', 'content', 'sec=syncSitemaps&website_id=$websiteId')"; ?>
-		    		<a href="javascript:void(0);" onclick="<?php echo $actFun?>" class="actionbut" >
+		    		<a href="javascript:void(0);" onclick="<?php echo $actFun?>" class="btn btn-info">
 						<?php echo $spTextSitemap['Sync Sitemaps']?>
 					</a>
 					&nbsp;&nbsp;
 				<?php }?>
-	    		<a href="javascript:void(0);" onclick="scriptDoLoad('websites.php', 'content', 'sec=submitSitemap&website_id=<?php echo $websiteId?>')" class="actionbut" >
+	    		<a href="javascript:void(0);" onclick="scriptDoLoad('websites.php', 'content', 'sec=submitSitemap&website_id=<?php echo $websiteId?>')" class="btn btn-primary" >
 					<?php echo $spTextPanel['Submit Sitemap']?>
 				</a>
 	    	</td>

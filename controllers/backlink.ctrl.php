@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,7 +23,7 @@
 # class defines all backlink controller functions
 class BacklinkController extends Controller{
 	var $url;
-	var $colList = array('google' => 'google', 'msn' => 'bing');
+	var $colList = array("external_pages_to_page" => "external_pages_to_page", "external_pages_to_root_domain" => "external_pages_to_root_domain");
 	var $backUrlList = array(
 		'google' => 'http://www.google.com/search?hl=en&q=link%3A',
 		'msn' => 'http://www.bing.com/search?q=link%3A',
@@ -39,7 +39,10 @@ class BacklinkController extends Controller{
 		$i = 1;
 		foreach ($urlList as $url) {
 		    $url = sanitizeData($url);
-			if(!preg_match('/\w+/', $url)) continue;
+		    if(!preg_match('/\w+/', $url)) {
+		        continue;
+		    }
+		    
 			if (SP_DEMO) {
 			    if ($i++ > 10) break;
 			}
@@ -48,6 +51,10 @@ class BacklinkController extends Controller{
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 
+		$mozCtrler = new MozController();
+		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+
+		$this->set('mozRankList', $mozRankList);
 		$this->set('list', $list);
 		$this->render('backlink/findbacklink');
 	}
@@ -55,11 +62,17 @@ class BacklinkController extends Controller{
 	function printBacklink($backlinkInfo){
 		$this->url = $backlinkInfo['url'];
 		$backlinkCount = $this->__getBacklinks($backlinkInfo['engine']);
-		
+
+		// For Moz API metrics, just display the count without link
+		if ($backlinkInfo['engine'] == 'external_pages_to_page' || $backlinkInfo['engine'] == 'external_pages_to_root_domain') {
+			echo $backlinkCount;
+			return;
+		}
+
 		// if msn engine
 		if ($backlinkInfo['engine'] == 'msn') {
 			$websiteUrl = addHttpToUrl($backlinkInfo['url']);
-		} else {		
+		} else {
 			$websiteUrl = @Spider::removeTrailingSlash(formatUrl($backlinkInfo['url']));
 		}
 
@@ -126,15 +139,26 @@ class BacklinkController extends Controller{
 			case 'alexa':
 			    $backlinkCount = 0;
 				break;
+
+			// external_pages_to_page - get from Moz API
+			case 'external_pages_to_page':
+			case 'external_pages_to_root_domain':
+				include_once(SP_CTRLPATH."/moz.ctrl.php");
+				$mozCtrler = new MozController();
+				$mozRankList = $mozCtrler->__getMozRankInfo(array($this->url));
+				$backlinkCount = !empty($mozRankList[0][$engine]) ? $mozRankList[0][$engine] : 0;
+				break;
 		}
 
 		// update crawl log
-		$crawlLogCtrl = new CrawlLogController();
-		$crawlInfo['crawl_type'] = 'backlink';
-		$crawlInfo['ref_id'] = $this->url;
-		$crawlInfo['subject'] = $engine;
-		$crawlLogCtrl->updateCrawlLog($v['log_id'], $crawlInfo);
-		
+		if (!empty($v['log_id'])) {
+			$crawlLogCtrl = new CrawlLogController();
+			$crawlInfo['crawl_type'] = 'backlink';
+			$crawlInfo['ref_id'] = $this->url;
+			$crawlInfo['subject'] = $engine;
+			$crawlLogCtrl->updateCrawlLog($v['log_id'], $crawlInfo);
+		}
+
 		return $backlinkCount;
 	}
 	
@@ -150,46 +174,70 @@ class BacklinkController extends Controller{
 	}
 	
 	# func to generate reports
-	function generateReports( $searchInfo='' ) {		
-		$userId = isLoggedIn();		
+	function generateReports($searchInfo=[]) {
+		$userId = isLoggedIn();
 		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
-		
+
 		$sql = "select id,url from websites where status=1";
-		if(!empty($userId) && !isAdmin()) $sql .= " and user_id=$userId";
-		if(!empty($websiteId)) $sql .= " and id=$websiteId";
-		$sql .= " order by name";
-		$websiteList = $this->db->select($sql);		
+		if(!empty($userId) && !isAdmin()) {
+		    $sql .= " and user_id=$userId";
+		}
 		
-		if(count($websiteList) <= 0){
+		if(!empty($websiteId)) {
+		    $sql .= " and id=$websiteId";
+		}
+		
+		$sql .= " order by name";
+		$websiteList = $this->db->select($sql);
+		if(count($websiteList) <= 0) {
 			echo "<p class='note'>".$_SESSION['text']['common']['nowebsites']."!</p>";
 			exit;
 		}
-		
-		# loop through each websites			
+
+		# loop through each websites
+		$rankCtrler = New RankController();
 		foreach ( $websiteList as $websiteInfo ) {
-			$this->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);			
-			foreach ($this->colList as $col => $dbCol) {
-				$websiteInfo[$col] = $this->__getBacklinks($col);
-			}
-			
-			$this->saveRankResults($websiteInfo, true);			
+			$websiteUrl = addHttpToUrl($websiteInfo['url']);
+
+			// Get all Moz data in one API call
+			include_once(SP_CTRLPATH."/moz.ctrl.php");
+			$mozCtrler = new MozController();
+			$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+
+			// Extract backlink data
+			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+			$this->saveRankResults($websiteInfo, true);
 			echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
-		}	
+
+			// Also save rank data
+			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+			$rankCtrler->saveRankResults($websiteInfo, true);
+		}
 	}
 	
 	# function to save rank details
 	function saveRankResults($matchInfo, $remove=false) {
 		$resultDate = date('Y-m-d');
-		
-		if($remove){				
+
+		if($remove){
 			$sql = "delete from backlinkresults where website_id={$matchInfo['id']} and result_date='$resultDate'";
 			$this->db->query($sql);
 		}
-		
-		$sql = "insert into backlinkresults(website_id,google,msn,result_date)
-		values({$matchInfo['id']},{$matchInfo['google']},{$matchInfo['msn']}, '$resultDate')";
+
+		$columns = array();
+		$values = array();
+		foreach ($this->colList as $col => $dbCol) {
+			$columns[] = $dbCol;
+			$values[] = !empty($matchInfo[$col]) ? intval($matchInfo[$col]) : 0;
+		}
+
+		$sql = "insert into backlinkresults(website_id," . implode(',', $columns) . ",result_date)
+		values({$matchInfo['id']}," . implode(',', $values) . ", '$resultDate')";
 		$this->db->query($sql);
-		
+
 	}
 	
 	# function check whether reports already saved
@@ -327,8 +375,7 @@ class BacklinkController extends Controller{
 	}
 	
 	# func to show graphical reports
-	function showGraphicalReports($searchInfo = '') {
-	
+	function showGraphicalReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 		$fromTime = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
 		$toTime = !empty ($searchInfo['to_time']) ? $searchInfo['to_time'] : date("Y-m-d");
@@ -349,14 +396,18 @@ class BacklinkController extends Controller{
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {
-				
-			$dataArr = "['Date', '" . implode("', '", array_values($colList)) . "']";
+			// Create readable labels for graph
+			$graphLabels = array(
+				'external_pages_to_page' => $this->spTextBack['Backlink Count'],
+				'external_pages_to_root_domain' => $this->spTextBack['Domain Backlink Count']
+			);
+
+			$dataArr = "['Date', '" . implode("', '", array_values($graphLabels)) . "']";
 			 
 			// loop through data list
-			foreach ($reportList as $dataInfo) {
-	
+			foreach ($reportList as $dataInfo) {	
 				$valStr = "";
-				foreach ($colList as $seId => $seVal) {
+				foreach (array_keys($colList) as $seId) {
 					$valStr .= ", ";
 					$valStr .= !empty($dataInfo[$seId])    ? $dataInfo[$seId] : 0;
 				}

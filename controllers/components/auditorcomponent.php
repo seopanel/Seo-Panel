@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   		   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   		   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -48,9 +48,8 @@ class AuditorComponent extends Controller{
     // func to run report for a project
     function runReport($reportUrl, $projectInfo, $totalLinks) {        
         $spider = new Spider();
-
-        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
-        	
+        
+        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {        	
         	$pageInfo = $spider->getPageInfo($reportUrl, $projectInfo['url'], true);
         	
             // handle redirects
@@ -105,7 +104,7 @@ class AuditorComponent extends Controller{
             if ($projectInfo['check_pr']) {
             	$mozCtrler = $this->createController('Moz');
             	$mozRankList = $mozCtrler->__getMozRankInfo(array($reportUrl));
-            	$reportInfo['pagerank'] = !empty($mozRankList[0]['moz_rank']) ? $mozRankList[0]['moz_rank'] : 0;
+            	$reportInfo['spam_score'] = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
             	$reportInfo['page_authority'] = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
             }
             
@@ -126,14 +125,14 @@ class AuditorComponent extends Controller{
             }
         
             if ($projectInfo['check_brocken']) {
-                $reportInfo['brocken'] = Spider::isLInkBrocken($linkInfo['link_url']);    
+                $reportInfo['brocken'] = Spider::isLInkBrocken($projectInfo['url']);    
             }
             
             $this->saveReportInfo($reportInfo, 'update');
             
             // to store sitelinks in page and links reports
             $i = 0;
-            if (count($pageInfo['site_links']) > 0) {
+            if (!empty($pageInfo['site_links']) && count($pageInfo['site_links']) > 0) {
             	
             	// loo through site links
                 foreach ($pageInfo['site_links'] as $linkInfo) {
@@ -170,7 +169,7 @@ class AuditorComponent extends Controller{
             
             // to store external links in page
             if ($projectInfo['store_links_in_page']) {
-                if (count($pageInfo['external_links']) > 0) {
+                if (!empty($pageInfo['site_links']) && count($pageInfo['external_links']) > 0) {
                     foreach ($pageInfo['external_links'] as $linkInfo) {
                         $delete = $i++ ? false : true;
                         $linkInfo['report_id'] = $rInfo['id'];

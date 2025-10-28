@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -21,9 +21,10 @@
  ***************************************************************************/
 
 # func to format error message
-function formatErrorMsg($msg, $class='error', $star="*"){
+function formatErrorMsg($msg, $class='error', $star=""){
 	if(!empty($msg)){
-		$msg = "<font class='$class'> $star $msg</font>";
+		$iconHtml = '<i class="fas fa-exclamation-circle"></i> ';
+		$msg = "<span class='$class'>{$iconHtml}{$msg}</span>";
 	}
 	return $msg;
 }
@@ -31,7 +32,8 @@ function formatErrorMsg($msg, $class='error', $star="*"){
 # func to format success message
 function formatSuccessMsg($msg, $class='success'){
 	if(!empty($msg)){
-		$msg = "<font class='$class'>$msg</font>";
+		$iconHtml = '<i class="fas fa-check-circle"></i> ';
+		$msg = "<span class='$class'>{$iconHtml}{$msg}</span>";
 	}
 	return $msg;
 }
@@ -58,7 +60,6 @@ function showDiv($divId) {
 	print "<script>showDiv('$divId')</script>";
 	exit;
 }
-
 
 # func to show no results
 function showNoRecordsList($colspan, $msg='', $plain=false) {
@@ -87,6 +88,18 @@ function showSuccessMsg($successMsg, $exit=true) {
 	$data['successMsg'] = $successMsg;
 	print @View::fetchViewFile('common/success', $data);
 	if($exit) exit;
+}
+
+# func to show success msg
+function showWarningMsg($warningMsg, $exit=true) {
+    $warningHtml = '<div class="alert alert-warning">
+	                   <button type="button" class="close" data-dismiss="alert">&times;</button>
+                       ' . $warningMsg . '
+                    </div>';
+    print $warningHtml;
+    if($exit) {
+        exit;
+    }
 }
 
 # func to show no results
@@ -159,7 +172,7 @@ function scriptAJAXLinkHref($file, $area, $args='', $linkText='Click', $class=''
 	return $link;
 }
 
-function scriptAJAXLinkHrefDialog($file, $area, $args='', $linkText='Click', $class='', $trigger='OnClick', $widthVal = 900, $heightVal = 600){
+function scriptAJAXLinkHrefDialog($file, $area, $args='', $linkText='Click', $class='', $trigger='OnClick', $widthVal=1100, $heightVal=600){
 	if ($file == 'demo') {
 		$link = ' '.$trigger.'="alertDemoMsg()"';
 	} else {
@@ -176,7 +189,6 @@ function confirmScriptAJAXLinkHref($file, $area, $args='', $linkText='Click', $t
 	return $link;
 }
 
-
 #post functions
 function scriptPostAJAXLink($file, $form, $area, $trigger='OnClick'){
 	$link = ' '.$trigger.'="scriptDoLoadPost('."'$file', '$form', '$area')".'"';
@@ -188,13 +200,17 @@ function confirmPostAJAXLink($file, $form, $area, $trigger='OnClick'){
 	return $link;
 }
 
-function formatUrl( $url, $removeWWW=true ) {
+function formatUrl( $url, $removeWWW=true, $removeLastSlash=false) {
 	$url = str_replace('http://', '', $url);
 	$url = str_replace('https://', '', $url);
 	
 	// if ww needs to be removed
 	if ($removeWWW) {
 		$url = preg_replace('/^www./i', '', $url);
+	}
+	
+	if ($removeLastSlash) {
+	    $url = rtrim($url, '/');
 	}
 	
 	return $url;
@@ -205,11 +221,71 @@ function formatDate($date) {
 	return $date;
 }
 
-function addHttpToUrl($url){
-	if(!stristr($url, 'http://') && !stristr($url, 'https://')){
-		$url = 'http://'.trim($url);
+function addHttpToUrl($url) {
+	if(!stristr($url, 'http://') && !stristr($url, 'https://')) {
+		$url = 'https://'.trim($url);
 	}
+	
 	return trim($url);
+}
+
+function isDomainUrl($url) {
+    $parsedUrl = parse_url($url);
+    
+    // Check if the URL has a scheme (e.g., http, https) and a host
+    return isset($parsedUrl['scheme']) && isset($parsedUrl['host']) && !isset($parsedUrl['path']);
+}
+
+function getMainDomainLink($url) {
+    $parsedUrl = parse_url($url);
+    $mainLink = "";
+    
+    // Check if the URL has a scheme (e.g., http, https) and a host
+    if (isset($parsedUrl['scheme']) && isset($parsedUrl['host'])) {
+        $mainLink = $parsedUrl['scheme'] . "://" . $parsedUrl['host'];
+    }
+    
+    return $mainLink;
+}
+
+function isImageFile($filename) {
+    // Get the file extension in lowercase
+    $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+    
+    // Convert the allowed types constant into an array
+    $allowedTypes = array_map('trim', explode(',', SP_IMG_FILE_TYPES));
+    
+    // Return true if extension is in the allowed types
+    return in_array($ext, $allowedTypes);
+}
+
+function generateFileNameFromTitle($title, $extension='txt', $maxChars=50) {
+    // Convert to lowercase
+    $title = strtolower($title);
+    
+    // Replace spaces and underscores with hyphens
+    $title = preg_replace('/[\s_]+/', '-', $title);
+    
+    // Remove all non-alphanumeric and non-hyphen characters
+    $title = preg_replace('/[^a-z0-9\-]/', '', $title);
+    
+    // Trim hyphens from beginning and end
+    $title = trim($title, '-');
+    
+    // Limit to 60 characters
+    $title = substr($title, 0, $maxChars);
+    
+    // Remove trailing hyphen if cut in the middle
+    $title = rtrim($title, '-');
+    
+    return $title . '.' . $extension;
+}
+
+function isPageUrl($url) {
+    $parsedUrl = parse_url($url);
+    
+    // Check if the URL has a scheme, a host, and a path (page)
+    return isset($parsedUrl['scheme']) && isset($parsedUrl['host']) && isset($parsedUrl['path']);
 }
 
 function formatFileName( $fileName ) {
@@ -217,6 +293,13 @@ function formatFileName( $fileName ) {
 	$replace = array('_', '', '');
 	$fileName = str_replace($search, $replace, $fileName);
 	return $fileName;
+}
+
+function formatCommaSeparatedString($commaStr) {
+    $parts = preg_split('/\s*,\s*/', $commaStr);
+    $parts = array_filter($parts);
+    $commaStr = implode(',', $parts);
+    return $commaStr;
 }
 
 function showActionLog($msg, $area='subcontent'){
@@ -624,7 +707,7 @@ function showPdfFooter($spText) {
 	if (!empty($custSiteInfo['footer_copyright'])) {
 		$copyrightTxt = str_replace('[year]', date('Y'), $custSiteInfo['footer_copyright']);
 	} else {
-		$copyrightTxt = str_replace("www.seopanel.in", "<a href='https://www.seopanel.org'>www.seopanel.org</a>", $spText['common']['copyright']);
+		$copyrightTxt = str_replace("www.seopanel.org", "<a href='https://www.seopanel.org'>www.seopanel.org</a>", $spText['common']['copyright']);
 	}
     ?>
     <div style="clear: both; margin-top: 30px;font-size: 12px; text-align: center;"><?php echo str_replace('[year]', date('Y'), $copyrightTxt)?></div>
@@ -656,10 +739,17 @@ if (!function_exists('curl_reset')) {
 	
 }
 
-function getRequestParamStr() {
+function getRequestParamStr($requestType="REQUEST") {
 	$paramStr = "";
 	
-	foreach ($_REQUEST as $item => $value) {
+	$items = $_REQUEST;
+	if ($requestType == 'GET') {
+	    $items = $_GET;
+	} else if ($requestType == 'POST') {
+	    $items = $_POST;
+	}
+	
+	foreach ($items as $item => $value) {
 		$item = htmlentities($item, ENT_QUOTES);
 		$value = htmlentities($value, ENT_QUOTES);
 		$paramStr .= "&$item=" . urlencode($value);
@@ -865,5 +955,131 @@ function createSelectBox($optList, $nameAtr, $selectedVal, $labelCol='name', $id
     
     $selectStr .= "<select>";
     return $selectStr;
+}
+
+function __assign($info, $col='id', $default="", $isset=false) {
+    if ($isset) {
+        return isset($info[$col]) ? $info[$col] : $default;
+    } else {
+        return !empty($info[$col]) ? $info[$col] : $default;
+    }
+}
+
+function showStatusBadge($statusVal, $badgeType="") {
+    $spText = $_SESSION['text'];
+    $statusClass = "badge bg-danger";    
+    switch ($badgeType) {        
+        case "yesno":
+            $statusLabel = $spText['common']["No"];
+            break;
+            
+        case "successfail":
+            $statusLabel = $spText['label']["Fail"];
+            break;
+            
+        default:            
+            $statusLabel = $spText['common']["Inactive"];
+            break;
+    }
+    
+    if (!empty($statusVal)) {
+        $statusClass = "badge bg-success";        
+        switch ($badgeType) {
+            case "yesno":
+                $statusLabel = $spText['common']["Yes"];
+                break;
+                
+            case "successfail":
+                $statusLabel = $spText['label']["Success"];
+                break;
+                
+            default:
+                $statusLabel = $spText['common']["Active"];
+                break;
+        }
+        
+    }
+    
+    $statusHtml = "<span class='$statusClass py-2 px-3 text-light'>$statusLabel</span>";
+    return  $statusHtml;
+}
+
+function generateUuidV4() {
+    return sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000, // version 4
+        mt_rand(0, 0x3fff) | 0x8000, // variant
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
+}
+
+/**
+ * Get color class for spam score based on risk level
+ * @param float $score Spam score (0-100)
+ * @return string CSS class name
+ */
+function getSpamScoreColor($score) {
+    $score = floatval($score);
+    if ($score <= 30) {
+        return 'success'; // Green - Low risk
+    } elseif ($score <= 60) {
+        return 'warning'; // Yellow/Orange - Medium risk
+    } else {
+        return 'danger'; // Red - High risk
+    }
+}
+
+/**
+ * Get color class for Domain/Page Authority based on strength
+ * @param float $score DA or PA score (0-100)
+ * @return string CSS class name
+ */
+function getAuthorityColor($score) {
+    $score = floatval($score);
+    if ($score <= 20) {
+        return 'danger'; // Red - Weak
+    } elseif ($score <= 50) {
+        return 'warning'; // Yellow - Moderate
+    } elseif ($score <= 70) {
+        return 'info'; // Blue - Strong
+    } else {
+        return 'success'; // Green - Very strong
+    }
+}
+
+/**
+ * Get spam score risk level label
+ * @param float $score Spam score (0-100)
+ * @return string Risk level label
+ */
+function getSpamScoreLabel($score) {
+    $score = floatval($score);
+    if ($score <= 30) {
+        return 'Low Risk';
+    } elseif ($score <= 60) {
+        return 'Medium Risk';
+    } else {
+        return 'High Risk';
+    }
+}
+
+/**
+ * Get authority strength label
+ * @param float $score DA or PA score (0-100)
+ * @return string Strength label
+ */
+function getAuthorityLabel($score) {
+    $score = floatval($score);
+    if ($score <= 20) {
+        return 'Weak';
+    } elseif ($score <= 50) {
+        return 'Moderate';
+    } elseif ($score <= 70) {
+        return 'Strong';
+    } else {
+        return 'Very Strong';
+    }
 }
 ?>

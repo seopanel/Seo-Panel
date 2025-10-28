@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -23,7 +23,7 @@ if (defined('SP_CTRLPATH')) {
     include_once(SP_CTRLPATH."/proxy.ctrl.php");
 }
 
-class Spider{
+class Spider {
 
 	# settings of the spider
 	var $_CURL_RESOURCE = null;	
@@ -34,7 +34,7 @@ class Spider{
 	var $_CURLOPT_TIMEOUT = 15;	
 	var $_CURLOPT_POST = true;
 	var $_CURLOPT_POSTFIELDS = null;
-	var $_CURLOPT_USERAGENT = "Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))";
+	var $_CURLOPT_USERAGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0";
 	var $_CURLOPT_USERPWD = null;
 	var $_CURLOPT_COOKIEJAR = '';
 	var $_CURLOPT_COOKIEFILE = '';
@@ -45,34 +45,41 @@ class Spider{
 	var $_CURL_HTTPHEADER = array();
 	var $userAgentList = array();
 	var $effectiveUrl = null;
+	var $proxyInfo = [];
 	
 	# spider constructor
-	function __construct()	{
+	function __construct()	{	    
+	    // if _CURLOPT_COOKIEJAR path defined
+	    if (!empty($this -> _CURLOPT_COOKIEJAR)) {
+	        $this -> _CURLOPT_COOKIEJAR = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEJAR;
+	    }
 	    
-	    // if tmp path defined
-	    if (defined('SP_TMPPATH')) {
-    		$this -> _CURLOPT_COOKIEJAR = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEJAR;
-    		$this -> _CURLOPT_COOKIEFILE = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEFILE;
+	    // if _CURLOPT_COOKIEFILE path defined
+	    if (!empty($this -> _CURLOPT_COOKIEFILE)) {
+	        $this -> _CURLOPT_COOKIEFILE = SP_TMPPATH.'/'.$this -> _CURLOPT_COOKIEFILE;
 	    }
 	    
 		$this -> _CURL_RESOURCE = curl_init( );
-		if(!empty($_SERVER['HTTP_USER_AGENT'])) $this->_CURLOPT_USERAGENT = $_SERVER['HTTP_USER_AGENT'];
+		if(!empty($_SERVER['HTTP_USER_AGENT'])) {
+		    $this->_CURLOPT_USERAGENT = $_SERVER['HTTP_USER_AGENT'];
+		}
 
 		// user agents
-		$this->userAgentList['google'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
+		$this->userAgentList['google'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:143.0) Gecko/20100101 Firefox/143.0";
 		$this->userAgentList['bing'] = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:69.0) Gecko/20100101 Firefox/69.0";
 		$this->userAgentList['pinterest'] = "Mozilla/5.0 (X11; Linux x86_64; rv:100.0) Gecko/20100101 Firefox/100.0";
 		$this->userAgentList['default'] = defined('SP_USER_AGENT') ? SP_USER_AGENT : $this->_CURLOPT_USERAGENT;
 	}	
 	
 	# func to format urls
-	public static function formatUrl($url){	    
+	public static function formatUrl($url) {
 	    $scheme = "";
-		if(stristr($url,'http://')){
+		if(stristr($url,'http://')) {
 			$scheme = "http://";
-		}elseif(stristr($url,'https://')){
+		} elseif(stristr($url,'https://')) {
 			$scheme = "https://";			
 		}
+		
 		$url = str_replace(array('http://','https://', '"', '"'), '',$url);
 		$url = preg_replace('/\/{2,}/', '/', $url);
 		$url = preg_replace('/&{2,}/', '&', $url);
@@ -83,10 +90,10 @@ class Spider{
 	
 	# func to get relative url to append with relative links found in the page 
 	function getRelativeUrl($relativeUrl) {
-	    
 	    $relativeUrl = parse_url($relativeUrl, PHP_URL_PATH);
         
 	    // if link contains script names
+	    $matches = [];
         if(preg_match('/.htm$|.html$|.php$|.pl$|.jsp$|.asp$|.aspx$|.do$|.cgi$|.cfm$/i', $relativeUrl)) {
             if (preg_match('/(.*)\//', $relativeUrl, $matches) ) {
                 return $matches[1];
@@ -99,13 +106,13 @@ class Spider{
 	}
 	
     # func to get backlink page info
-	function getPageInfo($url, $domainUrl, $returnUrls=false){
-	    
+	function getPageInfo($url, $domainUrl, $returnUrls=false) {	    
 	    $urlWithTrailingSlash = Spider::addTrailingSlash($url);
 		$ret = $this->getContent($urlWithTrailingSlash);
 		$pageInfo = array(
 			'external' => 0,
 			'total_links' => 0,
+		    'site_links' => [],
 		);
 		
 		$checkUrl = formatUrl($domainUrl);
@@ -119,6 +126,8 @@ class Spider{
 		$domainHostInfo = parse_url($domainUrl);
 		$domainHostLink = $domainHostInfo['scheme'] . "://" . $domainHostInfo['host'] . "/";
 		
+		$matches = [];
+		$match = [];
 		if( !empty($ret['page'])){
 			$string = str_replace(array("\n",'\n\r','\r\n','\r'), "", $ret['page']);			
 			$pageInfo = WebsiteController::crawlMetaData($url, '', $string, true);
@@ -145,15 +154,12 @@ class Spider{
     					// find external links
     				    $pageInfo['total_links'] += 1;
     				    $external = 0;
-    				    if (stristr($href, 'http://') ||  stristr($href, 'https://')) {
-    				    	
+    				    if (stristr($href, 'http://') ||  stristr($href, 'https://')) {    				    	
     					    if (!preg_match("/^".preg_quote($checkUrl, '/')."/", formatUrl($href))) {
     					        $external = 1;
     					        $pageInfo['external'] += 1;
-    					    }
-    					    					        
-    				    } else {
-    				        
+    					    }    					    					        
+    				    } else {    				        
     				        // if url starts with / then append with base url of site
     				    	if (preg_match('/^\//', $href)) {
     				    		$href = $domainHostLink . $href;
@@ -169,6 +175,7 @@ class Spider{
     				        }
     				        
     				        // if contains back directory operator
+    				        $matchpart = [];
     				        if (stristr($href, '/../')) {
                             	$hrefParts = explode('/../', $href);
                             	preg_match('/.*\//', $hrefParts[0], $matchpart);	
@@ -177,13 +184,14 @@ class Spider{
     				    }
     				    
     				    // if details of urls to be checked
-    				    if($returnUrls){
+    				    if($returnUrls) {
     				        $linkInfo['link_url'] = $href;
     						if(stristr($matches[2][$i], '<img')) {
     							$linkInfo['link_anchor'] = $this->__getTagParam("alt", $matches[2][$i]);
     						} else {
     							$linkInfo['link_anchor'] = strip_tags($matches[2][$i]);
-    						}										
+    						}
+    						
     						$linkInfo['nofollow'] = stristr($matches[1][$i], 'nofollow') ? 1 : 0;
     						$linkInfo['link_title'] = $this->__getTagParam("title", $matches[1][$i]);
     						if ($external) {
@@ -198,6 +206,7 @@ class Spider{
 			}			
 		}
 		
+		$pageInfo = __assign($pageInfo, "site_links", []);
 		return $pageInfo;
 	}
 	
@@ -220,11 +229,10 @@ class Spider{
 	}
 	
 	# func to get unique urls of a page
-	function getUniqueUrls($url){
-				
+	function getUniqueUrls($url) {				
 		$ret = $this->getContent($url);
 		$urlList = array();
-		
+		$matches = [];		
 		if( !empty($ret['page'])){
 			$string = strtolower($ret['page']);
 			$string = str_replace("\n","",$string);
@@ -247,7 +255,8 @@ class Spider{
 	}
 
 	# function to get value of a parameter in a tag
-    function __getTagParam($param, $tag){
+    function __getTagParam($param, $tag) {
+        $matches = [];
 		preg_match('/'.$param.'="(.*?)"/is', $tag, $matches);
 		if(empty($matches[1])){
 			preg_match("/$param='(.*?)'/is", $tag, $matches);
@@ -265,8 +274,7 @@ class Spider{
 	}
 	
 	# function to create custome headers
-	function setCustomHeaders() {
-		
+	function setCustomHeaders() {		
 		// if sending custom header with curl is enabled
 		if (SP_SEND_CUSTOM_HEADER_IN_CURL) {
 			$sessionId = session_id();
@@ -276,21 +284,26 @@ class Spider{
 			array_push($this ->_CURL_HTTPHEADER, "Cache-Control: max-age=0");
 			array_push($this ->_CURL_HTTPHEADER, "Cookie: PHPSESSID=" . $sessionId);
 			array_push($this ->_CURL_HTTPHEADER, "User-Agent: " . $this -> _CURLOPT_USERAGENT);
-		}
-		
+		}		
 	}
 	
 	# get contents of a web page	
 	function getContent( $url, $enableProxy=true, $logCrawl = true)	{
-		
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_URL , $url );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FAILONERROR , $this -> _CURLOPT_FAILONERROR );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_MAXREDIRS , $this -> _CURLOPT_MAXREDIRS );
 		@curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FOLLOWLOCATION , $this -> _CURLOPT_FOLLOWLOCATION );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_RETURNTRANSFER , $this -> _CURLOPT_RETURNTRANSFER );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_TIMEOUT , $this -> _CURLOPT_TIMEOUT );
-		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEJAR , $this -> _CURLOPT_COOKIEJAR );
-		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEFILE , $this -> _CURLOPT_COOKIEFILE );
+		
+		if (!empty($this -> _CURLOPT_COOKIEJAR)) {
+		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEJAR, $this -> _CURLOPT_COOKIEJAR );
+		}
+		
+		if (!empty($this -> _CURLOPT_COOKIEFILE)) {
+		    curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_COOKIEFILE, $this -> _CURLOPT_COOKIEFILE );
+		}
+		
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_HEADER , $this -> _CURLOPT_HEADER);
 		
 		// to fix the ssl related issues
@@ -317,16 +330,19 @@ class Spider{
 		}
 		
 		// set custom headers for google domains
-		if (stristr($url, 'google.')) {
+		/*if (stristr($url, 'google.')) {
 			$this->setCustomHeaders();
-		}
+		}*/
 
 		// to add the curl http headers
 		if (!empty($this ->_CURL_HTTPHEADER)) {
 			curl_setopt($this->_CURL_RESOURCE, CURLOPT_HTTPHEADER, $this ->_CURL_HTTPHEADER);
 		}
 		
-		if(!empty($this -> _CURLOPT_COOKIE)) curl_setopt( $this -> _CURL_RESOURCE, CURLOPT_COOKIE , $this -> _CURLOPT_COOKIE );
+		if(!empty($this -> _CURLOPT_COOKIE)) {
+		    curl_setopt( $this -> _CURL_RESOURCE, CURLOPT_COOKIE , $this -> _CURLOPT_COOKIE );
+		}
+		
 		if(!empty($this-> _CURLOPT_REFERER)){
 			curl_setopt($this -> _CURL_RESOURCE, CURLOPT_REFERER, $this-> _CURLOPT_REFERER); 
 		}		
@@ -344,7 +360,7 @@ class Spider{
 		$proxyInfo = [];
 		if ($enableProxy && SP_ENABLE_PROXY) {
 			$proxyCtrler = New ProxyController();
-			if ($proxyInfo = $proxyCtrler->getRandomProxy()) {
+			if ($proxyInfo = $this->getSpiderProxy()) {
 				curl_setopt($this -> _CURL_RESOURCE, CURLOPT_PROXY, $proxyInfo['proxy'].":".$proxyInfo['port']);
 				
 				if (CURLOPT_HTTPPROXYTUNNEL_VAL) {
@@ -353,8 +369,7 @@ class Spider{
 				
 				if (!empty($proxyInfo['proxy_auth'])) {
 					curl_setopt ($this -> _CURL_RESOURCE, CURLOPT_PROXYUSERPWD, $proxyInfo['proxy_username'].":".$proxyInfo['proxy_password']);
-				}
-				
+				}				
 			} else {
 			    showErrorMsg("No active proxies found!! Please check your proxy settings from Admin Panel.");
 			}
@@ -385,7 +400,6 @@ class Spider{
 		
 		// disable proxy if not working
 		if ($enableProxy && SP_ENABLE_PROXY && !empty($ret['error']) && !empty($proxyInfo['id'])) {
-			
 			// deactivate proxy
 			if (PROXY_DEACTIVATE_CRAWL) {
 				$proxyCtrler->__changeStatus($proxyInfo['id'], 0);
@@ -404,8 +418,7 @@ class Spider{
 	}
 	
 	# function to debug runtime
-	function debugRunTime($ret) {
-		
+	function debugRunTime($ret) {		
 		// check debug request is enabled
 		if (!empty($_GET['debug']) || !empty($_POST['debug'])) {
 			?>
@@ -419,12 +432,17 @@ class Spider{
 				?>
 			</div>
 			<?php
-		}
-		
+		}		
+	}
+	
+	function resetCurlResourceCookie() {
+	    $this->_CURLOPT_COOKIE = "";
+	    curl_setopt($this->_CURL_RESOURCE, CURLOPT_COOKIE, $this->_CURLOPT_COOKIE);
 	}
 	
 	# func to get session id
 	function getSessionId($page){
+	    $result = [];
 		if (preg_match('/PHPSESSID=(.*?);/', $page, $result)) {
 			return $result[1];
 		} else {
@@ -513,6 +531,15 @@ class Spider{
 		return $content;
 	}
 	
+	function getSpiderProxy() {
+	    if (!empty($this->proxyInfo)) {
+	        return $this->proxyInfo;
+	    } else {
+	        $proxyCtrler = New ProxyController();
+	        return $proxyCtrler->getRandomProxy();
+	    }
+	}
+	
 	// function to check whether link is brocke
 	public static function isLInkBrocken($url) {
 	    $header = Spider::getHeader($url);
@@ -526,7 +553,7 @@ class Spider{
 	// function to check whether link is a redirect
 	public static function isLinkRedirect($url) {
 			$followRedirects = false; //don't follow with cURL as we need that info.
-			$header = $this->getHeader($url, $followRedirects);
+			$header = Spider::getHeader($url, $followRedirects);
 			if (stristr($header, '301 Moved Permanently') || stristr($header, '308 Permanent Redirect')) {
 					return true;
 			} else {

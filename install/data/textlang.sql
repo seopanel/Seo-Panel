@@ -70,6 +70,8 @@ CREATE TABLE `texts` (
   `changed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+ALTER TABLE `texts` CHANGE `label` `label` VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL;
+
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`) VALUES
 (1, 'en', 'common', 'lang', 'Language', '2019-08-06 06:09:56'),
 (2, 'de', 'common', 'lang', 'Sprache', '2021-06-14 21:46:19'),
@@ -15281,7 +15283,90 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (15275, 'ru', 'subscription', 'Access Type', 'Тип доступа', '2024-07-17 11:24:41'),
 (15276, 'en', 'website', 'Sync Google Analytics Properties', 'Sync Google Analytics Properties', '2024-09-03 19:12:17'),
 (15277, 'en', 'website', 'Google Analytics Property', 'Google Analytics Property', '2024-09-03 19:12:17'),
-(15278, 'en', 'common', 'Invalid Url', 'Invalid Url', '2024-09-03 19:12:17');
+(15278, 'en', 'common', 'Invalid Url', 'Invalid Url', '2024-09-03 19:12:17'),
+(15279, 'en', 'keyword', 'Ranking Trends', 'Ranking Trends', '2025-10-27 13:18:04'),
+(15280, 'en', 'keyword', 'Keyword Ranking Trends', 'Keyword Ranking Trends', '2025-10-27 13:18:04'),
+(15281, 'en', 'keyword', 'Keywords Tracked', 'Keywords Tracked', '2025-10-27 13:18:04'),
+(15282, 'en', 'keyword', 'Top Keywords', 'Top Keywords', '2025-10-27 13:18:04'),
+(15283, 'en', 'label', 'Recent Activity', 'Recent Activity', '2025-10-27 13:18:04'),
+(15284, 'en', 'common', 'Rankings', 'Rankings', '2025-10-27 13:18:04'),
+(15285, 'en', 'common', 'Range', 'Range', '2025-10-27 13:18:04'),
+(15286, 'en', 'common', 'Number', 'Number', '2025-10-27 13:18:04'),
+(15287, 'en', 'login', 'Welcome message', 'Welcome back! Please login to your account', '2025-10-27 13:18:04'),
+(15288, 'en', 'login', 'Username placeholder', 'Enter your username', '2025-10-27 13:18:04'),
+(15289, 'en', 'login', 'Password placeholder', 'Enter your password', '2025-10-27 13:18:04'),
+(15290, 'en', 'login', 'No account text', 'Don\'t have an account?', '2025-10-27 13:18:04'),
+(15291, 'en', 'login', 'Security message', 'Your information is secure and encrypted', '2025-10-27 13:18:04'),
+(15292, 'en', 'login', 'Forgot subtitle', 'Enter your email address and we\'ll send you instructions to reset your password', '2025-10-27 13:18:04'),
+(15293, 'en', 'login', 'Verification', 'Verification', '2025-10-27 13:18:04'),
+(15294, 'en', 'login', 'Enter the code', 'Enter the code', '2025-10-27 13:18:04'),
+(15295, 'en', 'login', 'Remember password text', 'Remember your password?', '2025-10-27 13:18:04'),
+(15296, 'en', 'login', 'Email placeholder', 'your@email.com', '2025-10-27 13:18:04'),
+(15297, 'en', 'login', 'Sign In', 'Sign In', '2025-10-27 13:18:04'),
+(15298, 'en', 'register', 'Register subtitle', 'Join us today and start optimizing your SEO', '2025-10-27 13:18:04'),
+(15299, 'en', 'register', 'Subscription Details', 'Subscription Details', '2025-10-27 13:18:04'),
+(15300, 'en', 'register', 'Account Information', 'Account Information', '2025-10-27 13:18:04'),
+(15301, 'en', 'register', 'Personal Information', 'Personal Information', '2025-10-27 13:18:04'),
+(15302, 'en', 'register', 'First name placeholder', 'First name', '2025-10-27 13:18:04'),
+(15303, 'en', 'register', 'Last name placeholder', 'Last name', '2025-10-27 13:18:04'),
+(15304, 'en', 'register', 'Already have account', 'Already have an account?', '2025-10-27 13:18:04'),
+(15305, 'en', 'guest', 'Welcome to SEO Panel', 'Welcome to SEO Panel', '2025-10-27 13:18:04'),
+(15306, 'en', 'guest', 'Hero subtitle', 'World\'s First Open Source SEO Control Panel for Multiple Websites', '2025-10-27 13:18:04'),
+(15307, 'en', 'guest', 'Hero description', 'A complete open source SEO control panel for managing search engine optimization of your websites. SEO Panel is a powerful toolkit that includes the latest SEO tools to increase and track the performance of your websites.', '2025-10-27 13:18:04'),
+(15308, 'en', 'guest', 'Login to Get Started', 'Login to Get Started', '2025-10-27 13:18:04'),
+(15309, 'en', 'guest', 'View Demo', 'View Demo', '2025-10-27 13:18:04'),
+(15310, 'en', 'guest', 'Powerful SEO Features', 'Powerful SEO Features', '2025-10-27 13:18:04'),
+(15311, 'en', 'guest', 'Keyword Position Checker desc', 'Track your keyword rankings across multiple search engines with detailed daily reports and beautiful graphs.', '2025-10-27 13:18:04'),
+(15312, 'en', 'guest', 'Backlinks Checker desc', 'Monitor the number of backlinks from major search engines and track your link building progress over time.', '2025-10-27 13:18:04'),
+(15313, 'en', 'guest', 'Site Auditor desc', 'Audit all SEO factors of each page and generate XML, HTML, and TEXT sitemaps for search engines.', '2025-10-27 13:18:04'),
+(15314, 'en', 'guest', 'Rank Checker desc', 'Check Google PageRank, Alexa Rank, and Moz Rank with comprehensive daily tracking and reporting.', '2025-10-27 13:18:04'),
+(15315, 'en', 'guest', 'Search Engine Saturation desc', 'Find the number of indexed pages across different search engines and monitor your indexing progress.', '2025-10-27 13:18:04'),
+(15316, 'en', 'guest', 'Plugin Architecture', 'Plugin Architecture', '2025-10-27 13:18:04'),
+(15317, 'en', 'guest', 'Plugin Architecture desc', 'Extend functionality with powerful plugins including Article Submitter, Meta Tag Generator, and more.', '2025-10-27 13:18:04'),
+(15318, 'en', 'guest', 'Directory Submission desc', 'Automatically submit your websites to major free and paid directories with status tracking.', '2025-10-27 13:18:04'),
+(15319, 'en', 'guest', 'Social Media Integration', 'Social Media Integration', '2025-10-27 13:18:04'),
+(15320, 'en', 'guest', 'Social Media Integration desc', 'Integrate with Google Analytics, Search Console, and social media platforms for comprehensive reporting.', '2025-10-27 13:18:04'),
+(15321, 'en', 'guest', 'Why Choose SEO Panel?', 'Why Choose SEO Panel?', '2025-10-27 13:18:04'),
+(15322, 'en', 'guest', '100% Open Source', '100% Open Source', '2025-10-27 13:18:04'),
+(15323, 'en', 'guest', '100% Open Source desc', 'Free software released under GNU GPL. Download, customize, and use without any restrictions.', '2025-10-27 13:18:04'),
+(15324, 'en', 'guest', 'Trusted by Thousands', 'Trusted by Thousands', '2025-10-27 13:18:04'),
+(15325, 'en', 'guest', 'Trusted by Thousands desc', 'Since 2010, thousands of webmasters worldwide use SEO Panel to optimize their websites.', '2025-10-27 13:18:04'),
+(15326, 'en', 'guest', 'Highly Extensible', 'Highly Extensible', '2025-10-27 13:18:04'),
+(15327, 'en', 'guest', 'Highly Extensible desc', 'Easily develop and install custom plugins to extend functionality according to your needs.', '2025-10-27 13:18:04'),
+(15328, 'en', 'guest', 'Multi-Website Support', 'Multi-Website Support', '2025-10-27 13:18:04'),
+(15329, 'en', 'guest', 'Multi-Website Support desc', 'Manage SEO for unlimited websites from a single control panel with centralized reporting.', '2025-10-27 13:18:04'),
+(15330, 'en', 'guest', 'Resources & Support', 'Resources & Support', '2025-10-27 13:18:04'),
+(15331, 'en', 'guest', 'Download SEO Panel', 'Download SEO Panel', '2025-10-27 13:18:04'),
+(15332, 'en', 'guest', 'Documentation', 'Documentation', '2025-10-27 13:18:04'),
+(15333, 'en', 'guest', 'Get Support', 'Get Support', '2025-10-27 13:18:04'),
+(15334, 'en', 'guest', 'Browse Plugins', 'Browse Plugins', '2025-10-27 13:18:04'),
+(15335, 'en', 'guest', 'Contact Us', 'Contact Us', '2025-10-27 13:18:04'),
+(15336, 'en', 'guest', 'Cloud Hosted', 'Cloud Hosted', '2025-10-27 13:18:04'),
+(15337, 'en', 'guest', 'Support Development', 'Support Development', '2025-10-27 13:18:04'),
+(15338, 'en', 'dashboard', 'Keyword Statistics', 'Keyword Statistics', '2025-10-27 13:18:04'),
+(15339, 'en', 'dashboard', 'Top 3', 'Top 3', '2025-10-27 13:18:04'),
+(15340, 'en', 'dashboard', 'Top 10', 'Top 10', '2025-10-27 13:18:04'),
+(15341, 'en', 'dashboard', 'Not Ranked', 'Not Ranked', '2025-10-27 13:18:04'),
+(15342, 'en', 'dashboard', 'Keyword Distribution by Rank', 'Keyword Distribution by Rank', '2025-10-27 13:18:04'),
+(15343, 'en', 'dashboard', 'Keywords by Ranking Position', 'Keywords by Ranking Position', '2025-10-27 13:18:04'),
+(15344, 'en', 'dashboard', 'Ranking Volatility', 'Ranking Volatility', '2025-10-27 13:18:04'),
+(15345, 'en', 'dashboard', 'Keywords with most ranking fluctuations', 'Keywords with most ranking fluctuations', '2025-10-27 13:18:04'),
+(15346, 'en', 'dashboard', 'Top 10 Most Volatile Keywords', 'Top 10 Most Volatile Keywords', '2025-10-27 13:18:04'),
+(15347, 'en', 'dashboard', 'Volatility Score', 'Volatility Score', '2025-10-27 13:18:04'),
+(15348, 'en', 'dashboard', 'Volatility Score (Standard Deviation)', 'Volatility Score (Standard Deviation)', '2025-10-27 13:18:04'),
+(15349, 'en', 'dashboard', 'Best Rank', 'Best Rank', '2025-10-27 13:18:04'),
+(15350, 'en', 'dashboard', 'Worst Rank', 'Worst Rank', '2025-10-27 13:18:04'),
+(15351, 'en', 'dashboard', 'Avg Rank', 'Avg Rank', '2025-10-27 13:18:04'),
+(15352, 'en', 'dashboard', 'Trend', 'Trend', '2025-10-27 13:18:04'),
+(15353, 'en', 'dashboard', 'Volatility', 'Volatility', '2025-10-27 13:18:04'),
+(15354, 'en', 'dashboard', 'Volatility data requires at least 2 ranking checks within the se', 'Volatility data requires at least 2 ranking checks within the selected period.', '2025-10-27 13:18:04'),
+(15355, 'en', 'dashboard', 'positions', 'positions', '2025-10-27 13:18:04'),
+(15356, 'en', 'common', 'API Token', 'API Token', '2025-10-27 13:18:04'),
+(15357, 'en', 'common', 'Spam Score', 'Spam Score', '2025-10-27 13:18:04'),
+(15358, 'en', 'common', 'Metric', 'Metric', '2025-10-27 13:18:04'),
+(15359, 'en', 'backlink', 'Backlink Count', 'Backlink Count', '2025-10-27 13:18:04'),
+(15360, 'en', 'backlink', 'Domain Backlink Count', 'Domain Backlink Count', '2025-10-27 13:18:04'),
+(15361, 'en', 'backlink', 'Domain Backlinks', 'Domain Backlinks', '2025-10-27 13:18:04');
 
 DROP TABLE IF EXISTS `translators`;
 CREATE TABLE `translators` (
@@ -15341,7 +15426,7 @@ ALTER TABLE `translators`
 
 
 ALTER TABLE `texts`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15279;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15362;
 
 ALTER TABLE `translators`
   MODIFY `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;

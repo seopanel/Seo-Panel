@@ -1,20 +1,39 @@
-<div class="col-sm-12">	
+<div class="col-sm-12 mt-4">	
     <?php
     $showOverview = true;
     if ($showOverview) {
-        $dbTabClass = "active";
+        $dbTabClass = "";
         $ovTabView = "";
+        $mainTabClass = "";
         if (!empty($custSubMenu)) {
-            $dbTabClass = "";
             $ovTabView = "active";
+        } else {
+            switch ($post['dashboard']) {
+                case "reports":
+                    $dbTabClass = "active";
+                    break;
+                    
+                default:
+                    $mainTabClass = "active";
+                    break;
+            }
         }
         ?>
-		<ul class="nav nav-tabs" style="margin-top: 6px;">
+		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
-            	<a class="sub_menu_link nav-link <?php echo $dbTabClass?>" href="<?php echo SP_WEBPATH?>/"><?php echo $spText['common']['Dashboard']?></a>
+            	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/">
+            		<i class="fas fa-tachometer-alt"></i> <?php echo $spText['common']['Dashboard']?>
+            	</a>
             </li>
             <li class="nav-item">
-            	<a class="sub_menu_link nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php"><?php echo $spText['label']['Overview']?></a>
+            	<a class="nav-link <?php echo $dbTabClass?>" href="<?php echo SP_WEBPATH?>/?dashboard=reports">
+            		<i class="fas fa-chart-line"></i> <?php echo $spText['common']['Reports']?>
+            	</a>
+            </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php">
+            		<i class="fas fa-eye"></i> <?php echo $spText['label']['Overview']?>
+            	</a>
             </li>
         </ul>
     	<?php
@@ -25,7 +44,11 @@
     <?php } else {?> 
         <div id="content">
         	<script type="text/javascript">
-               	scriptDoLoad('archive.php', 'content', '<?php echo getRequestParamStr(); ?>');
+        		<?php if ($dbTabClass == "active") {?>
+               		scriptDoLoad('archive.php', 'content', '<?php echo getRequestParamStr(); ?>');
+           		<?php } else {?>
+               		scriptDoLoad('dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php }?>
         	</script>
         </div>
     <?php }?>

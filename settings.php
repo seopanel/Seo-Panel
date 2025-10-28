@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -84,29 +84,25 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 		
 		case "checkMozCon":
-			
-			if (empty($_GET['access_id']) || empty($_GET['secret_key'])) {
-				print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+			if (empty($_GET['api_token'])) {
+			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);
 			} else {
-			
-				include_once(SP_CTRLPATH."/rank.ctrl.php");
-				$urlList = array("http://moz.com");
-				$mozCtrler = new MozController();
-				list($rankInfo, $logInfo) = $mozCtrler->__getMozRankInfo($urlList, $_GET['access_id'], $_GET['secret_key'], true);
-				
-				// if error occured
-				if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
-					print "<span class='error'>{$logInfo['log_message']}</span>";
-				} else {
-					print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
-				}
+			    $mozCtrler = new MozController();
+			    list($usageData, $logInfo) = $mozCtrler->__getMozUsageData($_GET['api_token'], true);
+			    
+			    // if error occured
+			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
+			        showErrorMsg($logInfo['log_message']);
+			    } else {
+			        $rowsAllotted = $usageData['quota']['allotted'] ?? 0;
+			        $rowsConsumed = $usageData['quota']['used'] ?? 0;
+			        showSuccessMsg("{$_SESSION['text']['label']['Success']}<br>Monthly Token Usage: <b>$rowsConsumed/$rowsAllotted</b>");
+			    }
 			}
 			
 			break;
 		
 		case "checkGoogleAPI":
-			
-			
 			if (empty($_GET['api_key'])) {
 				print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
 			} else {
@@ -128,7 +124,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "checkDataForSEOAPI":
-		    
 		    if (empty($_GET['api_login']) || empty($_GET['api_password'])) {
 		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
 		    } else {

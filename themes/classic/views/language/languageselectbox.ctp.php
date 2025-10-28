@@ -1,5 +1,5 @@
-<?php $langStyle = empty($langStyle) ? 150 : $langStyle; ?>  
-<select name="lang_code" id="lang_code" style="width:<?php echo $langStyle?>px;" onchange="<?php echo $onChange?>">
+<?php $langStyle = empty($langStyle) ? 200 : $langStyle; ?>  
+<select name="lang_code" id="lang_code" style="width:<?php echo $langStyle?>px;" onchange="<?php echo $onChange?>" class="custom-select">
 	<?php if($langNull){ ?>
 		<option value="">-- all --</option>
 	<?php } ?>

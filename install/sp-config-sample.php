@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   						                           *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -40,7 +40,7 @@ define('DB_HOST', '[DB_HOST]');
 define('DB_ENGINE', '[DB_ENGINE]');
 
 # The version of seo panel installed
-define('SP_INSTALLED', '4.11.0');
+define('SP_INSTALLED', '5.0.0');
 
 # The DB debug mode
 define('SP_DEBUG', 0);

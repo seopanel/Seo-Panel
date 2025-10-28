@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seofreetools.net)  	   *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	   *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -92,7 +92,6 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 		if (!empty($argv[2])) {
 			$includeList[] = intval($argv[2]);
 		}
-		
 	}
 	
 	// call cronjob function

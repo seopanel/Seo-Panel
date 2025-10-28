@@ -1,7 +1,7 @@
 <?php
 
 /***************************************************************************
- *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.in)  	           *
+ *   Copyright (C) 2009-2011 by Geo Varghese(www.seopanel.org)  	           *
  *   sendtogeo@gmail.com   												   *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -566,6 +566,7 @@ class Install {
 		    '4.8.0',
 		    '4.9.0',
 		    '4.10.0',
+		    '4.11.0',
 		);
 		
 		// get current version number
