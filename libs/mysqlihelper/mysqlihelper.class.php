@@ -46,7 +46,7 @@ class MysqliHelper extends Database{
     			$this->showError();			
     			showErrorMsg("<p style='color:red'>Database connection failed!<br>Please check your database settings!</p>");
     		} else {	
-    		    $this->query( "SET NAMES utf8");
+    		    $this->query( "SET NAMES utf8mb4");
     		    $SP_DB_CONN_OBJ = $this->connectionId;
     		}
     		
