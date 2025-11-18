@@ -1,8 +1,11 @@
 <?php $publishedTime = strtotime($blogInfo['updated_time'])?>
-<div class="col" id="home_screen">
-            <div class="blog_search">
+<div class="col-12" id="home_screen">
+            <!-- Search Section at Top -->
+            <div class="blog_search" style="float: none !important; margin-bottom: 30px; margin-top: 20px; text-align: center !important; width: 100% !important;">
             	<form action="<?php echo SP_WEBPATH . "/blog.php"?>" method="post">
-            		<input type="text" name="search" value="<?php echo $post['search']?>" placeholder="Search..">
+            		<div style="max-width: 600px; margin: 0 auto;">
+            			<input type="text" name="search" value="" placeholder="Search blogs by keyword, title, or content..." style="width: 100% !important; padding: 12px 20px; border: 1px solid #ddd; border-radius: 25px; font-size: 15px;">
+            		</div>
             	</form>
             </div>
             <div class="blog_section">

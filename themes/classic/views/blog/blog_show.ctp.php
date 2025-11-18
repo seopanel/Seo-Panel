@@ -1,15 +1,19 @@
 <?php $publishedTime = strtotime($blogInfo['updated_time'])?>
-<div class="col" id="home_screen">
-	<!-- Search Section -->
-	<div class="blog_search" style="margin-bottom: 30px;">
-		<form action="<?php echo SP_WEBPATH . "/blog.php"?>" method="post">
-			<div class="input-group" style="max-width: 500px;">
-				<input type="text" name="search" class="form-control" value="<?php echo $post['search']?>" placeholder="Search blogs...">
-				<div class="input-group-append">
-					<button class="btn btn-primary" type="submit"><i class="fa fa-search"></i> Search</button>
-				</div>
+<div class="col-12" id="home_screen">
+	<!-- Search Section at Top -->
+	<div class="blog_search" style="float: none !important; text-align: center !important; margin-bottom: 30px; margin-top: 20px; width: 100% !important;">
+		<div class="row justify-content-center">
+			<div class="col-md-8 col-lg-6">
+				<form action="<?php echo SP_WEBPATH . "/blog.php"?>" method="post">
+					<div class="input-group shadow-sm" style="border-radius: 50px; overflow: hidden;">
+						<input type="text" name="search" class="form-control" value="" placeholder="Search blogs by keyword, title, or content..." style="border: none; padding: 15px 20px; font-size: 16px; width: auto !important;">
+						<div class="input-group-append">
+							<button class="btn btn-primary" type="submit" style="padding: 0 30px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fa fa-search"></i> Search</button>
+						</div>
+					</div>
+				</form>
 			</div>
-		</form>
+		</div>
 	</div>
 
 	<!-- Back Button -->

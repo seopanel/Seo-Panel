@@ -1,20 +1,24 @@
-<div class="col" id="home_screen">
-	<!-- Search Section -->
-	<div class="blog_search" style="margin-bottom: 30px;">
-		<form action="<?php echo SP_WEBPATH . "/blog.php"?>" method="post">
-			<div class="input-group" style="max-width: 500px;">
-				<input type="text" name="search" class="form-control" value="<?php echo $post['search']?>" placeholder="Search blogs...">
-				<div class="input-group-append">
-					<button class="btn btn-primary" type="submit"><i class="fa fa-search"></i> Search</button>
-				</div>
+<div class="col-12" id="home_screen">
+	<!-- Search Section at Top -->
+	<div class="blog_search" style="float: none !important; text-align: center !important; margin-bottom: 40px; margin-top: 20px; width: 100% !important;">
+		<div class="row justify-content-center">
+			<div class="col-md-8 col-lg-6">
+				<form action="<?php echo SP_WEBPATH . "/blog.php"?>" method="post">
+					<div class="input-group shadow-sm" style="border-radius: 50px; overflow: hidden;">
+						<input type="text" name="search" class="form-control" value="<?php echo $post['search']?>" placeholder="Search blogs by keyword, title, or content..." style="border: none; padding: 15px 20px; font-size: 16px; width: auto !important;">
+						<div class="input-group-append">
+							<button class="btn btn-primary" type="submit" style="padding: 0 30px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fa fa-search"></i> Search</button>
+						</div>
+					</div>
+				</form>
 			</div>
-		</form>
+		</div>
 	</div>
 
 	<?php
 	if (!empty($blogList)) {
 		?>
-		<!-- Blog Grid -->
+		<!-- Blog Grid - Full Width -->
 		<div class="row">
 			<?php
 			foreach ($blogList as $blogInfo) {
@@ -26,7 +30,7 @@
 				$featureImage = !empty($blogInfo['feature_image']) ? SP_WEBPATH . '/' . $blogInfo['feature_image'] : '';
 				$hasImage = !empty($featureImage);
 				?>
-				<div class="col-md-6 mb-4">
+				<div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
 					<div class="card h-100 shadow-sm" style="border: none; border-radius: 8px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;">
 						<!-- Feature Image or Placeholder -->
 						<a href="<?php echo SP_WEBPATH . "/blog.php?id=" . $blogInfo['id']?>" style="text-decoration: none;">
@@ -147,8 +151,36 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-	.col-md-6 {
+	.col-sm-6, .col-md-4, .col-lg-3 {
 		margin-bottom: 20px;
+	}
+
+	.blog_search .col-md-8 {
+		padding: 0 15px;
+	}
+}
+
+@media (min-width: 1200px) {
+	/* 4 columns on large screens */
+	.col-lg-3 {
+		flex: 0 0 25%;
+		max-width: 25%;
+	}
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+	/* 3 columns on medium screens */
+	.col-md-4 {
+		flex: 0 0 33.333333%;
+		max-width: 33.333333%;
+	}
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+	/* 2 columns on tablets */
+	.col-sm-6 {
+		flex: 0 0 50%;
+		max-width: 50%;
 	}
 }
 </style>
