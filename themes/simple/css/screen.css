@@ -926,7 +926,10 @@ div.tab button.active {	background-color: #ccc;}
 .navbar.navbar-expand-md {
     padding: 10px 16px;
     min-height: 54px;
-    background: #1e3a52 !important;
+}
+
+.navbar-expand-md-bg {
+	background: #1e3a52 !important;
 }
 
 .navbar-brand {
@@ -979,8 +982,11 @@ div.tab button.active {	background-color: #ccc;}
     flex-wrap: wrap;
     gap: 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    background: #1e3a52 !important;
     color: #ffffff;
+}
+
+.footer-sp-bg {
+    background: #1e3a52 !important;
 }
 
 .footer-sp > div {

@@ -19,11 +19,10 @@
     	$siteBgClass = $menuInfo['bg_color'];
     	$siteFooterBgClass = $menuInfo['bg_color'];
     } else {
-    
 	    // theme wise changes
 	    if (stristr(SP_VIEWPATH, '/simple/')) {
-	    	$siteBgClass = "bg-primary";
-	    	$siteFooterBgClass = "bg-primary";
+	    	$siteBgClass = "navbar-expand-md-bg";
+	    	$siteFooterBgClass = "footer-sp-bg";
 	    } else {
 	    	$siteBgClass = "bg-dark";
 	    	$siteFooterBgClass = "bg-dark text-muted";
@@ -58,6 +57,11 @@
     <script type="text/javascript" src="<?php echo SP_JSPATH; ?>/loader.js?<?php echo $spKey?>"></script>
     <script type="text/javascript" src="<?php echo SP_JSPATH; ?>/jquery.tablesorter.min.js?<?php echo $spKey?>"></script>
     <script type="text/javascript" src="<?php echo SP_JSPATH?>/simplemde.min.js?<?php echo $spKey?>"></script>
+    
+     <!-- tinymce editor -->
+	<script type="text/javascript" src="<?php echo SP_JSPATH?>/tinymce/tinymce.min.js?<?php echo $spKey?>"></script>
+	
+    <!-- sp specific files -->    
     <script type="text/javascript" src="<?php echo SP_JSPATH?>/common.js?<?php echo $spKey?>"></script>
     <script type="text/javascript" src="<?php echo SP_JSPATH?>/popup.js?<?php echo $spKey?>"></script>
     
