@@ -36,12 +36,12 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Review Statistics</h4>
+					<h4><?php echo $spTextReview['Review Statistics']?></h4>
 				</div>
 				<div class="card-body">
 					<div class="row">
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Total Review Links</h6>
+							<h6 class="mb-3"><?php echo $spTextReview['Total Review Links']?></h6>
 							<h3>
 								<span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo $reviewStats['total_links']?>
@@ -58,7 +58,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Total Reviews</h6>
+							<h6 class="mb-3"><?php echo $spTextReview['Total Reviews']?></h6>
 							<h3>
 								<span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo number_format($reviewStats['total_reviews'])?>
@@ -75,7 +75,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Average Rating</h6>
+							<h6 class="mb-3"><?php echo $spTextReview['Average Rating']?></h6>
 							<h3>
 								<span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo number_format($reviewStats['avg_rating'], 2)?>
@@ -103,7 +103,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Reviews by Platform</h4>
+					<h4><?php echo $spTextReview['Reviews by Platform']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="review_count_chart" style="width: 100%; height: 350px;"></div>
@@ -113,7 +113,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Average Rating by Platform</h4>
+					<h4><?php echo $spTextReview['Average Rating by Platform']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="review_rating_chart" style="width: 100%; height: 350px;"></div>
@@ -127,7 +127,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Review Growth Trends</h4>
+					<h4><?php echo $spTextReview['Review Growth Trends']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="review_trends_chart" style="width: 100%; height: 400px;"></div>
@@ -141,7 +141,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Top Review Links</h4>
+					<h4><?php echo $spTextReview['Top Review Links']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="review_comparison_chart" style="width: 100%; height: 400px;"></div>
@@ -155,7 +155,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Review Link Details</h4>
+					<h4><?php echo $spTextReview['Review Link Details']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($topReviewLinks)) { ?>
@@ -164,12 +164,12 @@
 								<thead>
 									<tr>
 										<th>#</th>
-										<th>Name</th>
-										<th>Platform</th>
-										<th>Reviews</th>
-										<th>Rating</th>
-										<th>Last Checked</th>
-										<th>Actions</th>
+										<th><?php echo $spText['common']['Name']?></th>
+										<th><?php echo $spTextSocialMedia['Platform']?></th>
+										<th><?php echo $spTextReview['Total Reviews']?></th>
+										<th><?php echo $spTextReview['Average Rating']?></th>
+										<th><?php echo $spTextSocialMedia['Last Checked']?></th>
+										<th><?php echo $spText['common']['Actions']?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -204,7 +204,7 @@
 						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
-							<i class="fas fa-info-circle me-2"></i>No review links found. <a href="review.php">Add review links</a> to track your reviews and ratings.
+							<i class="fas fa-info-circle me-2"></i><?php echo $spTextReview['No review data available']?>
 						</div>
 					<?php } ?>
 				</div>
@@ -216,7 +216,7 @@
 	<div class="row">
 		<div class="col-md-12">
 			<div class="alert alert-info">
-				<i class="fas fa-info-circle me-2"></i>No review data available. <a href="review.php">Add review links</a> to start tracking your reviews and ratings.
+				<i class="fas fa-info-circle me-2"></i><?php echo $spTextReview['No review data available']?>
 			</div>
 		</div>
 	</div>
