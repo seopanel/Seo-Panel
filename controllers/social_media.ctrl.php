@@ -106,7 +106,7 @@ class SocialMediaController extends Controller{
     	parent::__construct();
     }
     
-    function showSocialMediaLinks($searchInfo = '') {
+    function showSocialMediaLinks($searchInfo=[]) {
     	$userId = isLoggedIn();
     	$this->set('searchInfo', $searchInfo);
     	$sql = "select l.*, w.name as website_name from $this->linkTable l, websites w where l.website_id=w.id";
@@ -244,7 +244,7 @@ class SocialMediaController extends Controller{
         $this->render( 'socialmedia/edit_social_media_link');   
     }
     
-    function createSocialMediaLink($listInfo = '') {
+    function createSocialMediaLink($listInfo=[]) {
         $listInfo['name'] = trim($listInfo['name']);
         $listInfo['url'] = trim($listInfo['url']);        
         $errMsg = $this->validateSocialMediaLink($listInfo);
@@ -266,8 +266,7 @@ class SocialMediaController extends Controller{
         $this->newSocialMediaLink($listInfo);        
     }
     
-    function editSocialMediaLink($linkId, $listInfo = '') {
-        
+    function editSocialMediaLink($linkId, $listInfo=[]) {        
         if (!empty($linkId)) {
             $userId = isLoggedIn();
             $webSiteCtrler = new WebsiteController();
@@ -345,8 +344,7 @@ class SocialMediaController extends Controller{
 		$this->render('socialmedia/quick_checker');
 	}
 
-	function doQuickChecker($listInfo = '') {
-		
+	function doQuickChecker($listInfo=[]) {		
 	    if ($listInfo['type'] == 'linkedin') {
 	        $errorMsg = formatErrorMsg($this->validate->checkNumber($listInfo['url']));
 	        $smLink = $listInfo['url'];
@@ -511,7 +509,7 @@ class SocialMediaController extends Controller{
 	/*
 	 * func to show report summary
 	 */ 
-	function viewReportSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {	
+	function viewReportSummary($searchInfo=[], $summaryPage = false, $cronUserId=false) {	
 		$userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
 		$this->set('summaryPage', $summaryPage);
 		$this->set('searchInfo', $searchInfo);
@@ -695,8 +693,7 @@ class SocialMediaController extends Controller{
 	}
 	
 	// func to show detailed reports
-	function viewDetailedReports($searchInfo = '') {
-	
+	function viewDetailedReports($searchInfo=[]) {	
 		$userId = isLoggedIn();
 
 		if (!empty ($searchInfo['from_time'])) {
@@ -785,8 +782,7 @@ class SocialMediaController extends Controller{
 	}
 	
 	// func to show link search reports in graph
-	function viewGraphReports($searchInfo = '') {
-	    
+	function viewGraphReports($searchInfo=[]) {	    
 	    $userId = isLoggedIn();
 	    
 	    if (!empty ($searchInfo['from_time'])) {
@@ -870,9 +866,7 @@ class SocialMediaController extends Controller{
 		
 		// get graph content
 		$this->set('graphContent', $graphContent);
-		$this->render('socialmedia/graphicalreport');
-		
-	}
-	
+		$this->render('socialmedia/graphicalreport');		
+	}	
 }
 ?>
