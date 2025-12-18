@@ -36,12 +36,12 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Social Media Statistics</h4>
+					<h4><?php echo $spTextSocialMedia['Social Media Statistics']?></h4>
 				</div>
 				<div class="card-body">
 					<div class="row">
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Total Social Media Links</h6>
+							<h6 class="mb-3"><?php echo $spTextSocialMedia['Total Social Media Links']?></h6>
 							<h3>
 								<span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo $socialMediaStats['total_links']?>
@@ -58,7 +58,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Total Followers</h6>
+							<h6 class="mb-3"><?php echo $spTextSocialMedia['Total Followers']?></h6>
 							<h3>
 								<span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo number_format($socialMediaStats['total_followers'])?>
@@ -75,7 +75,7 @@
 							<?php endif; ?>
 						</div>
 						<div class="col-md-4 text-center">
-							<h6 class="mb-3">Total Likes</h6>
+							<h6 class="mb-3"><?php echo $spTextSocialMedia['Total Likes']?></h6>
 							<h3>
 								<span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;">
 									<?php echo number_format($socialMediaStats['total_likes'])?>
@@ -103,7 +103,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Followers by Platform</h4>
+					<h4><?php echo $spTextSocialMedia['Followers by Platform']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="social_media_followers_chart" style="width: 100%; height: 350px;"></div>
@@ -113,7 +113,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Likes by Platform</h4>
+					<h4><?php echo $spTextSocialMedia['Likes by Platform']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="social_media_likes_chart" style="width: 100%; height: 350px;"></div>
@@ -127,7 +127,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Social Media Growth Trends</h4>
+					<h4><?php echo $spTextSocialMedia['Social Media Growth Trends']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="social_media_trends_chart" style="width: 100%; height: 400px;"></div>
@@ -141,7 +141,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Top Social Media Profiles</h4>
+					<h4><?php echo $spTextSocialMedia['Top Social Media Profiles']?></h4>
 				</div>
 				<div class="card-body">
 					<div id="social_media_comparison_chart" style="width: 100%; height: 400px;"></div>
@@ -155,7 +155,7 @@
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4>Social Media Profile Details</h4>
+					<h4><?php echo $spTextSocialMedia['Social Media Profile Details']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($topSocialMediaLinks)) { ?>
@@ -164,12 +164,12 @@
 								<thead>
 									<tr>
 										<th>#</th>
-										<th>Name</th>
-										<th>Platform</th>
-										<th>Followers</th>
-										<th>Likes</th>
-										<th>Last Checked</th>
-										<th>Actions</th>
+										<th><?php echo $spText['common']['Name']?></th>
+										<th><?php echo $spTextSocialMedia['Platform']?></th>
+										<th><?php echo $spText['common']['Followers']?></th>
+										<th><?php echo $spText['common']['Likes']?></th>
+										<th><?php echo $spTextSocialMedia['Last Checked']?></th>
+										<th><?php echo $spText['common']['Actions']?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -200,7 +200,7 @@
 						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
-							<i class="fas fa-info-circle me-2"></i>No social media links found. <a href="social_media.php">Add social media links</a> to track your social media performance.
+							<i class="fas fa-info-circle me-2"></i><?php echo $spTextSocialMedia['No social media data available']?>
 						</div>
 					<?php } ?>
 				</div>
@@ -212,7 +212,7 @@
 	<div class="row">
 		<div class="col-md-12">
 			<div class="alert alert-info">
-				<i class="fas fa-info-circle me-2"></i>No social media data available. <a href="social_media.php">Add social media links</a> to start tracking your social media performance.
+				<i class="fas fa-info-circle me-2"></i><?php echo $spTextSocialMedia['No social media data available']?>
 			</div>
 		</div>
 	</div>

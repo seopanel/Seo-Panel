@@ -33,7 +33,7 @@
 		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
             	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/" onclick="return navigateDashboardTab(this, '');">
-            		<i class="fas fa-tachometer-alt"></i> <?php echo $spText['common']['Dashboard']?>
+            		<i class="fas fa-tachometer-alt"></i> <?php echo $spText['label']['Overview']?>
             	</a>
             </li>
             <li class="nav-item">
@@ -43,17 +43,17 @@
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');">
-            		<i class="fas fa-eye"></i> <?php echo $spText['label']['Overview']?>
+            		<i class="fas fa-key"></i> <?php echo $spText['common']['Keywords']?>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $smTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=social_media" onclick="return navigateDashboardTab(this, 'social_media');">
-            		<i class="fas fa-share-alt"></i> Social Media
+            		<i class="fas fa-share-alt"></i> <?php echo $spText['label']['Social Media']?>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $rvTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=reviews" onclick="return navigateDashboardTab(this, 'reviews');">
-            		<i class="fas fa-star"></i> Reviews
+            		<i class="fas fa-star"></i> <?php echo $spText['label']['Reviews']?>
             	</a>
             </li>
         </ul>

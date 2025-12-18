@@ -42,6 +42,8 @@ $controller->spTextHome = $controller->getLanguageTexts('home', $_SESSION['lang_
 $controller->set('spTextHome', $controller->spTextHome);
 $controller->spTextDashboard = $controller->getLanguageTexts('dashboard', $_SESSION['lang_code']);
 $controller->set('spTextDashboard', $controller->spTextDashboard);
+$controller->spTextSocialMedia = $controller->getLanguageTexts('socialmedia', $_SESSION['lang_code']);
+$controller->set('spTextSocialMedia', $controller->spTextSocialMedia);
 
 // set site details according to customizer plugin
 $custSiteInfo = getCustomizerDetails();
