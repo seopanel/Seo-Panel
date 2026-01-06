@@ -11,9 +11,7 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
         	</tr>
         	<tr>
         		<th class="leftcell" width="20%"><?php echo $spTextSA['Page Link']?>:</th>
-        		<td width="40%" style="text-align: left;"><a href="<?php echo $reportInfo['page_url']?>" target="_blank"><?php echo $reportInfo['page_url']?></a></td>
-        		<th width="20%"><?php echo $_SESSION['text']['common']['MOZ Rank']; ?>:</th>
-        		<td><?php echo $reportInfo['pagerank']?></td>        		
+        		<td colspan="3" style="text-align: left;"><a href="<?php echo $reportInfo['page_url']?>" target="_blank"><?php echo $reportInfo['page_url']?></a></td>
         	</tr>
         	<tr>
         		<th class="leftcell"><?php echo $spText['label']['Score']?>:</th>

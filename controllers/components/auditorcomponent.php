@@ -243,120 +243,120 @@ class AuditorComponent extends Controller{
         $scoreInfo = array();
         $this->commentInfo = array();
         $spTextSA = $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']);
-        
-        // check page title length
+
+        // check page title length (Modern SEO: 50-60 characters for optimal display)
         $lengTitle = strlen($reportInfo['page_title']);
-        if ( ($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= SA_TITLE_MIN_LENGTH) ) {
-            $scoreInfo['page_title'] = 1;        
+        if ( ($lengTitle <= 60) && ($lengTitle >= 50) ) {
+            $scoreInfo['page_title'] = 2; // Increased weight for proper title optimization
+            $msg = $spTextSA["The page title length is optimal for search engines"];
+            $this->commentInfo['page_title'] = formatSuccessMsg($msg);
+        } else if ( ($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= 30) ) {
+            $scoreInfo['page_title'] = 1; // Acceptable but not optimal
+            $msg = $spTextSA["The page title length is acceptable"];
+            $this->commentInfo['page_title'] = formatSuccessMsg($msg);
         } else {
-            $scoreInfo['page_title'] = -1;
-            $msg = $spTextSA["The page title length is not between"]." ".SA_TITLE_MIN_LENGTH." & ".SA_TITLE_MAX_LENGTH;
+            $scoreInfo['page_title'] = -2; // Higher penalty for poor title optimization
+            $msg = $spTextSA["The page title length is not optimal (recommended: 50-60 characters)"];
             $this->commentInfo['page_title'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check meta description length
+
+        // check meta description length (Modern SEO: 150-160 characters)
         $lengDes = strlen($reportInfo['page_description']);
-        if ( ($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= SA_DES_MIN_LENGTH) ) {
-            $scoreInfo['page_description'] = 1;
+        if ( ($lengDes <= 160) && ($lengDes >= 150) ) {
+            $scoreInfo['page_description'] = 2; // Optimal length
+            $msg = $spTextSA["The page description length is optimal for search engines"];
+            $this->commentInfo['page_description'] = formatSuccessMsg($msg);
+        } else if ( ($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= 120) ) {
+            $scoreInfo['page_description'] = 1; // Acceptable
+            $msg = $spTextSA["The page description length is acceptable"];
+            $this->commentInfo['page_description'] = formatSuccessMsg($msg);
         } else {
             $scoreInfo['page_description'] = -1;
-            $msg = $spTextSA["The page description length is not between"]." ".SA_DES_MIN_LENGTH." and ".SA_DES_MAX_LENGTH;
+            $msg = $spTextSA["The page description length is not optimal (recommended: 150-160 characters)"];
             $this->commentInfo['page_description'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check meta keywords length
-        $lengKey = strlen($reportInfo['page_keywords']);
-        if ( ($lengKey <= SA_KEY_MAX_LENGTH) && ($lengKey >= SA_KEY_MIN_LENGTH) ) {
-            $scoreInfo['page_keywords'] = 1;
-        } else {
-            $scoreInfo['page_keywords'] = -1;
-            $msg = $spTextSA["The page keywords length is not between"]." ".SA_KEY_MIN_LENGTH." and ".SA_KEY_MAX_LENGTH;
-            $this->commentInfo['page_keywords'] = formatErrorMsg($msg, 'error', '');
+
+        // Meta keywords check removed - Google ignores meta keywords since 2009
+        // Keeping minimal check for presence only, not scoring
+        if (!empty($reportInfo['page_keywords'])) {
+            $scoreInfo['page_keywords'] = 0; // Neutral - no impact on modern SEO
         }
-        
-        // if link brocken
+
+        // if link broken (critical issue in modern SEO)
         if ($reportInfo['brocken']) {
-            $scoreInfo['brocken'] = -1;
-            $msg = $spTextSA["The page is brocken"];
+            $scoreInfo['brocken'] = -3; // Higher penalty for broken links
+            $msg = $spTextSA["The page is broken - critical SEO issue"];
             $this->commentInfo['brocken'] = formatErrorMsg($msg, 'error', '');
         }
 
-        // if total links of a page
-        if ($reportInfo['total_links'] >= SA_TOTAL_LINKS_MAX) {
+        // if total links of a page (modern recommendation: 100-150 links max)
+        if ($reportInfo['total_links'] >= 150) {
+            $scoreInfo['total_links'] = -2;
+            $msg = $spTextSA["The total number of links in page is too high (recommended: less than 150)"];
+            $this->commentInfo['total_links'] = formatErrorMsg($msg, 'error', '');
+        } else if ($reportInfo['total_links'] >= 100) {
             $scoreInfo['total_links'] = -1;
-            $msg = $spTextSA["The total number of links in page is greater than"]." ".SA_TOTAL_LINKS_MAX;
-            $this->commentInfo['page_keywords'] = formatErrorMsg($msg, 'error', '');
+            $msg = $spTextSA["The total number of links in page is slightly high"];
+            $this->commentInfo['total_links'] = formatErrorMsg($msg, 'warning', '');
         }
-        
-        // check google pagerank
-        if ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_SECOND) {
-            $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 3;
-            $msg = $spTextSA["The page is having exellent pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_FIRST) {
-            $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 2;
-            $msg = $spTextSA["The page is having very good pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank']) {
-            $scoreInfo['pagerank'] = 1;
-            $msg = $spTextSA["The page is having good pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else {
-            $scoreInfo['pagerank'] = 0;
-            $msg = $spTextSA["The page is having poor pagerank"];
-            $this->commentInfo['pagerank'] = formatErrorMsg($msg, 'error', '');
-        }
-        
-        // check page authority value
+
+        // PageRank removed - deprecated since 2013, no longer used in scoring
+
+        // Page Authority - increased importance in modern SEO
         if ($reportInfo['page_authority'] >= SA_PA_CHECK_LEVEL_SECOND) {
-        	$scoreInfo['page_authority'] = 6;
+        	$scoreInfo['page_authority'] = 10; // Increased from 6 (most important metric)
         	$msg = $spTextSA["The page is having excellent page authority value"];
         	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
         } else if ($reportInfo['page_authority'] >= SA_PA_CHECK_LEVEL_FIRST) {
-        	$scoreInfo['page_authority'] = 3;
+        	$scoreInfo['page_authority'] = 5; // Increased from 3
         	$msg = $spTextSA["The page is having very good page authority value"];
+        	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
+        } else if ($reportInfo['page_authority'] >= 20) {
+        	$scoreInfo['page_authority'] = 2; // New tier for moderate PA
+        	$msg = $spTextSA["The page is having moderate page authority value"];
         	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
         } else if ($reportInfo['page_authority']) {
         	$scoreInfo['page_authority'] = 1;
-        	$msg = $spTextSA["The page is having good page authority value"];
-        	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
+        	$msg = $spTextSA["The page is having low page authority value"];
+        	$this->commentInfo['page_authority'] = formatErrorMsg($msg, 'warning', '');
         } else {
-        	$scoreInfo['page_authority'] = 0;
-        	$msg = $spTextSA["The page is having poor page authority value"];
+        	$scoreInfo['page_authority'] = -1;
+        	$msg = $spTextSA["The page is having no page authority value"];
         	$this->commentInfo['page_authority'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check backlinks
-        $seArr = array('google', 'bing');
-        foreach ($seArr as $se) {
-            $label = $se.'_backlinks';
-            if ($reportInfo[$label] >= SA_BL_CHECK_LEVEL) {                
-                $scoreInfo[$label] = 2;
-                $msg = $spTextSA["The page is having exellent number of backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatSuccessMsg($msg);
-            } elseif($reportInfo[$label]) {
-                $scoreInfo[$label] = 1;
-                $msg = $spTextSA["The page is having good number of backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatSuccessMsg($msg);                
-            } else {
-                $scoreInfo[$label] = 0;
-                $msg = $spTextSA["The page is not having backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }     
+
+        // check backlinks (important for modern SEO)
+        if ($reportInfo['google_backlinks'] >= SA_BL_CHECK_LEVEL) {
+            $scoreInfo['google_backlinks'] = 3; // Increased from 2
+            $msg = $spTextSA["The page is having excellent number of backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } elseif($reportInfo['google_backlinks'] >= 10) {
+            $scoreInfo['google_backlinks'] = 2; // New tier
+            $msg = $spTextSA["The page is having good number of backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } elseif($reportInfo['google_backlinks']) {
+            $scoreInfo['google_backlinks'] = 1;
+            $msg = $spTextSA["The page is having some backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['google_backlinks'] = 0; // Neutral - not a penalty
+            $msg = $spTextSA["The page has no backlinks yet"];
+            $this->commentInfo['google_backlinks'] = formatErrorMsg($msg, 'warning', '');
         }
-        
-        // check whether indexed or not    
+
+        // check whether indexed or not (critical for visibility)
+        $seArr = array('google', 'bing');
         foreach ($seArr as $se) {
             $label = $se.'_indexed';
             if($reportInfo[$label]) {
-                $scoreInfo[$label] = 1;                
+                $scoreInfo[$label] = 2; // Increased from 1 (being indexed is critical)
             } else {
-                $scoreInfo[$label] = -1;
+                $scoreInfo[$label] = -2; // Higher penalty for not being indexed
                 $msg = $spTextSA["The page is not indexed in"]." ".$se;
                 $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }   
+            }
         }
-        
+
         return $scoreInfo;
     }
     

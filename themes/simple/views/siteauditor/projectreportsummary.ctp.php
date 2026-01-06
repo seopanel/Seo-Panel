@@ -71,43 +71,15 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
         			<td style="<?php echo $tdStyle; ?>">
         				<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo $projectInfo["duplicate_".$col]?></a>
         			</td>
-    		        <?php	        
-        	    } 
+    		        <?php
+        	    }
             	?>
         	</tr>
         	<tr>
-        		<th class="leftcell">PR10:</th>
-        		<td><?php echo $projectInfo['PR10']?></td>
-        		<th>PR9:</th>
-        		<td><?php echo $projectInfo['PR9']?></td>
-        		<th>PR8:</th>
-        		<td style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['PR8']?></td>
+        		<th class="leftcell"><?php echo $spText['label']['Brocken']?>:</th>
+        		<td colspan="5" style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['brocken']?></td>
         	</tr>
-        	<tr>
-        		<th class="leftcell">PR7:</th>
-        		<td><?php echo $projectInfo['PR7']?></td>
-        		<th>PR6:</th>
-        		<td><?php echo $projectInfo['PR6']?></td>
-        		<th>PR5:</th>
-        		<td style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['PR5']?></td>
-        	</tr>
-        	<tr>
-        		<th class="leftcell">PR4:</th>
-        		<td><?php echo $projectInfo['PR4']?></td>
-        		<th>PR3:</th>
-        		<td><?php echo $projectInfo['PR3']?></td>
-        		<th>PR2:</th>
-        		<td style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['PR2']?></td>
-        	</tr>
-        	<tr>
-        		<th class="leftcell">PR1:</th>
-        		<td><?php echo $projectInfo['PR1']?></td>
-        		<th>PR0:</th>
-        		<td><?php echo $projectInfo['PR0']?></td>
-        		<th><?php echo $spText['label']['Brocken']?>:</th>
-        		<td style="<?php echo $lastTdStyle; ?>"><?php echo $projectInfo['brocken']?></td>
-        	</tr>
-        	
+
         	<tr>
             	<?php
         	    foreach ($seArr as $i => $se) {

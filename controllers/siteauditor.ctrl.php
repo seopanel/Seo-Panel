@@ -457,15 +457,15 @@ class SiteAuditorController extends Controller{
 	    $this->set('projectId', $projectId);
 	    $this->set('projectList', $projectList);
 	    $reportTypes = array(
-			'rp_links' => $this->spTextSA["Link Reports"],
 			'rp_summary' => $this->spTextSA["Report Summary"],
+			'rp_links' => $this->spTextSA["Link Reports"],
 			'page_title' => $this->spTextSA["Duplicate Title"],
 			'page_description' => $this->spTextSA["Duplicate Description"],
 			'page_keywords' => $this->spTextSA["Duplicate Keywords"],
 		);
-	    
+
 		$this->set('reportTypes', $reportTypes);
-		$this->set('repType', empty($info['report_type']) ? "rp_links" : $info['report_type']);	    
+		$this->set('repType', empty($info['report_type']) ? "rp_summary" : $info['report_type']);	    
 	    $this->render('siteauditor/viewreports');
 	}
 	
@@ -571,14 +571,12 @@ class SiteAuditorController extends Controller{
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$headArr =  array(
         	'page_url' => $this->spTextSA["Page Link"],
-        	'pagerank' => $_SESSION['text']['common']['MOZ Rank'],
         	'page_authority' => $_SESSION['text']['common']['Page Authority'],
         	'score' => $_SESSION['text']['label']["Score"],
         	'brocken' => $_SESSION['text']['label']["Brocken"],
             'external_links' => $this->spTextSA["External Links"],
         	'total_links' => $this->spTextSA["Total Links"],
-            'google_backlinks' => "Google {$spTextHome['Backlinks']}",
-            'bing_backlinks' => "Bing {$spTextHome['Backlinks']}",
+            'google_backlinks' => $spTextHome['Backlinks'],
             'google_indexed' => "Google {$spTextHome['Indexed']}",
             'bing_indexed' => "Bing {$spTextHome['Indexed']}",
 		    'crawled' => $this->spTextSA['Crawled'],
@@ -598,7 +596,7 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Updated'], $projectInfo['last_updated']));
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Total Results'], $this->db->noRows));
 			$exportContent .= createExportContent(array());
-			$exportContent .= createExportContent(array($spText['common']['No'],$headArr['page_url'],$headArr['pagerank'],$headArr['page_authority'],$headArr['google_backlinks'],$headArr['bing_backlinks'],$headArr['google_indexed'],$headArr['bing_indexed'],$headArr['external_links'],$headArr['total_links'],$headArr['score'],$headArr['brocken'],$headArr['crawled'],$headArr['page_title'],$headArr['page_description'],$headArr['page_keywords'],$headArr['comments']));
+			$exportContent .= createExportContent(array($spText['common']['No'],$headArr['page_url'],$headArr['page_authority'],$headArr['google_backlinks'],$headArr['google_indexed'],$headArr['bing_indexed'],$headArr['external_links'],$headArr['total_links'],$headArr['score'],$headArr['brocken'],$headArr['crawled'],$headArr['page_title'],$headArr['page_description'],$headArr['page_keywords'],$headArr['comments']));
 			$auditorComp = $this->createComponent('AuditorComponent');
 			foreach($reportList as $i => $listInfo) {			    
 			    if ($listInfo['crawled']) {			        
@@ -609,7 +607,7 @@ class SiteAuditorController extends Controller{
 			    }			    
 			    $listInfo['crawled'] = $listInfo['crawled'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['brocken'] = $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
-				$exportContent .= createExportContent(array($i+1, $listInfo['page_url'],$listInfo['pagerank'],$listInfo['page_authority'],$listInfo['google_backlinks'],$listInfo['bing_backlinks'],$listInfo['google_indexed'],$listInfo['bing_indexed'],$listInfo['external_links'],$listInfo['total_links'],$listInfo['score'],$listInfo['brocken'],$listInfo['crawled'],$listInfo['page_title'],$listInfo['page_description'],$listInfo['page_keywords'],$comments));
+				$exportContent .= createExportContent(array($i+1, $listInfo['page_url'],$listInfo['page_authority'],$listInfo['google_backlinks'],$listInfo['google_indexed'],$listInfo['bing_indexed'],$listInfo['external_links'],$listInfo['total_links'],$listInfo['score'],$listInfo['brocken'],$listInfo['crawled'],$listInfo['page_title'],$listInfo['page_description'],$listInfo['page_keywords'],$comments));
 			}			
 			exportToCsv('siteauditor_report', $exportContent);
 		} else {					
@@ -664,15 +662,7 @@ class SiteAuditorController extends Controller{
 		// check for brocken
 		$conditions = " and brocken=1";
 	    $projectInfo['brocken'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-		
-		// check for pagerank
-		for ($i=0; $i<=10; $i++) {
-		    $prMax = $i + 0.5;
-		    $prMin = $i - 0.5;
-		    $conditions = " and pagerank<$prMax and pagerank>=$prMin";
-		    $projectInfo['PR'.$i] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);    
-		}
-		
+
 		// check for backlinks
 	    foreach ($this->seArr as $se) {
 		    $conditions = " and $se"."_backlinks>0";
@@ -705,22 +695,17 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($this->spTextSA['Maximum Pages'], $projectInfo['max_links']));		
 			$exportContent .= createExportContent(array($this->spTextSA['Pages Found'], $projectInfo['total_links']));		
 			$exportContent .= createExportContent(array($this->spTextSA['Crawled Pages'], $projectInfo['crawled_links']));
-			
+
+			$exportContent .= createExportContent(array($spTextHome['Backlinks'], $projectInfo['google_backlinks']));
+
 			foreach ($this->seArr as $se) {
-		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Backlinks']}", $projectInfo[$se."_backlinks"])); 
+		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"]));
 			}
 			
-			foreach ($this->seArr as $se) {
-		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"])); 
-			}
-			
-			foreach ($metaArr as $meta => $val) {			    		
+			foreach ($metaArr as $meta => $val) {
 			    $exportContent .= createExportContent(array($val, $projectInfo["duplicate_".$meta]));
 	        }
-	        
-    	    for ($i=0; $i<=10; $i++) {
-    	        $exportContent .= createExportContent(array("PR$i", $projectInfo["PR$i"]));     
-    		}
+
     		$exportContent .= createExportContent(array($_SESSION['text']['label']['Brocken'], $projectInfo['brocken']));
 			exportToCsv('siteauditor_report_summary', $exportContent);
 		} else {
