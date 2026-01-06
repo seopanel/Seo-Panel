@@ -14,11 +14,30 @@
 	<tr>
 		<th><?php echo $spTextSitemap['Sitemap Type']?>: </th>
 		<td>
-			<select name="sm_type" class="custom-select">
+			<select name="sm_type" id="sm_type" class="custom-select">
 				<option value="xml">XML</option>
 				<option value="txt">Text</option>
 				<option value="html">HTML</option>
 			</select>
+		</td>
+	</tr>
+	<tr id="sitemap_options_row">
+		<th><?php echo $spText['common']['Options']?>: </th>
+		<td>
+			<div class="form-check">
+				<input type="checkbox" class="form-check-input" id="compress_sitemap" name="compress_sitemap" value="1">
+				<label class="form-check-label" for="compress_sitemap">
+					<?php echo $spTextSitemap['Compress sitemap files']?> (.xml.gz)
+				</label>
+				<p class="text-muted mb-2"><small><?php echo $spTextSitemap['Reduces file size by 70-90%, recommended for large sitemaps']?></small></p>
+			</div>
+			<div class="form-check">
+				<input type="checkbox" class="form-check-input" id="generate_index" name="generate_index" value="1">
+				<label class="form-check-label" for="generate_index">
+					<?php echo $spTextSitemap['Generate sitemap index file']?>
+				</label>
+				<p class="text-muted mb-0"><small><?php echo $spTextSitemap['Creates sitemap_index.xml for multiple sitemap files']?></small></p>
+			</div>
 		</td>
 	</tr>
 	<tr>
@@ -69,3 +88,47 @@
 		<i class="fas fa-info-circle me-2"></i><?php echo $spTextSitemap['clickproceedsitemap']?>
 	</div>
 </div>
+
+<script type="text/javascript">
+// Define function in global scope
+window.toggleSitemapOptions = function() {
+	var smType = document.getElementById('sm_type');
+	var optionsRow = document.getElementById('sitemap_options_row');
+	var compressCheckbox = document.getElementById('compress_sitemap');
+	var indexCheckbox = document.getElementById('generate_index');
+
+	if (!smType || !optionsRow) return; // Safety check
+
+	if (smType.value === 'xml') {
+		// Show options for XML sitemaps
+		optionsRow.style.display = '';
+	} else {
+		// Hide options for TXT and HTML sitemaps
+		optionsRow.style.display = 'none';
+		// Uncheck the options when hidden
+		if (compressCheckbox) compressCheckbox.checked = false;
+		if (indexCheckbox) indexCheckbox.checked = false;
+	}
+};
+
+// Initialize and attach event handler
+(function() {
+	var smType = document.getElementById('sm_type');
+	if (smType) {
+		// Attach onchange event handler
+		smType.onchange = window.toggleSitemapOptions;
+
+		// Initialize on load
+		window.toggleSitemapOptions();
+	}
+})();
+
+// Additional fallback for AJAX-loaded content
+setTimeout(function() {
+	var smType = document.getElementById('sm_type');
+	if (smType && !smType.onchange) {
+		smType.onchange = window.toggleSitemapOptions;
+		window.toggleSitemapOptions();
+	}
+}, 100);
+</script>
