@@ -17,25 +17,47 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 } else {
 ?>
 <style>
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.8;
+	}
+}
+
 .export_div {
 	display: inline-flex;
-	gap: 1px;
+	gap: 8px;
 	align-items: center;
 }
 .export_div a {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 20px;
-	height: 40px;
+	width: 36px;
+	height: 36px;
 	border-radius: 8px;
 	transition: all 0.3s ease;
 	text-decoration: none;
-	font-size: 18px;
+	font-size: 16px;
+	background: rgba(255, 255, 255, 0.2);
 }
 .export_div a:hover {
 	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+	background: rgba(255, 255, 255, 0.3);
+	box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .export_div a i.fa-file-pdf {
 	color: #fff;
@@ -55,104 +77,352 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 .export_div a:hover i.fa-print {
 	color: #f0f0f0;
 }
+
 .summary-card {
 	background: #fff;
-	border: 1px solid #e0e0e0;
-	border-radius: 8px;
+	border: none;
+	border-radius: 16px;
 	padding: 0;
 	margin-bottom: 20px;
-	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+	box-shadow: 0 10px 40px rgba(0,0,0,0.08);
 	overflow: hidden;
+	animation: fadeInUp 0.6s ease-out;
 }
+
 .summary-header {
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	color: white;
-	padding: 1px 25px;
+	padding: 5px 25px;
 	font-size: 18px;
 	font-weight: 600;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
 }
+
 .summary-body {
-	padding: 25px;
+	padding: 30px;
+	background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);
 }
+
 .summary-section {
-	background: #f8f9fa;
-	border-radius: 6px;
-	padding: 20px;
-	margin-bottom: 15px;
+	background: white;
+	border-radius: 12px;
+	padding: 25px;
+	margin-bottom: 20px;
+	box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+	border: 1px solid rgba(102, 126, 234, 0.1);
+	transition: all 0.3s ease;
 }
+
+.summary-section:hover {
+	box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+	border-color: rgba(102, 126, 234, 0.2);
+}
+
 .summary-section-title {
-	color: #495057;
-	font-size: 14px;
-	font-weight: 600;
-	margin-bottom: 15px;
-	padding-bottom: 10px;
-	border-bottom: 2px solid #dee2e6;
+	color: #2d3748;
+	font-size: 15px;
+	font-weight: 700;
+	margin-bottom: 20px;
+	padding-bottom: 12px;
+	border-bottom: 3px solid #667eea;
 	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	letter-spacing: 1px;
+	display: flex;
+	align-items: center;
+	gap: 10px;
 }
+
+.summary-section-title i {
+	color: #667eea;
+	font-size: 18px;
+}
+
 .summary-row {
 	display: flex;
 	flex-wrap: wrap;
-	margin: -8px;
+	margin: -10px;
 }
+
 .summary-item {
 	flex: 0 0 33.333%;
-	padding: 8px;
+	padding: 10px;
 	min-width: 250px;
 }
+
+.summary-item-quarter {
+	flex: 0 0 25%;
+	padding: 10px;
+	min-width: 220px;
+}
+
 .summary-item-full {
 	flex: 0 0 100%;
-	padding: 8px;
+	padding: 10px;
 }
+
 .summary-item-inner {
-	background: white;
-	border-radius: 4px;
-	padding: 15px;
-	border-left: 3px solid #667eea;
-	transition: all 0.2s;
+	background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+	border-radius: 10px;
+	padding: 20px;
+	border-left: 4px solid #667eea;
+	transition: all 0.3s ease;
+	height: 100%;
+	position: relative;
+	overflow: hidden;
 }
+
+.summary-item-inner::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 60px;
+	height: 60px;
+	background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, transparent 100%);
+	border-radius: 0 0 0 100%;
+}
+
 .summary-item-inner:hover {
-	transform: translateY(-2px);
-	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	transform: translateY(-4px);
+	box-shadow: 0 8px 20px rgba(102, 126, 234, 0.15);
+	border-left-color: #764ba2;
 }
+
 .summary-label {
-	color: #6c757d;
-	font-size: 12px;
-	font-weight: 600;
+	color: #718096;
+	font-size: 11px;
+	font-weight: 700;
 	text-transform: uppercase;
-	margin-bottom: 5px;
-	display: block;
+	letter-spacing: 0.5px;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
 }
-.summary-value {
-	color: #212529;
-	font-size: 18px;
-	font-weight: 600;
-	display: block;
-}
-.summary-value a {
-	color: #0066cc;
-	text-decoration: none;
+
+.summary-label i {
+	color: #667eea;
 	font-size: 14px;
-	font-weight: 500;
 }
+
+.summary-value {
+	color: #2d3748;
+	font-size: 22px;
+	font-weight: 700;
+	display: block;
+	position: relative;
+	z-index: 1;
+}
+
+.summary-value a {
+	color: #667eea;
+	text-decoration: none;
+	font-size: 16px;
+	font-weight: 600;
+	transition: all 0.2s;
+	word-break: break-all;
+}
+
 .summary-value a:hover {
-	text-decoration: underline;
+	color: #764ba2;
+	text-decoration: none;
 }
-.score-bar {
-	display: inline-block;
+
+/* Score Circle */
+.score-circle {
+	display: inline-flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.score-progress {
+	position: relative;
+	width: 80px;
+	height: 80px;
+}
+
+.score-progress svg {
+	transform: rotate(-90deg);
+}
+
+.score-progress-bg {
+	fill: none;
+	stroke: #e2e8f0;
+	stroke-width: 8;
+}
+
+.score-progress-bar {
+	fill: none;
+	stroke-width: 8;
+	stroke-linecap: round;
+	transition: stroke-dashoffset 1s ease;
+}
+
+.score-progress-bar.positive {
+	stroke: url(#scoreGradientPositive);
+}
+
+.score-progress-bar.negative {
+	stroke: url(#scoreGradientNegative);
+}
+
+.score-text {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 20px;
+	font-weight: 700;
+	color: #2d3748;
+}
+
+.score-label {
+	font-size: 14px;
+	color: #718096;
+	font-weight: 600;
+}
+
+/* Progress Bar for Pages */
+.pages-progress {
+	margin-top: 10px;
+	background: #e2e8f0;
 	height: 8px;
-	width: 8px;
-	border-radius: 2px;
-	margin-right: 2px;
+	border-radius: 10px;
+	overflow: hidden;
+	position: relative;
 }
-.score-bar.plus {
-	background: #28a745;
+
+.pages-progress-bar {
+	height: 100%;
+	background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+	border-radius: 10px;
+	transition: width 1s ease;
+	position: relative;
+	overflow: hidden;
 }
-.score-bar.minus {
-	background: #dc3545;
+
+.pages-progress-bar::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+	animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(100%); }
+}
+
+.pages-stats {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 8px;
+	font-size: 12px;
+	color: #718096;
+	font-weight: 600;
+}
+
+/* Status Badges */
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.danger {
+	background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.warning {
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.status-badge i {
+	font-size: 14px;
+}
+
+/* Metric Cards with Icons */
+.metric-icon {
+	width: 45px;
+	height: 45px;
+	border-radius: 12px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 20px;
+	margin-bottom: 12px;
+}
+
+.metric-icon.blue {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.metric-icon.green {
+	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.metric-icon.orange {
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.metric-icon.purple {
+	background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 1400px) {
+	.summary-item-quarter {
+		flex: 0 0 33.333%;
+	}
+}
+
+@media (max-width: 992px) {
+	.summary-item, .summary-item-quarter {
+		flex: 0 0 50%;
+	}
+}
+
+@media (max-width: 576px) {
+	.summary-item, .summary-item-quarter {
+		flex: 0 0 100%;
+	}
+	.summary-body {
+		padding: 20px;
+	}
+	.summary-header {
+		padding: 8px 20px;
+		font-size: 16px;
+	}
 }
 </style>
     <div class="summary-card">
@@ -182,23 +452,47 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 						<div class="summary-item-inner">
 							<span class="summary-label"><i class="fas fa-star"></i> <?php echo $spText['label']['Score']?></span>
 							<span class="summary-value">
-								<?php
-						        if ($projectInfo['score'] < 0) {
-						            $scoreClass = 'minus';
-						            $scoreValue = $projectInfo['score'] * -1;
-						        } else {
-						            $scoreClass = 'plus';
-						            $scoreValue = $projectInfo['score'];
-						        }
-						        for($b=0;$b<=$scoreValue;$b++) echo "<span class='score-bar $scoreClass'></span>";
-						        ?>
-								<?php echo $projectInfo['score']?>
+								<div class="score-circle">
+									<?php
+									$score = $projectInfo['score'];
+									$isPositive = $score >= 0;
+									$absScore = abs($score);
+									$maxScore = 100;
+									$percentage = min(($absScore / $maxScore) * 100, 100);
+									$circumference = 2 * 3.14159 * 36;
+									$dashOffset = $circumference - ($percentage / 100) * $circumference;
+									?>
+									<div class="score-progress">
+										<svg width="80" height="80">
+											<defs>
+												<linearGradient id="scoreGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
+													<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+													<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+												</linearGradient>
+												<linearGradient id="scoreGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
+													<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+													<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+												</linearGradient>
+											</defs>
+											<circle class="score-progress-bg" cx="40" cy="40" r="36"></circle>
+											<circle class="score-progress-bar <?php echo $isPositive ? 'positive' : 'negative'; ?>"
+												cx="40" cy="40" r="36"
+												stroke-dasharray="<?php echo $circumference; ?>"
+												stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
+										</svg>
+										<div class="score-text"><?php echo $score; ?></div>
+									</div>
+									<div class="score-label"><?php echo $isPositive ? 'Positive' : 'Negative'; ?> Score</div>
+								</div>
 							</span>
 						</div>
 					</div>
 					<div class="summary-item">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-clock"></i> <?php echo $spText['label']['Updated']?></span>
+							<div class="metric-icon orange">
+								<i class="fas fa-clock"></i>
+							</div>
+							<span class="summary-label"><?php echo $spText['label']['Updated']?></span>
 							<span class="summary-value"><?php echo $projectInfo['last_updated']?></span>
 						</div>
 					</div>
@@ -211,20 +505,47 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<div class="summary-row">
 					<div class="summary-item">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-list-ol"></i> <?php echo $spTextSA['Maximum Pages']?></span>
-							<span class="summary-value"><?php echo $projectInfo['max_links']?></span>
+							<div class="metric-icon purple">
+								<i class="fas fa-list-ol"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Maximum Pages']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['max_links'])?></span>
 						</div>
 					</div>
 					<div class="summary-item">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-search"></i> <?php echo $spTextSA['Pages Found']?></span>
-							<span class="summary-value"><?php echo $projectInfo['total_links']?></span>
+							<div class="metric-icon blue">
+								<i class="fas fa-search"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Pages Found']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['total_links'])?></span>
+							<?php
+							$foundPercentage = $projectInfo['max_links'] > 0 ? ($projectInfo['total_links'] / $projectInfo['max_links']) * 100 : 0;
+							?>
+							<div class="pages-progress">
+								<div class="pages-progress-bar" style="width: <?php echo min($foundPercentage, 100); ?>%"></div>
+							</div>
+							<div class="pages-stats">
+								<span><?php echo number_format($foundPercentage, 1); ?>% of maximum</span>
+							</div>
 						</div>
 					</div>
 					<div class="summary-item">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Crawled Pages']?></span>
-							<span class="summary-value"><?php echo $projectInfo['crawled_links']?></span>
+							<div class="metric-icon green">
+								<i class="fas fa-check-circle"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Crawled Pages']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['crawled_links'])?></span>
+							<?php
+							$crawledPercentage = $projectInfo['total_links'] > 0 ? ($projectInfo['crawled_links'] / $projectInfo['total_links']) * 100 : 0;
+							?>
+							<div class="pages-progress">
+								<div class="pages-progress-bar" style="width: <?php echo min($crawledPercentage, 100); ?>%"></div>
+							</div>
+							<div class="pages-stats">
+								<span><?php echo number_format($crawledPercentage, 1); ?>% crawled</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -234,12 +555,23 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<div class="summary-section">
 				<div class="summary-section-title"><i class="fas fa-tags"></i> Meta Information</div>
 				<div class="summary-row">
-					<?php foreach ($metaArr as $col => $label) { ?>
+					<?php
+					$metaIcons = array(
+						'title' => 'heading',
+						'description' => 'align-left',
+						'keywords' => 'key'
+					);
+					foreach ($metaArr as $col => $label) {
+						$iconClass = isset($metaIcons[$col]) ? $metaIcons[$col] : 'tag';
+					?>
 					<div class="summary-item">
 						<div class="summary-item-inner">
+							<div class="metric-icon blue">
+								<i class="fas fa-<?php echo $iconClass; ?>"></i>
+							</div>
 							<span class="summary-label"><?php echo $label?></span>
 							<span class="summary-value">
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo $projectInfo["duplicate_".$col]?></a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo number_format($projectInfo["duplicate_".$col])?></a>
 							</span>
 						</div>
 					</div>
@@ -251,28 +583,49 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<div class="summary-section">
 				<div class="summary-section-title"><i class="fas fa-chart-bar"></i> SEO Metrics</div>
 				<div class="summary-row">
-					<div class="summary-item">
+					<div class="summary-item-quarter">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-link"></i> <?php echo $spTextHome['Backlinks']?></span>
-							<span class="summary-value"><?php echo $projectInfo['google_backlinks']?></span>
+							<div class="metric-icon green">
+								<i class="fas fa-link"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextHome['Backlinks']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['google_backlinks'])?></span>
 						</div>
 					</div>
-					<?php foreach ($seArr as $se) { ?>
-					<div class="summary-item">
+					<?php
+					$seIcons = array('google' => 'google', 'bing' => 'search');
+					foreach ($seArr as $se) {
+						$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
+						$isIndexed = $projectInfo[$se."_indexed"] == 'Yes';
+					?>
+					<div class="summary-item-quarter">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-database"></i> <?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
+							<div class="metric-icon <?php echo $isIndexed ? 'green' : 'orange'; ?>">
+								<i class="fab fa-<?php echo $iconClass; ?>"></i>
+							</div>
+							<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
 							<span class="summary-value"><?php echo showStatusBadge($projectInfo[$se."_indexed"], 'yesno')?></span>
 						</div>
 					</div>
 					<?php } ?>
-					<div class="summary-item">
+					<div class="summary-item-quarter">
 						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-exclamation-triangle"></i> <?php echo $spText['label']['Brocken']?></span>
-							<span class="summary-value"><?php
-							    $badgeClass = $projectInfo['brocken'] ? 'badge bg-danger' : 'badge bg-success';
-							    $badgeText = $projectInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
-							    echo "<span class='$badgeClass py-2 px-3 text-light'>$badgeText</span>";
-							?></span>
+							<div class="metric-icon <?php echo $projectInfo['brocken'] ? 'orange' : 'green'; ?>">
+								<i class="fas fa-<?php echo $projectInfo['brocken'] ? 'exclamation-triangle' : 'check-circle'; ?>"></i>
+							</div>
+							<span class="summary-label"><?php echo $spText['label']['Brocken']?></span>
+							<span class="summary-value">
+								<?php
+								$isBroken = $projectInfo['brocken'];
+								$badgeClass = $isBroken ? 'danger' : 'success';
+								$badgeText = $isBroken ? $spText['common']['Yes'] : $spText['common']['No'];
+								$iconClass = $isBroken ? 'times-circle' : 'check-circle';
+								?>
+								<span class="status-badge <?php echo $badgeClass; ?>">
+									<i class="fas fa-<?php echo $iconClass; ?>"></i>
+									<?php echo $badgeText; ?>
+								</span>
+							</span>
 						</div>
 					</div>
 				</div>

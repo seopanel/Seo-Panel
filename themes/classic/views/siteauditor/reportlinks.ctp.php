@@ -124,6 +124,54 @@
 .link-report-table tbody td:first-child a:hover {
 	text-decoration: underline;
 }
+
+/* Score Circle for table */
+.score-circle-small {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.score-progress-small {
+	position: relative;
+	width: 50px;
+	height: 50px;
+}
+
+.score-progress-small svg {
+	transform: rotate(-90deg);
+}
+
+.score-progress-bg-small {
+	fill: none;
+	stroke: #e2e8f0;
+	stroke-width: 6;
+}
+
+.score-progress-bar-small {
+	fill: none;
+	stroke-width: 6;
+	stroke-linecap: round;
+	transition: stroke-dashoffset 1s ease;
+}
+
+.score-progress-bar-small.positive {
+	stroke: url(#scoreGradientPositiveSmall);
+}
+
+.score-progress-bar-small.negative {
+	stroke: url(#scoreGradientNegativeSmall);
+}
+
+.score-text-small {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 14px;
+	font-weight: 700;
+	color: #2d3748;
+}
 </style>
 
 <div class="report-info-card">
@@ -185,7 +233,7 @@ foreach ($headArr as $col => $val) {
 
 <div class="link-report-card">
 	<div class="link-report-header">
-		<i class="fas fa-link"></i> <?php echo $this->spTextSA["Link Reports"]?>
+		<i class="fas fa-link"></i> <?php echo $spTextSA["Link Reports"]?>
 	</div>
 	<table class="link-report-table">
 		<thead>
@@ -221,23 +269,43 @@ foreach ($headArr as $col => $val) {
 				<td><?php echo showStatusBadge($listInfo['bing_indexed'], 'yesno')?></td>
 				<td><?php echo $listInfo['external_links']?></td>
 				<td><?php echo $listInfo['total_links']?></td>
-				<td style="text-align: right;">
+				<td style="text-align: center;">
 				    <?php
 				    	if ($pdfVersion) {
 							echo "<b>{$listInfo['score']}</b>";
 						} else {
-				    
-					        if ($listInfo['score'] < 0) {
-					            $scoreClass = 'minus';
-					            $listInfo['score'] = $listInfo['score'] * -1;
-					        } else {
-					            $scoreClass = 'plus';
-					        }
-					        
-					        for($b = 0; $b <= $listInfo['score']; $b++) {
-								echo "<span class='$scoreClass'>&nbsp;</span>";
-							}
-							
+							$score = $listInfo['score'];
+							$isPositive = $score >= 0;
+							$absScore = abs($score);
+							$maxScore = 100;
+							$percentage = min(($absScore / $maxScore) * 100, 100);
+							$circumference = 2 * 3.14159 * 22;
+							$dashOffset = $circumference - ($percentage / 100) * $circumference;
+							?>
+							<div class="score-circle-small">
+								<div class="score-progress-small">
+									<svg width="50" height="50">
+										<defs>
+											<linearGradient id="scoreGradientPositiveSmall<?php echo $listInfo['id']; ?>" x1="0%" y1="0%" x2="100%" y2="100%">
+												<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+												<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+											</linearGradient>
+											<linearGradient id="scoreGradientNegativeSmall<?php echo $listInfo['id']; ?>" x1="0%" y1="0%" x2="100%" y2="100%">
+												<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+												<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+											</linearGradient>
+										</defs>
+										<circle class="score-progress-bg-small" cx="25" cy="25" r="22"></circle>
+										<circle class="score-progress-bar-small <?php echo $isPositive ? 'positive' : 'negative'; ?>"
+											cx="25" cy="25" r="22"
+											stroke="url(#scoreGradient<?php echo $isPositive ? 'Positive' : 'Negative'; ?>Small<?php echo $listInfo['id']; ?>)"
+											stroke-dasharray="<?php echo $circumference; ?>"
+											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
+									</svg>
+									<div class="score-text-small"><?php echo $score; ?></div>
+								</div>
+							</div>
+							<?php
 				        }
 				    ?>
 				</td>
