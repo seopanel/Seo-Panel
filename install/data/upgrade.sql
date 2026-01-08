@@ -49,8 +49,48 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('Use Sample API Data (for testing - saves API credits)', 'SP_USE_SAMPLE_API_DATA', '0', 'system', 'bool', 1)
 ON DUPLICATE KEY UPDATE set_label=VALUES(set_label);
 
+-- Add system-wide exclude file extensions setting for site auditor
+INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Exclude file extensions (comma-separated)', 'SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso', 'siteauditor', 'text', 1)
+ON DUPLICATE KEY UPDATE set_label=VALUES(set_label);
+
+-- Add per-project exclude extensions column
+ALTER TABLE `auditorprojects` ADD `exclude_extensions` TEXT COLLATE utf8_unicode_ci NULL AFTER `exclude_links`;
+
+-- Add canonical URL and discovery tracking columns to reports
+ALTER TABLE `auditorreports` ADD `canonical_url` VARCHAR(2000) COLLATE utf8_unicode_ci NULL AFTER `page_url`;
+ALTER TABLE `auditorreports` ADD `discovered_via` ENUM('crawl','sitemap','robots','canonical','import') DEFAULT 'crawl' AFTER `canonical_url`;
+
+-- Create sitemap tracking table
+CREATE TABLE IF NOT EXISTS `auditorsitemaps` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `project_id` int(11) NOT NULL,
+  `sitemap_url` varchar(500) COLLATE utf8_unicode_ci NOT NULL,
+  `sitemap_type` ENUM('xml','txt','index') DEFAULT 'xml',
+  `last_parsed` timestamp NULL,
+  `urls_found` int(11) NOT NULL DEFAULT '0',
+  `status` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `project_id` (`project_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
+-----------------------------
+--- Text DB changes
+-----------------------------
+
 INSERT IGNORE INTO texts (lang_code, category, label, content) VALUES
 ('en', 'settings', 'SP_USE_SAMPLE_API_DATA', 'Use Sample API Data (for testing - saves API credits)');
+
+-- Add language texts for site auditor new features
+INSERT IGNORE INTO `texts` (`lang_code`, `text_category`, `text_label`, `text_value`, `updated`) VALUES
+('en', 'settings', 'SA_EXCLUDE_FILE_EXTENSIONS', 'Exclude file extensions (comma-separated)', NOW()),
+('en', 'siteauditor', 'Exclude Extensions', 'Exclude Extensions', NOW()),
+('en', 'siteauditor', 'Leave blank to use system default', 'Leave blank to use system default', NOW()),
+('en', 'siteauditor', 'Canonical URL', 'Canonical URL', NOW()),
+('en', 'siteauditor', 'Discovered Via', 'Discovered Via', NOW()),
+('en', 'siteauditor', 'Sitemap Parsing', 'Sitemap Parsing', NOW()),
+('en', 'siteauditor', 'Sitemaps Found', 'Sitemaps Found', NOW()),
+('en', 'siteauditor', 'URLs from Sitemap', 'URLs from Sitemap', NOW());
 
 -- Add Social Media language text for dashboard navigation
 INSERT INTO texts (lang_code, category, label, content) VALUES
