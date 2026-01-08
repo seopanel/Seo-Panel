@@ -20,14 +20,14 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 		<li role="presentation" class="nav-item">
 			<a href="javascript:void(0);"
 			   class="nav-link <?php echo ($repType == $type) ? 'active' : ''?>"
-			   onclick="$('.nav-tabs .nav-link').removeClass('active'); $(this).addClass('active'); $('input[name=report_type]').val('<?php echo $type?>'); <?php echo $submitJsFunc?>">
+			   onclick="$('.nav-tabs .nav-link').removeClass('active'); $(this).addClass('active'); $('input[name=report_type]').val('<?php echo $type?>'); if('<?php echo $type?>' == 'rp_links') { $('.filter-row-rp_links').show(); $('.filter-row-other').hide(); } else { $('.filter-row-rp_links').hide(); $('.filter-row-other').show(); } <?php echo $submitJsFunc?>">
 				<?php echo $label?>
 			</a>
 		</li>
 	<?php }?>
 </ul>
 
-<table class="search" style="width: 90%;">
+<table class="search" style="width: 100%;">
 	<tr>
 		<th><?php echo $spText['label']['Project']?>: </th>
 		<td>
@@ -53,7 +53,78 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 		<td>
 			<input type="text" name="page_url" value="" onblur="<?php echo $submitJsFunc?>" class="form-control">
 		</td>
+	</tr>
+	<tr class="filter-row-rp_links" style="display: <?php echo ($repType == 'rp_links') ? 'table-row' : 'none'; ?>">
+		<th>Robots Blocked: </th>
+		<td>
+			<select name="blocked_by_robots" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+		<th class="pl-4">AI Bot Allowed: </th>
+		<td>
+			<select name="ai_robot_allowed" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+		<th class="pl-4">Mobile Friendly: </th>
+		<td>
+			<select name="mobile_friendly" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+	</tr>
+	<tr class="filter-row-rp_links" style="display: <?php echo ($repType == 'rp_links') ? 'table-row' : 'none'; ?>">
+		<th>HTTPS Secure: </th>
+		<td>
+			<select name="https_secure" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+		<th class="pl-4">Has OG Tags: </th>
+		<td>
+			<select name="has_og_tags" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+		<th class="pl-4">Has Twitter Cards: </th>
+		<td>
+			<select name="has_twitter_cards" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="-1">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+	</tr>
+	<tr class="filter-row-rp_links" style="display: <?php echo ($repType == 'rp_links') ? 'table-row' : 'none'; ?>">
+		<th><?php echo $spTextSA['Discovered Via']?>: </th>
+		<td>
+			<select name="discovered_via" onchange="<?php echo $submitJsFunc?>" class="custom-select">
+				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
+				<option value="crawl">Crawl</option>
+				<option value="sitemap">Sitemap</option>
+				<option value="robots">Robots.txt</option>
+				<option value="canonical">Canonical</option>
+				<option value="import">Import</option>
+			</select>
+		</td>
+		<td colspan="4"></td>
 		<td style="text-align: center;">
+			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
+		</td>
+	</tr>
+	<tr class="filter-row-other" style="display: <?php echo ($repType != 'rp_links') ? 'table-row' : 'none'; ?>">
+		<td colspan="6" style="text-align: center;">
 			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
 		</td>
 	</tr>

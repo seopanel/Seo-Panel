@@ -238,23 +238,27 @@ foreach ($headArr as $col => $val) {
 	<table class="link-report-table">
 		<thead>
 			<tr>
-				<th style="width: 30%;"><?php echo $page_urlLink?></th>
+				<th style="width: 25%;"><?php echo $page_urlLink?></th>
 				<th><?php echo $page_authorityLink?></th>
 				<th><?php echo $google_backlinksLink?></th>
 				<th><?php echo $google_indexedLink?></th>
 				<th><?php echo $bing_indexedLink?></th>
-				<th><?php echo $external_linksLink?></th>
-				<th><?php echo $total_linksLink?></th>
+				<th>Robots</th>
+				<th>AI Bot</th>
+				<th>Mobile</th>
+				<th>HTTPS</th>
+				<th>OG</th>
+				<th>Twitter</th>
 				<th><?php echo $scoreLink?></th>
 				<th><?php echo $brockenLink?></th>
 				<?php if (empty($pdfVersion) && empty($printVersion)) {?>
-					<th style="width: 10%;"><?php echo $spText['common']['Action']?></th>
+					<th style="width: 8%;"><?php echo $spText['common']['Action']?></th>
 				<?php }?>
 			</tr>
 		</thead>
 		<tbody>
 	<?php
-	$colCount = 10;
+	$colCount = 15;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){            
@@ -267,8 +271,12 @@ foreach ($headArr as $col => $val) {
 				<td><?php echo $listInfo['google_backlinks']?></td>
 				<td><?php echo showStatusBadge($listInfo['google_indexed'], 'yesno')?></td>
 				<td><?php echo showStatusBadge($listInfo['bing_indexed'], 'yesno')?></td>
-				<td><?php echo $listInfo['external_links']?></td>
-				<td><?php echo $listInfo['total_links']?></td>
+				<td><?php echo showStatusBadge(!$listInfo['blocked_by_robots'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['ai_robot_allowed'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['mobile_friendly'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['https_secure'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['has_og_tags'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['has_twitter_cards'], 'yesno')?></td>
 				<td style="text-align: center;">
 				    <?php
 				    	if ($pdfVersion) {

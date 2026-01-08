@@ -589,42 +589,62 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 								<i class="fas fa-link"></i>
 							</div>
 							<span class="summary-label"><?php echo $spTextHome['Backlinks']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['google_backlinks'])?></span>
+							<span class="summary-value">
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links')">
+									<?php echo number_format($projectInfo['google_backlinks'])?>
+								</a>
+							</span>
 						</div>
 					</div>
 					<?php
 					$seIcons = array('google' => 'google', 'bing' => 'search');
 					foreach ($seArr as $se) {
 						$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-						$isIndexed = $projectInfo[$se."_indexed"] == 'Yes';
+						$indexedCount = $projectInfo[$se."_indexed"];
 					?>
 					<div class="summary-item-quarter">
 						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $isIndexed ? 'green' : 'orange'; ?>">
+							<div class="metric-icon <?php echo $indexedCount > 0 ? 'green' : 'orange'; ?>">
 								<i class="fab fa-<?php echo $iconClass; ?>"></i>
 							</div>
 							<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
-							<span class="summary-value"><?php echo showStatusBadge($projectInfo[$se."_indexed"], 'yesno')?></span>
+							<span class="summary-value">
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')">
+									<?php echo number_format($indexedCount)?>
+								</a>
+							</span>
+						</div>
+					</div>
+					<?php } ?>
+					<?php
+					foreach ($seArr as $se) {
+						$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
+						$notIndexedCount = $projectInfo[$se."_not_indexed"];
+					?>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $notIndexedCount == 0 ? 'green' : 'orange'; ?>">
+								<i class="fab fa-<?php echo $iconClass; ?>"></i>
+							</div>
+							<span class="summary-label"><?php echo ucfirst($se)?> Not Indexed</span>
+							<span class="summary-value">
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')">
+									<?php echo number_format($notIndexedCount)?>
+								</a>
+							</span>
 						</div>
 					</div>
 					<?php } ?>
 					<div class="summary-item-quarter">
 						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['brocken'] ? 'orange' : 'green'; ?>">
-								<i class="fas fa-<?php echo $projectInfo['brocken'] ? 'exclamation-triangle' : 'check-circle'; ?>"></i>
+							<div class="metric-icon <?php echo $projectInfo['brocken'] > 0 ? 'orange' : 'green'; ?>">
+								<i class="fas fa-<?php echo $projectInfo['brocken'] > 0 ? 'exclamation-triangle' : 'check-circle'; ?>"></i>
 							</div>
 							<span class="summary-label"><?php echo $spText['label']['Brocken']?></span>
 							<span class="summary-value">
-								<?php
-								$isBroken = $projectInfo['brocken'];
-								$badgeClass = $isBroken ? 'danger' : 'success';
-								$badgeText = $isBroken ? $spText['common']['Yes'] : $spText['common']['No'];
-								$iconClass = $isBroken ? 'times-circle' : 'check-circle';
-								?>
-								<span class="status-badge <?php echo $badgeClass; ?>">
-									<i class="fas fa-<?php echo $iconClass; ?>"></i>
-									<?php echo $badgeText; ?>
-								</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')">
+									<?php echo number_format($projectInfo['brocken'])?>
+								</a>
 							</span>
 						</div>
 					</div>

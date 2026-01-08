@@ -547,9 +547,79 @@ class SiteAuditorController extends Controller{
 		if(isset($data['crawled']) && ($data['crawled'] != -1) ) {
 		    $data['crawled'] = intval($data['crawled']);
 			$filter .= "&crawled=".$data['crawled'];
-			$sql .= " and crawled=".$data['crawled']; 
+			$sql .= " and crawled=".$data['crawled'];
 		}
-		
+
+		// check for blocked_by_robots
+		if(isset($data['blocked_by_robots']) && ($data['blocked_by_robots'] != -1) ) {
+		    $data['blocked_by_robots'] = intval($data['blocked_by_robots']);
+			$filter .= "&blocked_by_robots=".$data['blocked_by_robots'];
+			$sql .= " and blocked_by_robots=".$data['blocked_by_robots'];
+		}
+
+		// check for ai_robot_allowed
+		if(isset($data['ai_robot_allowed']) && ($data['ai_robot_allowed'] != -1) ) {
+		    $data['ai_robot_allowed'] = intval($data['ai_robot_allowed']);
+			$filter .= "&ai_robot_allowed=".$data['ai_robot_allowed'];
+			$sql .= " and ai_robot_allowed=".$data['ai_robot_allowed'];
+		}
+
+		// check for mobile_friendly
+		if(isset($data['mobile_friendly']) && ($data['mobile_friendly'] != -1) ) {
+		    $data['mobile_friendly'] = intval($data['mobile_friendly']);
+			$filter .= "&mobile_friendly=".$data['mobile_friendly'];
+			$sql .= " and mobile_friendly=".$data['mobile_friendly'];
+		}
+
+		// check for https_secure
+		if(isset($data['https_secure']) && ($data['https_secure'] != -1) ) {
+		    $data['https_secure'] = intval($data['https_secure']);
+			$filter .= "&https_secure=".$data['https_secure'];
+			$sql .= " and https_secure=".$data['https_secure'];
+		}
+
+		// check for has_og_tags
+		if(isset($data['has_og_tags']) && ($data['has_og_tags'] != -1) ) {
+		    $data['has_og_tags'] = intval($data['has_og_tags']);
+			$filter .= "&has_og_tags=".$data['has_og_tags'];
+			$sql .= " and has_og_tags=".$data['has_og_tags'];
+		}
+
+		// check for has_twitter_cards
+		if(isset($data['has_twitter_cards']) && ($data['has_twitter_cards'] != -1) ) {
+		    $data['has_twitter_cards'] = intval($data['has_twitter_cards']);
+			$filter .= "&has_twitter_cards=".$data['has_twitter_cards'];
+			$sql .= " and has_twitter_cards=".$data['has_twitter_cards'];
+		}
+
+		// check for discovered_via
+		if(!empty($data['discovered_via'])) {
+			$discoveredVia = addslashes($data['discovered_via']);
+			$filter .= "&discovered_via=".$data['discovered_via'];
+			$sql .= " and discovered_via='$discoveredVia'";
+		}
+
+		// check for google_indexed
+		if(isset($data['google_indexed']) && ($data['google_indexed'] != -1) ) {
+		    $data['google_indexed'] = intval($data['google_indexed']);
+			$filter .= "&google_indexed=".$data['google_indexed'];
+			$sql .= " and google_indexed=".$data['google_indexed'];
+		}
+
+		// check for bing_indexed
+		if(isset($data['bing_indexed']) && ($data['bing_indexed'] != -1) ) {
+		    $data['bing_indexed'] = intval($data['bing_indexed']);
+			$filter .= "&bing_indexed=".$data['bing_indexed'];
+			$sql .= " and bing_indexed=".$data['bing_indexed'];
+		}
+
+		// check for brocken
+		if(isset($data['brocken']) && ($data['brocken'] != -1) ) {
+		    $data['brocken'] = intval($data['brocken']);
+			$filter .= "&brocken=".$data['brocken'];
+			$sql .= " and brocken=".$data['brocken'];
+		}
+
 		// to find order col
         if (!empty($data['order_col'])) {
 		    $orderCol = $data['order_col'];
@@ -680,7 +750,11 @@ class SiteAuditorController extends Controller{
         // check for indexed
 	    foreach ($this->seArr as $se) {
 		    $conditions = " and $se"."_indexed>0";
-		    $projectInfo[$se."_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);	        
+		    $projectInfo[$se."_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+		    // check for NOT indexed
+		    $conditions = " and $se"."_indexed=0";
+		    $projectInfo[$se."_not_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 	    }
 	    
 	    // duplicate titles,descriptions and keywords
@@ -728,6 +802,7 @@ class SiteAuditorController extends Controller{
 
 			foreach ($this->seArr as $se) {
 		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"]));
+		        $exportContent .= createExportContent(array(ucfirst($se). " Not Indexed", $projectInfo[$se."_not_indexed"]));
 			}
 			
 			foreach ($metaArr as $meta => $val) {
