@@ -150,10 +150,29 @@ class Spider {
 				if ( !empty($href) || !empty($matches[2][$i])) {
 					
     				if( !preg_match( '/mailto:/', $href ) && !preg_match( '/javascript:|;/', $href ) ){
-    				    
+
     					// find external links
     				    $pageInfo['total_links'] += 1;
     				    $external = 0;
+
+    				    // Handle protocol-relative URLs (//cdn.example.com)
+    				    if (preg_match('#^//#', $href)) {
+    				        $href = 'https:' . $href;
+    				    }
+    				    // Handle query-string-only relative URLs (?page=2)
+    				    elseif (preg_match('#^\?#', $href)) {
+    				        $baseUrl = parse_url($url, PHP_URL_SCHEME) . '://' .
+    				                   parse_url($url, PHP_URL_HOST) .
+    				                   parse_url($url, PHP_URL_PATH);
+    				        $href = $baseUrl . $href;
+    				    }
+    				    // Handle fragment-only relative URLs (#section)
+    				    elseif (preg_match('#^#$', $href)) {
+    				        // Skip anchor-only links
+    				        $pageInfo['total_links'] -= 1;
+    				        continue;
+    				    }
+
     				    if (stristr($href, 'http://') ||  stristr($href, 'https://')) {    				    	
     					    if (!preg_match("/^".preg_quote($checkUrl, '/')."/", formatUrl($href))) {
     					        $external = 1;
@@ -173,14 +192,9 @@ class Spider {
     				            $pageInfo['total_links'] -= 1;
     				            continue;
     				        }
-    				        
-    				        // if contains back directory operator
-    				        $matchpart = [];
-    				        if (stristr($href, '/../')) {
-                            	$hrefParts = explode('/../', $href);
-                            	preg_match('/.*\//', $hrefParts[0], $matchpart);	
-                            	$href = $matchpart[0]. $hrefParts[1];
-                            }
+
+    				        // Normalize URL to resolve parent directory operators and other issues
+    				        $href = Spider::normalizeUrl($href);
     				    }
     				    
     				    // if details of urls to be checked
@@ -219,7 +233,7 @@ class Spider {
     # function to remove last trailing slash
 	public static function addTrailingSlash($url) {
 	    if (!stristr($url, '?') && !stristr($url, '#')) {
-	        if (!preg_match("/\.([^\/]+)$/", $url)) {		
+	        if (!preg_match("/\.([^\/]+)$/", $url)) {
         		if (!preg_match('/\/$/', $url)) {
         		    $url .= "/";
         		}
@@ -227,7 +241,113 @@ class Spider {
 	    }
 		return $url;
 	}
-	
+
+	/**
+	 * Normalize URL by resolving relative paths, protocol-relative URLs, etc.
+	 * Handles:
+	 * - Multiple parent directory references (../../..)
+	 * - Protocol-relative URLs (//cdn.example.com)
+	 * - Query-string-only URLs (?page=2)
+	 * - Fragment-only URLs (#section)
+	 *
+	 * @param string $url The URL to normalize
+	 * @return string Normalized URL
+	 */
+	public static function normalizeUrl($url) {
+	    if (empty($url)) {
+	        return $url;
+	    }
+
+	    // Parse URL components
+	    $parts = parse_url($url);
+
+	    // Handle protocol-relative URLs (//cdn.example.com/path)
+	    if (empty($parts['scheme']) && isset($parts['host'])) {
+	        // If URL starts with //, add https:
+	        if (preg_match('#^//#', $url)) {
+	            $url = 'https:' . $url;
+	            $parts = parse_url($url);
+	        }
+	    }
+
+	    // If no path, return as-is
+	    if (!isset($parts['path'])) {
+	        return $url;
+	    }
+
+	    $path = $parts['path'];
+
+	    // Normalize path by resolving .. and .
+	    $path = self::normalizePath($path);
+
+	    // Rebuild URL
+	    $normalized = '';
+	    if (isset($parts['scheme'])) {
+	        $normalized .= $parts['scheme'] . '://';
+	    }
+	    if (isset($parts['host'])) {
+	        if (isset($parts['user'])) {
+	            $normalized .= $parts['user'];
+	            if (isset($parts['pass'])) {
+	                $normalized .= ':' . $parts['pass'];
+	            }
+	            $normalized .= '@';
+	        }
+	        $normalized .= $parts['host'];
+	        if (isset($parts['port'])) {
+	            $normalized .= ':' . $parts['port'];
+	        }
+	    }
+
+	    $normalized .= $path;
+
+	    if (isset($parts['query'])) {
+	        $normalized .= '?' . $parts['query'];
+	    }
+	    if (isset($parts['fragment'])) {
+	        $normalized .= '#' . $parts['fragment'];
+	    }
+
+	    return $normalized;
+	}
+
+	/**
+	 * Normalize path by resolving . and .. segments
+	 *
+	 * @param string $path The path to normalize
+	 * @return string Normalized path
+	 */
+	private static function normalizePath($path) {
+	    // Split path into segments
+	    $segments = explode('/', $path);
+	    $normalized = array();
+
+	    foreach ($segments as $segment) {
+	        if ($segment === '' || $segment === '.') {
+	            // Skip empty and current directory segments
+	            continue;
+	        } elseif ($segment === '..') {
+	            // Parent directory - pop last segment if possible
+	            if (count($normalized) > 0 && end($normalized) !== '..') {
+	                array_pop($normalized);
+	            }
+	        } else {
+	            // Regular segment
+	            $normalized[] = $segment;
+	        }
+	    }
+
+	    // Rebuild path
+	    $result = '/' . implode('/', $normalized);
+
+	    // Preserve trailing slash if original had one
+	    if (substr($path, -1) === '/' && $result !== '/') {
+	        $result .= '/';
+	    }
+
+	    return $result;
+	}
+
 	# func to get unique urls of a page
 	function getUniqueUrls($url) {				
 		$ret = $this->getContent($url);
@@ -540,25 +660,51 @@ class Spider {
 	    }
 	}
 	
-	// function to check whether link is brocke
-	public static function isLInkBrocken($url) {
+	// function to check whether link is broken
+	public static function isLinkBroken($url) {
 	    $header = Spider::getHeader($url);
-	    if (stristr($header, '404 Not Found')) {
-	        return true;
-	    } else {
-	        return 0; 
+
+	    // Check for complete request failure
+	    if (empty($header)) {
+	        return 1; // Request failed completely
 	    }
+
+	    // Check for any 4xx or 5xx error codes (client errors and server errors)
+	    if (preg_match('/HTTP\/[\d\.]+\s+([45]\d{2})\s/', $header, $matches)) {
+	        return 1; // Broken (4xx or 5xx error)
+	    }
+
+	    return 0; // Not broken (2xx or 3xx response)
+	}
+
+	// Backward compatibility alias (deprecated)
+	public static function isLInkBrocken($url) {
+	    return self::isLinkBroken($url);
 	}
 	
 	// function to check whether link is a redirect
 	public static function isLinkRedirect($url) {
-			$followRedirects = false; //don't follow with cURL as we need that info.
-			$header = Spider::getHeader($url, $followRedirects);
-			if (stristr($header, '301 Moved Permanently') || stristr($header, '308 Permanent Redirect')) {
-					return true;
-			} else {
-					return 0;
+		$followRedirects = false; // Don't follow redirects so we can detect them
+		$header = Spider::getHeader($url, $followRedirects);
+
+		// Check for complete request failure
+		if (empty($header)) {
+			return 0; // Request failed, not a redirect
+		}
+
+		// Check for any 3xx redirect status code
+		if (preg_match('/HTTP\/[\d\.]+\s+(3\d{2})\s/', $header, $matches)) {
+			$statusCode = intval($matches[1]);
+
+			// 304 Not Modified is not really a redirect, it's a cache validation response
+			if ($statusCode == 304) {
+				return 0;
 			}
+
+			return 1; // Any other 3xx is a redirect (300, 301, 302, 303, 307, 308, etc.)
+		}
+
+		return 0; // Not a redirect
 	}
 	
 	public static function getCrawlEngineInfo($engineName, $engineCategory) {
@@ -579,6 +725,122 @@ class Spider {
 	    }
 	    
 	    return $engineList;
-	}	    
+	}
+	
+	/**
+	 * Check if a URL is blocked by robots.txt
+	 * 
+	 * @param string $pageUrl The full page URL to check
+	 * @param string $domainUrl The domain base URL
+	 * @return int 1 if blocked, 0 if allowed
+	 */
+	public static function isBlockedByRobotsTxt($pageUrl, $domainUrl) {
+		// Parse the domain URL to get the base
+		$parsedDomain = parse_url($domainUrl);
+		if (!isset($parsedDomain['scheme']) || !isset($parsedDomain['host'])) {
+			return 0; // Can't check, assume allowed
+		}
+		
+		$robotsTxtUrl = $parsedDomain['scheme'] . '://' . $parsedDomain['host'] . '/robots.txt';
+		
+		// Try to fetch robots.txt
+		$spider = new Spider();
+		$result = $spider->getContent($robotsTxtUrl, false, false);
+		
+		if (empty($result['page'])) {
+			return 0; // No robots.txt found, assume allowed
+		}
+		
+		$robotsTxt = $result['page'];
+		
+		// Parse the page URL to get the path
+		$parsedUrl = parse_url($pageUrl);
+		$urlPath = isset($parsedUrl['path']) ? $parsedUrl['path'] : '/';
+		if (isset($parsedUrl['query'])) {
+			$urlPath .= '?' . $parsedUrl['query'];
+		}
+		
+		// Parse robots.txt
+		$lines = explode("\n", $robotsTxt);
+		$currentUserAgent = '';
+		$disallowRules = array();
+		$allowRules = array();
+
+		foreach ($lines as $line) {
+			// Remove comments and trim
+			$line = trim(preg_replace('/#.*$/', '', $line));
+			if (empty($line)) continue;
+
+			// Check for User-agent directive
+			if (preg_match('/^User-agent:\s*(.+)$/i', $line, $matches)) {
+				$userAgent = trim($matches[1]);
+
+				// Check if this applies to our bot (treat as generic crawler)
+				if ($userAgent === '*' ||
+					stripos($userAgent, 'Googlebot') !== false ||
+					stripos($userAgent, 'bot') !== false ||
+					stripos($userAgent, 'crawler') !== false) {
+					$currentUserAgent = $userAgent;
+				} else {
+					$currentUserAgent = '';
+				}
+				continue;
+			}
+			
+			// Only process rules if we're in a relevant User-agent block
+			if (empty($currentUserAgent)) continue;
+			
+			// Check for Disallow directive
+			if (preg_match('/^Disallow:\s*(.*)$/i', $line, $matches)) {
+				$disallowPath = trim($matches[1]);
+				if ($disallowPath !== '') {
+					$disallowRules[] = $disallowPath;
+				}
+			}
+			
+			// Check for Allow directive (takes precedence over Disallow)
+			if (preg_match('/^Allow:\s*(.*)$/i', $line, $matches)) {
+				$allowPath = trim($matches[1]);
+				if ($allowPath !== '') {
+					$allowRules[] = $allowPath;
+				}
+			}
+		}
+		
+		// Check if URL matches any Allow rules first (these take precedence)
+		foreach ($allowRules as $allowPath) {
+			if (Spider::matchesRobotsPattern($urlPath, $allowPath)) {
+				return 0; // Explicitly allowed
+			}
+		}
+		
+		// Check if URL matches any Disallow rules
+		foreach ($disallowRules as $disallowPath) {
+			if (Spider::matchesRobotsPattern($urlPath, $disallowPath)) {
+				return 1; // Blocked
+			}
+		}
+		
+		return 0; // Not blocked
+	}
+	
+	/**
+	 * Check if a URL path matches a robots.txt pattern
+	 * 
+	 * @param string $urlPath The URL path to check
+	 * @param string $pattern The robots.txt pattern
+	 * @return bool True if matches
+	 */
+	private static function matchesRobotsPattern($urlPath, $pattern) {
+		// Handle wildcard * (matches any sequence of characters)
+		$pattern = preg_quote($pattern, '/');
+		$pattern = str_replace('\*', '.*', $pattern);
+		
+		// Handle $ (end of path marker)
+		$pattern = str_replace('\$', '$', $pattern);
+		
+		// Check if pattern matches the beginning of URL path
+		return preg_match('/^' . $pattern . '/i', $urlPath);
+	}
 }
 ?>

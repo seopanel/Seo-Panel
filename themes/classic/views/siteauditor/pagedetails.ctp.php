@@ -130,6 +130,108 @@ $backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&
 					</div>
 				</div>
 			</div>
+			<?php if (!empty($reportInfo['canonical_url'])) { ?>
+			<div class="detail-row">
+				<div class="detail-item-full">
+					<div class="detail-item-inner">
+						<span class="detail-label"><i class="fas fa-link"></i> <?php echo $spTextSA['Canonical URL']?></span>
+						<span class="detail-value">
+							<a href="<?php echo $reportInfo['canonical_url']?>" target="_blank"><?php echo $reportInfo['canonical_url']?></a>
+						</span>
+					</div>
+				</div>
+			</div>
+			<?php } ?>
+			<?php if (!empty($reportInfo['discovered_via'])) { ?>
+			<div class="detail-row">
+				<div class="detail-item-full">
+					<div class="detail-item-inner">
+						<span class="detail-label"><i class="fas fa-route"></i> <?php echo $spTextSA['Discovered Via']?></span>
+						<span class="detail-value"><?php echo ucfirst($reportInfo['discovered_via'])?></span>
+					</div>
+				</div>
+			</div>
+			<?php } ?>
+			<div class="detail-row">
+				<div class="detail-item-full">
+					<div class="detail-item-inner">
+						<span class="detail-label"><i class="fas fa-robot"></i> <?php echo $spTextSA['AI Robot Compatibility']?></span>
+						<span class="detail-value">
+							<?php if ($reportInfo['ai_robot_allowed']) { ?>
+								<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Allowed']?></span>
+							<?php } else { ?>
+								<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-times-circle"></i> <?php echo $spTextSA['Blocked']?></span>
+							<?php } ?>
+						</span>
+					</div>
+				</div>
+			</div>
+		<div class="detail-row">
+			<div class="detail-item">
+				<div class="detail-item-inner">
+					<span class="detail-label"><i class="fas fa-mobile-alt"></i> <?php echo $spTextSA['Mobile Friendly']?></span>
+					<span class="detail-value">
+						<?php if ($reportInfo['mobile_friendly']) { ?>
+							<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Yes']?></span>
+						<?php } else { ?>
+							<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-times-circle"></i> <?php echo $spTextSA['No']?></span>
+						<?php } ?>
+					</span>
+				</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-item-inner">
+					<span class="detail-label"><i class="fas fa-lock"></i> <?php echo $spTextSA['HTTPS Secure']?></span>
+					<span class="detail-value">
+						<?php if ($reportInfo['https_secure']) { ?>
+							<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Yes']?></span>
+						<?php } else { ?>
+							<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-times-circle"></i> <?php echo $spTextSA['No']?></span>
+						<?php } ?>
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-item">
+				<div class="detail-item-inner">
+					<span class="detail-label"><i class="fab fa-facebook"></i> <?php echo $spTextSA['Open Graph Tags']?></span>
+					<span class="detail-value">
+						<?php if ($reportInfo['has_og_tags']) { ?>
+							<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Found']?></span>
+						<?php } else { ?>
+							<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-times-circle"></i> <?php echo $spTextSA['Missing']?></span>
+						<?php } ?>
+					</span>
+				</div>
+			</div>
+			<div class="detail-item">
+				<div class="detail-item-inner">
+					<span class="detail-label"><i class="fab fa-twitter"></i> <?php echo $spTextSA['Twitter Cards']?></span>
+					<span class="detail-value">
+						<?php if ($reportInfo['has_twitter_cards']) { ?>
+							<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Found']?></span>
+						<?php } else { ?>
+							<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-times-circle"></i> <?php echo $spTextSA['Missing']?></span>
+						<?php } ?>
+					</span>
+				</div>
+			</div>
+		</div>
+		<div class="detail-row">
+			<div class="detail-item-full">
+				<div class="detail-item-inner">
+					<span class="detail-label"><i class="fas fa-file-code"></i> <?php echo $spTextSA['Robots.txt Status']?></span>
+					<span class="detail-value">
+						<?php if (!$reportInfo['blocked_by_robots']) { ?>
+							<span style="color: #28a745; font-weight: bold;"><i class="fas fa-check-circle"></i> <?php echo $spTextSA['Allowed']?></span>
+						<?php } else { ?>
+							<span style="color: #dc3545; font-weight: bold;"><i class="fas fa-ban"></i> <?php echo $spTextSA['Blocked']?></span>
+						<?php } ?>
+					</span>
+				</div>
+			</div>
+		</div>
 		</div>
 
 		<!-- Score and Authority Section -->

@@ -32,10 +32,18 @@
 		<td><?php echo $spTextSA['Exclude links']?>:</td>
 		<td>
 			<textarea name="exclude_links" class="form-control"><?php echo $post['exclude_links']?></textarea>
-			<br><?php echo $errMsg['exclude_links']?>
+			<?php echo $errMsg['exclude_links']?>
 			<p><?php echo $spTextSA['insertlinkssepcoma']?>.</p>
 			<p><b>Note:</b> <?php echo $spTextSA['anylinkcontainabovelinks']?>.</p>
 			<p><b>Eg:</b> /plugin/l/, &lang_code=</p>
+		</td>
+	</tr>
+	<tr>
+		<td><?php echo $spTextSA['Exclude Extensions']?>:</td>
+		<td>
+			<input type="text" name="exclude_extensions" value="<?php echo $post['exclude_extensions']?>" size="80" class="form-control">
+			<?php echo $errMsg['exclude_extensions']?>
+			<p><b>Note:</b> <?php echo $spTextSA['Leave blank to use system default']?>.</p>
 		</td>
 	</tr>
 	<tr>

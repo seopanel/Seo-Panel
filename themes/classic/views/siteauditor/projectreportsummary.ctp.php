@@ -630,6 +630,89 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 					</div>
 				</div>
 			</div>
+
+			<!-- Modern SEO Features Section -->
+			<div class="summary-section">
+				<div class="summary-section-title"><i class="fas fa-rocket"></i> Modern SEO Features</div>
+				<div class="summary-row">
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['mobile_friendly'] > 0 ? 'green' : 'orange'; ?>">
+								<i class="fas fa-mobile-alt"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Mobile Friendly']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['mobile_friendly'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['https_secure'] > 0 ? 'green' : 'orange'; ?>">
+								<i class="fas fa-lock"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['HTTPS Secure']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['https_secure'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['ai_robot_allowed'] > 0 ? 'green' : 'orange'; ?>">
+								<i class="fas fa-robot"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['AI Robot Compatibility']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['ai_robot_allowed'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon purple">
+								<i class="fas fa-share-alt"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Social Media']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'] + $projectInfo['has_twitter_cards'])?></span>
+						</div>
+					</div>
+				</div>
+				<div class="summary-row">
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['has_og_tags'] > 0 ? 'blue' : 'orange'; ?>">
+								<i class="fab fa-facebook"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Open Graph Tags']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['has_twitter_cards'] > 0 ? 'blue' : 'orange'; ?>">
+								<i class="fab fa-twitter"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Twitter Cards']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['has_twitter_cards'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon <?php echo $projectInfo['allowed_by_robots'] > 0 ? 'green' : 'orange'; ?>">
+								<i class="fas fa-file-code"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Robots.txt Allowed']?></span>
+							<span class="summary-value"><?php echo number_format($projectInfo['allowed_by_robots'])?></span>
+						</div>
+					</div>
+					<div class="summary-item-quarter">
+						<div class="summary-item-inner">
+							<div class="metric-icon blue">
+								<i class="fas fa-info-circle"></i>
+							</div>
+							<span class="summary-label"><?php echo $spText['common']['Info']?></span>
+							<span class="summary-value" style="font-size: 12px; line-height: 1.4;">
+								<?php echo $spTextSA['Pages with modern SEO features']?>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 <?php

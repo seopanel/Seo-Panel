@@ -421,15 +421,23 @@ class SiteAuditorController extends Controller{
 		if (empty($listInfo['page_url'])) {
 		    $totalLinks = $this->getCountcrawledLinks($projectId);
 		    if ($totalLinks == 0) {
+		        // First run - discover and parse sitemaps
 		        $auditorComp = $this->createComponent('AuditorComponent');
 		        $projectInfo = $this->__getProjectInfo($projectId);
+
+		        // Add initial project URL
 		        $reportInfo['page_url'] = Spider::formatUrl($projectInfo['url']);
 		        $reportInfo['project_id'] = $projectId;
+		        $reportInfo['discovered_via'] = 'crawl';
 		        $auditorComp->saveReportInfo($reportInfo);
+
+		        // Discover and parse sitemaps
+		        $this->discoverAndParseSitemaps($projectInfo);
+
 		        return $reportInfo['page_url'];
 		    } else {
 		        return false;
-		    }    
+		    }
 		} else {
 		    return $listInfo['page_url'];
 		}
@@ -681,6 +689,26 @@ class SiteAuditorController extends Controller{
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
 	    }
+
+	    // Modern SEO features - Mobile, HTTPS, AI Robot, Social Media
+	    $conditions = " and mobile_friendly=1";
+	    $projectInfo['mobile_friendly'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and https_secure=1";
+	    $projectInfo['https_secure'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and ai_robot_allowed=1";
+	    $projectInfo['ai_robot_allowed'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and has_og_tags=1";
+	    $projectInfo['has_og_tags'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and has_twitter_cards=1";
+	    $projectInfo['has_twitter_cards'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and blocked_by_robots=0";
+	    $projectInfo['allowed_by_robots'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
 	    $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 	    $this->set('spTextHome', $spTextHome);	    
 	    
@@ -707,6 +735,15 @@ class SiteAuditorController extends Controller{
 	        }
 
     		$exportContent .= createExportContent(array($_SESSION['text']['label']['Brocken'], $projectInfo['brocken']));
+
+			// Export modern SEO features
+			$exportContent .= createExportContent(array($this->spTextSA['Mobile Friendly'], $projectInfo['mobile_friendly']));
+			$exportContent .= createExportContent(array($this->spTextSA['HTTPS Secure'], $projectInfo['https_secure']));
+			$exportContent .= createExportContent(array($this->spTextSA['AI Robot Compatibility'], $projectInfo['ai_robot_allowed']));
+			$exportContent .= createExportContent(array($this->spTextSA['Open Graph Tags'], $projectInfo['has_og_tags']));
+			$exportContent .= createExportContent(array($this->spTextSA['Twitter Cards'], $projectInfo['has_twitter_cards']));
+			$exportContent .= createExportContent(array($this->spTextSA['Robots.txt Allowed'], $projectInfo['allowed_by_robots']));
+
 			exportToCsv('siteauditor_report_summary', $exportContent);
 		} else {
     		$this->set('projectInfo', $projectInfo);
@@ -942,6 +979,72 @@ class SiteAuditorController extends Controller{
     
     	return $validation;
     }
-    
+
+    /**
+     * Discover and parse sitemaps for a project
+     *
+     * @param array $projectInfo Project information
+     * @return void
+     */
+    function discoverAndParseSitemaps($projectInfo) {
+        $sitemapParser = $this->createComponent('SitemapParser');
+        $sitemapUrls = array();
+
+        // 1. Check robots.txt for sitemaps
+        $robotsSitemaps = $sitemapParser->discoverSitemapsFromRobots($projectInfo['url']);
+        $sitemapUrls = array_merge($sitemapUrls, $robotsSitemaps);
+
+        // 2. Try common sitemap locations if robots.txt has none
+        if (empty($sitemapUrls)) {
+            $commonSitemaps = $sitemapParser->discoverCommonSitemaps($projectInfo['url']);
+            $sitemapUrls = array_merge($sitemapUrls, $commonSitemaps);
+        }
+
+        // 3. Parse discovered sitemaps
+        $auditorComp = $this->createComponent('AuditorComponent');
+        $addedCount = 0;
+
+        foreach ($sitemapUrls as $sitemapUrl) {
+            // Save sitemap info
+            $sitemapParser->saveSitemapInfo($projectInfo['id'], $sitemapUrl, 'xml');
+
+            // Parse sitemap
+            $urls = $sitemapParser->parseSitemap($sitemapUrl, $projectInfo['id']);
+
+            // Add URLs to crawl queue
+            foreach ($urls as $url) {
+                $url = Spider::formatUrl($url);
+
+                // Check if excluded
+                if ($auditorComp->isExcludeLink($url, $projectInfo['exclude_links'])) {
+                    continue;
+                }
+
+                // Check if already exists
+                if ($auditorComp->getReportInfo(" and project_id={$projectInfo['id']} and page_url='".addslashes($url)."'")) {
+                    continue;
+                }
+
+                // Check max links limit
+                $totalLinks = $this->getCountcrawledLinks($projectInfo['id']);
+                if ($totalLinks >= $projectInfo['max_links']) {
+                    break 2; // Break out of both loops
+                }
+
+                // Add to queue
+                $reportInfo = array(
+                    'page_url' => $url,
+                    'project_id' => $projectInfo['id'],
+                    'discovered_via' => 'sitemap'
+                );
+                $auditorComp->saveReportInfo($reportInfo);
+                $addedCount++;
+            }
+
+            // Update sitemap URL count
+            $sitemapParser->updateSitemapUrlCount($projectInfo['id'], $sitemapUrl, count($urls));
+        }
+    }
+
 }
 ?>

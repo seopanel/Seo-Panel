@@ -24,6 +24,18 @@ ALTER TABLE `directories` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `pag
 
 ALTER TABLE `auditorreports` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `page_authority`;
 
+-- Add AI robot compatibility field to auditorreports
+ALTER TABLE `auditorreports` ADD `ai_robot_allowed` TINYINT(1) NOT NULL DEFAULT '1' AFTER `spam_score`;
+
+-- Add mobile, HTTPS, and social meta fields to auditorreports
+ALTER TABLE `auditorreports` ADD `mobile_friendly` TINYINT(1) NOT NULL DEFAULT '1' AFTER `ai_robot_allowed`;
+ALTER TABLE `auditorreports` ADD `https_secure` TINYINT(1) NOT NULL DEFAULT '0' AFTER `mobile_friendly`;
+ALTER TABLE `auditorreports` ADD `has_og_tags` TINYINT(1) NOT NULL DEFAULT '0' AFTER `https_secure`;
+ALTER TABLE `auditorreports` ADD `has_twitter_cards` TINYINT(1) NOT NULL DEFAULT '0' AFTER `has_og_tags`;
+
+-- Add robots.txt blocking check field
+ALTER TABLE `auditorreports` ADD `blocked_by_robots` TINYINT(1) NOT NULL DEFAULT '0' AFTER `has_twitter_cards`;
+
 ALTER TABLE `backlinkresults` ADD `external_pages_to_page` INT NOT NULL DEFAULT '0' AFTER `alexa`;
 
 ALTER TABLE `backlinkresults` ADD `external_pages_to_root_domain` INT NOT NULL DEFAULT '0' AFTER `external_pages_to_page`;
@@ -31,6 +43,14 @@ ALTER TABLE `backlinkresults` ADD `external_pages_to_root_domain` INT NOT NULL D
 ALTER TABLE `backlinkresults` CHANGE `google` `google` INT NOT NULL DEFAULT '0', CHANGE `msn` `msn` INT NOT NULL DEFAULT '0'; 
 
 update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
+
+-- Add setting to use sample API data (saves API credits during development/testing)
+INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Use Sample API Data (for testing - saves API credits)', 'SP_USE_SAMPLE_API_DATA', '0', 'system', 'bool', 1)
+ON DUPLICATE KEY UPDATE set_label=VALUES(set_label);
+
+INSERT IGNORE INTO texts (lang_code, category, label, content) VALUES
+('en', 'settings', 'SP_USE_SAMPLE_API_DATA', 'Use Sample API Data (for testing - saves API credits)');
 
 -- Add Social Media language text for dashboard navigation
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1322,4 +1342,593 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'common', 'Options', 'Параметри'),
 ('vn', 'common', 'Options', 'Tùy chọn'),
 ('zh', 'common', 'Options', '选项')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Exclude Extensions label for siteauditor
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Exclude Extensions', 'Exclude Extensions'),
+('ar', 'siteauditor', 'Exclude Extensions', 'استبعاد الامتدادات'),
+('bg', 'siteauditor', 'Exclude Extensions', 'Изключване на разширения'),
+('de', 'siteauditor', 'Exclude Extensions', 'Erweiterungen ausschließen'),
+('es', 'siteauditor', 'Exclude Extensions', 'Excluir extensiones'),
+('fr', 'siteauditor', 'Exclude Extensions', 'Exclure les extensions'),
+('it', 'siteauditor', 'Exclude Extensions', 'Escludi estensioni'),
+('nl', 'siteauditor', 'Exclude Extensions', 'Extensies uitsluiten'),
+('pl', 'siteauditor', 'Exclude Extensions', 'Wyklucz rozszerzenia'),
+('pt', 'siteauditor', 'Exclude Extensions', 'Excluir extensões'),
+('pt-br', 'siteauditor', 'Exclude Extensions', 'Excluir extensões'),
+('ru', 'siteauditor', 'Exclude Extensions', 'Исключить расширения'),
+('tr', 'siteauditor', 'Exclude Extensions', 'Uzantıları hariç tut'),
+('zh', 'siteauditor', 'Exclude Extensions', '排除扩展名'),
+('cn', 'siteauditor', 'Exclude Extensions', '排除扩展名')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Leave blank to use system default message for siteauditor
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Leave blank to use system default', 'Leave blank to use system default'),
+('ar', 'siteauditor', 'Leave blank to use system default', 'اتركه فارغًا لاستخدام الإعداد الافتراضي للنظام'),
+('bg', 'siteauditor', 'Leave blank to use system default', 'Оставете празно, за да използвате системната настройка по подразбиране'),
+('de', 'siteauditor', 'Leave blank to use system default', 'Leer lassen, um Systemstandard zu verwenden'),
+('es', 'siteauditor', 'Leave blank to use system default', 'Dejar en blanco para usar el valor predeterminado del sistema'),
+('fr', 'siteauditor', 'Leave blank to use system default', 'Laisser vide pour utiliser la valeur par défaut du système'),
+('it', 'siteauditor', 'Leave blank to use system default', 'Lasciare vuoto per utilizzare il valore predefinito del sistema'),
+('nl', 'siteauditor', 'Leave blank to use system default', 'Laat leeg om systeemstandaard te gebruiken'),
+('pl', 'siteauditor', 'Leave blank to use system default', 'Pozostaw puste, aby użyć domyślnych ustawień systemowych'),
+('pt', 'siteauditor', 'Leave blank to use system default', 'Deixe em branco para usar o padrão do sistema'),
+('pt-br', 'siteauditor', 'Leave blank to use system default', 'Deixe em branco para usar o padrão do sistema'),
+('ru', 'siteauditor', 'Leave blank to use system default', 'Оставьте пустым, чтобы использовать системное значение по умолчанию'),
+('tr', 'siteauditor', 'Leave blank to use system default', 'Sistem varsayılanını kullanmak için boş bırakın'),
+('zh', 'siteauditor', 'Leave blank to use system default', '留空以使用系统默认值'),
+('cn', 'siteauditor', 'Leave blank to use system default', '留空以使用系统默认值')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Canonical URL label for siteauditor
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Canonical URL', 'Canonical URL'),
+('ar', 'siteauditor', 'Canonical URL', 'عنوان URL الأساسي'),
+('bg', 'siteauditor', 'Canonical URL', 'Каноничен URL'),
+('de', 'siteauditor', 'Canonical URL', 'Kanonische URL'),
+('es', 'siteauditor', 'Canonical URL', 'URL canónica'),
+('fr', 'siteauditor', 'Canonical URL', 'URL canonique'),
+('it', 'siteauditor', 'Canonical URL', 'URL canonico'),
+('nl', 'siteauditor', 'Canonical URL', 'Canonieke URL'),
+('pl', 'siteauditor', 'Canonical URL', 'Kanoniczny URL'),
+('pt', 'siteauditor', 'Canonical URL', 'URL canônico'),
+('pt-br', 'siteauditor', 'Canonical URL', 'URL canônica'),
+('ru', 'siteauditor', 'Canonical URL', 'Канонический URL'),
+('tr', 'siteauditor', 'Canonical URL', 'Kanonik URL'),
+('zh', 'siteauditor', 'Canonical URL', '规范网址'),
+('cn', 'siteauditor', 'Canonical URL', '规范网址')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Discovered Via label for siteauditor
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Discovered Via', 'Discovered Via'),
+('ar', 'siteauditor', 'Discovered Via', 'اكتشف عبر'),
+('bg', 'siteauditor', 'Discovered Via', 'Открит чрез'),
+('de', 'siteauditor', 'Discovered Via', 'Entdeckt über'),
+('es', 'siteauditor', 'Discovered Via', 'Descubierto a través de'),
+('fr', 'siteauditor', 'Discovered Via', 'Découvert via'),
+('it', 'siteauditor', 'Discovered Via', 'Scoperto tramite'),
+('nl', 'siteauditor', 'Discovered Via', 'Ontdekt via'),
+('pl', 'siteauditor', 'Discovered Via', 'Odkryty przez'),
+('pt', 'siteauditor', 'Discovered Via', 'Descoberto via'),
+('pt-br', 'siteauditor', 'Discovered Via', 'Descoberto via'),
+('ru', 'siteauditor', 'Discovered Via', 'Обнаружено через'),
+('tr', 'siteauditor', 'Discovered Via', 'Keşfedildiği yol'),
+('zh', 'siteauditor', 'Discovered Via', '发现途径'),
+('cn', 'siteauditor', 'Discovered Via', '发现途径')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- AI Robot Compatibility label for siteauditor
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'AI Robot Compatibility', 'AI Robot Compatibility'),
+('ar', 'siteauditor', 'AI Robot Compatibility', 'توافق روبوت الذكاء الاصطناعي'),
+('bg', 'siteauditor', 'AI Robot Compatibility', 'Съвместимост с AI робот'),
+('de', 'siteauditor', 'AI Robot Compatibility', 'KI-Roboter-Kompatibilität'),
+('es', 'siteauditor', 'AI Robot Compatibility', 'Compatibilidad con robots de IA'),
+('fr', 'siteauditor', 'AI Robot Compatibility', 'Compatibilité des robots IA'),
+('it', 'siteauditor', 'AI Robot Compatibility', 'Compatibilità robot AI'),
+('nl', 'siteauditor', 'AI Robot Compatibility', 'AI-robotcompatibiliteit'),
+('pl', 'siteauditor', 'AI Robot Compatibility', 'Kompatybilność z robotami AI'),
+('pt', 'siteauditor', 'AI Robot Compatibility', 'Compatibilidade com robôs de IA'),
+('pt-br', 'siteauditor', 'AI Robot Compatibility', 'Compatibilidade com robôs de IA'),
+('ru', 'siteauditor', 'AI Robot Compatibility', 'Совместимость с AI роботами'),
+('tr', 'siteauditor', 'AI Robot Compatibility', 'AI Robot Uyumluluğu'),
+('zh', 'siteauditor', 'AI Robot Compatibility', 'AI机器人兼容性'),
+('cn', 'siteauditor', 'AI Robot Compatibility', 'AI机器人兼容性')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Allowed status for AI robots
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Allowed', 'Allowed'),
+('ar', 'siteauditor', 'Allowed', 'مسموح'),
+('bg', 'siteauditor', 'Allowed', 'Разрешено'),
+('de', 'siteauditor', 'Allowed', 'Erlaubt'),
+('es', 'siteauditor', 'Allowed', 'Permitido'),
+('fr', 'siteauditor', 'Allowed', 'Autorisé'),
+('it', 'siteauditor', 'Allowed', 'Consentito'),
+('nl', 'siteauditor', 'Allowed', 'Toegestaan'),
+('pl', 'siteauditor', 'Allowed', 'Dozwolone'),
+('pt', 'siteauditor', 'Allowed', 'Permitido'),
+('pt-br', 'siteauditor', 'Allowed', 'Permitido'),
+('ru', 'siteauditor', 'Allowed', 'Разрешено'),
+('tr', 'siteauditor', 'Allowed', 'İzin verildi'),
+('zh', 'siteauditor', 'Allowed', '允许'),
+('cn', 'siteauditor', 'Allowed', '允许')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Blocked status for AI robots
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Blocked', 'Blocked'),
+('ar', 'siteauditor', 'Blocked', 'محظور'),
+('bg', 'siteauditor', 'Blocked', 'Блокиран'),
+('de', 'siteauditor', 'Blocked', 'Blockiert'),
+('es', 'siteauditor', 'Blocked', 'Bloqueado'),
+('fr', 'siteauditor', 'Blocked', 'Bloqué'),
+('it', 'siteauditor', 'Blocked', 'Bloccato'),
+('nl', 'siteauditor', 'Blocked', 'Geblokkeerd'),
+('pl', 'siteauditor', 'Blocked', 'Zablokowane'),
+('pt', 'siteauditor', 'Blocked', 'Bloqueado'),
+('pt-br', 'siteauditor', 'Blocked', 'Bloqueado'),
+('ru', 'siteauditor', 'Blocked', 'Заблокировано'),
+('tr', 'siteauditor', 'Blocked', 'Engellendi'),
+('zh', 'siteauditor', 'Blocked', '已阻止'),
+('cn', 'siteauditor', 'Blocked', '已阻止')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- AI robot allowed message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page allows AI robots to crawl and index content', 'The page allows AI robots to crawl and index content'),
+('ar', 'siteauditor', 'The page allows AI robots to crawl and index content', 'تسمح الصفحة لروبوتات الذكاء الاصطناعي بالزحف وفهرسة المحتوى'),
+('bg', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Страницата позволява на AI роботите да сканират и индексират съдържанието'),
+('de', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Die Seite erlaubt KI-Robotern, Inhalte zu crawlen und zu indizieren'),
+('es', 'siteauditor', 'The page allows AI robots to crawl and index content', 'La página permite que los robots de IA rastreen e indexen el contenido'),
+('fr', 'siteauditor', 'The page allows AI robots to crawl and index content', 'La page permet aux robots IA d\'explorer et d\'indexer le contenu'),
+('it', 'siteauditor', 'The page allows AI robots to crawl and index content', 'La pagina consente ai robot AI di eseguire la scansione e indicizzare i contenuti'),
+('nl', 'siteauditor', 'The page allows AI robots to crawl and index content', 'De pagina staat AI-robots toe om inhoud te crawlen en te indexeren'),
+('pl', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Strona pozwala robotom AI na indeksowanie treści'),
+('pt', 'siteauditor', 'The page allows AI robots to crawl and index content', 'A página permite que robôs de IA rastreiem e indexem o conteúdo'),
+('pt-br', 'siteauditor', 'The page allows AI robots to crawl and index content', 'A página permite que robôs de IA rastreiem e indexem o conteúdo'),
+('ru', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Страница позволяет AI роботам сканировать и индексировать контент'),
+('tr', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Sayfa, AI robotlarının içeriği taramasına ve dizine eklemesine izin veriyor'),
+('zh', 'siteauditor', 'The page allows AI robots to crawl and index content', '该页面允许AI机器人抓取和索引内容'),
+('cn', 'siteauditor', 'The page allows AI robots to crawl and index content', '该页面允许AI机器人抓取和索引内容')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- AI robot blocked message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'The page blocks AI robots from crawling - may limit AI search visibility'),
+('ar', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'تمنع الصفحة روبوتات الذكاء الاصطناعي من الزحف - قد يحد من ظهور البحث بالذكاء الاصطناعي'),
+('bg', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Страницата блокира AI роботите от сканиране - може да ограничи видимостта в AI търсенето'),
+('de', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Die Seite blockiert KI-Roboter beim Crawlen - kann die AI-Suchsichtbarkeit einschränken'),
+('es', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'La página bloquea a los robots de IA para rastrear - puede limitar la visibilidad de búsqueda de IA'),
+('fr', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'La page empêche les robots IA d\'explorer - peut limiter la visibilité de recherche IA'),
+('it', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'La pagina blocca i robot AI dalla scansione - potrebbe limitare la visibilità della ricerca AI'),
+('nl', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'De pagina blokkeert AI-robots van crawlen - kan AI-zoekzichtbaarheid beperken'),
+('pl', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Strona blokuje roboty AI przed indeksowaniem - może ograniczyć widoczność w wyszukiwaniu AI'),
+('pt', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'A página bloqueia robôs de IA de rastrear - pode limitar a visibilidade de pesquisa de IA'),
+('pt-br', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'A página bloqueia robôs de IA de rastrear - pode limitar a visibilidade de pesquisa de IA'),
+('ru', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Страница блокирует AI роботов от сканирования - может ограничить видимость в AI поиске'),
+('tr', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Sayfa AI robotlarının taramasını engelliyor - AI arama görünürlüğünü sınırlayabilir'),
+('zh', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', '该页面阻止AI机器人抓取 - 可能限制AI搜索可见性'),
+('cn', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', '该页面阻止AI机器人抓取 - 可能限制AI搜索可见性')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Mobile Friendly label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Mobile Friendly', 'Mobile Friendly'),
+('ar', 'siteauditor', 'Mobile Friendly', 'متوافق مع الجوال'),
+('bg', 'siteauditor', 'Mobile Friendly', 'Подходящ за мобилни'),
+('de', 'siteauditor', 'Mobile Friendly', 'Mobilfreundlich'),
+('es', 'siteauditor', 'Mobile Friendly', 'Compatible con móviles'),
+('fr', 'siteauditor', 'Mobile Friendly', 'Compatible mobile'),
+('it', 'siteauditor', 'Mobile Friendly', 'Ottimizzato per mobile'),
+('nl', 'siteauditor', 'Mobile Friendly', 'Mobiel vriendelijk'),
+('pl', 'siteauditor', 'Mobile Friendly', 'Przyjazny dla urządzeń mobilnych'),
+('pt', 'siteauditor', 'Mobile Friendly', 'Compatível com dispositivos móveis'),
+('pt-br', 'siteauditor', 'Mobile Friendly', 'Compatível com dispositivos móveis'),
+('ru', 'siteauditor', 'Mobile Friendly', 'Мобильная версия'),
+('tr', 'siteauditor', 'Mobile Friendly', 'Mobil uyumlu'),
+('zh', 'siteauditor', 'Mobile Friendly', '移动友好'),
+('cn', 'siteauditor', 'Mobile Friendly', '移动友好')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- HTTPS Secure label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'HTTPS Secure', 'HTTPS Secure'),
+('ar', 'siteauditor', 'HTTPS Secure', 'آمن HTTPS'),
+('bg', 'siteauditor', 'HTTPS Secure', 'HTTPS сигурен'),
+('de', 'siteauditor', 'HTTPS Secure', 'HTTPS sicher'),
+('es', 'siteauditor', 'HTTPS Secure', 'HTTPS seguro'),
+('fr', 'siteauditor', 'HTTPS Secure', 'HTTPS sécurisé'),
+('it', 'siteauditor', 'HTTPS Secure', 'HTTPS sicuro'),
+('nl', 'siteauditor', 'HTTPS Secure', 'HTTPS beveiligd'),
+('pl', 'siteauditor', 'HTTPS Secure', 'HTTPS zabezpieczony'),
+('pt', 'siteauditor', 'HTTPS Secure', 'HTTPS seguro'),
+('pt-br', 'siteauditor', 'HTTPS Secure', 'HTTPS seguro'),
+('ru', 'siteauditor', 'HTTPS Secure', 'HTTPS защищен'),
+('tr', 'siteauditor', 'HTTPS Secure', 'HTTPS güvenli'),
+('zh', 'siteauditor', 'HTTPS Secure', 'HTTPS安全'),
+('cn', 'siteauditor', 'HTTPS Secure', 'HTTPS安全')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Open Graph Tags label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Open Graph Tags', 'Open Graph Tags'),
+('ar', 'siteauditor', 'Open Graph Tags', 'علامات Open Graph'),
+('bg', 'siteauditor', 'Open Graph Tags', 'Open Graph тагове'),
+('de', 'siteauditor', 'Open Graph Tags', 'Open Graph Tags'),
+('es', 'siteauditor', 'Open Graph Tags', 'Etiquetas Open Graph'),
+('fr', 'siteauditor', 'Open Graph Tags', 'Balises Open Graph'),
+('it', 'siteauditor', 'Open Graph Tags', 'Tag Open Graph'),
+('nl', 'siteauditor', 'Open Graph Tags', 'Open Graph tags'),
+('pl', 'siteauditor', 'Open Graph Tags', 'Tagi Open Graph'),
+('pt', 'siteauditor', 'Open Graph Tags', 'Tags Open Graph'),
+('pt-br', 'siteauditor', 'Open Graph Tags', 'Tags Open Graph'),
+('ru', 'siteauditor', 'Open Graph Tags', 'Теги Open Graph'),
+('tr', 'siteauditor', 'Open Graph Tags', 'Open Graph etiketleri'),
+('zh', 'siteauditor', 'Open Graph Tags', 'Open Graph标签'),
+('cn', 'siteauditor', 'Open Graph Tags', 'Open Graph标签')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Twitter Cards label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Twitter Cards', 'Twitter Cards'),
+('ar', 'siteauditor', 'Twitter Cards', 'بطاقات تويتر'),
+('bg', 'siteauditor', 'Twitter Cards', 'Twitter карти'),
+('de', 'siteauditor', 'Twitter Cards', 'Twitter Cards'),
+('es', 'siteauditor', 'Twitter Cards', 'Tarjetas de Twitter'),
+('fr', 'siteauditor', 'Twitter Cards', 'Cartes Twitter'),
+('it', 'siteauditor', 'Twitter Cards', 'Schede Twitter'),
+('nl', 'siteauditor', 'Twitter Cards', 'Twitter-kaarten'),
+('pl', 'siteauditor', 'Twitter Cards', 'Karty Twitter'),
+('pt', 'siteauditor', 'Twitter Cards', 'Cartões do Twitter'),
+('pt-br', 'siteauditor', 'Twitter Cards', 'Cartões do Twitter'),
+('ru', 'siteauditor', 'Twitter Cards', 'Карточки Twitter'),
+('tr', 'siteauditor', 'Twitter Cards', 'Twitter kartları'),
+('zh', 'siteauditor', 'Twitter Cards', 'Twitter卡片'),
+('cn', 'siteauditor', 'Twitter Cards', 'Twitter卡片')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Yes label for checks
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Yes', 'Yes'),
+('ar', 'siteauditor', 'Yes', 'نعم'),
+('bg', 'siteauditor', 'Yes', 'Да'),
+('de', 'siteauditor', 'Yes', 'Ja'),
+('es', 'siteauditor', 'Yes', 'Sí'),
+('fr', 'siteauditor', 'Yes', 'Oui'),
+('it', 'siteauditor', 'Yes', 'Sì'),
+('nl', 'siteauditor', 'Yes', 'Ja'),
+('pl', 'siteauditor', 'Yes', 'Tak'),
+('pt', 'siteauditor', 'Yes', 'Sim'),
+('pt-br', 'siteauditor', 'Yes', 'Sim'),
+('ru', 'siteauditor', 'Yes', 'Да'),
+('tr', 'siteauditor', 'Yes', 'Evet'),
+('zh', 'siteauditor', 'Yes', '是'),
+('cn', 'siteauditor', 'Yes', '是')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- No label for checks
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'No', 'No'),
+('ar', 'siteauditor', 'No', 'لا'),
+('bg', 'siteauditor', 'No', 'Не'),
+('de', 'siteauditor', 'No', 'Nein'),
+('es', 'siteauditor', 'No', 'No'),
+('fr', 'siteauditor', 'No', 'Non'),
+('it', 'siteauditor', 'No', 'No'),
+('nl', 'siteauditor', 'No', 'Nee'),
+('pl', 'siteauditor', 'No', 'Nie'),
+('pt', 'siteauditor', 'No', 'Não'),
+('pt-br', 'siteauditor', 'No', 'Não'),
+('ru', 'siteauditor', 'No', 'Нет'),
+('tr', 'siteauditor', 'No', 'Hayır'),
+('zh', 'siteauditor', 'No', '否'),
+('cn', 'siteauditor', 'No', '否')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Found label for social tags
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Found', 'Found'),
+('ar', 'siteauditor', 'Found', 'موجود'),
+('bg', 'siteauditor', 'Found', 'Намерен'),
+('de', 'siteauditor', 'Found', 'Gefunden'),
+('es', 'siteauditor', 'Found', 'Encontrado'),
+('fr', 'siteauditor', 'Found', 'Trouvé'),
+('it', 'siteauditor', 'Found', 'Trovato'),
+('nl', 'siteauditor', 'Found', 'Gevonden'),
+('pl', 'siteauditor', 'Found', 'Znaleziono'),
+('pt', 'siteauditor', 'Found', 'Encontrado'),
+('pt-br', 'siteauditor', 'Found', 'Encontrado'),
+('ru', 'siteauditor', 'Found', 'Найдено'),
+('tr', 'siteauditor', 'Found', 'Bulundu'),
+('zh', 'siteauditor', 'Found', '找到'),
+('cn', 'siteauditor', 'Found', '找到')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Missing label for social tags
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Missing', 'Missing'),
+('ar', 'siteauditor', 'Missing', 'مفقود'),
+('bg', 'siteauditor', 'Missing', 'Липсва'),
+('de', 'siteauditor', 'Missing', 'Fehlend'),
+('es', 'siteauditor', 'Missing', 'Faltante'),
+('fr', 'siteauditor', 'Missing', 'Manquant'),
+('it', 'siteauditor', 'Missing', 'Mancante'),
+('nl', 'siteauditor', 'Missing', 'Ontbreekt'),
+('pl', 'siteauditor', 'Missing', 'Brakujący'),
+('pt', 'siteauditor', 'Missing', 'Ausente'),
+('pt-br', 'siteauditor', 'Missing', 'Ausente'),
+('ru', 'siteauditor', 'Missing', 'Отсутствует'),
+('tr', 'siteauditor', 'Missing', 'Eksik'),
+('zh', 'siteauditor', 'Missing', '缺失'),
+('cn', 'siteauditor', 'Missing', '缺失')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Mobile friendly success message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'The page is mobile-friendly with proper viewport configuration'),
+('ar', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'الصفحة متوافقة مع الجوال مع تكوين viewport صحيح'),
+('bg', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Страницата е подходяща за мобилни устройства с правилна конфигурация на viewport'),
+('de', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Die Seite ist mobilfreundlich mit korrekter Viewport-Konfiguration'),
+('es', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'La página es compatible con dispositivos móviles con configuración adecuada del viewport'),
+('fr', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'La page est compatible mobile avec une configuration viewport appropriée'),
+('it', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'La pagina è ottimizzata per mobile con configurazione viewport corretta'),
+('nl', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'De pagina is mobiel vriendelijk met juiste viewport-configuratie'),
+('pl', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Strona jest przyjazna dla urządzeń mobilnych z odpowiednią konfiguracją viewport'),
+('pt', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'A página é compatível com dispositivos móveis com configuração de viewport adequada'),
+('pt-br', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'A página é compatível com dispositivos móveis com configuração de viewport adequada'),
+('ru', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Страница адаптирована для мобильных устройств с правильной конфигурацией viewport'),
+('tr', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Sayfa doğru viewport yapılandırması ile mobil uyumlu'),
+('zh', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', '该页面具有正确的viewport配置，对移动设备友好'),
+('cn', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', '该页面具有正确的viewport配置，对移动设备友好')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Mobile friendly error message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'The page is not mobile-friendly - critical issue for modern SEO'),
+('ar', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'الصفحة غير متوافقة مع الجوال - مشكلة حرجة لتحسين محركات البحث الحديثة'),
+('bg', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Страницата не е подходяща за мобилни устройства - критичен проблем за съвременното SEO'),
+('de', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Die Seite ist nicht mobilfreundlich - kritisches Problem für modernes SEO'),
+('es', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'La página no es compatible con dispositivos móviles - problema crítico para el SEO moderno'),
+('fr', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'La page n\'est pas compatible mobile - problème critique pour le SEO moderne'),
+('it', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'La pagina non è ottimizzata per mobile - problema critico per la SEO moderna'),
+('nl', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'De pagina is niet mobiel vriendelijk - kritiek probleem voor moderne SEO'),
+('pl', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Strona nie jest przyjazna dla urządzeń mobilnych - krytyczny problem dla nowoczesnego SEO'),
+('pt', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'A página não é compatível com dispositivos móveis - problema crítico para SEO moderno'),
+('pt-br', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'A página não é compatível com dispositivos móveis - problema crítico para SEO moderno'),
+('ru', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Страница не адаптирована для мобильных устройств - критическая проблема для современного SEO'),
+('tr', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Sayfa mobil uyumlu değil - modern SEO için kritik sorun'),
+('zh', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', '该页面不适合移动设备 - 现代SEO的关键问题'),
+('cn', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', '该页面不适合移动设备 - 现代SEO的关键问题')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- HTTPS success message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is served over HTTPS - secure connection', 'The page is served over HTTPS - secure connection'),
+('ar', 'siteauditor', 'The page is served over HTTPS - secure connection', 'يتم تقديم الصفحة عبر HTTPS - اتصال آمن'),
+('bg', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Страницата се обслужва чрез HTTPS - сигурна връзка'),
+('de', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Die Seite wird über HTTPS bereitgestellt - sichere Verbindung'),
+('es', 'siteauditor', 'The page is served over HTTPS - secure connection', 'La página se sirve a través de HTTPS - conexión segura'),
+('fr', 'siteauditor', 'The page is served over HTTPS - secure connection', 'La page est servie via HTTPS - connexion sécurisée'),
+('it', 'siteauditor', 'The page is served over HTTPS - secure connection', 'La pagina viene servita tramite HTTPS - connessione sicura'),
+('nl', 'siteauditor', 'The page is served over HTTPS - secure connection', 'De pagina wordt via HTTPS geleverd - beveiligde verbinding'),
+('pl', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Strona jest serwowana przez HTTPS - bezpieczne połączenie'),
+('pt', 'siteauditor', 'The page is served over HTTPS - secure connection', 'A página é servida via HTTPS - conexão segura'),
+('pt-br', 'siteauditor', 'The page is served over HTTPS - secure connection', 'A página é servida via HTTPS - conexão segura'),
+('ru', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Страница обслуживается через HTTPS - безопасное соединение'),
+('tr', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Sayfa HTTPS üzerinden sunuluyor - güvenli bağlantı'),
+('zh', 'siteauditor', 'The page is served over HTTPS - secure connection', '该页面通过HTTPS提供 - 安全连接'),
+('cn', 'siteauditor', 'The page is served over HTTPS - secure connection', '该页面通过HTTPS提供 - 安全连接')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- HTTPS error message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'The page is not secure (HTTP) - should use HTTPS'),
+('ar', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'الصفحة غير آمنة (HTTP) - يجب استخدام HTTPS'),
+('bg', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Страницата не е сигурна (HTTP) - трябва да използва HTTPS'),
+('de', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Die Seite ist nicht sicher (HTTP) - sollte HTTPS verwenden'),
+('es', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'La página no es segura (HTTP) - debería usar HTTPS'),
+('fr', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'La page n\'est pas sécurisée (HTTP) - devrait utiliser HTTPS'),
+('it', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'La pagina non è sicura (HTTP) - dovrebbe usare HTTPS'),
+('nl', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'De pagina is niet beveiligd (HTTP) - moet HTTPS gebruiken'),
+('pl', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Strona nie jest bezpieczna (HTTP) - powinna używać HTTPS'),
+('pt', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'A página não é segura (HTTP) - deveria usar HTTPS'),
+('pt-br', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'A página não é segura (HTTP) - deveria usar HTTPS'),
+('ru', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Страница небезопасна (HTTP) - следует использовать HTTPS'),
+('tr', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Sayfa güvenli değil (HTTP) - HTTPS kullanmalı'),
+('zh', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', '该页面不安全（HTTP） - 应使用HTTPS'),
+('cn', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', '该页面不安全（HTTP） - 应使用HTTPS')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- OG tags success message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'The page has Open Graph tags for better social media sharing'),
+('ar', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'تحتوي الصفحة على علامات Open Graph لمشاركة أفضل عبر وسائل التواصل الاجتماعي'),
+('bg', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Страницата има Open Graph тагове за по-добро споделяне в социалните мрежи'),
+('de', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Die Seite hat Open Graph Tags für besseres Social Media Sharing'),
+('es', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'La página tiene etiquetas Open Graph para mejor compartición en redes sociales'),
+('fr', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'La page a des balises Open Graph pour un meilleur partage sur les réseaux sociaux'),
+('it', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'La pagina ha tag Open Graph per una migliore condivisione sui social media'),
+('nl', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'De pagina heeft Open Graph tags voor betere social media sharing'),
+('pl', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Strona ma tagi Open Graph dla lepszego udostępniania w mediach społecznościowych'),
+('pt', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'A página tem tags Open Graph para melhor compartilhamento em redes sociais'),
+('pt-br', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'A página tem tags Open Graph para melhor compartilhamento em redes sociais'),
+('ru', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Страница имеет теги Open Graph для лучшего обмена в социальных сетях'),
+('tr', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Sayfa daha iyi sosyal medya paylaşımı için Open Graph etiketlerine sahip'),
+('zh', 'siteauditor', 'The page has Open Graph tags for better social media sharing', '该页面具有Open Graph标签，可更好地在社交媒体上分享'),
+('cn', 'siteauditor', 'The page has Open Graph tags for better social media sharing', '该页面具有Open Graph标签，可更好地在社交媒体上分享')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- OG tags error message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'The page is missing Open Graph tags - limits social media optimization'),
+('ar', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'الصفحة تفتقر إلى علامات Open Graph - يحد من تحسين وسائل التواصل الاجتماعي'),
+('bg', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'Страницата липсват Open Graph тагове - ограничава оптимизацията за социални мрежи'),
+('de', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'Der Seite fehlen Open Graph Tags - begrenzt Social Media Optimierung'),
+('es', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'La página carece de etiquetas Open Graph - limita la optimización en redes sociales'),
+('fr', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'La page manque de balises Open Graph - limite l\'optimisation des réseaux sociaux'),
+('it', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'La pagina manca di tag Open Graph - limita l\'ottimizzazione dei social media'),
+('nl', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'De pagina mist Open Graph tags - beperkt social media optimalisatie'),
+('pl', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'Strona nie ma tagów Open Graph - ogranicza optymalizację mediów społecznościowych'),
+('pt', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'A página está sem tags Open Graph - limita a otimização de redes sociais'),
+('pt-br', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'A página está sem tags Open Graph - limita a otimização de redes sociais'),
+('ru', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'На странице отсутствуют теги Open Graph - ограничивает оптимизацию для социальных сетей'),
+('tr', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'Sayfada Open Graph etiketleri eksik - sosyal medya optimizasyonunu sınırlar'),
+('zh', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', '该页面缺少Open Graph标签 - 限制社交媒体优化'),
+('cn', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', '该页面缺少Open Graph标签 - 限制社交媒体优化')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Twitter cards success message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'The page has Twitter Card tags for optimized Twitter sharing'),
+('ar', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'تحتوي الصفحة على علامات Twitter Card لمشاركة محسنة على تويتر'),
+('bg', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Страницата има Twitter Card тагове за оптимизирано споделяне в Twitter'),
+('de', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Die Seite hat Twitter Card Tags für optimiertes Twitter-Sharing'),
+('es', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'La página tiene etiquetas de Twitter Card para compartición optimizada en Twitter'),
+('fr', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'La page a des balises Twitter Card pour un partage Twitter optimisé'),
+('it', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'La pagina ha tag Twitter Card per una condivisione ottimizzata su Twitter'),
+('nl', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'De pagina heeft Twitter Card tags voor geoptimaliseerd delen op Twitter'),
+('pl', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Strona ma tagi Twitter Card dla zoptymalizowanego udostępniania na Twitter'),
+('pt', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'A página tem tags Twitter Card para compartilhamento otimizado no Twitter'),
+('pt-br', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'A página tem tags Twitter Card para compartilhamento otimizado no Twitter'),
+('ru', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Страница имеет теги Twitter Card для оптимизированного обмена в Twitter'),
+('tr', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Sayfa optimize edilmiş Twitter paylaşımı için Twitter Card etiketlerine sahip'),
+('zh', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', '该页面具有Twitter Card标签，可优化Twitter分享'),
+('cn', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', '该页面具有Twitter Card标签，可优化Twitter分享')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Twitter cards error message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'The page is missing Twitter Card tags - limits Twitter optimization'),
+('ar', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'الصفحة تفتقر إلى علامات Twitter Card - يحد من تحسين تويتر'),
+('bg', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'Страницата липсват Twitter Card тагове - ограничава оптимизацията за Twitter'),
+('de', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'Der Seite fehlen Twitter Card Tags - begrenzt Twitter-Optimierung'),
+('es', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'La página carece de etiquetas Twitter Card - limita la optimización de Twitter'),
+('fr', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'La page manque de balises Twitter Card - limite l\'optimisation Twitter'),
+('it', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'La pagina manca di tag Twitter Card - limita l\'ottimizzazione di Twitter'),
+('nl', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'De pagina mist Twitter Card tags - beperkt Twitter-optimalisatie'),
+('pl', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'Strona nie ma tagów Twitter Card - ogranicza optymalizację Twitter'),
+('pt', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'A página está sem tags Twitter Card - limita a otimização do Twitter'),
+('pt-br', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'A página está sem tags Twitter Card - limita a otimização do Twitter'),
+('ru', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'На странице отсутствуют теги Twitter Card - ограничивает оптимизацию для Twitter'),
+('tr', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'Sayfada Twitter Card etiketleri eksik - Twitter optimizasyonunu sınırlar'),
+('zh', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', '该页面缺少Twitter Card标签 - 限制Twitter优化'),
+('cn', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', '该页面缺少Twitter Card标签 - 限制Twitter优化')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Social Media label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Social Media', 'Social Media'),
+('ar', 'siteauditor', 'Social Media', 'وسائل التواصل الاجتماعي'),
+('bg', 'siteauditor', 'Social Media', 'Социални медии'),
+('de', 'siteauditor', 'Social Media', 'Soziale Medien'),
+('es', 'siteauditor', 'Social Media', 'Redes Sociales'),
+('fr', 'siteauditor', 'Social Media', 'Médias sociaux'),
+('it', 'siteauditor', 'Social Media', 'Social Media'),
+('nl', 'siteauditor', 'Social Media', 'Sociale media'),
+('pl', 'siteauditor', 'Social Media', 'Media społecznościowe'),
+('pt', 'siteauditor', 'Social Media', 'Redes Sociais'),
+('pt-br', 'siteauditor', 'Social Media', 'Redes Sociais'),
+('ru', 'siteauditor', 'Social Media', 'Социальные сети'),
+('tr', 'siteauditor', 'Social Media', 'Sosyal Medya'),
+('zh', 'siteauditor', 'Social Media', '社交媒体'),
+('cn', 'siteauditor', 'Social Media', '社交媒体')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Pages with modern SEO features label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Pages with modern SEO features', 'Pages with modern SEO features'),
+('ar', 'siteauditor', 'Pages with modern SEO features', 'الصفحات ذات ميزات SEO الحديثة'),
+('bg', 'siteauditor', 'Pages with modern SEO features', 'Страници с модерни SEO функции'),
+('de', 'siteauditor', 'Pages with modern SEO features', 'Seiten mit modernen SEO-Funktionen'),
+('es', 'siteauditor', 'Pages with modern SEO features', 'Páginas con características modernas de SEO'),
+('fr', 'siteauditor', 'Pages with modern SEO features', 'Pages avec fonctionnalités SEO modernes'),
+('it', 'siteauditor', 'Pages with modern SEO features', 'Pagine con funzionalità SEO moderne'),
+('nl', 'siteauditor', 'Pages with modern SEO features', 'Pagina\'s met moderne SEO-functies'),
+('pl', 'siteauditor', 'Pages with modern SEO features', 'Strony z nowoczesnymi funkcjami SEO'),
+('pt', 'siteauditor', 'Pages with modern SEO features', 'Páginas com recursos modernos de SEO'),
+('pt-br', 'siteauditor', 'Pages with modern SEO features', 'Páginas com recursos modernos de SEO'),
+('ru', 'siteauditor', 'Pages with modern SEO features', 'Страницы с современными функциями SEO'),
+('tr', 'siteauditor', 'Pages with modern SEO features', 'Modern SEO özellikleri olan sayfalar'),
+('zh', 'siteauditor', 'Pages with modern SEO features', '具有现代SEO功能的页面'),
+('cn', 'siteauditor', 'Pages with modern SEO features', '具有现代SEO功能的页面')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Robots.txt Status label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Robots.txt Status', 'Robots.txt Status'),
+('ar', 'siteauditor', 'Robots.txt Status', 'حالة Robots.txt'),
+('bg', 'siteauditor', 'Robots.txt Status', 'Robots.txt статус'),
+('de', 'siteauditor', 'Robots.txt Status', 'Robots.txt Status'),
+('es', 'siteauditor', 'Robots.txt Status', 'Estado de Robots.txt'),
+('fr', 'siteauditor', 'Robots.txt Status', 'Statut Robots.txt'),
+('it', 'siteauditor', 'Robots.txt Status', 'Stato Robots.txt'),
+('nl', 'siteauditor', 'Robots.txt Status', 'Robots.txt status'),
+('pl', 'siteauditor', 'Robots.txt Status', 'Status Robots.txt'),
+('pt', 'siteauditor', 'Robots.txt Status', 'Status do Robots.txt'),
+('pt-br', 'siteauditor', 'Robots.txt Status', 'Status do Robots.txt'),
+('ru', 'siteauditor', 'Robots.txt Status', 'Статус Robots.txt'),
+('tr', 'siteauditor', 'Robots.txt Status', 'Robots.txt durumu'),
+('zh', 'siteauditor', 'Robots.txt Status', 'Robots.txt状态'),
+('cn', 'siteauditor', 'Robots.txt Status', 'Robots.txt状态')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Robots.txt Allowed label
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt Allowed'),
+('ar', 'siteauditor', 'Robots.txt Allowed', 'مسموح في Robots.txt'),
+('bg', 'siteauditor', 'Robots.txt Allowed', 'Разрешено в Robots.txt'),
+('de', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt erlaubt'),
+('es', 'siteauditor', 'Robots.txt Allowed', 'Permitido por Robots.txt'),
+('fr', 'siteauditor', 'Robots.txt Allowed', 'Autorisé par Robots.txt'),
+('it', 'siteauditor', 'Robots.txt Allowed', 'Consentito da Robots.txt'),
+('nl', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt toegestaan'),
+('pl', 'siteauditor', 'Robots.txt Allowed', 'Dozwolone przez Robots.txt'),
+('pt', 'siteauditor', 'Robots.txt Allowed', 'Permitido pelo Robots.txt'),
+('pt-br', 'siteauditor', 'Robots.txt Allowed', 'Permitido pelo Robots.txt'),
+('ru', 'siteauditor', 'Robots.txt Allowed', 'Разрешено в Robots.txt'),
+('tr', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt izin verdi'),
+('zh', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt允许'),
+('cn', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt允许')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Robots.txt allowed message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'The page is allowed by robots.txt and can be crawled by search engines'),
+('ar', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'الصفحة مسموح بها في robots.txt ويمكن لمحركات البحث الزحف إليها'),
+('bg', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Страницата е разрешена от robots.txt и може да бъде сканирана от търсачки'),
+('de', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Die Seite ist von robots.txt erlaubt und kann von Suchmaschinen gecrawlt werden'),
+('es', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'La página está permitida por robots.txt y puede ser rastreada por motores de búsqueda'),
+('fr', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'La page est autorisée par robots.txt et peut être crawlée par les moteurs de recherche'),
+('it', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'La pagina è consentita da robots.txt e può essere scansionata dai motori di ricerca'),
+('nl', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'De pagina is toegestaan door robots.txt en kan worden gecrawld door zoekmachines'),
+('pl', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Strona jest dozwolona przez robots.txt i może być indeksowana przez wyszukiwarki'),
+('pt', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'A página é permitida pelo robots.txt e pode ser rastreada por mecanismos de busca'),
+('pt-br', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'A página é permitida pelo robots.txt e pode ser rastreada por mecanismos de busca'),
+('ru', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Страница разрешена в robots.txt и может быть проиндексирована поисковыми системами'),
+('tr', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Sayfa robots.txt tarafından izin verildi ve arama motorları tarafından taranabilir'),
+('zh', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', '该页面被robots.txt允许，可以被搜索引擎抓取'),
+('cn', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', '该页面被robots.txt允许，可以被搜索引擎抓取')
+ON DUPLICATE KEY UPDATE content=VALUES(content);
+
+-- Robots.txt blocked message
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'The page is blocked by robots.txt - search engines cannot crawl this page'),
+('ar', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'الصفحة محظورة بواسطة robots.txt - لا يمكن لمحركات البحث الزحف إلى هذه الصفحة'),
+('bg', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Страницата е блокирана от robots.txt - търсачките не могат да сканират тази страница'),
+('de', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Die Seite ist von robots.txt blockiert - Suchmaschinen können diese Seite nicht crawlen'),
+('es', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'La página está bloqueada por robots.txt - los motores de búsqueda no pueden rastrear esta página'),
+('fr', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'La page est bloquée par robots.txt - les moteurs de recherche ne peuvent pas crawler cette page'),
+('it', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'La pagina è bloccata da robots.txt - i motori di ricerca non possono scansionare questa pagina'),
+('nl', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'De pagina is geblokkeerd door robots.txt - zoekmachines kunnen deze pagina niet crawlen'),
+('pl', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Strona jest zablokowana przez robots.txt - wyszukiwarki nie mogą indeksować tej strony'),
+('pt', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'A página está bloqueada pelo robots.txt - os mecanismos de busca não podem rastrear esta página'),
+('pt-br', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'A página está bloqueada pelo robots.txt - os mecanismos de busca não podem rastrear esta página'),
+('ru', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Страница заблокирована в robots.txt - поисковые системы не могут индексировать эту страницу'),
+('tr', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Sayfa robots.txt tarafından engellendi - arama motorları bu sayfayı tarayamaz'),
+('zh', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', '该页面被robots.txt阻止 - 搜索引擎无法抓取此页面'),
+('cn', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', '该页面被robots.txt阻止 - 搜索引擎无法抓取此页面')
 ON DUPLICATE KEY UPDATE content=VALUES(content);
