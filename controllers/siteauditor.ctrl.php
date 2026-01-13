@@ -121,11 +121,20 @@ class SiteAuditorController extends Controller{
 		        $errorFlag = 1;
 		        $errMsg['max_links'] = $maxValidInfo['msg'];
 		    }
-		    
+
+		    // Validate sitemap URL if provided
+		    if (!empty($listInfo['sitemap_url'])) {
+		        $sitemapUrl = trim($listInfo['sitemap_url']);
+		        if (!filter_var($sitemapUrl, FILTER_VALIDATE_URL)) {
+		            $errorFlag = 1;
+		            $errMsg['sitemap_url'] = formatErrorMsg("Invalid sitemap URL format");
+		        }
+		    }
+
 		    if (!$errorFlag) {
     			if (!$this->isProjectExists($listInfo['website_id'])) {
-    				$sql = "insert into auditorprojects(website_id,max_links,exclude_links,check_pr,check_backlinks,check_indexed,store_links_in_page,check_brocken,cron)
-							values({$listInfo['website_id']},{$listInfo['max_links']},'".addslashes($listInfo['exclude_links'])."',
+    				$sql = "insert into auditorprojects(website_id,max_links,exclude_links,exclude_extensions,sitemap_url,check_pr,check_backlinks,check_indexed,store_links_in_page,check_brocken,cron)
+							values({$listInfo['website_id']},{$listInfo['max_links']},'".addslashes($listInfo['exclude_links'])."','".addslashes($listInfo['exclude_extensions'])."','".addslashes(trim($listInfo['sitemap_url']))."',
 							".intval($listInfo['check_pr']).",".intval($listInfo['check_backlinks']).",".intval($listInfo['check_indexed']).",
 							".intval($listInfo['store_links_in_page']).",".intval($listInfo['check_brocken']).",".intval($listInfo['cron']).")";
     				$this->db->query($sql);
@@ -243,6 +252,15 @@ class SiteAuditorController extends Controller{
 		        $errorFlag = 1;
 		        $errMsg['max_links'] = $maxValidInfo['msg'];
 		    }
+
+		    // Validate sitemap URL if provided
+		    if (!empty($listInfo['sitemap_url'])) {
+		        $sitemapUrl = trim($listInfo['sitemap_url']);
+		        if (!filter_var($sitemapUrl, FILTER_VALIDATE_URL)) {
+		            $errorFlag = 1;
+		            $errMsg['sitemap_url'] = formatErrorMsg("Invalid sitemap URL format");
+		        }
+		    }
 		    
 		    // if error occured
 		    if (!$errorFlag) {
@@ -256,7 +274,9 @@ class SiteAuditorController extends Controller{
     						store_links_in_page=".intval($listInfo['store_links_in_page']).",
     						check_brocken='".intval($listInfo['check_brocken'])."',
     						cron='".intval($listInfo['cron'])."',
-    						exclude_links='".addslashes($listInfo['exclude_links'])."'
+    						exclude_links='".addslashes($listInfo['exclude_links'])."',
+    						exclude_extensions='".addslashes($listInfo['exclude_extensions'])."',
+    						sitemap_url='".addslashes(trim($listInfo['sitemap_url']))."'
     						where id=".$listInfo['id'];
     				$this->db->query($sql);
     				$this->showAuditorProjects();
@@ -620,6 +640,62 @@ class SiteAuditorController extends Controller{
 			$sql .= " and brocken=".$data['brocken'];
 		}
 
+		// check for no backlinks
+		if(isset($data['no_backlinks']) && ($data['no_backlinks'] != -1) ) {
+		    $data['no_backlinks'] = intval($data['no_backlinks']);
+			$filter .= "&no_backlinks=".$data['no_backlinks'];
+			$sql .= " and google_backlinks=0";
+		}
+
+		// check for has backlinks
+		if(isset($data['has_backlinks']) && ($data['has_backlinks'] != -1) ) {
+		    $data['has_backlinks'] = intval($data['has_backlinks']);
+			$filter .= "&has_backlinks=".$data['has_backlinks'];
+			$sql .= " and google_backlinks>0";
+		}
+
+		// check for mobile friendly
+		if(isset($data['mobile_friendly']) && ($data['mobile_friendly'] != -1) ) {
+		    $data['mobile_friendly'] = intval($data['mobile_friendly']);
+			$filter .= "&mobile_friendly=".$data['mobile_friendly'];
+			$sql .= " and mobile_friendly=".$data['mobile_friendly'];
+		}
+
+		// check for https secure
+		if(isset($data['https_secure']) && ($data['https_secure'] != -1) ) {
+		    $data['https_secure'] = intval($data['https_secure']);
+			$filter .= "&https_secure=".$data['https_secure'];
+			$sql .= " and https_secure=".$data['https_secure'];
+		}
+
+		// check for ai robot allowed
+		if(isset($data['ai_robot_allowed']) && ($data['ai_robot_allowed'] != -1) ) {
+		    $data['ai_robot_allowed'] = intval($data['ai_robot_allowed']);
+			$filter .= "&ai_robot_allowed=".$data['ai_robot_allowed'];
+			$sql .= " and ai_robot_allowed=".$data['ai_robot_allowed'];
+		}
+
+		// check for open graph tags
+		if(isset($data['has_og_tags']) && ($data['has_og_tags'] != -1) ) {
+		    $data['has_og_tags'] = intval($data['has_og_tags']);
+			$filter .= "&has_og_tags=".$data['has_og_tags'];
+			$sql .= " and has_og_tags=".$data['has_og_tags'];
+		}
+
+		// check for twitter cards
+		if(isset($data['has_twitter_cards']) && ($data['has_twitter_cards'] != -1) ) {
+		    $data['has_twitter_cards'] = intval($data['has_twitter_cards']);
+			$filter .= "&has_twitter_cards=".$data['has_twitter_cards'];
+			$sql .= " and has_twitter_cards=".$data['has_twitter_cards'];
+		}
+
+		// check for robots.txt allowed
+		if(isset($data['allowed_by_robots']) && ($data['allowed_by_robots'] != -1) ) {
+		    $data['allowed_by_robots'] = intval($data['allowed_by_robots']);
+			$filter .= "&allowed_by_robots=".$data['allowed_by_robots'];
+			$sql .= " and allowed_by_robots=".$data['allowed_by_robots'];
+		}
+
 		// to find order col
         if (!empty($data['order_col'])) {
 		    $orderCol = $data['order_col'];
@@ -746,6 +822,10 @@ class SiteAuditorController extends Controller{
 		    $conditions = " and $se"."_backlinks>0";
 		    $projectInfo[$se."_backlinks"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);	        
 	    }
+
+	    // check for no backlinks
+	    $conditions = " and google_backlinks=0";
+	    $projectInfo['no_backlinks'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 	    
         // check for indexed
 	    foreach ($this->seArr as $se) {
@@ -786,8 +866,7 @@ class SiteAuditorController extends Controller{
 	    $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 	    $this->set('spTextHome', $spTextHome);	    
 	    
-	    if ($exportVersion) {			
-			$spText = $_SESSION['text'];
+	    if ($exportVersion) {
 			$exportContent = createExportContent(array('', $this->spTextSA['Project Summary'], ''));
 			$exportContent .= createExportContent(array());
 			$exportContent .= createExportContent(array());
@@ -798,7 +877,7 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($this->spTextSA['Pages Found'], $projectInfo['total_links']));		
 			$exportContent .= createExportContent(array($this->spTextSA['Crawled Pages'], $projectInfo['crawled_links']));
 
-			$exportContent .= createExportContent(array($spTextHome['Backlinks'], $projectInfo['google_backlinks']));
+			$exportContent .= createExportContent(array('Has Backlinks', $projectInfo['google_backlinks']));
 
 			foreach ($this->seArr as $se) {
 		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"]));
@@ -810,6 +889,7 @@ class SiteAuditorController extends Controller{
 	        }
 
     		$exportContent .= createExportContent(array($_SESSION['text']['label']['Brocken'], $projectInfo['brocken']));
+    		$exportContent .= createExportContent(array('No Backlinks', $projectInfo['no_backlinks']));
 
 			// Export modern SEO features
 			$exportContent .= createExportContent(array($this->spTextSA['Mobile Friendly'], $projectInfo['mobile_friendly']));
@@ -1065,17 +1145,23 @@ class SiteAuditorController extends Controller{
         $sitemapParser = $this->createComponent('SitemapParser');
         $sitemapUrls = array();
 
-        // 1. Check robots.txt for sitemaps
+        // PRIORITY 1: Check for manual sitemap URL in project settings
+        if (!empty($projectInfo['sitemap_url'])) {
+            $manualSitemap = trim($projectInfo['sitemap_url']);
+            $sitemapUrls[] = $manualSitemap;
+        }
+
+        // PRIORITY 2: Check robots.txt for sitemaps
         $robotsSitemaps = $sitemapParser->discoverSitemapsFromRobots($projectInfo['url']);
         $sitemapUrls = array_merge($sitemapUrls, $robotsSitemaps);
 
-        // 2. Try common sitemap locations if robots.txt has none
-        if (empty($sitemapUrls)) {
+        // PRIORITY 3: Try common sitemap locations if no sitemaps found yet
+        if (count($sitemapUrls) <= 1) { // Only manual sitemap or none at all
             $commonSitemaps = $sitemapParser->discoverCommonSitemaps($projectInfo['url']);
             $sitemapUrls = array_merge($sitemapUrls, $commonSitemaps);
         }
 
-        // 3. Parse discovered sitemaps
+        // Parse all discovered sitemaps in priority order
         $auditorComp = $this->createComponent('AuditorComponent');
         $addedCount = 0;
 

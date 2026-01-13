@@ -30,6 +30,14 @@
 		</td>
 	</tr>
 	<tr>
+		<td><?php echo $spTextSA['Sitemap URL']?>:</td>
+		<td>
+			<input type="text" name="sitemap_url" value="<?php echo $post['sitemap_url']?>" size="80" class="form-control">
+			<?php echo $errMsg['sitemap_url']?>
+			<p><b>Note:</b> Enter sitemap URL to fetch pages before crawling (e.g., https://example.com/sitemap.xml). Leave blank for automatic discovery.</p>
+		</td>
+	</tr>
+	<tr>
 		<td><?php echo $spTextSA['Exclude links']?>:</td>
 		<td>
 			<textarea name="exclude_links" class="form-control"><?php echo $post['exclude_links']?></textarea>			

@@ -196,10 +196,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
-	margin-bottom: 8px;
-	display: flex;
-	align-items: center;
-	gap: 6px;
+	margin-bottom: 4px;
+	display: block;
 }
 
 .summary-label i {
@@ -223,6 +221,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	font-weight: 600;
 	transition: all 0.2s;
 	word-break: break-all;
+	overflow-wrap: break-word;
 }
 
 .summary-value a:hover {
@@ -364,15 +363,23 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 }
 
 /* Metric Cards with Icons */
+/* Metric header with icon and label inline */
+.metric-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
 .metric-icon {
-	width: 45px;
-	height: 45px;
+	width: 36px;
+	height: 36px;
 	border-radius: 12px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 20px;
-	margin-bottom: 12px;
+	font-size: 16px;
+	margin-right: 10px;
+	flex-shrink: 0;
 }
 
 .metric-icon.blue {
@@ -441,63 +448,75 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<!-- Project Info Section -->
 			<div class="summary-section">
 				<div class="summary-section-title"><i class="fas fa-info-circle"></i> Project Information</div>
-				<div class="summary-row">
-					<div class="summary-item-full">
-						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-globe"></i> <?php echo $spTextSA['Project Url']?></span>
-							<span class="summary-value"><a href="<?php echo $projectInfo['url']?>" target="_blank"><?php echo $projectInfo['url']?></a></span>
+			<div class="summary-row">
+				<div class="summary-item">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+							<div class="metric-icon blue">
+								<i class="fas fa-globe"></i>
+							</div>
+							<span class="summary-label"><?php echo $spTextSA['Project Url']?></span>
 						</div>
+						<span class="summary-value"><a href="<?php echo $projectInfo['url']?>" target="_blank"><?php echo $projectInfo['url']?></a></span>
 					</div>
-					<div class="summary-item">
-						<div class="summary-item-inner">
-							<span class="summary-label"><i class="fas fa-star"></i> <?php echo $spText['label']['Score']?></span>
-							<span class="summary-value">
-								<div class="score-circle">
-									<?php
-									$score = $projectInfo['score'];
-									$isPositive = $score >= 0;
-									$absScore = abs($score);
-									$maxScore = 100;
-									$percentage = min(($absScore / $maxScore) * 100, 100);
-									$circumference = 2 * 3.14159 * 36;
-									$dashOffset = $circumference - ($percentage / 100) * $circumference;
-									?>
-									<div class="score-progress">
-										<svg width="80" height="80">
-											<defs>
-												<linearGradient id="scoreGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
-													<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
-													<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-												</linearGradient>
-												<linearGradient id="scoreGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
-													<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
-													<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
-												</linearGradient>
-											</defs>
-											<circle class="score-progress-bg" cx="40" cy="40" r="36"></circle>
-											<circle class="score-progress-bar <?php echo $isPositive ? 'positive' : 'negative'; ?>"
-												cx="40" cy="40" r="36"
-												stroke-dasharray="<?php echo $circumference; ?>"
-												stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
-										</svg>
-										<div class="score-text"><?php echo $score; ?></div>
-									</div>
-									<div class="score-label"><?php echo $isPositive ? 'Positive' : 'Negative'; ?> Score</div>
+				</div>
+				<div class="summary-item">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+							<div class="metric-icon green">
+								<i class="fas fa-star"></i>
+							</div>
+							<span class="summary-label"><?php echo $spText['label']['Score']?></span>
+						</div>
+						<span class="summary-value">
+							<div class="score-circle">
+								<?php
+								$score = $projectInfo['score'];
+								$isPositive = $score >= 0;
+								$absScore = abs($score);
+								$maxScore = 100;
+								$percentage = min(($absScore / $maxScore) * 100, 100);
+								$circumference = 2 * 3.14159 * 36;
+								$dashOffset = $circumference - ($percentage / 100) * $circumference;
+								?>
+								<div class="score-progress">
+									<svg width="80" height="80">
+										<defs>
+											<linearGradient id="scoreGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
+												<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+												<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+											</linearGradient>
+											<linearGradient id="scoreGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
+												<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
+												<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
+											</linearGradient>
+										</defs>
+										<circle class="score-progress-bg" cx="40" cy="40" r="36"></circle>
+										<circle class="score-progress-bar <?php echo $isPositive ? 'positive' : 'negative'; ?>"
+											cx="40" cy="40" r="36"
+											stroke-dasharray="<?php echo $circumference; ?>"
+											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
+									</svg>
+									<div class="score-text"><?php echo $score; ?></div>
 								</div>
-							</span>
-						</div>
+								<div class="score-label"><?php echo $isPositive ? 'Positive' : 'Negative'; ?> Score</div>
+							</div>
+						</span>
 					</div>
-					<div class="summary-item">
-						<div class="summary-item-inner">
+				</div>
+				<div class="summary-item">
+					<div class="summary-item-inner">
+						<div class="metric-header">
 							<div class="metric-icon orange">
 								<i class="fas fa-clock"></i>
 							</div>
 							<span class="summary-label"><?php echo $spText['label']['Updated']?></span>
-							<span class="summary-value"><?php echo $projectInfo['last_updated']?></span>
 						</div>
+						<span class="summary-value"><?php echo $projectInfo['last_updated']?></span>
 					</div>
 				</div>
 			</div>
+		</div>
 
 			<!-- Pages Statistics Section -->
 			<div class="summary-section">
@@ -505,19 +524,23 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<div class="summary-row">
 					<div class="summary-item">
 						<div class="summary-item-inner">
+							<div class="metric-header">
 							<div class="metric-icon purple">
 								<i class="fas fa-list-ol"></i>
 							</div>
 							<span class="summary-label"><?php echo $spTextSA['Maximum Pages']?></span>
+							</div>
 							<span class="summary-value"><?php echo number_format($projectInfo['max_links'])?></span>
 						</div>
 					</div>
 					<div class="summary-item">
 						<div class="summary-item-inner">
+							<div class="metric-header">
 							<div class="metric-icon blue">
 								<i class="fas fa-search"></i>
 							</div>
 							<span class="summary-label"><?php echo $spTextSA['Pages Found']?></span>
+							</div>
 							<span class="summary-value"><?php echo number_format($projectInfo['total_links'])?></span>
 							<?php
 							$foundPercentage = $projectInfo['max_links'] > 0 ? ($projectInfo['total_links'] / $projectInfo['max_links']) * 100 : 0;
@@ -532,10 +555,12 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 					</div>
 					<div class="summary-item">
 						<div class="summary-item-inner">
+							<div class="metric-header">
 							<div class="metric-icon green">
 								<i class="fas fa-check-circle"></i>
 							</div>
 							<span class="summary-label"><?php echo $spTextSA['Crawled Pages']?></span>
+							</div>
 							<span class="summary-value"><?php echo number_format($projectInfo['crawled_links'])?></span>
 							<?php
 							$crawledPercentage = $projectInfo['total_links'] > 0 ? ($projectInfo['crawled_links'] / $projectInfo['total_links']) * 100 : 0;
@@ -550,6 +575,250 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 					</div>
 				</div>
 			</div>
+
+    		<!-- SEO Metrics Section -->
+    		<div class="summary-section">
+    			<div class="summary-section-title"><i class="fas fa-chart-bar"></i> SEO Metrics</div>
+    			<div class="summary-row">
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon green">
+    							<i class="fas fa-link"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spTextSA['Has Backlinks']?></span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['google_backlinks'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_backlinks=1')">
+    								<?php echo number_format($projectInfo['google_backlinks'])?>
+    							</a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<?php
+    				$seIcons = array('google' => 'google', 'bing' => 'search');
+    				foreach ($seArr as $se) {
+    					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
+    					$indexedCount = $projectInfo[$se."_indexed"];
+    				?>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon <?php echo $indexedCount > 0 ? 'green' : 'orange'; ?>">
+    							<i class="fab fa-<?php echo $iconClass; ?>"></i>
+    						</div>
+    						<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($indexedCount > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')">
+    								<?php echo number_format($indexedCount)?>
+    							</a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<?php } ?>
+    			</div>
+    		</div>
+
+			<!-- Modern SEO Features Section -->
+			<div class="summary-section">
+			<div class="summary-section-title"><i class="fas fa-rocket"></i> Modern SEO Features</div>
+			<div class="summary-row">
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['mobile_friendly'] > 0 ? 'green' : 'orange'; ?>">
+							<i class="fas fa-mobile-alt"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['Mobile Friendly']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['mobile_friendly'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&mobile_friendly=1')"><?php echo number_format($projectInfo['mobile_friendly'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['https_secure'] > 0 ? 'green' : 'orange'; ?>">
+							<i class="fas fa-lock"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['HTTPS Secure']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['https_secure'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&https_secure=1')"><?php echo number_format($projectInfo['https_secure'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['ai_robot_allowed'] > 0 ? 'green' : 'orange'; ?>">
+							<i class="fas fa-robot"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['AI Robot Compatibility']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['ai_robot_allowed'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&ai_robot_allowed=1')"><?php echo number_format($projectInfo['ai_robot_allowed'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon purple">
+							<i class="fas fa-share-alt"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['Social Media']?></span>
+						</div>
+						<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'] + $projectInfo['has_twitter_cards'])?></span>
+					</div>
+				</div>
+			</div>
+			<div class="summary-row">
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['has_og_tags'] > 0 ? 'blue' : 'orange'; ?>">
+							<i class="fab fa-facebook"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['Open Graph Tags']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['has_og_tags'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_og_tags=1')"><?php echo number_format($projectInfo['has_og_tags'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['has_twitter_cards'] > 0 ? 'blue' : 'orange'; ?>">
+							<i class="fab fa-twitter"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['Twitter Cards']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['has_twitter_cards'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_twitter_cards=1')"><?php echo number_format($projectInfo['has_twitter_cards'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+				<div class="summary-item-quarter">
+					<div class="summary-item-inner">
+						<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['allowed_by_robots'] > 0 ? 'green' : 'orange'; ?>">
+							<i class="fas fa-file-code"></i>
+						</div>
+						<span class="summary-label"><?php echo $spTextSA['Robots.txt Allowed']?></span>
+						</div>
+						<span class="summary-value">
+							<?php if ($projectInfo['allowed_by_robots'] > 0): ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&allowed_by_robots=1')"><?php echo number_format($projectInfo['allowed_by_robots'])?></a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">Not found</span>
+							<?php endif; ?>
+						</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+    		<!-- Areas for Improvement Section -->
+    		<div class="summary-section">
+    			<div class="summary-section-title"><i class="fas fa-exclamation-triangle"></i> Areas for Improvement</div>
+    			<div class="summary-row">
+    				<?php
+    				foreach ($seArr as $se) {
+    					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
+    					$notIndexedCount = $projectInfo[$se."_not_indexed"];
+    				?>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon <?php echo $notIndexedCount == 0 ? 'green' : 'orange'; ?>">
+    							<i class="fab fa-<?php echo $iconClass; ?>"></i>
+    						</div>
+    						<span class="summary-label"><?php echo ucfirst($se)?> Not Indexed</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($notIndexedCount > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')">
+    								<?php echo number_format($notIndexedCount)?>
+    							</a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">None</span>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<?php } ?>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon <?php echo $projectInfo['brocken'] > 0 ? 'orange' : 'green'; ?>">
+    							<i class="fas fa-unlink"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spText['label']['Brocken']?></span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['brocken'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')">
+    								<?php echo number_format($projectInfo['brocken'])?>
+    							</a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">None</span>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon <?php echo $projectInfo['no_backlinks'] > 0 ? 'orange' : 'green'; ?>">
+    							<i class="fas fa-chain-broken"></i>
+    						</div>
+    						<span class="summary-label">No Backlinks</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['no_backlinks'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&no_backlinks=1')">
+    								<?php echo number_format($projectInfo['no_backlinks'])?>
+    							</a>
+							<?php else: ?>
+								<span style="color: #999; font-size: 11px;">None</span>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    			</div>
+    		</div>
 
 			<!-- Meta Information Section -->
 			<div class="summary-section">
@@ -566,173 +835,25 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 					?>
 					<div class="summary-item">
 						<div class="summary-item-inner">
+							<div class="metric-header">
 							<div class="metric-icon blue">
 								<i class="fas fa-<?php echo $iconClass; ?>"></i>
 							</div>
 							<span class="summary-label"><?php echo $label?></span>
+							</div>
 							<span class="summary-value">
+								<?php if ($projectInfo["duplicate_".$col] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo number_format($projectInfo["duplicate_".$col])?></a>
+								<?php else: ?>
+									<span style="color: #999; font-size: 11px;">None</span>
+								<?php endif; ?>
 							</span>
 						</div>
 					</div>
 					<?php } ?>
 				</div>
 			</div>
-
-			<!-- SEO Metrics Section -->
-			<div class="summary-section">
-				<div class="summary-section-title"><i class="fas fa-chart-bar"></i> SEO Metrics</div>
-				<div class="summary-row">
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon green">
-								<i class="fas fa-link"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextHome['Backlinks']?></span>
-							<span class="summary-value">
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links')">
-									<?php echo number_format($projectInfo['google_backlinks'])?>
-								</a>
-							</span>
-						</div>
-					</div>
-					<?php
-					$seIcons = array('google' => 'google', 'bing' => 'search');
-					foreach ($seArr as $se) {
-						$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-						$indexedCount = $projectInfo[$se."_indexed"];
-					?>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $indexedCount > 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-<?php echo $iconClass; ?>"></i>
-							</div>
-							<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
-							<span class="summary-value">
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')">
-									<?php echo number_format($indexedCount)?>
-								</a>
-							</span>
-						</div>
-					</div>
-					<?php } ?>
-					<?php
-					foreach ($seArr as $se) {
-						$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-						$notIndexedCount = $projectInfo[$se."_not_indexed"];
-					?>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $notIndexedCount == 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-<?php echo $iconClass; ?>"></i>
-							</div>
-							<span class="summary-label"><?php echo ucfirst($se)?> Not Indexed</span>
-							<span class="summary-value">
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')">
-									<?php echo number_format($notIndexedCount)?>
-								</a>
-							</span>
-						</div>
-					</div>
-					<?php } ?>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['brocken'] > 0 ? 'orange' : 'green'; ?>">
-								<i class="fas fa-<?php echo $projectInfo['brocken'] > 0 ? 'exclamation-triangle' : 'check-circle'; ?>"></i>
-							</div>
-							<span class="summary-label"><?php echo $spText['label']['Brocken']?></span>
-							<span class="summary-value">
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')">
-									<?php echo number_format($projectInfo['brocken'])?>
-								</a>
-							</span>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Modern SEO Features Section -->
-			<div class="summary-section">
-				<div class="summary-section-title"><i class="fas fa-rocket"></i> Modern SEO Features</div>
-				<div class="summary-row">
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['mobile_friendly'] > 0 ? 'green' : 'orange'; ?>">
-								<i class="fas fa-mobile-alt"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['Mobile Friendly']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['mobile_friendly'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['https_secure'] > 0 ? 'green' : 'orange'; ?>">
-								<i class="fas fa-lock"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['HTTPS Secure']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['https_secure'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['ai_robot_allowed'] > 0 ? 'green' : 'orange'; ?>">
-								<i class="fas fa-robot"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['AI Robot Compatibility']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['ai_robot_allowed'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon purple">
-								<i class="fas fa-share-alt"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['Social Media']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'] + $projectInfo['has_twitter_cards'])?></span>
-						</div>
-					</div>
-				</div>
-				<div class="summary-row">
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['has_og_tags'] > 0 ? 'blue' : 'orange'; ?>">
-								<i class="fab fa-facebook"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['Open Graph Tags']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['has_twitter_cards'] > 0 ? 'blue' : 'orange'; ?>">
-								<i class="fab fa-twitter"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['Twitter Cards']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['has_twitter_cards'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon <?php echo $projectInfo['allowed_by_robots'] > 0 ? 'green' : 'orange'; ?>">
-								<i class="fas fa-file-code"></i>
-							</div>
-							<span class="summary-label"><?php echo $spTextSA['Robots.txt Allowed']?></span>
-							<span class="summary-value"><?php echo number_format($projectInfo['allowed_by_robots'])?></span>
-						</div>
-					</div>
-					<div class="summary-item-quarter">
-						<div class="summary-item-inner">
-							<div class="metric-icon blue">
-								<i class="fas fa-info-circle"></i>
-							</div>
-							<span class="summary-label"><?php echo $spText['common']['Info']?></span>
-							<span class="summary-value" style="font-size: 12px; line-height: 1.4;">
-								<?php echo $spTextSA['Pages with modern SEO features']?>
-							</span>
-						</div>
-					</div>
-				</div>
-			</div>
+			
 		</div>
 	</div>
 <?php

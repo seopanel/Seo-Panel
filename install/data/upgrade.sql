@@ -47,12 +47,12 @@ update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
 -- Add setting to use sample API data (saves API credits during development/testing)
 INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Use Sample API Data (for testing - saves API credits)', 'SP_USE_SAMPLE_API_DATA', '0', 'system', 'bool', 1)
-ON DUPLICATE KEY UPDATE set_label=VALUES(set_label);
+AS new_values ON DUPLICATE KEY UPDATE set_label=new_values.set_label;
 
 -- Add system-wide exclude file extensions setting for site auditor
 INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Exclude file extensions (comma-separated)', 'SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso', 'siteauditor', 'text', 1)
-ON DUPLICATE KEY UPDATE set_label=VALUES(set_label);
+AS new_values ON DUPLICATE KEY UPDATE set_label=new_values.set_label;
 
 -- Add per-project exclude extensions column
 ALTER TABLE `auditorprojects` ADD `exclude_extensions` TEXT COLLATE utf8_unicode_ci NULL AFTER `exclude_links`;
@@ -78,11 +78,14 @@ CREATE TABLE IF NOT EXISTS `auditorsitemaps` (
 --- Text DB changes
 -----------------------------
 
-INSERT IGNORE INTO texts (lang_code, category, label, content) VALUES
-('en', 'settings', 'SP_USE_SAMPLE_API_DATA', 'Use Sample API Data (for testing - saves API credits)');
+INSERT INTO texts (lang_code, category, label, content) VALUES
+('en', 'settings', 'SP_USE_SAMPLE_API_DATA', 'Use Sample API Data (for testing - saves API credits)'),
+('en', 'siteauditor', 'Sitemap URL', 'Sitemap URL'),
+('en', 'siteauditor', 'Has Backlinks', 'Has Backlinks')
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add language texts for site auditor new features
-INSERT IGNORE INTO `texts` (`lang_code`, `text_category`, `text_label`, `text_value`, `updated`) VALUES
+INSERT INTO `texts` (`lang_code`, `text_category`, `text_label`, `text_value`, `updated`) VALUES
 ('en', 'settings', 'SA_EXCLUDE_FILE_EXTENSIONS', 'Exclude file extensions (comma-separated)', NOW()),
 ('en', 'siteauditor', 'Exclude Extensions', 'Exclude Extensions', NOW()),
 ('en', 'siteauditor', 'Leave blank to use system default', 'Leave blank to use system default', NOW()),
@@ -90,7 +93,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `text_category`, `text_label`, `text_va
 ('en', 'siteauditor', 'Discovered Via', 'Discovered Via', NOW()),
 ('en', 'siteauditor', 'Sitemap Parsing', 'Sitemap Parsing', NOW()),
 ('en', 'siteauditor', 'Sitemaps Found', 'Sitemaps Found', NOW()),
-('en', 'siteauditor', 'URLs from Sitemap', 'URLs from Sitemap', NOW());
+('en', 'siteauditor', 'URLs from Sitemap', 'URLs from Sitemap', NOW())
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add Social Media language text for dashboard navigation
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -139,7 +143,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'label', 'Social Media', 'Соціальні мережі'),
 ('vn', 'label', 'Social Media', 'Mạng xã hội'),
 ('zh', 'label', 'Social Media', '社交媒体')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add Overview language text for dashboard navigation
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -188,7 +192,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'label', 'Overview', 'Огляд'),
 ('vn', 'label', 'Overview', 'Tổng quan'),
 ('zh', 'label', 'Overview', '概述')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add Social Media dashboard language texts under category 'socialmedia'
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -755,7 +759,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'socialmedia', 'No social media data available', 'Дані соціальних мереж недоступні. <a href="social_media.php">Додайте посилання на соціальні мережі</a>, щоб почати відстежувати ефективність ваших соціальних мереж.'),
 ('vn', 'socialmedia', 'No social media data available', 'Không có dữ liệu mạng xã hội. <a href="social_media.php">Thêm liên kết mạng xã hội</a> để bắt đầu theo dõi hiệu suất mạng xã hội của bạn.'),
 ('zh', 'socialmedia', 'No social media data available', '暂无社交媒体数据。<a href="social_media.php">添加社交媒体链接</a>以开始跟踪您的社交媒体表现。')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add Review dashboard language texts under category 'review'
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1228,7 +1232,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'review', 'No review data available', 'Дані відгуків недоступні. <a href="review.php">Додайте посилання на відгуки</a>, щоб почати відстежувати свої відгуки та рейтинги.'),
 ('vn', 'review', 'No review data available', 'Không có dữ liệu đánh giá. <a href="review.php">Thêm liên kết đánh giá</a> để bắt đầu theo dõi đánh giá và xếp hạng của bạn.'),
 ('zh', 'review', 'No review data available', '暂无评论数据。<a href="review.php">添加评论链接</a>以开始跟踪您的评论和评分。')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Sitemap compression and index generation features
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1333,7 +1337,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'sitemap', 'Generated sitemap files are listed below', 'Oluşturulan sitemap dosyaları aşağıda listelenmiştir'),
 ('zh', 'sitemap', 'Generated sitemap files are listed below', '生成的站点地图文件列在下面'),
 ('cn', 'sitemap', 'Generated sitemap files are listed below', '生成的站点地图文件列在下面')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Options label for common use
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1382,7 +1386,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('uk', 'common', 'Options', 'Параметри'),
 ('vn', 'common', 'Options', 'Tùy chọn'),
 ('zh', 'common', 'Options', '选项')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Exclude Extensions label for siteauditor
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1401,7 +1405,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Exclude Extensions', 'Uzantıları hariç tut'),
 ('zh', 'siteauditor', 'Exclude Extensions', '排除扩展名'),
 ('cn', 'siteauditor', 'Exclude Extensions', '排除扩展名')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Leave blank to use system default message for siteauditor
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1420,7 +1424,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Leave blank to use system default', 'Sistem varsayılanını kullanmak için boş bırakın'),
 ('zh', 'siteauditor', 'Leave blank to use system default', '留空以使用系统默认值'),
 ('cn', 'siteauditor', 'Leave blank to use system default', '留空以使用系统默认值')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Canonical URL label for siteauditor
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1439,7 +1443,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Canonical URL', 'Kanonik URL'),
 ('zh', 'siteauditor', 'Canonical URL', '规范网址'),
 ('cn', 'siteauditor', 'Canonical URL', '规范网址')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Discovered Via label for siteauditor
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1458,7 +1462,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Discovered Via', 'Keşfedildiği yol'),
 ('zh', 'siteauditor', 'Discovered Via', '发现途径'),
 ('cn', 'siteauditor', 'Discovered Via', '发现途径')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- AI Robot Compatibility label for siteauditor
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1477,7 +1481,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'AI Robot Compatibility', 'AI Robot Uyumluluğu'),
 ('zh', 'siteauditor', 'AI Robot Compatibility', 'AI机器人兼容性'),
 ('cn', 'siteauditor', 'AI Robot Compatibility', 'AI机器人兼容性')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Allowed status for AI robots
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1496,7 +1500,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Allowed', 'İzin verildi'),
 ('zh', 'siteauditor', 'Allowed', '允许'),
 ('cn', 'siteauditor', 'Allowed', '允许')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Blocked status for AI robots
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1515,7 +1519,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Blocked', 'Engellendi'),
 ('zh', 'siteauditor', 'Blocked', '已阻止'),
 ('cn', 'siteauditor', 'Blocked', '已阻止')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- AI robot allowed message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1534,7 +1538,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page allows AI robots to crawl and index content', 'Sayfa, AI robotlarının içeriği taramasına ve dizine eklemesine izin veriyor'),
 ('zh', 'siteauditor', 'The page allows AI robots to crawl and index content', '该页面允许AI机器人抓取和索引内容'),
 ('cn', 'siteauditor', 'The page allows AI robots to crawl and index content', '该页面允许AI机器人抓取和索引内容')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- AI robot blocked message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1553,7 +1557,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', 'Sayfa AI robotlarının taramasını engelliyor - AI arama görünürlüğünü sınırlayabilir'),
 ('zh', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', '该页面阻止AI机器人抓取 - 可能限制AI搜索可见性'),
 ('cn', 'siteauditor', 'The page blocks AI robots from crawling - may limit AI search visibility', '该页面阻止AI机器人抓取 - 可能限制AI搜索可见性')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Mobile Friendly label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1572,7 +1576,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Mobile Friendly', 'Mobil uyumlu'),
 ('zh', 'siteauditor', 'Mobile Friendly', '移动友好'),
 ('cn', 'siteauditor', 'Mobile Friendly', '移动友好')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- HTTPS Secure label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1591,7 +1595,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'HTTPS Secure', 'HTTPS güvenli'),
 ('zh', 'siteauditor', 'HTTPS Secure', 'HTTPS安全'),
 ('cn', 'siteauditor', 'HTTPS Secure', 'HTTPS安全')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Open Graph Tags label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1610,7 +1614,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Open Graph Tags', 'Open Graph etiketleri'),
 ('zh', 'siteauditor', 'Open Graph Tags', 'Open Graph标签'),
 ('cn', 'siteauditor', 'Open Graph Tags', 'Open Graph标签')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Twitter Cards label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1629,7 +1633,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Twitter Cards', 'Twitter kartları'),
 ('zh', 'siteauditor', 'Twitter Cards', 'Twitter卡片'),
 ('cn', 'siteauditor', 'Twitter Cards', 'Twitter卡片')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Yes label for checks
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1648,7 +1652,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Yes', 'Evet'),
 ('zh', 'siteauditor', 'Yes', '是'),
 ('cn', 'siteauditor', 'Yes', '是')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- No label for checks
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1667,7 +1671,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'No', 'Hayır'),
 ('zh', 'siteauditor', 'No', '否'),
 ('cn', 'siteauditor', 'No', '否')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Found label for social tags
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1686,7 +1690,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Found', 'Bulundu'),
 ('zh', 'siteauditor', 'Found', '找到'),
 ('cn', 'siteauditor', 'Found', '找到')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Missing label for social tags
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1705,7 +1709,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Missing', 'Eksik'),
 ('zh', 'siteauditor', 'Missing', '缺失'),
 ('cn', 'siteauditor', 'Missing', '缺失')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Mobile friendly success message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1724,7 +1728,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', 'Sayfa doğru viewport yapılandırması ile mobil uyumlu'),
 ('zh', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', '该页面具有正确的viewport配置，对移动设备友好'),
 ('cn', 'siteauditor', 'The page is mobile-friendly with proper viewport configuration', '该页面具有正确的viewport配置，对移动设备友好')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Mobile friendly error message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1743,7 +1747,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', 'Sayfa mobil uyumlu değil - modern SEO için kritik sorun'),
 ('zh', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', '该页面不适合移动设备 - 现代SEO的关键问题'),
 ('cn', 'siteauditor', 'The page is not mobile-friendly - critical issue for modern SEO', '该页面不适合移动设备 - 现代SEO的关键问题')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- HTTPS success message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1762,7 +1766,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is served over HTTPS - secure connection', 'Sayfa HTTPS üzerinden sunuluyor - güvenli bağlantı'),
 ('zh', 'siteauditor', 'The page is served over HTTPS - secure connection', '该页面通过HTTPS提供 - 安全连接'),
 ('cn', 'siteauditor', 'The page is served over HTTPS - secure connection', '该页面通过HTTPS提供 - 安全连接')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- HTTPS error message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1781,7 +1785,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', 'Sayfa güvenli değil (HTTP) - HTTPS kullanmalı'),
 ('zh', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', '该页面不安全（HTTP） - 应使用HTTPS'),
 ('cn', 'siteauditor', 'The page is not secure (HTTP) - should use HTTPS', '该页面不安全（HTTP） - 应使用HTTPS')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- OG tags success message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1800,7 +1804,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page has Open Graph tags for better social media sharing', 'Sayfa daha iyi sosyal medya paylaşımı için Open Graph etiketlerine sahip'),
 ('zh', 'siteauditor', 'The page has Open Graph tags for better social media sharing', '该页面具有Open Graph标签，可更好地在社交媒体上分享'),
 ('cn', 'siteauditor', 'The page has Open Graph tags for better social media sharing', '该页面具有Open Graph标签，可更好地在社交媒体上分享')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- OG tags error message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1819,7 +1823,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', 'Sayfada Open Graph etiketleri eksik - sosyal medya optimizasyonunu sınırlar'),
 ('zh', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', '该页面缺少Open Graph标签 - 限制社交媒体优化'),
 ('cn', 'siteauditor', 'The page is missing Open Graph tags - limits social media optimization', '该页面缺少Open Graph标签 - 限制社交媒体优化')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Twitter cards success message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1838,7 +1842,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', 'Sayfa optimize edilmiş Twitter paylaşımı için Twitter Card etiketlerine sahip'),
 ('zh', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', '该页面具有Twitter Card标签，可优化Twitter分享'),
 ('cn', 'siteauditor', 'The page has Twitter Card tags for optimized Twitter sharing', '该页面具有Twitter Card标签，可优化Twitter分享')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Twitter cards error message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1857,7 +1861,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', 'Sayfada Twitter Card etiketleri eksik - Twitter optimizasyonunu sınırlar'),
 ('zh', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', '该页面缺少Twitter Card标签 - 限制Twitter优化'),
 ('cn', 'siteauditor', 'The page is missing Twitter Card tags - limits Twitter optimization', '该页面缺少Twitter Card标签 - 限制Twitter优化')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Social Media label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1876,7 +1880,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Social Media', 'Sosyal Medya'),
 ('zh', 'siteauditor', 'Social Media', '社交媒体'),
 ('cn', 'siteauditor', 'Social Media', '社交媒体')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Pages with modern SEO features label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1895,7 +1899,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Pages with modern SEO features', 'Modern SEO özellikleri olan sayfalar'),
 ('zh', 'siteauditor', 'Pages with modern SEO features', '具有现代SEO功能的页面'),
 ('cn', 'siteauditor', 'Pages with modern SEO features', '具有现代SEO功能的页面')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Robots.txt Status label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1914,7 +1918,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Robots.txt Status', 'Robots.txt durumu'),
 ('zh', 'siteauditor', 'Robots.txt Status', 'Robots.txt状态'),
 ('cn', 'siteauditor', 'Robots.txt Status', 'Robots.txt状态')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Robots.txt Allowed label
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1933,7 +1937,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt izin verdi'),
 ('zh', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt允许'),
 ('cn', 'siteauditor', 'Robots.txt Allowed', 'Robots.txt允许')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Robots.txt allowed message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1952,7 +1956,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', 'Sayfa robots.txt tarafından izin verildi ve arama motorları tarafından taranabilir'),
 ('zh', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', '该页面被robots.txt允许，可以被搜索引擎抓取'),
 ('cn', 'siteauditor', 'The page is allowed by robots.txt and can be crawled by search engines', '该页面被robots.txt允许，可以被搜索引擎抓取')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Robots.txt blocked message
 INSERT INTO texts (lang_code, category, label, content) VALUES
@@ -1971,4 +1975,7 @@ INSERT INTO texts (lang_code, category, label, content) VALUES
 ('tr', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', 'Sayfa robots.txt tarafından engellendi - arama motorları bu sayfayı tarayamaz'),
 ('zh', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', '该页面被robots.txt阻止 - 搜索引擎无法抓取此页面'),
 ('cn', 'siteauditor', 'The page is blocked by robots.txt - search engines cannot crawl this page', '该页面被robots.txt阻止 - 搜索引擎无法抓取此页面')
-ON DUPLICATE KEY UPDATE content=VALUES(content);
+AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
+
+-- Add sitemap_url field to auditorprojects table for manual sitemap URL input
+ALTER TABLE auditorprojects ADD COLUMN sitemap_url VARCHAR(500) NULL AFTER exclude_extensions;

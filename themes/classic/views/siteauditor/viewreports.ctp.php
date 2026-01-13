@@ -18,9 +18,8 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 <ul class="nav nav-tabs nav-tabs-sm" role="tablist" style="margin-bottom: 15px;">
 	<?php foreach($reportTypes as $type => $label){?>
 		<li role="presentation" class="nav-item">
-			<a href="javascript:void(0);"
-			   class="nav-link <?php echo ($repType == $type) ? 'active' : ''?>"
-			   onclick="$('.nav-tabs .nav-link').removeClass('active'); $(this).addClass('active'); $('input[name=report_type]').val('<?php echo $type?>'); if('<?php echo $type?>' == 'rp_links') { $('.filter-row-rp_links').show(); $('.filter-row-other').hide(); } else { $('.filter-row-rp_links').hide(); $('.filter-row-other').show(); } <?php echo $submitJsFunc?>">
+			<a href="javascript:void(0);" data-value="<?php echo $type?>"
+			   class="nav-link <?php echo ($repType == $type) ? 'active' : ''?>">
 				<?php echo $label?>
 			</a>
 		</li>
@@ -49,9 +48,12 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 				<option value="1" selected><?php echo $spText['common']['Yes']?></option>
 			</select>
 		</td>
-		<th class="pl-4"><?php echo $spTextSA['Page Link']?>: </th>
-		<td>
+		<th class="pl-4 search_box" style="display: <?php echo ($repType != 'rp_summary') ? '' : 'none'; ?>"><?php echo $spTextSA['Page Link']?>: </th>
+		<td class="search_box" style="display: <?php echo ($repType != 'rp_summary') ? '' : 'none'; ?>">
 			<input type="text" name="page_url" value="" onblur="<?php echo $submitJsFunc?>" class="form-control">
+		</td>
+		<td>
+			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
 		</td>
 	</tr>
 	<tr class="filter-row-rp_links" style="display: <?php echo ($repType == 'rp_links') ? 'table-row' : 'none'; ?>">
@@ -119,17 +121,33 @@ $submitJsFunc = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent'
 			</select>
 		</td>
 		<td colspan="4"></td>
-		<td style="text-align: center;">
-			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
-		</td>
-	</tr>
-	<tr class="filter-row-other" style="display: <?php echo ($repType != 'rp_links') ? 'table-row' : 'none'; ?>">
-		<td colspan="6" style="text-align: center;">
-			<a href="javascript:void(0);" onclick="<?php echo $submitJsFunc?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
-		</td>
 	</tr>
 </table>
 </form>
 <div id='subcontent'>
 	<script><?php echo $submitJsFunc?></script>
 </div>
+
+<script type="text/javascript">
+// Handle nav tabs clicks
+$(document).on('click', '.nav-tabs .nav-link', function () {
+	$('.nav-tabs .nav-link').removeClass('active');
+	$(this).addClass('active');
+	var rpType = $(this).data('value');
+	$('input[name=report_type]').val(rpType);
+	
+	if(rpType == 'rp_links') {
+		$('.filter-row-rp_links').show();
+	} else { 
+		$('.filter-row-rp_links').hide();
+	}
+	
+	if(rpType == 'rp_summary') {
+		$('.search_box').hide();
+	} else {
+		$('.search_box').show();
+	}
+	
+	<?php echo $submitJsFunc?>
+});
+</script>
