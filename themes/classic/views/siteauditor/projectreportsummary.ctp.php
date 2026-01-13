@@ -594,7 +594,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     								<?php echo number_format($projectInfo['google_backlinks'])?>
     							</a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_backlinks=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -619,7 +619,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     								<?php echo number_format($indexedCount)?>
     							</a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -644,7 +644,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['mobile_friendly'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&mobile_friendly=1')"><?php echo number_format($projectInfo['mobile_friendly'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&mobile_friendly=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -661,7 +661,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['https_secure'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&https_secure=1')"><?php echo number_format($projectInfo['https_secure'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&https_secure=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -678,7 +678,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['ai_robot_allowed'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&ai_robot_allowed=1')"><?php echo number_format($projectInfo['ai_robot_allowed'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&ai_robot_allowed=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -708,7 +708,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['has_og_tags'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_og_tags=1')"><?php echo number_format($projectInfo['has_og_tags'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_og_tags=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -725,7 +725,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['has_twitter_cards'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_twitter_cards=1')"><?php echo number_format($projectInfo['has_twitter_cards'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_twitter_cards=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -742,7 +742,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<?php if ($projectInfo['allowed_by_robots'] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&allowed_by_robots=1')"><?php echo number_format($projectInfo['allowed_by_robots'])?></a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">Not found</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&allowed_by_robots=1')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -773,7 +773,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     								<?php echo number_format($notIndexedCount)?>
     							</a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">None</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -793,7 +793,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     								<?php echo number_format($projectInfo['brocken'])?>
     							</a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">None</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -812,7 +812,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     								<?php echo number_format($projectInfo['no_backlinks'])?>
     							</a>
 							<?php else: ?>
-								<span style="color: #999; font-size: 11px;">None</span>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&no_backlinks=1')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -845,7 +845,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 								<?php if ($projectInfo["duplicate_".$col] > 0): ?>
 								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')"><?php echo number_format($projectInfo["duplicate_".$col])?></a>
 								<?php else: ?>
-									<span style="color: #999; font-size: 11px;">None</span>
+									<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>&')" style="color: #999; font-size: 11px;">None</a>
 								<?php endif; ?>
 							</span>
 						</div>
