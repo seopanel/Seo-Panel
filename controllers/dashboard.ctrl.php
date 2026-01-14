@@ -891,5 +891,134 @@ class DashboardController extends Controller {
         return $results ? $results : [];
     }
 
+    function showSiteAuditorDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextSA = $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']);
+        $this->set('spTextSA', $spTextSA);
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+
+        // Get user's Site Auditor projects
+        $siteAuditorCtrl = New SiteauditorController();
+        $whereClause = isAdmin() ? "" : " and w.user_id=$userId";
+        $projectList = $siteAuditorCtrl->getAllProjects($whereClause);
+
+        if (empty($projectList)) {
+            $this->set('noProjects', true);
+            $this->render('dashboard/siteauditor_main');
+            return;
+        }
+
+        $this->set('projectList', $projectList);
+
+        // Get selected project ID
+        $projectId = isset($info['project_id']) ? intval($info['project_id']) : $projectList[0]['id'];
+        $this->set('projectId', $projectId);
+
+        // Get project info
+        $projectInfo = $siteAuditorCtrl->__getProjectInfo($projectId);
+        if (empty($projectInfo)) {
+            $this->set('noProjects', true);
+            $this->render('dashboard/siteauditor_main');
+            return;
+        }
+
+        // Get project statistics
+        $projectInfo['total_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id']);
+        $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
+        $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
+
+        // Status check for crawled filter
+        $statusCheck = false;
+        $statusVal = 0;
+        $crawledVal = isset($info['crawled']) ? $info['crawled'] : 1;
+        if(isset($info['crawled']) && ($info['crawled'] != -1)) {
+            $statusCheck = true;
+            $statusVal = intval($info['crawled']);
+        }
+        $this->set('crawled', $crawledVal);
+
+        // Broken links
+        $conditions = " and brocken=1";
+        $projectInfo['brocken'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Backlinks
+        $seArr = ['google'];
+        foreach ($seArr as $se) {
+            $conditions = " and $se"."_backlinks>0";
+            $projectInfo[$se."_backlinks"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        }
+
+        // No backlinks
+        $conditions = " and google_backlinks=0";
+        $projectInfo['no_backlinks'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Indexed status
+        foreach ($seArr as $se) {
+            $conditions = " and $se"."_indexed>0";
+            $projectInfo[$se."_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+            $conditions = " and $se"."_indexed=0";
+            $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        }
+
+        // Bing indexed
+        $conditions = " and bing_indexed>0";
+        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and bing_indexed=0";
+        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Duplicate meta info
+        $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
+        $auditorComp = $siteAuditorCtrl->createComponent('AuditorComponent');
+        foreach ($metaArr as $meta => $val) {
+            $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
+        }
+
+        // Modern SEO features
+        $conditions = " and mobile_friendly=1";
+        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and https_secure=1";
+        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and ai_robot_allowed=1";
+        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and has_og_tags=1";
+        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and has_twitter_cards=1";
+        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and blocked_by_robots=0";
+        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Page Authority metrics
+        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+        $conditions = " and page_authority >= $paLevelSecond";
+        $projectInfo['pa_excellent'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+        $projectInfo['pa_good'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
+        $projectInfo['pa_low'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority = 0";
+        $projectInfo['pa_none'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $this->set('projectInfo', $projectInfo);
+        $this->set('metaArr', $metaArr);
+        $this->set('seArr', $seArr);
+
+        $this->render('dashboard/siteauditor_main');
+    }
+
 }
 ?>

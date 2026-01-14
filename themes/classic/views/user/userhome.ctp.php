@@ -7,6 +7,7 @@
         $mainTabClass = "";
         $smTabView = "";
         $rvTabView = "";
+        $saTabView = "";
 
         if (!empty($custSubMenu)) {
             $ovTabView = "active";
@@ -22,6 +23,10 @@
 
                 case "reviews":
                     $rvTabView = "active";
+                    break;
+
+                case "site_auditor":
+                    $saTabView = "active";
                     break;
 
                 default:
@@ -44,6 +49,11 @@
             <li class="nav-item">
             	<a class="nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');">
             		<i class="fas fa-key"></i> <?php echo $spText['common']['Keywords']?>
+            	</a>
+            </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $saTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=site_auditor" onclick="return navigateDashboardTab(this, 'site_auditor');">
+            		<i class="fas fa-search"></i> <?php echo $spTextTools['Site Auditor'] ?? 'Site Auditor'?>
             	</a>
             </li>
             <li class="nav-item">
@@ -71,6 +81,8 @@
                		scriptDoLoad('social_media_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } elseif ($rvTabView == "active") {?>
                		scriptDoLoad('review_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($saTabView == "active") {?>
+               		scriptDoLoad('siteauditor_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } else {?>
                		scriptDoLoad('dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php }?>

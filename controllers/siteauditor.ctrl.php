@@ -654,6 +654,85 @@ class SiteAuditorController extends Controller{
 			$sql .= " and google_backlinks>0";
 		}
 
+		// check for backlinks filter (from dropdown)
+		if(!empty($data['backlinks_filter'])) {
+			$blFilter = addslashes($data['backlinks_filter']);
+			$filter .= "&backlinks_filter=$blFilter";
+			if($blFilter == 'has') {
+				$sql .= " and google_backlinks > 0";
+			} else if($blFilter == 'no') {
+				$sql .= " and google_backlinks = 0";
+			}
+		}
+
+		// check for indexed filter (from dropdown)
+		if(!empty($data['indexed_filter'])) {
+			$idxFilter = addslashes($data['indexed_filter']);
+			$filter .= "&indexed_filter=$idxFilter";
+			switch($idxFilter) {
+				case 'google_yes':
+					$sql .= " and google_indexed = 1";
+					break;
+				case 'google_no':
+					$sql .= " and google_indexed = 0";
+					break;
+				case 'bing_yes':
+					$sql .= " and bing_indexed = 1";
+					break;
+				case 'bing_no':
+					$sql .= " and bing_indexed = 0";
+					break;
+			}
+		}
+
+		// Page Authority filters
+		$paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+		$paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+		// check for PA type filter (from dropdown)
+		if(!empty($data['pa_type'])) {
+			$paType = addslashes($data['pa_type']);
+			$filter .= "&pa_type=$paType";
+			switch($paType) {
+				case 'excellent':
+					$sql .= " and page_authority >= $paLevelSecond";
+					break;
+				case 'good':
+					$sql .= " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+					break;
+				case 'low':
+					$sql .= " and page_authority > 0 and page_authority < $paLevelFirst";
+					break;
+				case 'none':
+					$sql .= " and page_authority = 0";
+					break;
+			}
+		}
+
+		// check for excellent PA (>=75) - for card links
+		if(isset($data['pa_excellent']) && ($data['pa_excellent'] != -1) ) {
+			$filter .= "&pa_excellent=1";
+			$sql .= " and page_authority >= $paLevelSecond";
+		}
+
+		// check for good PA (>=40 and <75) - for card links
+		if(isset($data['pa_good']) && ($data['pa_good'] != -1) ) {
+			$filter .= "&pa_good=1";
+			$sql .= " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+		}
+
+		// check for low PA (>0 and <40) - for card links
+		if(isset($data['pa_low']) && ($data['pa_low'] != -1) ) {
+			$filter .= "&pa_low=1";
+			$sql .= " and page_authority > 0 and page_authority < $paLevelFirst";
+		}
+
+		// check for no PA (=0) - for card links
+		if(isset($data['pa_none']) && ($data['pa_none'] != -1) ) {
+			$filter .= "&pa_none=1";
+			$sql .= " and page_authority = 0";
+		}
+
 		// check for mobile friendly
 		if(isset($data['mobile_friendly']) && ($data['mobile_friendly'] != -1) ) {
 		    $data['mobile_friendly'] = intval($data['mobile_friendly']);
@@ -741,7 +820,7 @@ class SiteAuditorController extends Controller{
 		    'comments' => $_SESSION['text']['label']['Comments'],
         );
 		
-		if ($exportVersion) {			
+		if ($exportVersion) {
 			$spText = $_SESSION['text'];
 			$exportContent = createExportContent(array('', $this->spTextSA["Link Reports"], ''));
 			$exportContent .= createExportContent(array());
@@ -750,19 +829,69 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Updated'], $projectInfo['last_updated']));
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Total Results'], $this->db->noRows));
 			$exportContent .= createExportContent(array());
-			$exportContent .= createExportContent(array($spText['common']['No'],$headArr['page_url'],$headArr['page_authority'],$headArr['google_backlinks'],$headArr['google_indexed'],$headArr['bing_indexed'],$headArr['external_links'],$headArr['total_links'],$headArr['score'],$headArr['brocken'],$headArr['crawled'],$headArr['page_title'],$headArr['page_description'],$headArr['page_keywords'],$headArr['comments']));
+			$exportContent .= createExportContent(array(
+				$spText['common']['No'],
+				$headArr['page_url'],
+				$headArr['page_authority'],
+				$headArr['google_backlinks'],
+				$headArr['google_indexed'],
+				$headArr['bing_indexed'],
+				'Robots Allowed',
+				'AI Bot Allowed',
+				'Mobile Friendly',
+				'HTTPS Secure',
+				'OG Tags',
+				'Twitter Cards',
+				$headArr['external_links'],
+				$headArr['total_links'],
+				$headArr['score'],
+				$headArr['brocken'],
+				$headArr['crawled'],
+				$headArr['page_title'],
+				$headArr['page_description'],
+				$headArr['page_keywords'],
+				$headArr['comments']
+			));
 			$auditorComp = $this->createComponent('AuditorComponent');
-			foreach($reportList as $i => $listInfo) {			    
-			    if ($listInfo['crawled']) {			        
+			foreach($reportList as $i => $listInfo) {
+			    if ($listInfo['crawled']) {
 			        $auditorComp->countReportPageScore($listInfo);
 			        $comments = strip_tags(implode("\n", $auditorComp->commentInfo));
 			    } else {
 			        $comments = "";
-			    }			    
+			    }
 			    $listInfo['crawled'] = $listInfo['crawled'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['brocken'] = $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
-				$exportContent .= createExportContent(array($i+1, $listInfo['page_url'],$listInfo['page_authority'],$listInfo['google_backlinks'],$listInfo['google_indexed'],$listInfo['bing_indexed'],$listInfo['external_links'],$listInfo['total_links'],$listInfo['score'],$listInfo['brocken'],$listInfo['crawled'],$listInfo['page_title'],$listInfo['page_description'],$listInfo['page_keywords'],$comments));
-			}			
+			    $listInfo['robots_allowed'] = !$listInfo['blocked_by_robots'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['ai_robot_allowed'] = $listInfo['ai_robot_allowed'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['mobile_friendly'] = $listInfo['mobile_friendly'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['https_secure'] = $listInfo['https_secure'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['has_og_tags'] = $listInfo['has_og_tags'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['has_twitter_cards'] = $listInfo['has_twitter_cards'] ? $spText['common']['Yes'] : $spText['common']['No'];
+				$exportContent .= createExportContent(array(
+					$i+1,
+					$listInfo['page_url'],
+					$listInfo['page_authority'],
+					$listInfo['google_backlinks'],
+					$listInfo['google_indexed'],
+					$listInfo['bing_indexed'],
+					$listInfo['robots_allowed'],
+					$listInfo['ai_robot_allowed'],
+					$listInfo['mobile_friendly'],
+					$listInfo['https_secure'],
+					$listInfo['has_og_tags'],
+					$listInfo['has_twitter_cards'],
+					$listInfo['external_links'],
+					$listInfo['total_links'],
+					$listInfo['score'],
+					$listInfo['brocken'],
+					$listInfo['crawled'],
+					$listInfo['page_title'],
+					$listInfo['page_description'],
+					$listInfo['page_keywords'],
+					$comments
+				));
+			}
 			exportToCsv('siteauditor_report', $exportContent);
 		} else {					
 			$this->set('totalResults', $this->db->noRows);					
@@ -863,6 +992,22 @@ class SiteAuditorController extends Controller{
 	    $conditions = " and blocked_by_robots=0";
 	    $projectInfo['allowed_by_robots'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 
+	    // Page Authority metrics based on thresholds
+	    $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+	    $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+	    $conditions = " and page_authority >= $paLevelSecond";
+	    $projectInfo['pa_excellent'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+	    $projectInfo['pa_good'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
+	    $projectInfo['pa_low'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority = 0";
+	    $projectInfo['pa_none'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
 	    $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 	    $this->set('spTextHome', $spTextHome);	    
 	    
@@ -898,6 +1043,12 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($this->spTextSA['Open Graph Tags'], $projectInfo['has_og_tags']));
 			$exportContent .= createExportContent(array($this->spTextSA['Twitter Cards'], $projectInfo['has_twitter_cards']));
 			$exportContent .= createExportContent(array($this->spTextSA['Robots.txt Allowed'], $projectInfo['allowed_by_robots']));
+
+			// Export Page Authority metrics
+			$exportContent .= createExportContent(array('Excellent Page Authority (>=75)', $projectInfo['pa_excellent']));
+			$exportContent .= createExportContent(array('Good Page Authority (40-74)', $projectInfo['pa_good']));
+			$exportContent .= createExportContent(array('Low Page Authority (1-39)', $projectInfo['pa_low']));
+			$exportContent .= createExportContent(array('No Page Authority (0)', $projectInfo['pa_none']));
 
 			exportToCsv('siteauditor_report_summary', $exportContent);
 		} else {

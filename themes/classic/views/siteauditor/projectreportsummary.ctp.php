@@ -14,6 +14,127 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
 
+	// PDF/Print content
+	$paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+	$paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+	?>
+	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
+		<tr style="background:#f5f5f5;">
+			<td colspan="4" style="border-bottom:1px solid #B0C2CC;font-weight:bold;font-size:16px;padding:10px;">
+				<?php echo $spTextSA['Project Summary']?>
+			</td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;width:25%;"><strong><?php echo $spTextSA['Project Url']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;" colspan="3"><?php echo $projectInfo['url']?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Updated']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['last_updated']?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Score']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['score']?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Maximum Pages']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['max_links'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Pages Found']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['total_links'])?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Crawled Pages']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;" colspan="3"><?php echo number_format($projectInfo['crawled_links'])?></td>
+		</tr>
+	</table>
+
+	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
+		<tr style="background:#f5f5f5;">
+			<td colspan="4" style="border-bottom:1px solid #B0C2CC;font-weight:bold;font-size:16px;padding:10px;">
+				SEO Metrics
+			</td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;width:25%;"><strong><?php echo $spTextSA['Excellent Page Authority'] ?? 'Excellent Page Authority'?> (&ge;<?php echo $paLevelSecond?>):</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['pa_excellent'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Good Page Authority'] ?? 'Good Page Authority'?> (<?php echo $paLevelFirst?>-<?php echo $paLevelSecond-1?>):</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['pa_good'])?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Low Page Authority'] ?? 'Low Page Authority'?> (1-<?php echo $paLevelFirst-1?>):</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['pa_low'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['No Page Authority'] ?? 'No Page Authority'?> (0):</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['pa_none'])?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Has Backlinks']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['google_backlinks'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong>No Backlinks:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['no_backlinks'])?></td>
+		</tr>
+		<?php foreach ($seArr as $se) { ?>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo[$se."_indexed"])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo ucfirst($se)?> Not Indexed:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo[$se."_not_indexed"])?></td>
+		</tr>
+		<?php } ?>
+	</table>
+
+	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
+		<tr style="background:#f5f5f5;">
+			<td colspan="4" style="border-bottom:1px solid #B0C2CC;font-weight:bold;font-size:16px;padding:10px;">
+				<?php echo $spTextSA['Modern SEO Features'] ?? 'Modern SEO Features'?>
+			</td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;width:25%;"><strong><?php echo $spTextSA['Mobile Friendly']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['mobile_friendly'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['HTTPS Secure']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['https_secure'])?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['AI Robot Compatibility']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['ai_robot_allowed'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Open Graph Tags']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['has_og_tags'])?></td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Twitter Cards']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['has_twitter_cards'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Robots.txt Allowed'] ?? 'Robots.txt Allowed'?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['allowed_by_robots'])?></td>
+		</tr>
+	</table>
+
+	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
+		<tr style="background:#f5f5f5;">
+			<td colspan="4" style="border-bottom:1px solid #B0C2CC;font-weight:bold;font-size:16px;padding:10px;">
+				Areas for Improvement
+			</td>
+		</tr>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;width:25%;"><strong><?php echo $spText['label']['Brocken']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['brocken'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong>No Backlinks:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['no_backlinks'])?></td>
+		</tr>
+	</table>
+
+	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
+		<tr style="background:#f5f5f5;">
+			<td colspan="4" style="border-bottom:1px solid #B0C2CC;font-weight:bold;font-size:16px;padding:10px;">
+				Meta Information
+			</td>
+		</tr>
+		<?php foreach ($metaArr as $meta => $val) { ?>
+		<tr>
+			<td style="border-bottom:1px solid #ddd;width:25%;"><strong>Duplicate <?php echo $val?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;" colspan="3"><?php echo number_format($projectInfo["duplicate_".$meta])?></td>
+		</tr>
+		<?php } ?>
+	</table>
+	<?php
+
 } else {
 ?>
 <style>
@@ -579,7 +700,87 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     		<!-- SEO Metrics Section -->
     		<div class="summary-section">
     			<div class="summary-section-title"><i class="fas fa-chart-bar"></i> SEO Metrics</div>
+    			<!-- Page Authority Row -->
     			<div class="summary-row">
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon green">
+    							<i class="fas fa-trophy"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spTextSA['Excellent Page Authority'] ?? 'Excellent Page Authority'; ?> (&ge;75)</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['pa_excellent'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=excellent')">
+    								<?php echo number_format($projectInfo['pa_excellent'])?>
+    							</a>
+							<?php else: ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=excellent')" style="color: #999; font-size: 11px;">Not found</a>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon blue">
+    							<i class="fas fa-thumbs-up"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spTextSA['Good Page Authority'] ?? 'Good Page Authority'; ?> (40-74)</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['pa_good'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=good')">
+    								<?php echo number_format($projectInfo['pa_good'])?>
+    							</a>
+							<?php else: ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=good')" style="color: #999; font-size: 11px;">Not found</a>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon orange">
+    							<i class="fas fa-exclamation-circle"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spTextSA['Low Page Authority'] ?? 'Low Page Authority'; ?> (1-39)</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['pa_low'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=low')">
+    								<?php echo number_format($projectInfo['pa_low'])?>
+    							</a>
+							<?php else: ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=low')" style="color: #999; font-size: 11px;">Not found</a>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    				<div class="summary-item-quarter">
+    					<div class="summary-item-inner">
+							<div class="metric-header">
+    						<div class="metric-icon <?php echo $projectInfo['pa_none'] > 0 ? 'orange' : 'green'; ?>">
+    							<i class="fas fa-times-circle"></i>
+    						</div>
+    						<span class="summary-label"><?php echo $spTextSA['No Page Authority'] ?? 'No Page Authority'; ?> (0)</span>
+							</div>
+    						<span class="summary-value">
+							<?php if ($projectInfo['pa_none'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=none')">
+    								<?php echo number_format($projectInfo['pa_none'])?>
+    							</a>
+							<?php else: ?>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=none')" style="color: #999; font-size: 11px;">None</a>
+							<?php endif; ?>
+    						</span>
+    					</div>
+    				</div>
+    			</div>
+    			<!-- Backlinks and Indexed Row -->
+    			<div class="summary-row" style="margin-top: 10px;">
     				<div class="summary-item-quarter">
     					<div class="summary-item-inner">
 							<div class="metric-header">
@@ -590,11 +791,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							</div>
     						<span class="summary-value">
 							<?php if ($projectInfo['google_backlinks'] > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_backlinks=1')">
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=has')">
     								<?php echo number_format($projectInfo['google_backlinks'])?>
     							</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_backlinks=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=has')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -615,11 +816,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							</div>
     						<span class="summary-value">
 							<?php if ($indexedCount > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')">
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')">
     								<?php echo number_format($indexedCount)?>
     							</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -686,19 +887,6 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<div class="summary-item-quarter">
 					<div class="summary-item-inner">
 						<div class="metric-header">
-						<div class="metric-icon purple">
-							<i class="fas fa-share-alt"></i>
-						</div>
-						<span class="summary-label"><?php echo $spTextSA['Social Media']?></span>
-						</div>
-						<span class="summary-value"><?php echo number_format($projectInfo['has_og_tags'] + $projectInfo['has_twitter_cards'])?></span>
-					</div>
-				</div>
-			</div>
-			<div class="summary-row">
-				<div class="summary-item-quarter">
-					<div class="summary-item-inner">
-						<div class="metric-header">
 						<div class="metric-icon <?php echo $projectInfo['has_og_tags'] > 0 ? 'blue' : 'orange'; ?>">
 							<i class="fab fa-facebook"></i>
 						</div>
@@ -713,6 +901,8 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 						</span>
 					</div>
 				</div>
+			</div>
+			<div class="summary-row" style="margin-top: 10px;">
 				<div class="summary-item-quarter">
 					<div class="summary-item-inner">
 						<div class="metric-header">
@@ -769,11 +959,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							</div>
     						<span class="summary-value">
 							<?php if ($notIndexedCount > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')">
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')">
     								<?php echo number_format($notIndexedCount)?>
     							</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&<?php echo $se?>_indexed=0')" style="color: #999; font-size: 11px;">None</a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>
@@ -808,11 +998,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							</div>
     						<span class="summary-value">
 							<?php if ($projectInfo['no_backlinks'] > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&no_backlinks=1')">
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=no')">
     								<?php echo number_format($projectInfo['no_backlinks'])?>
     							</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&no_backlinks=1')" style="color: #999; font-size: 11px;">None</a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=no')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>

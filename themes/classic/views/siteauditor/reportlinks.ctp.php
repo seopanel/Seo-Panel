@@ -1,3 +1,18 @@
+<?php
+$borderCollapseVal = "";
+$hrefAction = 'href="javascript:void(0)"';
+
+if(!empty($pdfVersion) || !empty($printVersion)) {
+	// if pdf report to be generated
+	if ($pdfVersion) {
+		showPdfHeader($spTextTools['Auditor Reports']);
+		$borderCollapseVal = "border-collapse: collapse;";
+		$hrefAction = "";
+	} else {
+		showPrintHeader($spTextTools['Auditor Reports']);
+	}
+} else {
+?>
 <style>
 .report-info-card {
 	background: #fff;
@@ -187,18 +202,6 @@
 		<span class="report-info-label"><i class="fas fa-list"></i> <?php echo $spText['label']['Total Results']?>:</span>
 		<span class="report-info-value"><strong><?php echo $totalResults?></strong></span>
 	</div>
-<?php
-if(!empty($pdfVersion) || !empty($printVersion)) {
-	// if pdf report to be generated
-	if ($pdfVersion) {
-		showPdfHeader($spTextTools['Auditor Reports']);
-		$borderCollapseVal = "border-collapse: collapse;";
-		$hrefAction = "";
-	} else {
-		showPrintHeader($spTextTools['Auditor Reports']);
-	}
-} else {
-    ?>
 	<div style="float: right; margin-top: -10px;">
 		<?php
 		$mainLink = SP_WEBPATH."/siteauditor.php?project_id=$projectId&pageno=$pageNo"."$filter";
@@ -208,12 +211,10 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		showExportDiv($pdfLink, $csvLink, $printLink);
 		?>
 	</div>
-<?php }?>
 </div>
+<?php } ?>
 
 <?php
-$borderCollapseVal = "";
-$hrefAction = 'href="javascript:void(0)"';
 $mainLink = SP_WEBPATH."/siteauditor.php?project_id=$projectId&pageno=$pageNo"."$filter";
 foreach ($headArr as $col => $val) {
     $linkName = $col."Link";
@@ -227,6 +228,78 @@ foreach ($headArr as $col => $val) {
 
     $$linkName = "<a id='sortLink' class='$linkClass' href='javascript:void(0)' onclick=\"scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&order_col=$col&order_val=$oVal')\">$val</a>";
 }
+
+// PDF/Print version - simple table
+if(!empty($pdfVersion) || !empty($printVersion)) {
+?>
+<table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; margin-bottom: 15px;">
+	<tr style="background: #f5f5f5;">
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; font-weight: bold; padding: 10px;">
+			<?php echo $spTextSA['Project Url']?>: <?php echo $projectInfo['url']?>
+		</td>
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
+			<?php echo $spText['label']['Updated']?>: <?php echo $projectInfo['last_updated']?>
+		</td>
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
+			<?php echo $spText['label']['Total Results']?>: <?php echo $totalResults?>
+		</td>
+	</tr>
+</table>
+<table width="100%" cellpadding="4" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; font-size: 11px;">
+	<thead>
+		<tr style="background: #f5f5f5;">
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Page URL</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">PA</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Backlinks</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Google</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Bing</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Robots</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">AI</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Mobile</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">HTTPS</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">OG</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Twitter</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Score</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Broken</th>
+		</tr>
+	</thead>
+	<tbody>
+	<?php
+	if(count($list) > 0){
+		foreach($list as $i => $listInfo){
+			$yesText = $spText['common']['Yes'];
+			$noText = $spText['common']['No'];
+			?>
+			<tr>
+				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo $listInfo['page_url']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['page_authority']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_backlinks']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_indexed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['bing_indexed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo !$listInfo['blocked_by_robots'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['ai_robot_allowed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['mobile_friendly'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['https_secure'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_og_tags'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_twitter_cards'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><strong><?php echo $listInfo['score']?></strong></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['brocken'] ? $yesText : $noText?></td>
+			</tr>
+			<?php
+		}
+	} else {
+		?>
+		<tr>
+			<td colspan="13" style="border: 1px solid #ddd; padding: 20px; text-align: center;"><?php echo $spText['common']['No Records Found']?></td>
+		</tr>
+		<?php
+	}
+	?>
+	</tbody>
+</table>
+<?php
+} else {
+// Web version
 ?>
 
 <?php echo $pagingDiv;?>
@@ -351,11 +424,6 @@ foreach ($headArr as $col => $val) {
 		</tbody>
 	</table>
 </div>
-<?php
-if(!empty($printVersion) || !empty($pdfVersion)) {
-	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
-} else if(empty($printVersion)) {
-    ?>
     <table class="actionSec mt-2">
     	<tr>
         	<td>
@@ -365,5 +433,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
         	</td>
     	</tr>
     </table>
-	<?php 
-}?>
+<?php
+} // end of web version else block
+
+// Show footer for PDF/Print
+if(!empty($printVersion) || !empty($pdfVersion)) {
+	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
+}
+?>
