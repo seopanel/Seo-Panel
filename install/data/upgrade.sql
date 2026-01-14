@@ -1979,3 +1979,9 @@ AS new_values ON DUPLICATE KEY UPDATE content=new_values.content;
 
 -- Add sitemap_url field to auditorprojects table for manual sitemap URL input
 ALTER TABLE auditorprojects ADD COLUMN sitemap_url VARCHAR(500) NULL AFTER exclude_extensions;
+
+-- Update social media dashboard links to use seo-tools.php
+UPDATE texts SET content = REPLACE(content, 'href="social_media.php"', 'href="seo-tools.php?menu_sec=sm-checker"') WHERE label = 'No social media data available';
+
+-- Update review manager dashboard links to use seo-tools.php
+UPDATE texts SET content = REPLACE(content, 'href="review.php"', 'href="seo-tools.php?menu_sec=review-manager"') WHERE label = 'No review data available';

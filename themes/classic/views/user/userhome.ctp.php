@@ -115,6 +115,10 @@ function getCurrentWebsiteId() {
     else if ($('#review_dashboard_form select[name="website_id"]').length) {
         websiteId = $('#review_dashboard_form select[name="website_id"]').val();
     }
+    // Try to get from site auditor dashboard form
+    else if ($('#siteauditor_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#siteauditor_dashboard_form select[name="website_id"]').val();
+    }
     // Try to get from URL parameter
     else {
         var urlParams = new URLSearchParams(window.location.search);

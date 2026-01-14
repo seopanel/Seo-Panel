@@ -901,30 +901,35 @@ class DashboardController extends Controller {
         $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
         $this->set('spTextHome', $spTextHome);
 
-        // Get user's Site Auditor projects
+        // Get user websites (same as other dashboard tabs)
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noProjects', true);
+            $this->render('dashboard/siteauditor_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Get Site Auditor project for selected website
         $siteAuditorCtrl = New SiteauditorController();
-        $whereClause = isAdmin() ? "" : " and w.user_id=$userId";
-        $projectList = $siteAuditorCtrl->getAllProjects($whereClause);
+        $sql = "SELECT ap.*, w.url, w.name FROM auditorprojects ap, websites w
+                WHERE w.id = ap.website_id AND ap.website_id = $websiteId AND ap.status = 1 LIMIT 1";
+        $projectInfo = $this->db->select($sql, true);
 
-        if (empty($projectList)) {
-            $this->set('noProjects', true);
-            $this->render('dashboard/siteauditor_main');
-            return;
-        }
-
-        $this->set('projectList', $projectList);
-
-        // Get selected project ID
-        $projectId = isset($info['project_id']) ? intval($info['project_id']) : $projectList[0]['id'];
-        $this->set('projectId', $projectId);
-
-        // Get project info
-        $projectInfo = $siteAuditorCtrl->__getProjectInfo($projectId);
         if (empty($projectInfo)) {
-            $this->set('noProjects', true);
+            $this->set('noProjectForWebsite', true);
+            $this->set('selectedWebsiteId', $websiteId);
             $this->render('dashboard/siteauditor_main');
             return;
         }
+
+        $projectId = $projectInfo['id'];
+        $this->set('projectId', $projectId);
 
         // Get project statistics
         $projectInfo['total_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id']);

@@ -383,4 +383,28 @@ function drawReviewComparisonChart() {
 	chart.draw(data, options);
 	<?php } ?>
 }
+
+// Sync website selection with other tabs
+$(document).ready(function() {
+	if (sessionStorage.getItem('sp_review_auto_loading')) {
+		sessionStorage.removeItem('sp_review_auto_loading');
+		return;
+	}
+
+	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
+	var currentWebsiteId = '<?php echo $websiteId?>';
+
+	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
+		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
+			$('#website_id').val(storedWebsiteId);
+			sessionStorage.setItem('sp_review_auto_loading', '1');
+			scriptDoLoadPost('review_dashboard.php', 'review_dashboard_form', 'content');
+			return;
+		}
+	}
+
+	if (currentWebsiteId) {
+		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
+	}
+});
 </script>

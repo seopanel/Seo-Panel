@@ -25,6 +25,7 @@ checkLoggedIn();
 
 include_once(SP_CTRLPATH."/dashboard.ctrl.php");
 include_once(SP_CTRLPATH."/siteauditor.ctrl.php");
+include_once(SP_CTRLPATH."/website.ctrl.php");
 $controller = New DashboardController();
 $controller->layout = __assign($_REQUEST, 'layout', 'ajax');
 

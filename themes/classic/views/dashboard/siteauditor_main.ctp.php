@@ -1,12 +1,38 @@
 <?php if (!empty($noProjects)) { ?>
 <div class="alert alert-warning mt-4">
 	<i class="fas fa-exclamation-triangle"></i>
-	<?php echo $spTextSA['No active projects found'] ?? 'No active Site Auditor projects found.'?>
-	<a href="<?php echo SP_WEBPATH?>/siteauditor.php?sec=newproject" class="alert-link"><?php echo $spTextSA['Create a new project'] ?? 'Create a new project'?></a>
+	<?php echo $spText['common']['nowebsites'] ?? 'No websites found.'?>
+</div>
+<?php } elseif (!empty($noProjectForWebsite)) { ?>
+<form id='siteauditor_dashboard_form' method="post">
+<table class="search">
+	<tr>
+		<th><?php echo $spText['common']['Website']?>: </th>
+		<td>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $selectedWebsiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+					<?php }else{?>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+					<?php }?>
+				<?php }?>
+			</select>
+		</td>
+	</tr>
+</table>
+</form>
+<div class="alert alert-warning mt-4">
+	<i class="fas fa-exclamation-triangle"></i>
+	<?php echo $spTextSA['No active projects found'] ?? 'No Site Auditor project found for this website.'?>
+	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=newproject')?>" class="alert-link"><?php echo $spTextSA['Create a new project'] ?? 'Create a new project'?></a>
 </div>
 <?php } else {
 $crawledVal = isset($crawled) ? $crawled : 1;
-$hrefAction = 'href="javascript:void(0)"';
+// Helper function to generate seo-tools.php URL with encoded args
+function saToolsUrl($args) {
+	return SP_WEBPATH . '/seo-tools.php?menu_sec=site-auditor&default_args=' . urlencode($args);
+}
 ?>
 <style>
 @keyframes fadeInUp {
@@ -351,14 +377,14 @@ $hrefAction = 'href="javascript:void(0)"';
 <form id='siteauditor_dashboard_form' method="post">
 <table class="search">
 	<tr>
-		<th><?php echo $spText['label']['Project'] ?? 'Project'?>: </th>
+		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="project_id" id="sa_project_id" onchange="saveSAProjectId(); scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="custom-select">
-				<?php foreach($projectList as $project){?>
-					<?php if($project['id'] == $projectId){?>
-						<option value="<?php echo $project['id']?>" data-website-id="<?php echo $project['website_id']?>" selected><?php echo $project['name']?></option>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $websiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
 					<?php }else{?>
-						<option value="<?php echo $project['id']?>" data-website-id="<?php echo $project['website_id']?>"><?php echo $project['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
 					<?php }?>
 				<?php }?>
 			</select>
@@ -375,7 +401,7 @@ $hrefAction = 'href="javascript:void(0)"';
 			<a href="javascript:void(0);" onclick="scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
 		</td>
 		<td>
-			<a href="<?php echo SP_WEBPATH?>/siteauditor.php?sec=viewreports&project_id=<?php echo $projectId?>" class="btn btn-primary">
+			<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=viewreports&project_id='.$projectId)?>" class="btn btn-primary">
 				<i class="fas fa-external-link-alt"></i> <?php echo $spTextSA['View Full Reports'] ?? 'View Full Reports'?>
 			</a>
 		</td>
@@ -386,7 +412,7 @@ $hrefAction = 'href="javascript:void(0)"';
 <?php
 $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
 $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
-$mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=viewreports&report_type=rp_links";
+$mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urlencode("project_id=".$projectInfo['id']."&sec=viewreports&report_type=rp_links");
 ?>
 
 <div class="summary-card" style="margin-top: 20px;">
@@ -540,11 +566,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['pa_excellent'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=excellent')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=excellent')?>">
 									<?php echo number_format($projectInfo['pa_excellent'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=excellent')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=excellent')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -559,11 +585,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['pa_good'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=good')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=good')?>">
 									<?php echo number_format($projectInfo['pa_good'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=good')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=good')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -578,11 +604,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['pa_low'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=low')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=low')?>">
 									<?php echo number_format($projectInfo['pa_low'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=low')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=low')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -597,11 +623,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['pa_none'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=none')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=none')?>">
 									<?php echo number_format($projectInfo['pa_none'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&pa_type=none')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&pa_type=none')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -619,11 +645,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['google_backlinks'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=has')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&backlinks_filter=has')?>">
 									<?php echo number_format($projectInfo['google_backlinks'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=has')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&backlinks_filter=has')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -644,11 +670,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($indexedCount > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_yes')?>">
 									<?php echo number_format($indexedCount)?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_yes')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -665,11 +691,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['bing_indexed'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=bing_yes')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_yes')?>">
 									<?php echo number_format($projectInfo['bing_indexed'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=bing_yes')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_yes')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -691,9 +717,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['mobile_friendly'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&mobile_friendly=1')"><?php echo number_format($projectInfo['mobile_friendly'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&mobile_friendly=1')?>"><?php echo number_format($projectInfo['mobile_friendly'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&mobile_friendly=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&mobile_friendly=1')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -708,9 +734,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['https_secure'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&https_secure=1')"><?php echo number_format($projectInfo['https_secure'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&https_secure=1')?>"><?php echo number_format($projectInfo['https_secure'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&https_secure=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&https_secure=1')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -725,9 +751,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['ai_robot_allowed'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&ai_robot_allowed=1')"><?php echo number_format($projectInfo['ai_robot_allowed'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&ai_robot_allowed=1')?>"><?php echo number_format($projectInfo['ai_robot_allowed'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&ai_robot_allowed=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&ai_robot_allowed=1')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -742,9 +768,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['has_og_tags'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_og_tags=1')"><?php echo number_format($projectInfo['has_og_tags'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&has_og_tags=1')?>"><?php echo number_format($projectInfo['has_og_tags'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_og_tags=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&has_og_tags=1')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -761,9 +787,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['has_twitter_cards'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_twitter_cards=1')"><?php echo number_format($projectInfo['has_twitter_cards'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&has_twitter_cards=1')?>"><?php echo number_format($projectInfo['has_twitter_cards'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&has_twitter_cards=1')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&has_twitter_cards=1')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -778,9 +804,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['allowed_by_robots'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&blocked_by_robots=0')"><?php echo number_format($projectInfo['allowed_by_robots'])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&blocked_by_robots=0')?>"><?php echo number_format($projectInfo['allowed_by_robots'])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&blocked_by_robots=0')" style="color: #999; font-size: 11px;">Not found</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&blocked_by_robots=0')?>" style="color: #999; font-size: 11px;">Not found</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -808,11 +834,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($notIndexedCount > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_no')?>">
 									<?php echo number_format($notIndexedCount)?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_no')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -829,11 +855,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['bing_not_indexed'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=bing_no')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_no')?>">
 									<?php echo number_format($projectInfo['bing_not_indexed'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=bing_no')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_no')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -848,11 +874,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['brocken'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&brocken=1')?>">
 									<?php echo number_format($projectInfo['brocken'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&brocken=1')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&brocken=1')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -867,11 +893,11 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo['no_backlinks'] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=no')">
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&backlinks_filter=no')?>">
 									<?php echo number_format($projectInfo['no_backlinks'])?>
 								</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&backlinks_filter=no')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&backlinks_filter=no')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -902,9 +928,9 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 						</div>
 						<span class="summary-value">
 							<?php if ($projectInfo["duplicate_".$col] > 0): ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>')"><?php echo number_format($projectInfo["duplicate_".$col])?></a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type='.$col)?>"><?php echo number_format($projectInfo["duplicate_".$col])?></a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=<?php echo $col?>')" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type='.$col)?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>
@@ -917,55 +943,31 @@ $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=v
 </div>
 
 <script type="text/javascript">
-// Save selected project ID to sessionStorage
-function saveSAProjectId() {
-	var projectId = $('#sa_project_id').val();
-	var websiteId = $('#sa_project_id option:selected').data('website-id');
-	if (projectId) {
-		sessionStorage.setItem('sp_selected_sa_project_id', projectId);
-	}
-	if (websiteId) {
-		sessionStorage.setItem('sp_selected_website_id', websiteId);
-	}
-}
-
-// On page load, try to auto-select project based on stored value or website
+// On page load, sync website selection with other tabs
 $(document).ready(function() {
 	// Prevent multiple auto-loads
 	if (sessionStorage.getItem('sp_sa_auto_loading')) {
 		sessionStorage.removeItem('sp_sa_auto_loading');
-		saveSAProjectId();
 		return;
 	}
 
-	var storedProjectId = sessionStorage.getItem('sp_selected_sa_project_id');
 	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentProjectId = '<?php echo $projectId?>';
+	var currentWebsiteId = '<?php echo $websiteId?>';
 
-	// If we have a stored project ID and it's different from current, check if it exists in dropdown
-	if (storedProjectId && storedProjectId != currentProjectId) {
-		if ($('#sa_project_id option[value="' + storedProjectId + '"]').length) {
-			$('#sa_project_id').val(storedProjectId);
+	// If stored website differs from current and exists in dropdown, auto-select it
+	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
+		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
+			$('#website_id').val(storedWebsiteId);
 			sessionStorage.setItem('sp_sa_auto_loading', '1');
 			scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content');
 			return;
 		}
 	}
 
-	// If we have a stored website ID, try to find a project for that website
-	if (storedWebsiteId && !storedProjectId) {
-		var matchingOption = $('#sa_project_id option[data-website-id="' + storedWebsiteId + '"]').first();
-		if (matchingOption.length && matchingOption.val() != currentProjectId) {
-			$('#sa_project_id').val(matchingOption.val());
-			saveSAProjectId();
-			sessionStorage.setItem('sp_sa_auto_loading', '1');
-			scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content');
-			return;
-		}
+	// Store current website ID
+	if (currentWebsiteId) {
+		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
 	}
-
-	// Store current project ID
-	saveSAProjectId();
 });
 </script>
 <?php } ?>
