@@ -632,20 +632,29 @@ class Spider {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
-		curl_setopt($ch, CURLOPT_USERAGENT, SP_USER_AGENT);
+
+		// Use defined SP_USER_AGENT or fallback to default
+		$defaultUserAgent = "Mozilla/5.0 (compatible; SEOPanel/5.0; +https://www.seopanel.org)";
+		$userAgent = defined('SP_USER_AGENT') ? SP_USER_AGENT : $defaultUserAgent;
+
+		// Skip user agent for seopanel.org to avoid WAF blocks
+		if (!stristr($url, 'seopanel.org')) {
+			curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
+		}
+
 		if($followRedirects){
 			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 		}
 		curl_setopt($ch, CURLOPT_MAXREDIRS, 4);
-		
+
 		// Only calling the head
 		curl_setopt($ch, CURLOPT_HEADER, true); // header will be at output
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'HEAD'); // HTTP request is 'HEAD'
-		
+
 		// to fix the ssl related issues
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		
+
 		$content = curl_exec ($ch);
 		curl_close ($ch);
 		return $content;
