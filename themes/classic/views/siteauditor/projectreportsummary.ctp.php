@@ -32,7 +32,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Updated']?>:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['last_updated']?></td>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Score']?>:</strong></td>
-			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['score']?></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo round($projectInfo['score'], 2)?></td>
 		</tr>
 		<tr>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Maximum Pages']?>:</strong></td>
@@ -592,7 +592,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 						<span class="summary-value">
 							<div class="score-circle">
 								<?php
-								$score = $projectInfo['score'];
+								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
 								$absScore = abs($score);
 								$maxScore = 100;

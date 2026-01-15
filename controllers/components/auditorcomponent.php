@@ -209,9 +209,17 @@ class AuditorComponent extends Controller{
     
     // function to store link of page
     function storePagelLinks($linkInfo, $delete=false) {
-        
+
+        // Truncate link_anchor and link_title to fit database columns (varchar 200)
+        if (isset($linkInfo['link_anchor'])) {
+            $linkInfo['link_anchor'] = mb_substr($linkInfo['link_anchor'], 0, 200);
+        }
+        if (isset($linkInfo['link_title'])) {
+            $linkInfo['link_title'] = mb_substr($linkInfo['link_title'], 0, 200);
+        }
+
         foreach ($linkInfo as $col => $val) {
-            $linkInfo[$col] = addslashes($val);
+            $linkInfo[$col] = addslashes($val ?? '');
         }
         
         if ($delete) {
@@ -441,7 +449,7 @@ class AuditorComponent extends Controller{
     function updateProjectPageScore($projectId) {        
         $sql = "select sum(score)/count(*) as avgscore from auditorreports where crawled=1 and project_id=$projectId";
         $listInfo = $this->db->select($sql, true);
-		$score = empty($listInfo['avgscore']) ? 0 : $listInfo['avgscore'];
+		$score = empty($listInfo['avgscore']) ? 0 : round($listInfo['avgscore'], 2);
         
         $sql = "update auditorprojects set score=$score where id=$projectId";
         $this->db->query($sql); 

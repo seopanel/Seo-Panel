@@ -945,7 +945,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (11, 'User agent', 'SP_USER_AGENT', 'Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))', 'report', 'large', 1),
 (12, 'Seo Panel API Key', 'SP_API_KEY', '11a9b9070c7d7633831f603f0454ef5b', 'api', 'large', 1),
 (13, 'Maximum number of pages allowed per website', 'SA_MAX_NO_PAGES', '500', 'siteauditor', 'small', 1),
-(14, 'Site auditor crawl delay', 'SA_CRAWL_DELAY_TIME', '20', 'siteauditor', 'small', 1),
+(14, 'Site auditor crawl delay', 'SA_CRAWL_DELAY_TIME', '10', 'siteauditor', 'small', 1),
 (15, 'Maximum length of page title', 'SA_TITLE_MAX_LENGTH', '80', 'siteauditor', 'small', 0),
 (16, 'Minimum length of page title', 'SA_TITLE_MIN_LENGTH', '50', 'siteauditor', 'small', 0),
 (17, 'Maximum length of meta description', 'SA_DES_MAX_LENGTH', '200', 'siteauditor', 'small', 0),

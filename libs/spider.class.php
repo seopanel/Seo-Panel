@@ -149,7 +149,12 @@ class Spider {
 				$href = $this->__getTagParam("href",$matches[1][$i]);
 				if ( !empty($href) || !empty($matches[2][$i])) {
 					
-    				if( !preg_match( '/mailto:/', $href ) && !preg_match( '/javascript:|;/', $href ) ){
+    				if( !preg_match( '/mailto:|tel:/', $href ) && !preg_match( '/javascript:|;/', $href ) ){
+
+    				    // Skip JavaScript template literals and invalid URL patterns
+    				    if (preg_match('/\$\{|\}|typeof\s|===|function\s*\(/', $href)) {
+    				        continue;
+    				    }
 
     					// find external links
     				    $pageInfo['total_links'] += 1;
@@ -220,7 +225,10 @@ class Spider {
 			}			
 		}
 		
-		$pageInfo = __assign($pageInfo, "site_links", []);
+		// Ensure site_links key exists as an array
+		if (!isset($pageInfo['site_links'])) {
+		    $pageInfo['site_links'] = [];
+		}
 		return $pageInfo;
 	}
 	

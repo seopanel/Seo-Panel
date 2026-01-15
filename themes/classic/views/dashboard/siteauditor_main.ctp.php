@@ -446,7 +446,7 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 						<span class="summary-value">
 							<div class="score-circle">
 								<?php
-								$score = $projectInfo['score'];
+								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
 								$absScore = abs($score);
 								$maxScore = 100;
