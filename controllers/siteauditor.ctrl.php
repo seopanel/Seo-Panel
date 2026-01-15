@@ -671,13 +671,13 @@ class SiteAuditorController extends Controller{
 			$filter .= "&indexed_filter=$idxFilter";
 			switch($idxFilter) {
 				case 'google_yes':
-					$sql .= " and google_indexed = 1";
+					$sql .= " and google_indexed > 0";
 					break;
 				case 'google_no':
 					$sql .= " and google_indexed = 0";
 					break;
 				case 'bing_yes':
-					$sql .= " and bing_indexed = 1";
+					$sql .= " and bing_indexed > 0";
 					break;
 				case 'bing_no':
 					$sql .= " and bing_indexed = 0";
