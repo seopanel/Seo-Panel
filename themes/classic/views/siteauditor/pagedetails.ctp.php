@@ -180,28 +180,75 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	background: #f8d7da;
 	color: #721c24;
 }
-.score-display {
+/* Round Score Gauge */
+.score-circle-container {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 15px;
 }
-.score-bars {
-	display: flex;
-	gap: 2px;
+.score-circle {
+	position: relative;
+	width: 80px;
+	height: 80px;
 }
-.score-bar {
-	width: 6px;
-	height: 18px;
-	border-radius: 2px;
+.score-circle svg {
+	transform: rotate(-90deg);
+	width: 80px;
+	height: 80px;
 }
-.score-bar.plus { background: #28a745; }
-.score-bar.minus { background: #dc3545; }
-.score-number {
-	font-size: 20px;
+.score-circle-bg {
+	fill: none;
+	stroke: #e9ecef;
+	stroke-width: 8;
+}
+.score-circle-progress {
+	fill: none;
+	stroke-width: 8;
+	stroke-linecap: round;
+	transition: stroke-dashoffset 0.5s ease;
+}
+.score-circle-progress.positive {
+	stroke: url(#scoreGradientPositive);
+}
+.score-circle-progress.negative {
+	stroke: url(#scoreGradientNegative);
+}
+.score-circle-value {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 18px;
 	font-weight: 700;
+	text-align: center;
 }
-.score-number.positive { color: #28a745; }
-.score-number.negative { color: #dc3545; }
+.score-circle-value.positive { color: #28a745; }
+.score-circle-value.negative { color: #dc3545; }
+.score-circle-label {
+	font-size: 10px;
+	color: #6c757d;
+	font-weight: 600;
+	text-transform: uppercase;
+	margin-top: 2px;
+}
+.score-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.score-status {
+	font-size: 14px;
+	font-weight: 600;
+}
+.score-status.excellent { color: #28a745; }
+.score-status.good { color: #20c997; }
+.score-status.average { color: #ffc107; }
+.score-status.poor { color: #fd7e14; }
+.score-status.bad { color: #dc3545; }
+.score-description {
+	font-size: 12px;
+	color: #6c757d;
+}
 .metric-value {
 	font-size: 24px;
 	font-weight: 700;
@@ -464,17 +511,65 @@ $dofollowCount = $totalLinks - $nofollowCount;
 				<div class="detail-card">
 					<div class="detail-label"><i class="fas fa-star"></i> <?php echo $spText['label']['Score']?></div>
 					<div class="detail-value">
-						<div class="score-display">
-							<div class="score-bars">
-								<?php
-								$scoreValue = abs($reportInfo['score']);
-								$scoreClass = $reportInfo['score'] < 0 ? 'minus' : 'plus';
-								for($b=0; $b < min($scoreValue, 15); $b++) echo "<span class='score-bar $scoreClass'></span>";
-								?>
+						<?php
+						$scoreValue = round($reportInfo['score'], 2);
+						$isPositive = $scoreValue >= 0;
+						$absScore = abs($scoreValue);
+
+						// Calculate percentage for circle (max score assumed to be 100)
+						$maxScore = 100;
+						$percentage = min(($absScore / $maxScore) * 100, 100);
+
+						// SVG circle calculations
+						$radius = 32;
+						$circumference = 2 * M_PI * $radius;
+						$dashoffset = $circumference - ($percentage / 100) * $circumference;
+
+						// Determine score status
+						if ($absScore >= 80) {
+							$statusClass = $isPositive ? 'excellent' : 'bad';
+							$statusText = $isPositive ? 'Excellent' : 'Critical';
+						} elseif ($absScore >= 60) {
+							$statusClass = $isPositive ? 'good' : 'poor';
+							$statusText = $isPositive ? 'Good' : 'Poor';
+						} elseif ($absScore >= 40) {
+							$statusClass = 'average';
+							$statusText = 'Average';
+						} elseif ($absScore >= 20) {
+							$statusClass = $isPositive ? 'average' : 'poor';
+							$statusText = $isPositive ? 'Fair' : 'Needs Work';
+						} else {
+							$statusClass = $isPositive ? 'average' : 'bad';
+							$statusText = $isPositive ? 'Low' : 'Critical';
+						}
+						?>
+						<div class="score-circle-container">
+							<div class="score-circle">
+								<svg viewBox="0 0 80 80">
+									<defs>
+										<linearGradient id="scoreGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
+											<stop offset="0%" style="stop-color:#28a745"/>
+											<stop offset="100%" style="stop-color:#20c997"/>
+										</linearGradient>
+										<linearGradient id="scoreGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
+											<stop offset="0%" style="stop-color:#dc3545"/>
+											<stop offset="100%" style="stop-color:#fd7e14"/>
+										</linearGradient>
+									</defs>
+									<circle class="score-circle-bg" cx="40" cy="40" r="<?php echo $radius?>"/>
+									<circle class="score-circle-progress <?php echo $isPositive ? 'positive' : 'negative'?>"
+										cx="40" cy="40" r="<?php echo $radius?>"
+										stroke-dasharray="<?php echo $circumference?>"
+										stroke-dashoffset="<?php echo $dashoffset?>"/>
+								</svg>
+								<div class="score-circle-value <?php echo $isPositive ? 'positive' : 'negative'?>">
+									<?php echo ($isPositive ? '+' : '') . $scoreValue?>
+								</div>
 							</div>
-							<span class="score-number <?php echo $reportInfo['score'] >= 0 ? 'positive' : 'negative'?>">
-								<?php echo round($reportInfo['score'], 2)?>
-							</span>
+							<div class="score-info">
+								<span class="score-status <?php echo $statusClass?>"><?php echo $statusText?></span>
+								<span class="score-description">SEO Score Rating</span>
+							</div>
 						</div>
 					</div>
 				</div>

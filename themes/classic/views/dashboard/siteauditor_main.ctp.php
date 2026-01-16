@@ -55,6 +55,26 @@ function saToolsUrl($args) {
 	}
 }
 
+@keyframes countUp {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes numberGlow {
+	0%, 100% {
+		filter: drop-shadow(0 0 0 transparent);
+	}
+	50% {
+		filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
+	}
+}
+
 .summary-card {
 	background: #fff;
 	border: none;
@@ -184,26 +204,66 @@ function saToolsUrl($args) {
 
 .summary-value {
 	color: #2d3748;
-	font-size: 22px;
-	font-weight: 700;
+	font-size: 30px;
+	font-weight: 800;
 	display: block;
 	position: relative;
 	z-index: 1;
+	background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	letter-spacing: -1px;
+	animation: countUp 0.6s ease-out;
+	line-height: 1.2;
+	margin-left: 2px;
 }
 
 .summary-value a {
 	color: #667eea;
 	text-decoration: none;
-	font-size: 16px;
-	font-weight: 600;
-	transition: all 0.2s;
+	font-size: 30px;
+	font-weight: 800;
+	transition: all 0.3s ease;
 	word-break: break-all;
 	overflow-wrap: break-word;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	display: inline-block;
+	text-shadow: none;
+	letter-spacing: -1px;
+	animation: countUp 0.6s ease-out;
+	line-height: 1.1;
+	margin-left: 5px;
 }
 
 .summary-value a:hover {
-	color: #764ba2;
+	transform: scale(1.08);
+	background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
 	text-decoration: none;
+	animation: numberGlow 1.5s ease-in-out infinite;
+}
+
+/* Special styling for zero/not found values */
+.summary-value a[style*="color: #999"] {
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	background: none !important;
+	-webkit-text-fill-color: #999 !important;
+	letter-spacing: 0 !important;
+	animation: none !important;
+}
+
+/* URL links should not be huge */
+.summary-value a[href*="://"] {
+	font-size: 30px;
+	font-weight: 600;
+	letter-spacing: 0;
 }
 
 /* Score Circle */
@@ -249,15 +309,44 @@ function saToolsUrl($args) {
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	font-size: 20px;
+	font-size: 18px;
 	font-weight: 700;
 	color: #2d3748;
+	-webkit-text-fill-color: #2d3748;
+	background: none;
+}
+.score-text.positive {
+	color: #28a745;
+	-webkit-text-fill-color: #28a745;
+}
+.score-text.negative {
+	color: #dc3545;
+	-webkit-text-fill-color: #dc3545;
 }
 
 .score-label {
 	font-size: 14px;
 	color: #718096;
 	font-weight: 600;
+}
+
+.score-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.score-status {
+	font-size: 14px;
+	font-weight: 600;
+}
+.score-status.excellent { color: #28a745; }
+.score-status.good { color: #20c997; }
+.score-status.average { color: #ffc107; }
+.score-status.poor { color: #fd7e14; }
+.score-status.bad { color: #dc3545; }
+.score-description {
+	font-size: 12px;
+	color: #6c757d;
 }
 
 /* Progress Bar for Pages */
@@ -302,6 +391,41 @@ function saToolsUrl($args) {
 	font-size: 12px;
 	color: #718096;
 	font-weight: 600;
+}
+
+/* Status Badges */
+.status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	border-radius: 20px;
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.danger {
+	background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.status-badge.warning {
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+	color: white;
+	box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.status-badge i {
+	font-size: 14px;
 }
 
 /* Metric Cards with Icons */
@@ -453,6 +577,24 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 								$percentage = min(($absScore / $maxScore) * 100, 100);
 								$circumference = 2 * 3.14159 * 36;
 								$dashOffset = $circumference - ($percentage / 100) * $circumference;
+
+								// Determine score status
+								if ($absScore >= 80) {
+									$statusClass = $isPositive ? 'excellent' : 'bad';
+									$statusText = $isPositive ? 'Excellent' : 'Critical';
+								} elseif ($absScore >= 60) {
+									$statusClass = $isPositive ? 'good' : 'poor';
+									$statusText = $isPositive ? 'Good' : 'Poor';
+								} elseif ($absScore >= 40) {
+									$statusClass = 'average';
+									$statusText = 'Average';
+								} elseif ($absScore >= 20) {
+									$statusClass = $isPositive ? 'average' : 'poor';
+									$statusText = $isPositive ? 'Fair' : 'Needs Work';
+								} else {
+									$statusClass = $isPositive ? 'average' : 'bad';
+									$statusText = $isPositive ? 'Low' : 'Critical';
+								}
 								?>
 								<div class="score-progress">
 									<svg width="80" height="80">
@@ -472,9 +614,12 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 											stroke-dasharray="<?php echo $circumference; ?>"
 											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
 									</svg>
-									<div class="score-text"><?php echo $score; ?></div>
+									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo ($isPositive ? '+' : '') . $score; ?></div>
 								</div>
-								<div class="score-label"><?php echo $isPositive ? 'Positive' : 'Negative'; ?> Score</div>
+								<div class="score-info">
+									<span class="score-status <?php echo $statusClass?>"><?php echo $statusText?></span>
+									<span class="score-description">SEO Score Rating</span>
+								</div>
 							</div>
 						</span>
 					</div>

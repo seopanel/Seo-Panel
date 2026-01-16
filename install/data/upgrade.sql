@@ -74,6 +74,17 @@ CREATE TABLE IF NOT EXISTS `auditorsitemaps` (
   KEY `project_id` (`project_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
+
+ALTER TABLE `auditorpagelinks` CHANGE `link_url` `link_url` VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, 
+CHANGE `link_anchor` `link_anchor` VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, 
+CHANGE `link_title` `link_title` VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
+
+ALTER TABLE `auditorreports` CHANGE `page_url` `page_url` VARCHAR(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL, 
+CHANGE `canonical_url` `canonical_url` VARCHAR(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL, 
+CHANGE `page_title` `page_title` VARCHAR(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL, 
+CHANGE `page_description` `page_description` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL, 
+CHANGE `page_keywords` `page_keywords` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL;
+
 -----------------------------
 --- Text DB changes
 -----------------------------

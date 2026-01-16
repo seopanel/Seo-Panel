@@ -453,15 +453,44 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	top: 50%;
 	left: 50%;
 	transform: translate(-50%, -50%);
-	font-size: 20px;
+	font-size: 18px;
 	font-weight: 700;
 	color: #2d3748;
+	-webkit-text-fill-color: #2d3748;
+	background: none;
+}
+.score-text.positive {
+	color: #28a745;
+	-webkit-text-fill-color: #28a745;
+}
+.score-text.negative {
+	color: #dc3545;
+	-webkit-text-fill-color: #dc3545;
 }
 
 .score-label {
 	font-size: 14px;
 	color: #718096;
 	font-weight: 600;
+}
+
+.score-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.score-status {
+	font-size: 14px;
+	font-weight: 600;
+}
+.score-status.excellent { color: #28a745; }
+.score-status.good { color: #20c997; }
+.score-status.average { color: #ffc107; }
+.score-status.poor { color: #fd7e14; }
+.score-status.bad { color: #dc3545; }
+.score-description {
+	font-size: 12px;
+	color: #6c757d;
 }
 
 /* Progress Bar for Pages */
@@ -659,6 +688,24 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 								$percentage = min(($absScore / $maxScore) * 100, 100);
 								$circumference = 2 * 3.14159 * 36;
 								$dashOffset = $circumference - ($percentage / 100) * $circumference;
+
+								// Determine score status
+								if ($absScore >= 80) {
+									$statusClass = $isPositive ? 'excellent' : 'bad';
+									$statusText = $isPositive ? 'Excellent' : 'Critical';
+								} elseif ($absScore >= 60) {
+									$statusClass = $isPositive ? 'good' : 'poor';
+									$statusText = $isPositive ? 'Good' : 'Poor';
+								} elseif ($absScore >= 40) {
+									$statusClass = 'average';
+									$statusText = 'Average';
+								} elseif ($absScore >= 20) {
+									$statusClass = $isPositive ? 'average' : 'poor';
+									$statusText = $isPositive ? 'Fair' : 'Needs Work';
+								} else {
+									$statusClass = $isPositive ? 'average' : 'bad';
+									$statusText = $isPositive ? 'Low' : 'Critical';
+								}
 								?>
 								<div class="score-progress">
 									<svg width="80" height="80">
@@ -678,9 +725,12 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 											stroke-dasharray="<?php echo $circumference; ?>"
 											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
 									</svg>
-									<div class="score-text"><?php echo $score; ?></div>
+									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo ($isPositive ? '+' : '') . $score; ?></div>
 								</div>
-								<div class="score-label"><?php echo $isPositive ? 'Positive' : 'Negative'; ?> Score</div>
+								<div class="score-info">
+									<span class="score-status <?php echo $statusClass?>"><?php echo $statusText?></span>
+									<span class="score-description">SEO Score Rating</span>
+								</div>
 							</div>
 						</span>
 					</div>

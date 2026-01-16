@@ -94,7 +94,7 @@
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
-				<td><?php echo $websiteLink?></td>
+				<td class="text-left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
 					<td><?php echo $listInfo['username']?></td>
 				<?php } ?>

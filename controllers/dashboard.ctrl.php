@@ -936,13 +936,14 @@ class DashboardController extends Controller {
         $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
         $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
 
-        // Status check for crawled filter
+        // Status check for crawled filter - default to crawled=1 on first load
         $statusCheck = false;
         $statusVal = 0;
         $crawledVal = isset($info['crawled']) ? $info['crawled'] : 1;
-        if(isset($info['crawled']) && ($info['crawled'] != -1)) {
+        // Apply filter if crawled is set OR on first load (default to 1)
+        if($crawledVal != -1) {
             $statusCheck = true;
-            $statusVal = intval($info['crawled']);
+            $statusVal = intval($crawledVal);
         }
         $this->set('crawled', $crawledVal);
 
