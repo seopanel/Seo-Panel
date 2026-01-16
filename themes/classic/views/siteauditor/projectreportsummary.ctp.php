@@ -158,6 +158,26 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	}
 }
 
+@keyframes countUp {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes numberGlow {
+	0%, 100% {
+		filter: drop-shadow(0 0 0 transparent);
+	}
+	50% {
+		filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
+	}
+}
+
 .export_div {
 	display: inline-flex;
 	gap: 8px;
@@ -328,26 +348,66 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 
 .summary-value {
 	color: #2d3748;
-	font-size: 22px;
-	font-weight: 700;
+	font-size: 30px;
+	font-weight: 800;
 	display: block;
 	position: relative;
 	z-index: 1;
+	background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	letter-spacing: -1px;
+	animation: countUp 0.6s ease-out;
+	line-height: 1.2;
+	margin-left: 2px;
 }
 
 .summary-value a {
 	color: #667eea;
 	text-decoration: none;
-	font-size: 16px;
-	font-weight: 600;
-	transition: all 0.2s;
+	font-size: 30px;
+	font-weight: 800;
+	transition: all 0.3s ease;
 	word-break: break-all;
 	overflow-wrap: break-word;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	display: inline-block;
+	text-shadow: none;
+	letter-spacing: -1px;
+	animation: countUp 0.6s ease-out;
+	line-height: 1.1;
+	margin-left: 5px;
 }
 
 .summary-value a:hover {
-	color: #764ba2;
+	transform: scale(1.08);
+	background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
 	text-decoration: none;
+	animation: numberGlow 1.5s ease-in-out infinite;
+}
+
+/* Special styling for zero/not found values */
+.summary-value a[style*="color: #999"] {
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	background: none !important;
+	-webkit-text-fill-color: #999 !important;
+	letter-spacing: 0 !important;
+	animation: none !important;
+}
+
+/* URL links should not be huge */
+.summary-value a[href*="://"] {
+	font-size: 15px;
+	font-weight: 600;
+	letter-spacing: 0;
 }
 
 /* Score Circle */

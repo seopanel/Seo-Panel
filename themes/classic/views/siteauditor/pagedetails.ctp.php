@@ -49,46 +49,50 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	flex: 1;
 	padding: 18px 25px;
 	border: none;
-	background: transparent;
+	background: linear-gradient(135deg, #e8f4f8 0%, #d4e5f7 100%);
 	cursor: pointer;
 	font-size: 15px;
 	font-weight: 600;
-	color: #6c757d;
+	color: #3498db;
 	transition: all 0.3s;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
 	position: relative;
+	border-bottom: 3px solid #3498db;
 }
 .tab-btn:hover {
-	color: #495057;
-	background: #e9ecef;
+	color: #2980b9;
+	background: linear-gradient(135deg, #d4e5f7 0%, #c4daf0 100%);
 }
 .tab-btn.active {
 	color: #667eea;
 	background: #fff;
+	border-bottom: 3px solid transparent;
 }
 .tab-btn.active::after {
 	content: '';
 	position: absolute;
-	bottom: 0;
+	bottom: -3px;
 	left: 0;
 	right: 0;
 	height: 3px;
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 .tab-btn .badge-count {
-	background: #dee2e6;
-	color: #495057;
-	padding: 3px 10px;
+	background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+	color: #fff;
+	padding: 4px 12px;
 	border-radius: 12px;
 	font-size: 12px;
-	font-weight: 600;
+	font-weight: 700;
+	box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
 }
 .tab-btn.active .badge-count {
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	color: white;
+	box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
 }
 .tab-content {
 	display: none;
@@ -158,6 +162,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 .detail-value a:hover {
 	text-decoration: underline;
 }
+
 .status-badge {
 	display: inline-flex;
 	align-items: center;
@@ -437,11 +442,11 @@ $dofollowCount = $totalLinks - $nofollowCount;
 
 	<!-- Tabs Header -->
 	<div class="tabs-header">
-		<button class="tab-btn active" onclick="switchTab('details', this)">
+		<button class="tab-btn active" onclick="document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});document.getElementById('tab-details').classList.add('active');this.classList.add('active');">
 			<i class="fas fa-file-alt"></i>
 			<?php echo $spTextSA['Page Details']?>
 		</button>
-		<button class="tab-btn" onclick="switchTab('links', this)">
+		<button class="tab-btn" onclick="document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active')});document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});document.getElementById('tab-links').classList.add('active');this.classList.add('active');">
 			<i class="fas fa-link"></i>
 			<?php echo $spTextSA['Page Links']?>
 			<span class="badge-count"><?php echo $totalLinks?></span>
@@ -634,17 +639,20 @@ $dofollowCount = $totalLinks - $nofollowCount;
 			</div>
 		</div>
 
-		<?php if (!empty($reportInfo['comments'])) { ?>
-		<div class="detail-section">
-			<div class="detail-section-title">
-				<i class="fas fa-comment-alt"></i> Analysis Comments
-			</div>
-			<div class="detail-grid">
-				<div class="detail-card full-width">
-					<div class="detail-value"><?php echo $reportInfo['comments']?></div>
-				</div>
-			</div>
-		</div>
+		<?php if (!empty($reportInfo['comments'])) {
+		    $reportInfo['comments'] = preg_replace('/^(<br\s*\/?>\s*)+/i', '', $reportInfo['comments']);
+		    $reportInfo['comments'] = str_ireplace("<br><br>", "<br>", $reportInfo['comments']);
+            ?>
+    		<div class="detail-section">
+    			<div class="detail-section-title">
+    				<i class="fas fa-comment-alt"></i> Analysis Comments
+    			</div>
+    			<div class="detail-grid">
+    				<div class="detail-card full-width">
+    					<div class="detail-value"><?php echo  $reportInfo['comments']?></div>
+    				</div>
+    			</div>
+    		</div>
 		<?php } ?>
 	</div>
 
@@ -675,13 +683,13 @@ $dofollowCount = $totalLinks - $nofollowCount;
 		<div class="links-toolbar">
 			<div class="search-box">
 				<i class="fas fa-search"></i>
-				<input type="text" id="linkSearchInput" placeholder="Search links, anchors, titles..." onkeyup="filterLinks()">
+				<input type="text" id="linkSearchInput" placeholder="Search links, anchors, titles..." onkeyup="var f=this.value.toLowerCase();document.querySelectorAll('#linksTable tbody tr').forEach(function(r){r.style.display=r.textContent.toLowerCase().indexOf(f)>-1?'':'none'});">
 			</div>
 			<div class="filter-pills">
-				<button class="filter-pill active" onclick="filterByType('all', this)">All</button>
-				<button class="filter-pill" onclick="filterByType('internal', this)">Internal</button>
-				<button class="filter-pill" onclick="filterByType('external', this)">External</button>
-				<button class="filter-pill" onclick="filterByType('nofollow', this)">Nofollow</button>
+				<button class="filter-pill active" onclick="document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active')});this.classList.add('active');document.querySelectorAll('#linksTable tbody tr').forEach(function(r){r.style.display=''});">All</button>
+				<button class="filter-pill" onclick="document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active')});this.classList.add('active');document.querySelectorAll('#linksTable tbody tr').forEach(function(r){r.style.display=r.dataset.type==='internal'?'':'none'});">Internal</button>
+				<button class="filter-pill" onclick="document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active')});this.classList.add('active');document.querySelectorAll('#linksTable tbody tr').forEach(function(r){r.style.display=r.dataset.type==='external'?'':'none'});">External</button>
+				<button class="filter-pill" onclick="document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active')});this.classList.add('active');document.querySelectorAll('#linksTable tbody tr').forEach(function(r){r.style.display=r.dataset.follow==='nofollow'?'':'none'});">Nofollow</button>
 			</div>
 		</div>
 
@@ -741,48 +749,3 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	</div>
 </div>
 
-<script>
-function switchTab(tabId, btn) {
-	// Hide all tab contents
-	document.querySelectorAll('.tab-content').forEach(function(tab) {
-		tab.classList.remove('active');
-	});
-	// Remove active from all buttons
-	document.querySelectorAll('.tab-btn').forEach(function(b) {
-		b.classList.remove('active');
-	});
-	// Show selected tab
-	document.getElementById('tab-' + tabId).classList.add('active');
-	btn.classList.add('active');
-}
-
-function filterLinks() {
-	var input = document.getElementById('linkSearchInput');
-	var filter = input.value.toLowerCase();
-	var rows = document.querySelectorAll('#linksTable tbody tr');
-
-	rows.forEach(function(row) {
-		var text = row.textContent.toLowerCase();
-		row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
-	});
-}
-
-function filterByType(type, btn) {
-	document.querySelectorAll('.filter-pill').forEach(function(b) {
-		b.classList.remove('active');
-	});
-	btn.classList.add('active');
-
-	var rows = document.querySelectorAll('#linksTable tbody tr');
-
-	rows.forEach(function(row) {
-		if (type === 'all') {
-			row.style.display = '';
-		} else if (type === 'internal' || type === 'external') {
-			row.style.display = row.dataset.type === type ? '' : 'none';
-		} else if (type === 'nofollow') {
-			row.style.display = row.dataset.follow === 'nofollow' ? '' : 'none';
-		}
-	});
-}
-</script>
