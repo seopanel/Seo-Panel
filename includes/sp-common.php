@@ -1082,4 +1082,64 @@ function getAuthorityLabel($score) {
         return 'Very Strong';
     }
 }
+
+/**
+ * Detect CAPTCHA or bot detection challenges in page content
+ * Common function used across review manager and social media checker
+ *
+ * @param string $pageContent The HTML content of the page
+ * @param int $pageLength Optional page length (will be calculated if not provided)
+ * @return array Array with 'detected' boolean and 'message' string
+ */
+function detectCaptchaChallenge($pageContent, $pageLength = null) {
+    $result = array(
+        'detected' => false,
+        'message' => ''
+    );
+
+    // Calculate page length if not provided
+    if ($pageLength === null) {
+        $pageLength = strlen($pageContent);
+    }
+
+    // Check for explicit CAPTCHA indicators combined with small page size
+    // Small page size (< 1500 chars) combined with captcha patterns indicates blocking
+    if ($pageLength < 1500 && (
+        stripos($pageContent, 'captcha-delivery.com') !== false ||
+        (stripos($pageContent, 'Please enable JS') !== false &&
+         stripos($pageContent, 'disable any ad blocker') !== false) ||
+        stripos($pageContent, 'verify you are human') !== false ||
+        stripos($pageContent, 'robot') !== false ||
+        stripos($pageContent, 'recaptcha') !== false ||
+        stripos($pageContent, 'cloudflare') !== false
+    )) {
+        $result['detected'] = true;
+        $result['message'] = "Bot detection or CAPTCHA challenge detected. The website may be blocking automated requests. Please try accessing the URL directly in a browser or consider using official APIs for this platform.";
+    }
+
+    return $result;
+}
+
+/**
+ * Detect browser blocking patterns (specifically for social platforms like Facebook)
+ *
+ * @param string $pageContent The HTML content of the page
+ * @return array Array with 'detected' boolean and 'message' string
+ */
+function detectBrowserBlocking($pageContent) {
+    $result = array(
+        'detected' => false,
+        'message' => ''
+    );
+
+    // Check for common browser blocking patterns
+    if (stripos($pageContent, 'Unsupported browser') !== false ||
+        stripos($pageContent, 'Facebook is not available on this browser') !== false ||
+        stripos($pageContent, 'browser is not supported') !== false) {
+        $result['detected'] = true;
+        $result['message'] = "Browser not supported. The platform blocks automated access. Please use official APIs for reliable data access.";
+    }
+
+    return $result;
+}
 ?>
