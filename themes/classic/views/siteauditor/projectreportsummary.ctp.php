@@ -32,7 +32,11 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Updated']?>:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['last_updated']?></td>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Score']?>:</strong></td>
-			<td style="border-bottom:1px solid #ddd;"><?php echo round($projectInfo['score'], 2)?></td>
+			<td style="border-bottom:1px solid #ddd;"><?php
+				$pdfMaxScore = 38;
+				$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $projectInfo['score']) / $pdfMaxScore * 100, 100) : 0;
+				echo round($pdfScorePercentage, 1) . '%';
+			?></td>
 		</tr>
 		<tr>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Maximum Pages']?>:</strong></td>
@@ -683,28 +687,27 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 								<?php
 								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
-								$absScore = abs($score);
-								$maxScore = 100;
-								$percentage = min(($absScore / $maxScore) * 100, 100);
+								$maxScore = 38; // Maximum possible score from AuditorComponent
+								$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 								$circumference = 2 * 3.14159 * 36;
-								$dashOffset = $circumference - ($percentage / 100) * $circumference;
+								$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
 
-								// Determine score status
-								if ($absScore >= 80) {
-									$statusClass = $isPositive ? 'excellent' : 'bad';
-									$statusText = $isPositive ? 'Excellent' : 'Critical';
-								} elseif ($absScore >= 60) {
-									$statusClass = $isPositive ? 'good' : 'poor';
-									$statusText = $isPositive ? 'Good' : 'Poor';
-								} elseif ($absScore >= 40) {
+								// Determine score status based on percentage
+								if ($scorePercentage >= 80) {
+									$statusClass = 'excellent';
+									$statusText = 'Excellent';
+								} elseif ($scorePercentage >= 60) {
+									$statusClass = 'good';
+									$statusText = 'Good';
+								} elseif ($scorePercentage >= 40) {
 									$statusClass = 'average';
 									$statusText = 'Average';
-								} elseif ($absScore >= 20) {
-									$statusClass = $isPositive ? 'average' : 'poor';
-									$statusText = $isPositive ? 'Fair' : 'Needs Work';
+								} elseif ($scorePercentage >= 20) {
+									$statusClass = 'poor';
+									$statusText = 'Needs Work';
 								} else {
-									$statusClass = $isPositive ? 'average' : 'bad';
-									$statusText = $isPositive ? 'Low' : 'Critical';
+									$statusClass = 'bad';
+									$statusText = 'Critical';
 								}
 								?>
 								<div class="score-progress">
@@ -725,7 +728,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 											stroke-dasharray="<?php echo $circumference; ?>"
 											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
 									</svg>
-									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo ($isPositive ? '+' : '') . $score; ?></div>
+									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo round($scorePercentage, 0); ?>%</div>
 								</div>
 								<div class="score-info">
 									<span class="score-status <?php echo $statusClass?>"><?php echo $statusText?></span>

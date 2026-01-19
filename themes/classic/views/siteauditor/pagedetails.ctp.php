@@ -514,33 +514,32 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						<?php
 						$scoreValue = round($reportInfo['score'], 2);
 						$isPositive = $scoreValue >= 0;
-						$absScore = abs($scoreValue);
 
-						// Calculate percentage for circle (max score assumed to be 100)
-						$maxScore = 100;
-						$percentage = min(($absScore / $maxScore) * 100, 100);
+						// Calculate percentage for circle (max score is 38 from AuditorComponent)
+						$maxScore = 38;
+						$scorePercentage = $maxScore > 0 ? min(max(0, $scoreValue) / $maxScore * 100, 100) : 0;
 
 						// SVG circle calculations
 						$radius = 32;
 						$circumference = 2 * M_PI * $radius;
-						$dashoffset = $circumference - ($percentage / 100) * $circumference;
+						$dashoffset = $circumference - ($scorePercentage / 100) * $circumference;
 
-						// Determine score status
-						if ($absScore >= 80) {
-							$statusClass = $isPositive ? 'excellent' : 'bad';
-							$statusText = $isPositive ? 'Excellent' : 'Critical';
-						} elseif ($absScore >= 60) {
-							$statusClass = $isPositive ? 'good' : 'poor';
-							$statusText = $isPositive ? 'Good' : 'Poor';
-						} elseif ($absScore >= 40) {
+						// Determine score status based on percentage
+						if ($scorePercentage >= 80) {
+							$statusClass = 'excellent';
+							$statusText = 'Excellent';
+						} elseif ($scorePercentage >= 60) {
+							$statusClass = 'good';
+							$statusText = 'Good';
+						} elseif ($scorePercentage >= 40) {
 							$statusClass = 'average';
 							$statusText = 'Average';
-						} elseif ($absScore >= 20) {
-							$statusClass = $isPositive ? 'average' : 'poor';
-							$statusText = $isPositive ? 'Fair' : 'Needs Work';
+						} elseif ($scorePercentage >= 20) {
+							$statusClass = 'poor';
+							$statusText = 'Needs Work';
 						} else {
-							$statusClass = $isPositive ? 'average' : 'bad';
-							$statusText = $isPositive ? 'Low' : 'Critical';
+							$statusClass = 'bad';
+							$statusText = 'Critical';
 						}
 						?>
 						<div class="score-circle-container">
@@ -563,7 +562,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 										stroke-dashoffset="<?php echo $dashoffset?>"/>
 								</svg>
 								<div class="score-circle-value <?php echo $isPositive ? 'positive' : 'negative'?>">
-									<?php echo ($isPositive ? '+' : '') . $scoreValue?>
+									<?php echo round($scorePercentage, 0)?>%
 								</div>
 							</div>
 							<div class="score-info">

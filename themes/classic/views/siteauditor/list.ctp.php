@@ -106,33 +106,25 @@
 				    <?php
 			        $score = $listInfo['score'];
 			        $isPositive = $score >= 0;
-			        $absScore = abs($score);
-			        $maxScore = 100;
-			        $percentage = min(($absScore / $maxScore) * 100, 100);
+			        $maxScore = 38; // Maximum possible score from AuditorComponent
+			        $scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 			        $circumference = 2 * 3.14159 * 22;
-			        $dashOffset = $circumference - ($percentage / 100) * $circumference;
+			        $dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
+			        $strokeColor = $isPositive ? '#10b981' : '#ef4444';
 			        ?>
 					<div class="score-circle-small">
 						<div class="score-progress-small">
-							<svg width="50" height="50">
-								<defs>
-									<linearGradient id="scoreGradientPositiveSmall<?php echo $listInfo['id']; ?>" x1="0%" y1="0%" x2="100%" y2="100%">
-										<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
-										<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-									</linearGradient>
-									<linearGradient id="scoreGradientNegativeSmall<?php echo $listInfo['id']; ?>" x1="0%" y1="0%" x2="100%" y2="100%">
-										<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
-										<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
-									</linearGradient>
-								</defs>
+							<svg width="50" height="50" style="transform: rotate(-90deg);">
 								<circle class="score-progress-bg-small" cx="25" cy="25" r="22"></circle>
-								<circle class="score-progress-bar-small <?php echo $isPositive ? 'positive' : 'negative'; ?>"
-									cx="25" cy="25" r="22"
-									stroke="url(#scoreGradient<?php echo $isPositive ? 'Positive' : 'Negative'; ?>Small<?php echo $listInfo['id']; ?>)"
+								<circle cx="25" cy="25" r="22"
+									fill="none"
+									stroke="<?php echo $strokeColor; ?>"
+									stroke-width="6"
+									stroke-linecap="round"
 									stroke-dasharray="<?php echo $circumference; ?>"
 									stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
 							</svg>
-							<div class="score-text-small"><?php echo round($score, 1); ?></div>
+							<div class="score-text-small"><?php echo round($scorePercentage, 0); ?>%</div>
 						</div>
 					</div>
 				</td>
