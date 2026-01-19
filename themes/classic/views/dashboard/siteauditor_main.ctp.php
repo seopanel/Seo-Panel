@@ -572,49 +572,42 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 								<?php
 								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
-								$absScore = abs($score);
-								$maxScore = 100;
-								$percentage = min(($absScore / $maxScore) * 100, 100);
+								$maxScore = 38; // Maximum possible score from AuditorComponent
+								$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 								$circumference = 2 * 3.14159 * 36;
-								$dashOffset = $circumference - ($percentage / 100) * $circumference;
+								$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
+								$strokeColor = $isPositive ? '#10b981' : '#ef4444';
 
-								// Determine score status
-								if ($absScore >= 80) {
-									$statusClass = $isPositive ? 'excellent' : 'bad';
-									$statusText = $isPositive ? 'Excellent' : 'Critical';
-								} elseif ($absScore >= 60) {
-									$statusClass = $isPositive ? 'good' : 'poor';
-									$statusText = $isPositive ? 'Good' : 'Poor';
-								} elseif ($absScore >= 40) {
+								// Determine score status based on percentage
+								if ($scorePercentage >= 80) {
+									$statusClass = 'excellent';
+									$statusText = 'Excellent';
+								} elseif ($scorePercentage >= 60) {
+									$statusClass = 'good';
+									$statusText = 'Good';
+								} elseif ($scorePercentage >= 40) {
 									$statusClass = 'average';
 									$statusText = 'Average';
-								} elseif ($absScore >= 20) {
-									$statusClass = $isPositive ? 'average' : 'poor';
-									$statusText = $isPositive ? 'Fair' : 'Needs Work';
+								} elseif ($scorePercentage >= 20) {
+									$statusClass = 'poor';
+									$statusText = 'Needs Work';
 								} else {
-									$statusClass = $isPositive ? 'average' : 'bad';
-									$statusText = $isPositive ? 'Low' : 'Critical';
+									$statusClass = 'bad';
+									$statusText = 'Critical';
 								}
 								?>
 								<div class="score-progress">
-									<svg width="80" height="80">
-										<defs>
-											<linearGradient id="scoreGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
-												<stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
-												<stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
-											</linearGradient>
-											<linearGradient id="scoreGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
-												<stop offset="0%" style="stop-color:#ef4444;stop-opacity:1" />
-												<stop offset="100%" style="stop-color:#dc2626;stop-opacity:1" />
-											</linearGradient>
-										</defs>
+									<svg width="80" height="80" style="transform: rotate(-90deg);">
 										<circle class="score-progress-bg" cx="40" cy="40" r="36"></circle>
-										<circle class="score-progress-bar <?php echo $isPositive ? 'positive' : 'negative'; ?>"
-											cx="40" cy="40" r="36"
+										<circle cx="40" cy="40" r="36"
+											fill="none"
+											stroke="<?php echo $strokeColor; ?>"
+											stroke-width="8"
+											stroke-linecap="round"
 											stroke-dasharray="<?php echo $circumference; ?>"
 											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
 									</svg>
-									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo ($isPositive ? '+' : '') . $score; ?></div>
+									<div class="score-text <?php echo $isPositive ? 'positive' : 'negative'; ?>"><?php echo round($scorePercentage, 0); ?>%</div>
 								</div>
 								<div class="score-info">
 									<span class="score-status <?php echo $statusClass?>"><?php echo $statusText?></span>
