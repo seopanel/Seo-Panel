@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS `analytic_sources` (
 CREATE TABLE IF NOT EXISTS `auditorpagelinks` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `report_id` bigint(20) NOT NULL,
-  `link_url` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
-  `link_anchor` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
-  `link_title` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
+  `link_url` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_anchor` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `nofollow` tinyint(1) NOT NULL DEFAULT '0',
   `extrenal` tinyint(1) NOT NULL DEFAULT '0',
   `brocken` tinyint(1) NOT NULL DEFAULT '0',
@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS `auditorprojects` (
   `website_id` int(11) NOT NULL,
   `max_links` int(11) NOT NULL DEFAULT '500',
   `exclude_links` text COLLATE utf8_unicode_ci NOT NULL,
+  `exclude_extensions` text COLLATE utf8_unicode_ci NULL,
+  `sitemap_url` varchar(500) COLLATE utf8_unicode_ci NULL,
   `check_pr` tinyint(1) NOT NULL DEFAULT '0',
   `check_backlinks` tinyint(1) NOT NULL DEFAULT '0',
   `check_indexed` tinyint(1) NOT NULL DEFAULT '0',
@@ -57,10 +59,12 @@ CREATE TABLE IF NOT EXISTS `auditorprojects` (
 CREATE TABLE IF NOT EXISTS `auditorreports` (
   `id` bigint(24) NOT NULL AUTO_INCREMENT,
   `project_id` int(11) NOT NULL,
-  `page_url` varchar(200) COLLATE utf8_unicode_ci NOT NULL,
-  `page_title` varchar(180) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `page_description` text COLLATE utf8_unicode_ci,
-  `page_keywords` text COLLATE utf8_unicode_ci,
+  `page_url` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `canonical_url` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
+  `discovered_via` ENUM('crawl','sitemap','robots','canonical','import') DEFAULT 'crawl',
+  `page_title` varchar(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `page_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `page_keywords` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `pagerank` float NOT NULL DEFAULT '0',
   `google_backlinks` int(11) NOT NULL DEFAULT '0',
   `bing_backlinks` int(11) NOT NULL DEFAULT '0',
@@ -73,17 +77,38 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `score` smallint(6) NOT NULL DEFAULT '0',
   `updated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `page_authority` float NOT NULL DEFAULT '0',
+  `spam_score` float NOT NULL DEFAULT '0',
+  `ai_robot_allowed` tinyint(1) NOT NULL DEFAULT '1',
+  `mobile_friendly` tinyint(1) NOT NULL DEFAULT '1',
+  `https_secure` tinyint(1) NOT NULL DEFAULT '0',
+  `has_og_tags` tinyint(1) NOT NULL DEFAULT '0',
+  `has_twitter_cards` tinyint(1) NOT NULL DEFAULT '0',
+  `blocked_by_robots` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `project_id_2` (`project_id`,`page_url`),
   KEY `project_id` (`project_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `auditorsitemaps` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `project_id` int(11) NOT NULL,
+  `sitemap_url` varchar(500) COLLATE utf8_unicode_ci NOT NULL,
+  `sitemap_type` ENUM('xml','txt','index') DEFAULT 'xml',
+  `last_parsed` timestamp NULL,
+  `urls_found` int(11) NOT NULL DEFAULT '0',
+  `status` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id`),
+  KEY `project_id` (`project_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `backlinkresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
-  `google` int(11) NOT NULL,
-  `msn` int(11) NOT NULL,
+  `google` int(11) NOT NULL DEFAULT '0',
+  `msn` int(11) NOT NULL DEFAULT '0',
   `alexa` int(11) NOT NULL,
+  `external_pages_to_page` int(11) NOT NULL DEFAULT '0',
+  `external_pages_to_root_domain` int(11) NOT NULL DEFAULT '0',
   `result_time` int(11) NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -473,6 +498,7 @@ CREATE TABLE IF NOT EXISTS `directories` (
   `rank` int(11) NOT NULL DEFAULT '0',
   `is_reciprocal` tinyint(1) NOT NULL DEFAULT '0',
   `pagerank` float NOT NULL DEFAULT '0',
+  `spam_score` float NOT NULL DEFAULT '0',
   `domain_authority` float NOT NULL,
   `page_authority` float NOT NULL,
   PRIMARY KEY (`id`),
@@ -775,10 +801,11 @@ CREATE TABLE IF NOT EXISTS `rankresults` (
   `website_id` int(11) NOT NULL,
   `google_pagerank` int(8) NOT NULL DEFAULT '0',
   `alexa_rank` int(11) NOT NULL,
-  `moz_rank` float NOT NULL,
+  `moz_rank` float NOT NULL DEFAULT '0',
+  `spam_score` float NOT NULL DEFAULT '0',
   `result_time` int(11) NOT NULL DEFAULT '0',
-  `domain_authority` float NOT NULL,
-  `page_authority` float NOT NULL,
+  `domain_authority` float NOT NULL DEFAULT '0',
+  `page_authority` float NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `result_date` (`result_date`)
@@ -847,6 +874,7 @@ CREATE TABLE IF NOT EXISTS `searchengines` (
   `description_index` int(11) NOT NULL DEFAULT '3',
   `encoding` varchar(32) COLLATE utf8_unicode_ci DEFAULT NULL,
   `status` tinyint(1) DEFAULT '0',
+  `updated` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=4 ;
 
@@ -1541,6 +1569,14 @@ ALTER TABLE `backlinkresults` ADD `external_pages_to_root_domain` INT NOT NULL D
 ALTER TABLE `backlinkresults` CHANGE `google` `google` INT NOT NULL DEFAULT '0', CHANGE `msn` `msn` INT NOT NULL DEFAULT '0';
 
 update `settings` set display=0 WHERE `set_name` LIKE 'SP_MOZ_API_ACCESS_ID';
+
+-- Add setting to use sample API data (saves API credits during development/testing)
+INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Use Sample API Data (for testing - saves API credits)', 'SP_USE_SAMPLE_API_DATA', '0', 'system', 'bool', 1);
+
+-- Add system-wide exclude file extensions setting for site auditor
+INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Exclude file extensions (comma-separated)', 'SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso', 'siteauditor', 'text', 1);
 
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
