@@ -1,7 +1,6 @@
 --
 -- Seo Panel 5.1.0 changes
 --
-
 update `settings` set set_val='5.1.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
 
 ALTER TABLE `auditorreports` ADD `ai_robot_allowed` TINYINT(1) NOT NULL DEFAULT '1' AFTER `spam_score`;
