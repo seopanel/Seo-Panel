@@ -1548,8 +1548,6 @@ UPDATE searchengines SET url = REPLACE(url, '&num=[--num--]', '') WHERE  url LIK
 
 UPDATE searchengines SET url = REPLACE(url, '&as_qdr=all&gws_rd=cr&nfpr=1', '') WHERE  url LIKE '%google%';
 
-ALTER TABLE `searchengines` ADD `updated` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
-
 ALTER TABLE `rankresults` ADD `spam_score` FLOAT NOT NULL DEFAULT '0' AFTER `moz_rank`;
 
 ALTER TABLE `rankresults` CHANGE `moz_rank` `moz_rank` FLOAT NOT NULL DEFAULT '0';
