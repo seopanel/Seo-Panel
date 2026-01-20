@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS `analytic_sources` (
 CREATE TABLE IF NOT EXISTS `auditorpagelinks` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `report_id` bigint(20) NOT NULL,
-  `link_url` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `link_anchor` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `link_title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_url` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_anchor` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `link_title` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `nofollow` tinyint(1) NOT NULL DEFAULT '0',
   `extrenal` tinyint(1) NOT NULL DEFAULT '0',
   `brocken` tinyint(1) NOT NULL DEFAULT '0',
