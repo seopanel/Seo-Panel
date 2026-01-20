@@ -133,12 +133,12 @@ class DataForSEOController extends Controller {
             $cat = "lite";
             $dataType = "advanced";
         }
-        
+
         // option to just search for a target url, if found stop search to save api cost
         if (!empty($keywordInfo['stop_crawl_on_match'])) {
             $searchInfo['stop_crawl_on_match'] = $keywordInfo['stop_crawl_on_match'];
         }
-        
+
         try {
             $result = $this->restClient->post("/v3/serp/$seDomianCat/$cat/$subCat/$dataType", [$searchInfo]);
             $connResult['status'] = true;
@@ -241,17 +241,20 @@ class DataForSEOController extends Controller {
             
             // set number of search results per page
             $keywordInfo['depth'] = $seList[$seInfoId]['max_results'];
-            
+
             // if not show all, use option just search for a target url, if found stop search to save api cost
             if (!$showAll) {
+                // extract domain and remove www. prefix for matching
+                $parsedUrl = parse_url('http://' . $websiteUrl);
+                $matchDomain = preg_replace('/^www\./i', '', $parsedUrl['host']);
                 $keywordInfo['stop_crawl_on_match'] = [
                     [
-                        "match_value" => $websiteUrl,
-                        "match_type" => "wildcard",
+                        "match_value" => $matchDomain,
+                        "match_type" => "with_subdomains",
                     ]
                 ];
             }
-            
+
             // call serp api to get the results
             $seFound = true;
             $urlInfo = parse_url($seList[$seInfoId]['url']);
