@@ -4,13 +4,7 @@
 	if (!empty($blogContent['blog_content'])) {
 	    echo $blogContent['blog_content'];
 	} else {
-
-	    // add no follow option to SP links
-	    $spTextHome['home_cont1'] = str_replace('<a ', '<a rel="nofollow" ', $spTextHome['home_cont1']);
-	    $spTextHome['home_cont2'] = str_replace('<a ', '<a rel="nofollow" ', $spTextHome['home_cont2']);
-	    $spTextHome['home_cont3'] = str_replace('<a ', '<a rel="nofollow" ', $spTextHome['home_cont3']);
     	?>
-
     	<!-- Hero Section -->
     	<div class="home-hero">
     		<div class="hero-content">
@@ -189,7 +183,6 @@
     			</a>
     		</div>
     	</div>
-
     	<?php
     }?>
 </div>

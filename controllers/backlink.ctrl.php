@@ -50,7 +50,7 @@ class BacklinkController extends Controller{
 			$url = addHttpToUrl($url);
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
-
+		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($list);
 
@@ -60,111 +60,32 @@ class BacklinkController extends Controller{
 	}
 	
 	function printBacklink($backlinkInfo){
-		$this->url = $backlinkInfo['url'];
-		$backlinkCount = $this->__getBacklinks($backlinkInfo['engine']);
-
-		// For Moz API metrics, just display the count without link
-		if ($backlinkInfo['engine'] == 'external_pages_to_page' || $backlinkInfo['engine'] == 'external_pages_to_root_domain') {
-			echo $backlinkCount;
-			return;
-		}
-
-		// if msn engine
-		if ($backlinkInfo['engine'] == 'msn') {
-			$websiteUrl = addHttpToUrl($backlinkInfo['url']);
-		} else {
-			$websiteUrl = @Spider::removeTrailingSlash(formatUrl($backlinkInfo['url']));
-		}
-
-		$websiteUrl = urldecode($websiteUrl);
-		$backlinkUrl = $this->backUrlList[$backlinkInfo['engine']] . $websiteUrl;
-		echo "<a href='$backlinkUrl' target='_blank'>$backlinkCount</a>";
+		$metric = !empty($backlinkInfo['metric']) ? $backlinkInfo['metric'] : 'external_pages_to_page';
+		$backlinkCount = $this->__getBacklinks($backlinkInfo['url'], $metric);
+		echo $backlinkCount;
 	}
 	
-	function __getBacklinks ($engine, $cron=false) {
+	function __getBacklinks ($url, $metric = 'external_pages_to_page') {
 		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
-		
-		// check whether any api source is enabled for crawl keyword
-		if ($engine != 'alexa') {
-    		$searchInfo = ['name' => "link:$this->url", "engine" => $engine];
-    		list($resDataStatus, $resData) = SettingsController::getSearchResultCount($searchInfo, $cron);
-    		if ($resDataStatus) {
-    		    return $resData['count'];
-    		}
-		}
-		
-		$backlinkCount = 0;
-		switch ($engine) {
-			
-			#google
-			case 'google':
-				$url = $this->backUrlList[$engine] . urlencode($this->url);			
-				$v = $this->spider->getContent($url);
-				$pageContent = empty($v['page']) ? '' :  $v['page'];
-				$r = [];
-				$engineInfo = Spider::getCrawlEngineInfo('google', 'backlink');
-				if (preg_match($engineInfo['regex1'], $pageContent, $r)) {					
-				} elseif (preg_match($engineInfo['regex2'], $pageContent, $r)) {					
-				} elseif (preg_match($engineInfo['regex3'], $pageContent, $r)) {					
-				} elseif (preg_match($engineInfo['regex4'], $pageContent, $r)) {					
-				} else {
-					$crawlInfo['crawl_status'] = 0;
-					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";					
-				}
-				
-				$backlinkCount = !empty($r[1]) ? str_replace(',', '', $r[1]) : 0;
-				break;
-				
-			#msn
-			case 'msn':
-			    $url = formatUrl($this->url, false);
-				$url = $this->backUrlList[$engine] . urlencode(addHttpToUrl($url));
-				$v = $this->spider->getContent($url);
-				$pageContent = empty($v['page']) ? '' :  $v['page'];
-				$r = [];
-				$engineInfo = Spider::getCrawlEngineInfo('bing', 'backlink');
-				if (preg_match($engineInfo['regex1'], $pageContent, $r)) {
-				} elseif (preg_match($engineInfo['regex2'], $pageContent, $r)) {
-				} elseif (preg_match($engineInfo['regex3'], $pageContent, $r)) {
-				} elseif (preg_match($engineInfo['regex4'], $pageContent, $r)) {
-				} else {
-					$crawlInfo['crawl_status'] = 0;
-					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
-				}
-				
-				$backlinkCount = !empty($r[1]) ? str_replace(',', '', $r[1]) : 0;
-				break;
-				
-			// alexa
-			case 'alexa':
-			    $backlinkCount = 0;
-				break;
 
-			// external_pages_to_page - get from Moz API
-			case 'external_pages_to_page':
-			case 'external_pages_to_root_domain':
-				include_once(SP_CTRLPATH."/moz.ctrl.php");
-				$mozCtrler = new MozController();
-				$mozRankList = $mozCtrler->__getMozRankInfo(array($this->url));
-				$backlinkCount = !empty($mozRankList[0][$engine]) ? $mozRankList[0][$engine] : 0;
-				break;
+		// Use sample API data if enabled (saves API credits)
+		if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+			return rand(100, 50000);
 		}
 
-		// update crawl log
-		if (!empty($v['log_id'])) {
-			$crawlLogCtrl = new CrawlLogController();
-			$crawlInfo['crawl_type'] = 'backlink';
-			$crawlInfo['ref_id'] = $this->url;
-			$crawlInfo['subject'] = $engine;
-			$crawlLogCtrl->updateCrawlLog($v['log_id'], $crawlInfo);
-		}
+		// Get backlink data from Moz API (matches generateReports logic)
+		include_once(SP_CTRLPATH."/moz.ctrl.php");
+		$mozCtrler = new MozController();
+		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($url));
+
+		// Extract backlink count based on metric
+		$backlinkCount = !empty($mozRankInfo[0][$metric]) ? $mozRankInfo[0][$metric] : 0;
 
 		return $backlinkCount;
 	}
 	
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo = '') {
-				
+	function showGenerateReports($searchInfo=[]) {				
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
@@ -249,8 +170,7 @@ class BacklinkController extends Controller{
 	}
 	
 	# func to show reports
-	function showReports($searchInfo = '') {
-		
+	function showReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = $searchInfo['from_time'];
@@ -325,10 +245,8 @@ class BacklinkController extends Controller{
 	
 	# func to get backlink report for a website
 	function __getWebsitebacklinkReport($websiteId, $fromTime, $toTime) {
-
 		$fromTimeLabel = date('Y-m-d', $fromTime);
-		$toTimeLabel = date('Y-m-d', $toTime);
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+		$toTimeLabel = date('Y-m-d', $toTime);	
 		$sql = "select s.* ,w.name
 				from backlinkresults s,websites w 
 				where s.website_id=w.id 

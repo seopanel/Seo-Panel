@@ -63,7 +63,12 @@ class SaturationCheckerController extends Controller{
 	
 	function __getSaturationRank ($engine, $cron = false) {
 		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
-		
+
+		// Use sample API data if enabled (saves API credits)
+		if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+			return rand(50, 10000);
+		}
+
 		// check whether any api source is enabled for crawl keyword
 		$searchInfo = ['name' => "site:$this->url", "engine" => $engine];
 		list($resDataStatus, $resData) = SettingsController::getSearchResultCount($searchInfo, $cron);

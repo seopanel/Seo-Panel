@@ -22,8 +22,11 @@
 
 # class defines all site auditor controller functions
 class AuditorComponent extends Controller{
-    
+
     var $commentInfo = array(); // to store the details about the score of each page
+
+    // Maximum possible score for a page (sum of all positive scoring factors)
+    var $maxScore = 38;
     
     // function to save report info
     function saveReportInfo($reportInfo, $action='create') {
@@ -49,7 +52,7 @@ class AuditorComponent extends Controller{
     function runReport($reportUrl, $projectInfo, $totalLinks) {        
         $spider = new Spider();
         
-        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {        	
+        if ($rInfo = $this->getReportInfo(" and project_id={$projectInfo['id']} and page_url='$reportUrl'") ) {
         	$pageInfo = $spider->getPageInfo($reportUrl, $projectInfo['url'], true);
         	
             // handle redirects
@@ -96,36 +99,47 @@ class AuditorComponent extends Controller{
             $reportInfo['page_title'] = addslashes($pageInfo['page_title']);
             $reportInfo['page_description'] = addslashes($pageInfo['page_description']);
             $reportInfo['page_keywords'] = addslashes($pageInfo['page_keywords']);
-            $reportInfo['total_links'] = intval($pageInfo['total_links']);
-            $reportInfo['external_links'] = intval($pageInfo['external']);
-            $reportInfo['crawled'] = 1;
-        
-            // gooogle pagerank check
-            if ($projectInfo['check_pr']) {
-            	$mozCtrler = $this->createController('Moz');
-            	$mozRankList = $mozCtrler->__getMozRankInfo(array($reportUrl));
-            	$reportInfo['spam_score'] = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
-            	$reportInfo['page_authority'] = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
+            if (!empty($pageInfo['canonical_url'])) {
+                $reportInfo['canonical_url'] = addslashes($pageInfo['canonical_url']);
             }
             
-            // backlinks page check
-            if ($projectInfo['check_backlinks']) {
-                $backlinkCtrler = $this->createController('Backlink');
-                $backlinkCtrler->url = Spider::addTrailingSlash($reportUrl);
-                $reportInfo['bing_backlinks'] = $backlinkCtrler->__getBacklinks('msn');
-                $reportInfo['google_backlinks'] = $backlinkCtrler->__getBacklinks('google');
+            $reportInfo['total_links'] = intval($pageInfo['total_links']);
+            $reportInfo['external_links'] = intval($pageInfo['external']);
+            $reportInfo['ai_robot_allowed'] = isset($pageInfo['ai_robot_allowed']) ? intval($pageInfo['ai_robot_allowed']) : 1;
+            $reportInfo['mobile_friendly'] = isset($pageInfo['mobile_friendly']) ? intval($pageInfo['mobile_friendly']) : 0;
+            $reportInfo['https_secure'] = isset($pageInfo['https_secure']) ? intval($pageInfo['https_secure']) : 0;
+            $reportInfo['has_og_tags'] = isset($pageInfo['has_og_tags']) ? intval($pageInfo['has_og_tags']) : 0;
+            $reportInfo['has_twitter_cards'] = isset($pageInfo['has_twitter_cards']) ? intval($pageInfo['has_twitter_cards']) : 0;
+            $reportInfo['blocked_by_robots'] = isset($pageInfo['blocked_by_robots']) ? intval($pageInfo['blocked_by_robots']) : 0;
+            $reportInfo['crawled'] = 1;
+        
+            //  pagerank and backlink check
+            if ($projectInfo['check_pr'] || $projectInfo['check_backlinks']) {
+            	$mozCtrler = $this->createController('Moz');
+            	$mozRankList = $mozCtrler->__getMozRankInfo(array($reportUrl));
+            	
+            	// page rank details needs to stored
+            	if ($projectInfo['check_pr']) {
+            	   $reportInfo['spam_score'] = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
+            	   $reportInfo['page_authority'] = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
+            	}
+            	
+            	// backlinks page check
+            	if ($projectInfo['check_backlinks']) {
+            	    $reportInfo['google_backlinks'] = !empty($mozRankList[0]['external_pages_to_page']) ? $mozRankList[0]['external_pages_to_page'] : 0;
+            	}
             }
             
             // indexed page check
             if ($projectInfo['check_indexed']) {
                 $saturationCtrler = $this->createController('SaturationChecker');
                 $saturationCtrler->url = Spider::addTrailingSlash($reportUrl);
-                $reportInfo['bing_indexed'] = $saturationCtrler->__getSaturationRank('msn');
                 $reportInfo['google_indexed'] = $saturationCtrler->__getSaturationRank('google');
+                $reportInfo['bing_indexed'] = $saturationCtrler->__getSaturationRank('msn');
             }
         
             if ($projectInfo['check_brocken']) {
-                $reportInfo['brocken'] = Spider::isLInkBrocken($projectInfo['url']);    
+                $reportInfo['brocken'] = Spider::isLinkBroken($reportInfo['page_url']);
             }
             
             $this->saveReportInfo($reportInfo, 'update');
@@ -147,7 +161,7 @@ class AuditorComponent extends Controller{
                     if ($totalLinks < $projectInfo['max_links']) { 
                     	
                     	// check whether valid html serving link
-                        if(preg_match('/\.zip$|\.gz$|\.tar$|\.png$|\.jpg$|\.jpeg$|\.gif$|\.mp3$|\.flv$|\.pdf$|\.m4a$|#$/i', $linkInfo['link_url'])) continue;
+                        if($this->isExcludedFileExtension($linkInfo['link_url'], $projectInfo)) continue;
                         
                         // if found any space in the link
                         $linkInfo['link_url'] = Spider::formatUrl($linkInfo['link_url']);
@@ -198,9 +212,17 @@ class AuditorComponent extends Controller{
     
     // function to store link of page
     function storePagelLinks($linkInfo, $delete=false) {
-        
+
+        // Truncate link_anchor and link_title to fit database columns (varchar 200)
+        if (isset($linkInfo['link_anchor'])) {
+            $linkInfo['link_anchor'] = mb_substr($linkInfo['link_anchor'], 0, 200);
+        }
+        if (isset($linkInfo['link_title'])) {
+            $linkInfo['link_title'] = mb_substr($linkInfo['link_title'], 0, 200);
+        }
+
         foreach ($linkInfo as $col => $val) {
-            $linkInfo[$col] = addslashes($val);
+            $linkInfo[$col] = addslashes($val ?? '');
         }
         
         if ($delete) {
@@ -243,128 +265,206 @@ class AuditorComponent extends Controller{
         $scoreInfo = array();
         $this->commentInfo = array();
         $spTextSA = $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']);
-        
-        // check page title length
+
+        // check page title length (Modern SEO: 50-60 characters for optimal display)
         $lengTitle = strlen($reportInfo['page_title']);
-        if ( ($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= SA_TITLE_MIN_LENGTH) ) {
-            $scoreInfo['page_title'] = 1;        
+        if ( ($lengTitle <= 60) && ($lengTitle >= 50) ) {
+            $scoreInfo['page_title'] = 2; // Increased weight for proper title optimization
+            $msg = $spTextSA["The page title length is optimal for search engines"];
+            $this->commentInfo['page_title'] = formatSuccessMsg($msg);
+        } else if ( ($lengTitle <= SA_TITLE_MAX_LENGTH) && ($lengTitle >= 30) ) {
+            $scoreInfo['page_title'] = 1; // Acceptable but not optimal
+            $msg = $spTextSA["The page title length is acceptable"];
+            $this->commentInfo['page_title'] = formatSuccessMsg($msg);
         } else {
-            $scoreInfo['page_title'] = -1;
-            $msg = $spTextSA["The page title length is not between"]." ".SA_TITLE_MIN_LENGTH." & ".SA_TITLE_MAX_LENGTH;
+            $scoreInfo['page_title'] = -2; // Higher penalty for poor title optimization
+            $msg = $spTextSA["The page title length is not optimal (recommended: 50-60 characters)"];
             $this->commentInfo['page_title'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check meta description length
+
+        // check meta description length (Modern SEO: 150-160 characters)
         $lengDes = strlen($reportInfo['page_description']);
-        if ( ($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= SA_DES_MIN_LENGTH) ) {
-            $scoreInfo['page_description'] = 1;
+        if ( ($lengDes <= 160) && ($lengDes >= 150) ) {
+            $scoreInfo['page_description'] = 2; // Optimal length
+            $msg = $spTextSA["The page description length is optimal for search engines"];
+            $this->commentInfo['page_description'] = formatSuccessMsg($msg);
+        } else if ( ($lengDes <= SA_DES_MAX_LENGTH) && ($lengDes >= 120) ) {
+            $scoreInfo['page_description'] = 1; // Acceptable
+            $msg = $spTextSA["The page description length is acceptable"];
+            $this->commentInfo['page_description'] = formatSuccessMsg($msg);
         } else {
             $scoreInfo['page_description'] = -1;
-            $msg = $spTextSA["The page description length is not between"]." ".SA_DES_MIN_LENGTH." and ".SA_DES_MAX_LENGTH;
+            $msg = $spTextSA["The page description length is not optimal (recommended: 150-160 characters)"];
             $this->commentInfo['page_description'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check meta keywords length
-        $lengKey = strlen($reportInfo['page_keywords']);
-        if ( ($lengKey <= SA_KEY_MAX_LENGTH) && ($lengKey >= SA_KEY_MIN_LENGTH) ) {
-            $scoreInfo['page_keywords'] = 1;
-        } else {
-            $scoreInfo['page_keywords'] = -1;
-            $msg = $spTextSA["The page keywords length is not between"]." ".SA_KEY_MIN_LENGTH." and ".SA_KEY_MAX_LENGTH;
-            $this->commentInfo['page_keywords'] = formatErrorMsg($msg, 'error', '');
+
+        // Meta keywords check removed - Google ignores meta keywords since 2009
+        // Keeping minimal check for presence only, not scoring
+        if (!empty($reportInfo['page_keywords'])) {
+            $scoreInfo['page_keywords'] = 0; // Neutral - no impact on modern SEO
         }
-        
-        // if link brocken
+
+        // if link broken (critical issue in modern SEO)
         if ($reportInfo['brocken']) {
-            $scoreInfo['brocken'] = -1;
-            $msg = $spTextSA["The page is brocken"];
+            $scoreInfo['brocken'] = -3; // Higher penalty for broken links
+            $msg = $spTextSA["The page is broken - critical SEO issue"];
             $this->commentInfo['brocken'] = formatErrorMsg($msg, 'error', '');
         }
 
-        // if total links of a page
-        if ($reportInfo['total_links'] >= SA_TOTAL_LINKS_MAX) {
+        // if total links of a page (modern recommendation: 100-150 links max)
+        if ($reportInfo['total_links'] >= 150) {
+            $scoreInfo['total_links'] = -2;
+            $msg = $spTextSA["The total number of links in page is too high (recommended: less than 150)"];
+            $this->commentInfo['total_links'] = formatErrorMsg($msg, 'error', '');
+        } else if ($reportInfo['total_links'] >= 100) {
             $scoreInfo['total_links'] = -1;
-            $msg = $spTextSA["The total number of links in page is greater than"]." ".SA_TOTAL_LINKS_MAX;
-            $this->commentInfo['page_keywords'] = formatErrorMsg($msg, 'error', '');
+            $msg = $spTextSA["The total number of links in page is slightly high"];
+            $this->commentInfo['total_links'] = formatErrorMsg($msg, 'warning', '');
         }
-        
-        // check google pagerank
-        if ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_SECOND) {
-            $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 3;
-            $msg = $spTextSA["The page is having exellent pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank'] >= SA_PR_CHECK_LEVEL_FIRST) {
-            $scoreInfo['pagerank'] = $reportInfo['pagerank'] * 2;
-            $msg = $spTextSA["The page is having very good pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else if ($reportInfo['pagerank']) {
-            $scoreInfo['pagerank'] = 1;
-            $msg = $spTextSA["The page is having good pagerank"];
-            $this->commentInfo['pagerank'] = formatSuccessMsg($msg);
-        } else {
-            $scoreInfo['pagerank'] = 0;
-            $msg = $spTextSA["The page is having poor pagerank"];
-            $this->commentInfo['pagerank'] = formatErrorMsg($msg, 'error', '');
-        }
-        
-        // check page authority value
+
+        // PageRank removed - deprecated since 2013, no longer used in scoring
+
+        // Page Authority - increased importance in modern SEO
         if ($reportInfo['page_authority'] >= SA_PA_CHECK_LEVEL_SECOND) {
-        	$scoreInfo['page_authority'] = 6;
+        	$scoreInfo['page_authority'] = 10; // Increased from 6 (most important metric)
         	$msg = $spTextSA["The page is having excellent page authority value"];
         	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
         } else if ($reportInfo['page_authority'] >= SA_PA_CHECK_LEVEL_FIRST) {
-        	$scoreInfo['page_authority'] = 3;
+        	$scoreInfo['page_authority'] = 5; // Increased from 3
         	$msg = $spTextSA["The page is having very good page authority value"];
+        	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
+        } else if ($reportInfo['page_authority'] >= 20) {
+        	$scoreInfo['page_authority'] = 2; // New tier for moderate PA
+        	$msg = $spTextSA["The page is having moderate page authority value"];
         	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
         } else if ($reportInfo['page_authority']) {
         	$scoreInfo['page_authority'] = 1;
-        	$msg = $spTextSA["The page is having good page authority value"];
-        	$this->commentInfo['page_authority'] = formatSuccessMsg($msg);
+        	$msg = $spTextSA["The page is having low page authority value"];
+        	$this->commentInfo['page_authority'] = formatErrorMsg($msg, 'warning', '');
         } else {
-        	$scoreInfo['page_authority'] = 0;
-        	$msg = $spTextSA["The page is having poor page authority value"];
+        	$scoreInfo['page_authority'] = -1;
+        	$msg = $spTextSA["The page is having no page authority value"];
         	$this->commentInfo['page_authority'] = formatErrorMsg($msg, 'error', '');
         }
-        
-        // check backlinks
-        $seArr = array('google', 'bing');
-        foreach ($seArr as $se) {
-            $label = $se.'_backlinks';
-            if ($reportInfo[$label] >= SA_BL_CHECK_LEVEL) {                
-                $scoreInfo[$label] = 2;
-                $msg = $spTextSA["The page is having exellent number of backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatSuccessMsg($msg);
-            } elseif($reportInfo[$label]) {
-                $scoreInfo[$label] = 1;
-                $msg = $spTextSA["The page is having good number of backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatSuccessMsg($msg);                
-            } else {
-                $scoreInfo[$label] = 0;
-                $msg = $spTextSA["The page is not having backlinks in"]." ".$se;
-                $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }     
+
+        // check backlinks (important for modern SEO)
+        if ($reportInfo['google_backlinks'] >= SA_BL_CHECK_LEVEL) {
+            $scoreInfo['google_backlinks'] = 3; // Increased from 2
+            $msg = $spTextSA["The page is having excellent number of backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } elseif($reportInfo['google_backlinks'] >= 10) {
+            $scoreInfo['google_backlinks'] = 2; // New tier
+            $msg = $spTextSA["The page is having good number of backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } elseif($reportInfo['google_backlinks']) {
+            $scoreInfo['google_backlinks'] = 1;
+            $msg = $spTextSA["The page is having some backlinks"];
+            $this->commentInfo['google_backlinks'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['google_backlinks'] = 0; // Neutral - not a penalty
+            $msg = $spTextSA["The page has no backlinks yet"];
+            $this->commentInfo['google_backlinks'] = formatErrorMsg($msg, 'warning', '');
         }
-        
-        // check whether indexed or not    
+
+        // check whether indexed or not (critical for visibility)
+        $seArr = array('google', 'bing');
         foreach ($seArr as $se) {
             $label = $se.'_indexed';
             if($reportInfo[$label]) {
-                $scoreInfo[$label] = 1;                
+                $scoreInfo[$label] = 2; // Increased from 1 (being indexed is critical)
             } else {
-                $scoreInfo[$label] = -1;
+                $scoreInfo[$label] = -2; // Higher penalty for not being indexed
                 $msg = $spTextSA["The page is not indexed in"]." ".$se;
                 $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }   
+            }
         }
-        
+
+        // Check AI robot compatibility (important for modern SEO and AI visibility)
+        if ($reportInfo['ai_robot_allowed']) {
+            $scoreInfo['ai_robot_allowed'] = 3; // Good score for AI-friendly pages
+            $msg = $spTextSA["The page allows AI robots to crawl and index content"];
+            $this->commentInfo['ai_robot_allowed'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['ai_robot_allowed'] = -2; // Penalty for blocking AI robots
+            $msg = $spTextSA["The page blocks AI robots from crawling - may limit AI search visibility"];
+            $this->commentInfo['ai_robot_allowed'] = formatErrorMsg($msg, 'warning', '');
+        }
+
+        // Check Mobile-Friendliness (critical for modern SEO - Google mobile-first indexing)
+        if ($reportInfo['mobile_friendly']) {
+            $scoreInfo['mobile_friendly'] = 4; // High score for mobile-friendly pages
+            $msg = $spTextSA["The page is mobile-friendly with proper viewport configuration"];
+            $this->commentInfo['mobile_friendly'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['mobile_friendly'] = -3; // High penalty for non-mobile-friendly
+            $msg = $spTextSA["The page is not mobile-friendly - critical issue for modern SEO"];
+            $this->commentInfo['mobile_friendly'] = formatErrorMsg($msg, 'error', '');
+        }
+
+        // Check HTTPS/SSL Security (essential for SEO and user trust)
+        if ($reportInfo['https_secure']) {
+            $scoreInfo['https_secure'] = 3; // Good score for secure pages
+            $msg = $spTextSA["The page is served over HTTPS - secure connection"];
+            $this->commentInfo['https_secure'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['https_secure'] = -3; // High penalty for non-HTTPS
+            $msg = $spTextSA["The page is not secure (HTTP) - should use HTTPS"];
+            $this->commentInfo['https_secure'] = formatErrorMsg($msg, 'error', '');
+        }
+
+        // Check Open Graph Tags (important for social media sharing)
+        if ($reportInfo['has_og_tags']) {
+            $scoreInfo['has_og_tags'] = 2; // Good score for OG tags
+            $msg = $spTextSA["The page has Open Graph tags for better social media sharing"];
+            $this->commentInfo['has_og_tags'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['has_og_tags'] = -1; // Minor penalty for missing OG tags
+            $msg = $spTextSA["The page is missing Open Graph tags - limits social media optimization"];
+            $this->commentInfo['has_og_tags'] = formatErrorMsg($msg, 'warning', '');
+        }
+
+        // Check Twitter Card Tags (important for Twitter sharing)
+        if ($reportInfo['has_twitter_cards']) {
+            $scoreInfo['has_twitter_cards'] = 2; // Good score for Twitter cards
+            $msg = $spTextSA["The page has Twitter Card tags for optimized Twitter sharing"];
+            $this->commentInfo['has_twitter_cards'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['has_twitter_cards'] = -1; // Minor penalty for missing Twitter cards
+            $msg = $spTextSA["The page is missing Twitter Card tags - limits Twitter optimization"];
+            $this->commentInfo['has_twitter_cards'] = formatErrorMsg($msg, 'warning', '');
+        }
+
+        // Check robots.txt blocking (critical for crawlability)
+        if (!$reportInfo['blocked_by_robots']) {
+            $scoreInfo['blocked_by_robots'] = 3; // Good score for accessible pages
+            $msg = $spTextSA["The page is allowed by robots.txt and can be crawled by search engines"];
+            $this->commentInfo['blocked_by_robots'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['blocked_by_robots'] = -5; // High penalty for blocked pages
+            $msg = $spTextSA["The page is blocked by robots.txt - search engines cannot crawl this page"];
+            $this->commentInfo['blocked_by_robots'] = formatErrorMsg($msg, 'error', '');
+        }
+
         return $scoreInfo;
     }
-    
+
+    // function to calculate score as percentage
+    function getScorePercentage($score) {
+        if ($this->maxScore <= 0) {
+            return 0;
+        }
+        // Ensure score is not negative for percentage calculation
+        $score = max(0, $score);
+        $percentage = round(($score / $this->maxScore) * 100, 1);
+        // Cap at 100% in case of any calculation issues
+        return min(100, $percentage);
+    }
+
     // function to find the score of a project
     function updateProjectPageScore($projectId) {        
         $sql = "select sum(score)/count(*) as avgscore from auditorreports where crawled=1 and project_id=$projectId";
         $listInfo = $this->db->select($sql, true);
-		$score = empty($listInfo['avgscore']) ? 0 : $listInfo['avgscore'];
+		$score = empty($listInfo['avgscore']) ? 0 : round($listInfo['avgscore'], 2);
         
         $sql = "update auditorprojects set score=$score where id=$projectId";
         $this->db->query($sql); 
@@ -379,21 +479,60 @@ class AuditorComponent extends Controller{
     
     // function to get duplicate meta contents info
     function getDuplicateMetaInfoCount($projectId, $col='page_title', $statusCheck=false, $statusVal=1) {
+        $col = addslashes($col);
+        $projectId = intval($projectId);
         $crawled = $statusCheck ? " and crawled=$statusVal" : "";
-        $sql = "select $col,count(*) as count from auditorreports where project_id=$projectId and $col!='' $crawled group by $col having count>1";
+        $sql = "select $col,count(*) as count 
+                from auditorreports
+                where project_id=$projectId and $col!='' $crawled
+                group by $col having count>1";
         $list = $this->db->select($sql);
-        $total = 0;
-        foreach ($list as $info) {
-            $total++;
-        }
+        $total = count($list);        
         return $total;
     }
     
     // function to get all report pages of a project
-    function getAllreportPages($where='', $cols='*') {        	    
+    function getAllreportPages($where='', $cols='*') {
 	    $sql = "SELECT $cols FROM auditorreports where 1=1 $where";
 		$list = $this->db->select($sql);
 		return $list;
     }
-    
+
+    /**
+     * Check if URL has excluded file extension
+     *
+     * @param string $url The URL to check
+     * @param array $projectInfo Project information containing exclude_extensions setting
+     * @return bool True if URL should be excluded, false otherwise
+     */
+    function isExcludedFileExtension($url, $projectInfo) {
+        // Get project-specific extensions if set, otherwise use system default
+        if (!empty($projectInfo['exclude_extensions'])) {
+            $extensions = $projectInfo['exclude_extensions'];
+        } else {
+            $extensions = defined('SA_EXCLUDE_FILE_EXTENSIONS') ? SA_EXCLUDE_FILE_EXTENSIONS : 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a';
+        }
+
+        // Also exclude anchor-only links
+        if (preg_match('/#$/', $url)) {
+            return true;
+        }
+
+        // Build regex from extension list
+        $extArray = array_map('trim', explode(',', $extensions));
+        $extArray = array_filter($extArray); // remove empty values
+
+        if (empty($extArray)) {
+            return false;
+        }
+
+        // Escape special regex chars and build pattern
+        $extArray = array_map(function($ext) {
+            return preg_quote($ext, '/');
+        }, $extArray);
+
+        $pattern = '/\.(' . implode('|', $extArray) . ')(\?|#|$)/i';
+        return preg_match($pattern, $url);
+    }
+
 }

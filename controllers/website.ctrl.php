@@ -510,10 +510,142 @@ class WebsiteController extends Controller{
     			} else {
 				    WebsiteController::addInputValue($matches[1], 'webkeywords');
     			}
-			}			
+			}
+
+			// Extract canonical URL
+			if ($returVal) {
+				preg_match('/<link.*?rel=["\']canonical["\'].*?href=["\']([^"\']+)["\']/si', $ret['page'], $matches);
+				if (empty($matches[1])) {
+					preg_match('/<link.*?href=["\']([^"\']+)["\'].*?rel=["\']canonical["\']/si', $ret['page'], $matches);
+				}
+				if (!empty($matches[1])) {
+					$metaInfo['canonical_url'] = trim($matches[1]);
+				}
+
+			// Check AI robot compatibility
+			$metaInfo['ai_robot_allowed'] = 1; // Default: allowed
+
+			// Check for robots meta tag that blocks AI bots
+			// Common AI bot blocking patterns: noindex, nofollow, noarchive, nosnippet
+			$aiBlockingBots = ['GPTBot', 'ChatGPT-User', 'Google-Extended', 'anthropic-ai', 'Claude-Web', 'CCBot', 'PerplexityBot', 'Omgilibot'];
+
+			// Check for general robots meta tag
+			preg_match('/<meta\s+name=["\']robots["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']robots["\']/si', $ret['page'], $matches);
+			}
+
+			if (!empty($matches[1])) {
+				$robotsContent = strtolower(trim($matches[1]));
+				// If noindex or none is present, AI robots are blocked
+				if (stristr($robotsContent, 'noindex') || stristr($robotsContent, 'none')) {
+					$metaInfo['ai_robot_allowed'] = 0;
+				}
+			}
+
+			// Check for specific AI bot blocking meta tags
+			foreach ($aiBlockingBots as $botName) {
+				preg_match('/<meta\s+name=["\']' . preg_quote($botName, '/') . '["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+				if (empty($matches[1])) {
+					preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']' . preg_quote($botName, '/') . '["\']/si', $ret['page'], $matches);
+				}
+
+				if (!empty($matches[1])) {
+					$botContent = strtolower(trim($matches[1]));
+					// If noindex, nofollow, or none is present for AI bots
+					if (stristr($botContent, 'noindex') || stristr($botContent, 'nofollow') || stristr($botContent, 'none')) {
+						$metaInfo['ai_robot_allowed'] = 0;
+						break;
+					}
+				}
+			}
+
+			// Check Mobile-Friendliness (viewport meta tag)
+			$metaInfo['mobile_friendly'] = 0; // Default: not mobile-friendly
+			preg_match('/<meta\s+name=["\']viewport["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']viewport["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) {
+				// Check if viewport has width=device-width or initial-scale
+				$viewportContent = strtolower($matches[1]);
+				if (stristr($viewportContent, 'width=device-width') || stristr($viewportContent, 'initial-scale')) {
+					$metaInfo['mobile_friendly'] = 1;
+				}
+			}
+
+			// Check HTTPS/SSL Security
+			$metaInfo['https_secure'] = 0; // Default: not secure
+			if (stristr($websiteUrl, 'https://')) {
+				$metaInfo['https_secure'] = 1;
+			}
+
+			// Check Open Graph Tags
+			$metaInfo['has_og_tags'] = 0; // Default: no OG tags
+			$ogTagsFound = 0;
+			
+			// Check for og:title
+			preg_match('/<meta\s+property=["\']og:title["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+property=["\']og:title["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $ogTagsFound++;
+
+			// Check for og:description
+			preg_match('/<meta\s+property=["\']og:description["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+property=["\']og:description["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $ogTagsFound++;
+
+			// Check for og:image
+			preg_match('/<meta\s+property=["\']og:image["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+property=["\']og:image["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $ogTagsFound++;
+
+			// If at least 2 OG tags found, consider it has OG tags
+			if ($ogTagsFound >= 2) {
+				$metaInfo['has_og_tags'] = 1;
+			}
+
+			// Check Twitter Card Tags
+			$metaInfo['has_twitter_cards'] = 0; // Default: no Twitter cards
+			$twitterTagsFound = 0;
+
+			// Check for twitter:card
+			preg_match('/<meta\s+name=["\']twitter:card["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']twitter:card["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $twitterTagsFound++;
+
+			// Check for twitter:title
+			preg_match('/<meta\s+name=["\']twitter:title["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']twitter:title["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $twitterTagsFound++;
+
+			// Check for twitter:description
+			preg_match('/<meta\s+name=["\']twitter:description["\']\s+content=["\'](.*?)["\']/si', $ret['page'], $matches);
+			if (empty($matches[1])) {
+				preg_match('/<meta\s+content=["\'](.*?)["\']\s+name=["\']twitter:description["\']/si', $ret['page'], $matches);
+			}
+			if (!empty($matches[1])) $twitterTagsFound++;
+
+			// If at least 2 Twitter tags found, consider it has Twitter cards
+			if ($twitterTagsFound >= 2) {
+				$metaInfo['has_twitter_cards'] = 1;
+			}
+
+			// Check if page is blocked by robots.txt
+			$metaInfo['blocked_by_robots'] = Spider::isBlockedByRobotsTxt($websiteUrl, $websiteUrl);
 		}
-		
-		return $metaInfo; 
+	}
+
+	return $metaInfo; 
 	}
 	
 	public static function addInputValue($value, $col) {
