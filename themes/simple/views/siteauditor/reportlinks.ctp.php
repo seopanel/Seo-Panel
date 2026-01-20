@@ -1,27 +1,6 @@
-<table class="report_head" style="width: 98%;">
-	<tr>
-		<td align="left" valign="bottom">
-			<div><b><?php echo $spTextSA['Project Url']?></b>: <?php echo $projectInfo['url']?></div>
-			<div style="margin-bottom: 0px;"><b><?php echo $spText['label']['Updated']?></b>: <?php echo $projectInfo['last_updated']?></div>
-			<div style="margin-bottom: 0px;margin-top: 10px;"><b><?php echo $spText['label']['Total Results']?></b>: <?php echo $totalResults?></div>
-		</td>
-
 <?php
 $borderCollapseVal = "";
 $hrefAction = 'href="javascript:void(0)"';
-$mainLink = SP_WEBPATH."/siteauditor.php?project_id=$projectId&pageno=$pageNo"."$filter";
-foreach ($headArr as $col => $val) {
-    $linkName = $col."Link";
-    $linkClass = "";
-    if ($col == $orderCol) {
-        $oVal = ($orderVal == 'DESC') ? "ASC" : "DESC";
-        $linkClass .= "sort_".strtolower($orderVal);
-    } else {
-        $oVal = $orderVal;
-    }
-    
-    $$linkName = "<a id='sortLink' class='$linkClass' href='javascript:void(0)' onclick=\"scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&order_col=$col&order_val=$oVal')\">$val</a>";
-}
 
 if(!empty($pdfVersion) || !empty($printVersion)) {
 	// if pdf report to be generated
@@ -32,39 +11,331 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	} else {
 		showPrintHeader($spTextTools['Auditor Reports']);
 	}
-} else {    
-    ?>	
-	<td align="right" valign="bottom">
+} else {
+?>
+<style>
+.report-info-card {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.export_div {
+	display: inline-flex;
+	gap: 1px;
+	align-items: center;
+}
+.export_div a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 40px;
+	border-radius: 8px;
+	transition: all 0.3s ease;
+	text-decoration: none;
+	font-size: 18px;
+}
+.export_div a:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.export_div a i.fa-file-pdf {
+	color: #dc3545;
+}
+.export_div a:hover i.fa-file-pdf {
+	color: #c82333;
+}
+.export_div a i.fa-file-csv {
+	color: #28a745;
+}
+.export_div a:hover i.fa-file-csv {
+	color: #218838;
+}
+.export_div a i.fa-print {
+	color: #007bff;
+}
+.export_div a:hover i.fa-print {
+	color: #0056b3;
+}
+.report-info-item {
+	display: inline-block;
+	margin-right: 30px;
+	margin-bottom: 8px;
+	font-size: 14px;
+}
+.report-info-label {
+	color: #666;
+	font-weight: 600;
+	margin-right: 8px;
+}
+.report-info-value {
+	color: #333;
+	font-weight: 400;
+}
+.report-info-url {
+	color: #0066cc;
+	text-decoration: none;
+}
+.report-info-url:hover {
+	text-decoration: underline;
+}
+.link-report-card {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 0;
+	margin-bottom: 20px;
+	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+	overflow: hidden;
+}
+.link-report-header {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: white;
+	padding: 5px 25px;
+	font-size: 18px;
+	font-weight: 600;
+}
+.link-report-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.link-report-table thead tr {
+	background: #f8f9fa;
+	border-bottom: 2px solid #dee2e6;
+}
+.link-report-table thead th {
+	padding: 15px;
+	text-align: left;
+	font-size: 13px;
+	font-weight: 600;
+	color: #495057;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+.link-report-table tbody tr {
+	border-bottom: 1px solid #e9ecef;
+	transition: background-color 0.2s;
+}
+.link-report-table tbody tr:hover {
+	background-color: #f8f9fa;
+}
+.link-report-table tbody td {
+	padding: 15px;
+	font-size: 14px;
+	color: #212529;
+	vertical-align: middle;
+}
+.link-report-table tbody td:first-child {
+	font-size: 15px;
+}
+.link-report-table tbody td:first-child a {
+	color: #0066cc;
+	text-decoration: none;
+	font-weight: 500;
+}
+.link-report-table tbody td:first-child a:hover {
+	text-decoration: underline;
+}
+
+/* Score Circle for table */
+.score-circle-small {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.score-progress-small {
+	position: relative;
+	width: 50px;
+	height: 50px;
+}
+
+.score-progress-small svg {
+	transform: rotate(-90deg);
+}
+
+.score-progress-bg-small {
+	fill: none;
+	stroke: #e2e8f0;
+	stroke-width: 6;
+}
+
+.score-progress-bar-small {
+	fill: none;
+	stroke-width: 6;
+	stroke-linecap: round;
+	transition: stroke-dashoffset 1s ease;
+}
+
+.score-progress-bar-small.positive {
+	stroke: url(#scoreGradientPositiveSmall);
+}
+
+.score-progress-bar-small.negative {
+	stroke: url(#scoreGradientNegativeSmall);
+}
+
+.score-text-small {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-size: 14px;
+	font-weight: 700;
+	color: #2d3748;
+}
+</style>
+
+<div class="report-info-card">
+	<div class="report-info-item">
+		<span class="report-info-label"><i class="fas fa-globe"></i> <?php echo $spTextSA['Project Url']?>:</span>
+		<a href="<?php echo $projectInfo['url']?>" target="_blank" class="report-info-value report-info-url"><?php echo $projectInfo['url']?></a>
+	</div>
+	<div class="report-info-item">
+		<span class="report-info-label"><i class="fas fa-clock"></i> <?php echo $spText['label']['Updated']?>:</span>
+		<span class="report-info-value"><?php echo $projectInfo['last_updated']?></span>
+	</div>
+	<div class="report-info-item">
+		<span class="report-info-label"><i class="fas fa-list"></i> <?php echo $spText['label']['Total Results']?>:</span>
+		<span class="report-info-value"><strong><?php echo $totalResults?></strong></span>
+	</div>
+	<div style="float: right; margin-top: -10px;">
 		<?php
+		$mainLink = SP_WEBPATH."/siteauditor.php?project_id=$projectId&pageno=$pageNo"."$filter";
 		$pdfLink = "$mainLink&sec=showreport&report_type=rp_links&doc_type=pdf";
 		$csvLink = "$mainLink&sec=showreport&report_type=rp_links&doc_type=export";
 		$printLink = "$mainLink&sec=showreport&report_type=rp_links&doc_type=print";
 		showExportDiv($pdfLink, $csvLink, $printLink);
 		?>
-	</td>
-<?php }?>
+	</div>
+</div>
+<?php } ?>
+
+<?php
+$mainLink = SP_WEBPATH."/siteauditor.php?project_id=$projectId&pageno=$pageNo"."$filter";
+foreach ($headArr as $col => $val) {
+    $linkName = $col."Link";
+    $linkClass = "";
+    if ($col == $orderCol) {
+        $oVal = ($orderVal == 'DESC') ? "ASC" : "DESC";
+        $linkClass .= "sort_".strtolower($orderVal);
+    } else {
+        $oVal = $orderVal;
+    }
+
+    $$linkName = "<a id='sortLink' class='$linkClass' href='javascript:void(0)' onclick=\"scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&order_col=$col&order_val=$oVal')\">$val</a>";
+}
+
+// PDF/Print version - simple table
+if(!empty($pdfVersion) || !empty($printVersion)) {
+?>
+<table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; margin-bottom: 15px;">
+	<tr style="background: #f5f5f5;">
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; font-weight: bold; padding: 10px;">
+			<?php echo $spTextSA['Project Url']?>: <?php echo $projectInfo['url']?>
+		</td>
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
+			<?php echo $spText['label']['Updated']?>: <?php echo $projectInfo['last_updated']?>
+		</td>
+		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
+			<?php echo $spText['label']['Total Results']?>: <?php echo $totalResults?>
+		</td>
 	</tr>
 </table>
+<table width="100%" cellpadding="4" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; font-size: 11px;">
+	<thead>
+		<tr style="background: #f5f5f5;">
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Page URL</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">PA</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Backlinks</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Google</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Bing</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Robots</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">AI</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Mobile</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">HTTPS</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">OG</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Twitter</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Score</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Broken</th>
+		</tr>
+	</thead>
+	<tbody>
+	<?php
+	if(count($list) > 0){
+		foreach($list as $i => $listInfo){
+			$yesText = $spText['common']['Yes'];
+			$noText = $spText['common']['No'];
+			?>
+			<tr>
+				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo $listInfo['page_url']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['page_authority']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_backlinks']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_indexed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['bing_indexed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo !$listInfo['blocked_by_robots'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['ai_robot_allowed'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['mobile_friendly'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['https_secure'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_og_tags'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_twitter_cards'] ? $yesText : $noText?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><strong><?php
+	$pdfMaxScore = 38;
+	$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $listInfo['score']) / $pdfMaxScore * 100, 100) : 0;
+	echo round($pdfScorePercentage, 0) . '%';
+?></strong></td>
+				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['brocken'] ? $yesText : $noText?></td>
+			</tr>
+			<?php
+		}
+	} else {
+		?>
+		<tr>
+			<td colspan="13" style="border: 1px solid #ddd; padding: 20px; text-align: center;"><?php echo $spText['common']['No Records Found']?></td>
+		</tr>
+		<?php
+	}
+	?>
+	</tbody>
+</table>
+<?php
+} else {
+// Web version
+?>
 
 <?php echo $pagingDiv;?>
-<table class="list">
-	<tr class="listHead">
-		<td class="left" style="width: 30%;"><?php echo $page_urlLink?></td>
-		<td><?php echo $page_authorityLink?></td>
-		<td><?php echo $google_backlinksLink?></td>
-		<td><?php echo $bing_backlinksLink?></td>
-		<td><?php echo $google_indexedLink?></td>
-		<td><?php echo $bing_indexedLink?></td>
-		<td><?php echo $external_linksLink?></td>
-		<td><?php echo $total_linksLink?></td>
-		<td><?php echo $scoreLink?></td>
-		<td><?php echo $brockenLink?></td>
-		<?php if (empty($pdfVersion) && empty($printVersion)) {?>
-			<td class="right" style="width: 10%;"><?php echo $spText['common']['Action']?></td>
-		<?php }?>
-	</tr>
+
+<div class="link-report-card">
+	<div class="link-report-header">
+		<i class="fas fa-link"></i> <?php echo $spTextSA["Link Reports"]?>
+	</div>
+	<table class="link-report-table">
+		<thead>
+			<tr>
+				<th style="width: 25%;"><?php echo $page_urlLink?></th>
+				<th><?php echo $page_authorityLink?></th>
+				<th><?php echo $google_backlinksLink?></th>
+				<th><?php echo $google_indexedLink?></th>
+				<th><?php echo $bing_indexedLink?></th>
+				<th>Robots</th>
+				<th>AI Bot</th>
+				<th>Mobile</th>
+				<th>HTTPS</th>
+				<th>OG</th>
+				<th>Twitter</th>
+				<th><?php echo $scoreLink?></th>
+				<th><?php echo $brockenLink?></th>
+				<?php if (empty($pdfVersion) && empty($printVersion)) {?>
+					<th style="width: 8%;"><?php echo $spText['common']['Action']?></th>
+				<?php }?>
+			</tr>
+		</thead>
+		<tbody>
 	<?php
-	$colCount = 11; 
+	$colCount = 15;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){            
@@ -75,33 +346,54 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td><?php echo $pageLink?></td>
 				<td><?php echo $listInfo['page_authority']?></td>
 				<td><?php echo $listInfo['google_backlinks']?></td>
-				<td><?php echo $listInfo['bing_backlinks']?></td>
-				<td><?php echo $listInfo['google_indexed']?></td>
-				<td><?php echo $listInfo['bing_indexed']?></td>
-				<td><?php echo $listInfo['external_links']?></td>
-				<td><?php echo $listInfo['total_links']?></td>
-				<td style="text-align: right;">
+				<td><?php echo showStatusBadge($listInfo['google_indexed'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['bing_indexed'], 'yesno')?></td>
+				<td><?php echo showStatusBadge(!$listInfo['blocked_by_robots'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['ai_robot_allowed'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['mobile_friendly'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['https_secure'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['has_og_tags'], 'yesno')?></td>
+				<td><?php echo showStatusBadge($listInfo['has_twitter_cards'], 'yesno')?></td>
+				<td style="text-align: center;">
 				    <?php
 				    	if ($pdfVersion) {
-							echo "<b>{$listInfo['score']}</b>";
+							$pdfMaxScore = 38;
+							$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $listInfo['score']) / $pdfMaxScore * 100, 100) : 0;
+							echo "<b>" . round($pdfScorePercentage, 0) . "%</b>";
 						} else {
-				    
-					        if ($listInfo['score'] < 0) {
-					            $scoreClass = 'minus';
-					            $listInfo['score'] = $listInfo['score'] * -1;
-					        } else {
-					            $scoreClass = 'plus';
-					        }
-					        
-					        for($b = 0; $b <= $listInfo['score']; $b++) {
-								echo "<span class='$scoreClass'>&nbsp;</span>";
-							}
-							
+							$score = $listInfo['score'];
+							$isPositive = $score >= 0;
+							$maxScore = 38; // Maximum possible score from AuditorComponent
+							$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
+							$circumference = 2 * 3.14159 * 22;
+							$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
+							$strokeColor = $isPositive ? '#10b981' : '#ef4444';
+							?>
+							<div class="score-circle-small">
+								<div class="score-progress-small">
+									<svg width="50" height="50" style="transform: rotate(-90deg);">
+										<circle class="score-progress-bg-small" cx="25" cy="25" r="22"></circle>
+										<circle cx="25" cy="25" r="22"
+											fill="none"
+											stroke="<?php echo $strokeColor; ?>"
+											stroke-width="6"
+											stroke-linecap="round"
+											stroke-dasharray="<?php echo $circumference; ?>"
+											stroke-dashoffset="<?php echo $dashOffset; ?>"></circle>
+									</svg>
+									<div class="score-text-small"><?php echo round($scorePercentage, 0); ?>%</div>
+								</div>
+							</div>
+							<?php
 				        }
 				    ?>
 				</td>
 				<td>
-				    <?php echo $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No']; ?>
+				    <?php
+				        $badgeClass = $listInfo['brocken'] ? 'badge bg-danger' : 'badge bg-success';
+				        $badgeText = $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
+				        echo "<span class='$badgeClass py-2 px-3 text-light'>$badgeText</span>";
+				    ?>
 				</td>
 				<?php if (empty($pdfVersion) && empty($printVersion)) {?>
 					<td>
@@ -116,16 +408,20 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			</tr>
 			<?php
 		}
-	}else{	 
-		echo showNoRecordsList($colCount-2, '', true);		
-	} 
+	}else{
+		?>
+		<tr>
+			<td colspan="<?php echo $colCount?>" style="text-align: center; padding: 40px; color: #6c757d;">
+				<i class="fas fa-info-circle" style="font-size: 48px; margin-bottom: 15px; opacity: 0.3;"></i>
+				<div style="font-size: 16px;"><?php echo $spText['common']['No Records Found']?></div>
+			</td>
+		</tr>
+		<?php
+	}
 	?>
-</table>
-<?php
-if(!empty($printVersion) || !empty($pdfVersion)) {
-	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
-} else if(empty($printVersion)) {
-    ?>
+		</tbody>
+	</table>
+</div>
     <table class="actionSec mt-2">
     	<tr>
         	<td>
@@ -135,5 +431,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
         	</td>
     	</tr>
     </table>
-	<?php 
-}?>
+<?php
+} // end of web version else block
+
+// Show footer for PDF/Print
+if(!empty($printVersion) || !empty($pdfVersion)) {
+	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
+}
+?>
