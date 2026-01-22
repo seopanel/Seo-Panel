@@ -138,6 +138,9 @@ class DataForSEOController extends Controller {
         if (!empty($keywordInfo['stop_crawl_on_match'])) {
             $searchInfo['stop_crawl_on_match'] = $keywordInfo['stop_crawl_on_match'];
         }
+        
+        // for debugging purpose
+        /*debugVar(["/v3/serp/$seDomianCat/$cat/$subCat/$dataType", $searchInfo]);*/
 
         try {
             $result = $this->restClient->post("/v3/serp/$seDomianCat/$cat/$subCat/$dataType", [$searchInfo]);
