@@ -128,11 +128,11 @@ class DataForSEOController extends Controller {
             }
         }
         
-        // if google use dataforseo lite method
-        if (($seDomianCat == "google") && ($searchInfo['depth'] > 10)) {
+        // if google use dataforseo lite method - currently this api end point disabled
+        /*if (($seDomianCat == "google") && ($searchInfo['depth'] > 10)) {
             $cat = "lite";
             $dataType = "advanced";
-        }
+        }*/
 
         // option to just search for a target url, if found stop search to save api cost
         if (!empty($keywordInfo['stop_crawl_on_match'])) {
