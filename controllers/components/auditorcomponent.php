@@ -130,12 +130,11 @@ class AuditorComponent extends Controller{
             	}
             }
             
-            // indexed page check
+            // indexed page check (bing_indexed excluded - difficult to check reliably)
             if ($projectInfo['check_indexed']) {
                 $saturationCtrler = $this->createController('SaturationChecker');
                 $saturationCtrler->url = Spider::addTrailingSlash($reportUrl);
                 $reportInfo['google_indexed'] = $saturationCtrler->__getSaturationRank('google');
-                $reportInfo['bing_indexed'] = $saturationCtrler->__getSaturationRank('msn');
             }
         
             if ($projectInfo['check_brocken']) {
@@ -367,16 +366,13 @@ class AuditorComponent extends Controller{
         }
 
         // check whether indexed or not (critical for visibility)
-        $seArr = array('google', 'bing');
-        foreach ($seArr as $se) {
-            $label = $se.'_indexed';
-            if($reportInfo[$label]) {
-                $scoreInfo[$label] = 2; // Increased from 1 (being indexed is critical)
-            } else {
-                $scoreInfo[$label] = -2; // Higher penalty for not being indexed
-                $msg = $spTextSA["The page is not indexed in"]." ".$se;
-                $this->commentInfo[$label] = formatErrorMsg($msg, 'error', '');
-            }
+        // Note: bing_indexed excluded from score - difficult to check reliably
+        if($reportInfo['google_indexed']) {
+            $scoreInfo['google_indexed'] = 4; // Higher score for Google indexing (most important)
+        } else {
+            $scoreInfo['google_indexed'] = -2; // Penalty for not being indexed in Google
+            $msg = $spTextSA["The page is not indexed in"]." google";
+            $this->commentInfo['google_indexed'] = formatErrorMsg($msg, 'error', '');
         }
 
         // Check AI robot compatibility (important for modern SEO and AI visibility)

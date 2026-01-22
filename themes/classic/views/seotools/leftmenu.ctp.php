@@ -118,6 +118,7 @@ foreach($menuList as $i => $menuInfo){
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('siteauditor.php?sec=importlinks', 'content')"><?php echo $spTextTools['Import Project Links']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('sitemap.php', 'content')"><?php echo $spTextTools['sitemap-generator']?></a></li>
 				<?php }?>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('siteauditor.php?sec=scoreinfo', 'content')"><?php echo $spTextTools['Score Information'] ?? 'Score Information'?></a></li>
 			    <?php if (isAdmin()) {?>
 			    	<li><a href="javascript:void(0);" onclick="scriptDoLoad('siteauditor.php?sec=croncommand', 'content')"><?php echo $spTextPanel['Cron Command']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('siteauditor.php?sec=showsettings', 'content')"><?php echo $spTextTools['Auditor Settings']?></a></li>

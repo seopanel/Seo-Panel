@@ -792,52 +792,25 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 						</span>
 					</div>
 				</div>
-				<?php
-				$seIcons = array('google' => 'google', 'bing' => 'search');
-				foreach ($seArr as $se) {
-					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-					$indexedCount = $projectInfo[$se."_indexed"];
-				?>
 				<div class="summary-item-quarter">
-					<div class="summary-item-inner">
-						<div class="metric-header">
-							<div class="metric-icon <?php echo $indexedCount > 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-<?php echo $iconClass; ?>"></i>
-							</div>
-							<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed'] ?? 'Indexed'?></span>
+				<div class="summary-item-inner">
+					<div class="metric-header">
+						<div class="metric-icon <?php echo $projectInfo['google_indexed'] > 0 ? 'green' : 'orange'; ?>">
+							<i class="fab fa-google"></i>
 						</div>
-						<span class="summary-value">
-							<?php if ($indexedCount > 0): ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_yes')?>">
-									<?php echo number_format($indexedCount)?>
-								</a>
-							<?php else: ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_yes')?>" style="color: #999; font-size: 11px;">Not found</a>
-							<?php endif; ?>
-						</span>
+						<span class="summary-label"><?php echo $spTextHome['Indexed'] ?? 'Indexed'?></span>
 					</div>
+					<span class="summary-value">
+						<?php if ($projectInfo['google_indexed'] > 0): ?>
+							<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=google_yes')?>">
+								<?php echo number_format($projectInfo['google_indexed'])?>
+							</a>
+						<?php else: ?>
+							<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=google_yes')?>" style="color: #999; font-size: 11px;">Not found</a>
+						<?php endif; ?>
+					</span>
 				</div>
-				<?php } ?>
-				<!-- Bing Indexed -->
-				<div class="summary-item-quarter">
-					<div class="summary-item-inner">
-						<div class="metric-header">
-							<div class="metric-icon <?php echo $projectInfo['bing_indexed'] > 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-microsoft"></i>
-							</div>
-							<span class="summary-label">Bing <?php echo $spTextHome['Indexed'] ?? 'Indexed'?></span>
-						</div>
-						<span class="summary-value">
-							<?php if ($projectInfo['bing_indexed'] > 0): ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_yes')?>">
-									<?php echo number_format($projectInfo['bing_indexed'])?>
-								</a>
-							<?php else: ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_yes')?>" style="color: #999; font-size: 11px;">Not found</a>
-							<?php endif; ?>
-						</span>
-					</div>
-				</div>
+			</div>
 			</div>
 		</div>
 
@@ -956,48 +929,21 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 		<div class="summary-section">
 			<div class="summary-section-title"><i class="fas fa-exclamation-triangle"></i> Areas for Improvement</div>
 			<div class="summary-row">
-				<?php
-				$seIcons = array('google' => 'google', 'bing' => 'microsoft');
-				foreach ($seArr as $se) {
-					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-					$notIndexedCount = $projectInfo[$se."_not_indexed"];
-				?>
 				<div class="summary-item-quarter">
 					<div class="summary-item-inner">
 						<div class="metric-header">
-							<div class="metric-icon <?php echo $notIndexedCount == 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-<?php echo $iconClass; ?>"></i>
+							<div class="metric-icon <?php echo $projectInfo['google_not_indexed'] == 0 ? 'green' : 'orange'; ?>">
+								<i class="fab fa-google"></i>
 							</div>
-							<span class="summary-label"><?php echo ucfirst($se)?> Not Indexed</span>
+							<span class="summary-label"><?php echo $spTextSA['Not Indexed'] ?? 'Not Indexed'?></span>
 						</div>
 						<span class="summary-value">
-							<?php if ($notIndexedCount > 0): ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_no')?>">
-									<?php echo number_format($notIndexedCount)?>
+							<?php if ($projectInfo['google_not_indexed'] > 0): ?>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=google_no')?>">
+									<?php echo number_format($projectInfo['google_not_indexed'])?>
 								</a>
 							<?php else: ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter='.$se.'_no')?>" style="color: #999; font-size: 11px;">None</a>
-							<?php endif; ?>
-						</span>
-					</div>
-				</div>
-				<?php } ?>
-				<!-- Bing Not Indexed -->
-				<div class="summary-item-quarter">
-					<div class="summary-item-inner">
-						<div class="metric-header">
-							<div class="metric-icon <?php echo $projectInfo['bing_not_indexed'] == 0 ? 'green' : 'orange'; ?>">
-								<i class="fab fa-microsoft"></i>
-							</div>
-							<span class="summary-label">Bing Not Indexed</span>
-						</div>
-						<span class="summary-value">
-							<?php if ($projectInfo['bing_not_indexed'] > 0): ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_no')?>">
-									<?php echo number_format($projectInfo['bing_not_indexed'])?>
-								</a>
-							<?php else: ?>
-								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=bing_no')?>" style="color: #999; font-size: 11px;">None</a>
+								<a href="<?php echo saToolsUrl('sec=viewreports&project_id='.$projectInfo['id'].'&report_type=rp_links&indexed_filter=google_no')?>" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
 						</span>
 					</div>

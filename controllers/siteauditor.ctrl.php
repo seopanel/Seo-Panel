@@ -810,8 +810,7 @@ class SiteAuditorController extends Controller{
             'external_links' => $this->spTextSA["External Links"],
         	'total_links' => $this->spTextSA["Total Links"],
             'google_backlinks' => $spTextHome['Backlinks'],
-            'google_indexed' => "Google {$spTextHome['Indexed']}",
-            'bing_indexed' => "Bing {$spTextHome['Indexed']}",
+            'indexed' => $spTextHome['Indexed'],
 		    'crawled' => $this->spTextSA['Crawled'],
 		    'brocken' => $_SESSION['text']['label']['Brocken'],
 		    'page_title' => $_SESSION['text']['label']['Title'],
@@ -834,8 +833,7 @@ class SiteAuditorController extends Controller{
 				$headArr['page_url'],
 				$headArr['page_authority'],
 				$headArr['google_backlinks'],
-				$headArr['google_indexed'],
-				$headArr['bing_indexed'],
+				$headArr['indexed'],
 				'Robots Allowed',
 				'AI Bot Allowed',
 				'Mobile Friendly',
@@ -863,6 +861,7 @@ class SiteAuditorController extends Controller{
 			    $listInfo['crawled'] = $listInfo['crawled'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['brocken'] = $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['robots_allowed'] = !$listInfo['blocked_by_robots'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['google_indexed'] = $listInfo['google_indexed'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['ai_robot_allowed'] = $listInfo['ai_robot_allowed'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['mobile_friendly'] = $listInfo['mobile_friendly'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['https_secure'] = $listInfo['https_secure'] ? $spText['common']['Yes'] : $spText['common']['No'];
@@ -874,7 +873,6 @@ class SiteAuditorController extends Controller{
 					$listInfo['page_authority'],
 					$listInfo['google_backlinks'],
 					$listInfo['google_indexed'],
-					$listInfo['bing_indexed'],
 					$listInfo['robots_allowed'],
 					$listInfo['ai_robot_allowed'],
 					$listInfo['mobile_friendly'],
@@ -1024,10 +1022,8 @@ class SiteAuditorController extends Controller{
 
 			$exportContent .= createExportContent(array('Has Backlinks', $projectInfo['google_backlinks']));
 
-			foreach ($this->seArr as $se) {
-		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"]));
-		        $exportContent .= createExportContent(array(ucfirst($se). " Not Indexed", $projectInfo[$se."_not_indexed"]));
-			}
+			$exportContent .= createExportContent(array($spTextHome['Indexed'], $projectInfo['google_indexed']));
+			$exportContent .= createExportContent(array('Not Indexed', $projectInfo['google_not_indexed']));
 			
 			foreach ($metaArr as $meta => $val) {
 			    $exportContent .= createExportContent(array($val, $projectInfo["duplicate_".$meta]));
@@ -1356,6 +1352,11 @@ class SiteAuditorController extends Controller{
             // Update sitemap URL count
             $sitemapParser->updateSitemapUrlCount($projectInfo['id'], $sitemapUrl, count($urls));
         }
+    }
+
+    // Show score information page
+    function showScoreInfo() {
+        $this->render('siteauditor/scoreinfo');
     }
 
 }

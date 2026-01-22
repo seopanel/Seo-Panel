@@ -971,12 +971,6 @@ class DashboardController extends Controller {
             $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
         }
 
-        // Bing indexed
-        $conditions = " and bing_indexed>0";
-        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-        $conditions = " and bing_indexed=0";
-        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
         // Duplicate meta info
         $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
         $auditorComp = $siteAuditorCtrl->createComponent('AuditorComponent');

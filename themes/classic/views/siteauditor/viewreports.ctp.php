@@ -157,10 +157,8 @@ $discoveredVia = isset($_GET['discovered_via']) ? $_GET['discovered_via'] : '';
 		<td>
 			<select name="indexed_filter" onchange="<?php echo $submitJsFunc?>" class="custom-select">
 				<option value="" <?php echo $indexedFilter == '' ? 'selected' : ''?>>-- <?php echo $spText['common']['Select']?> --</option>
-				<option value="google_yes" <?php echo $indexedFilter == 'google_yes' ? 'selected' : ''?>>Google Indexed</option>
-				<option value="google_no" <?php echo $indexedFilter == 'google_no' ? 'selected' : ''?>>Google Not Indexed</option>
-				<option value="bing_yes" <?php echo $indexedFilter == 'bing_yes' ? 'selected' : ''?>>Bing Indexed</option>
-				<option value="bing_no" <?php echo $indexedFilter == 'bing_no' ? 'selected' : ''?>>Bing Not Indexed</option>
+				<option value="google_yes" <?php echo $indexedFilter == 'google_yes' ? 'selected' : ''?>><?php echo $spTextHome['Indexed'] ?? 'Indexed'?></option>
+				<option value="google_no" <?php echo $indexedFilter == 'google_no' ? 'selected' : ''?>><?php echo $spTextSA['Not Indexed'] ?? 'Not Indexed'?></option>
 			</select>
 		</td>
 		<th class="pl-4"><?php echo $spText['label']['Brocken'] ?? 'Broken'?>: </th>

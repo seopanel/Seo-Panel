@@ -74,14 +74,12 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<td style="border-bottom:1px solid #ddd;"><strong>No Backlinks:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['no_backlinks'])?></td>
 		</tr>
-		<?php foreach ($seArr as $se) { ?>
 		<tr>
-			<td style="border-bottom:1px solid #ddd;"><strong><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?>:</strong></td>
-			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo[$se."_indexed"])?></td>
-			<td style="border-bottom:1px solid #ddd;"><strong><?php echo ucfirst($se)?> Not Indexed:</strong></td>
-			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo[$se."_not_indexed"])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextHome['Indexed']?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['google_indexed'])?></td>
+			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spTextSA['Not Indexed'] ?? 'Not Indexed'?>:</strong></td>
+			<td style="border-bottom:1px solid #ddd;"><?php echo number_format($projectInfo['google_not_indexed'])?></td>
 		</tr>
-		<?php } ?>
 	</table>
 
 	<table width="100%" cellpadding="5" cellspacing="0" style="<?php echo $borderCollapseVal?>border:1px solid #B0C2CC;margin-bottom:15px;">
@@ -913,32 +911,25 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     						</span>
     					</div>
     				</div>
-    				<?php
-    				$seIcons = array('google' => 'google', 'bing' => 'search');
-    				foreach ($seArr as $se) {
-    					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-    					$indexedCount = $projectInfo[$se."_indexed"];
-    				?>
     				<div class="summary-item-quarter">
-    					<div class="summary-item-inner">
-							<div class="metric-header">
-    						<div class="metric-icon <?php echo $indexedCount > 0 ? 'green' : 'orange'; ?>">
-    							<i class="fab fa-<?php echo $iconClass; ?>"></i>
-    						</div>
-    						<span class="summary-label"><?php echo ucfirst($se)?> <?php echo $spTextHome['Indexed']?></span>
-							</div>
-    						<span class="summary-value">
-							<?php if ($indexedCount > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')">
-    								<?php echo number_format($indexedCount)?>
-    							</a>
-							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_yes')" style="color: #999; font-size: 11px;">Not found</a>
-							<?php endif; ?>
-    						</span>
+    				<div class="summary-item-inner">
+						<div class="metric-header">
+    					<div class="metric-icon <?php echo $projectInfo['google_indexed'] > 0 ? 'green' : 'orange'; ?>">
+    						<i class="fab fa-google"></i>
     					</div>
+    					<span class="summary-label"><?php echo $spTextHome['Indexed']?></span>
+						</div>
+    					<span class="summary-value">
+						<?php if ($projectInfo['google_indexed'] > 0): ?>
+    						<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=google_yes')">
+    							<?php echo number_format($projectInfo['google_indexed'])?>
+    						</a>
+						<?php else: ?>
+							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=google_yes')" style="color: #999; font-size: 11px;">Not found</a>
+						<?php endif; ?>
+    					</span>
     				</div>
-    				<?php } ?>
+    			</div>
     			</div>
     		</div>
 
@@ -1057,31 +1048,25 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
     		<div class="summary-section">
     			<div class="summary-section-title"><i class="fas fa-exclamation-triangle"></i> Areas for Improvement</div>
     			<div class="summary-row">
-    				<?php
-    				foreach ($seArr as $se) {
-    					$iconClass = isset($seIcons[$se]) ? $seIcons[$se] : 'database';
-    					$notIndexedCount = $projectInfo[$se."_not_indexed"];
-    				?>
     				<div class="summary-item-quarter">
     					<div class="summary-item-inner">
 							<div class="metric-header">
-    						<div class="metric-icon <?php echo $notIndexedCount == 0 ? 'green' : 'orange'; ?>">
-    							<i class="fab fa-<?php echo $iconClass; ?>"></i>
+    						<div class="metric-icon <?php echo $projectInfo['google_not_indexed'] == 0 ? 'green' : 'orange'; ?>">
+    							<i class="fab fa-google"></i>
     						</div>
-    						<span class="summary-label"><?php echo ucfirst($se)?> Not Indexed</span>
+    						<span class="summary-label"><?php echo $spTextSA['Not Indexed'] ?? 'Not Indexed'?></span>
 							</div>
     						<span class="summary-value">
-							<?php if ($notIndexedCount > 0): ?>
-    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')">
-    								<?php echo number_format($notIndexedCount)?>
+							<?php if ($projectInfo['google_not_indexed'] > 0): ?>
+    							<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=google_no')">
+    								<?php echo number_format($projectInfo['google_not_indexed'])?>
     							</a>
 							<?php else: ?>
-								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=<?php echo $se?>_no')" style="color: #999; font-size: 11px;">None</a>
+								<a <?php echo $hrefAction; ?> onclick="scriptDoLoad('siteauditor.php', 'content', '&sec=viewreports&project_id=<?php echo $projectInfo['id']?>&report_type=rp_links&indexed_filter=google_no')" style="color: #999; font-size: 11px;">None</a>
 							<?php endif; ?>
     						</span>
     					</div>
     				</div>
-    				<?php } ?>
     				<div class="summary-item-quarter">
     					<div class="summary-item-inner">
 							<div class="metric-header">
