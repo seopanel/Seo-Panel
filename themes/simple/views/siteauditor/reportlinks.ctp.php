@@ -251,8 +251,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Page URL</th>
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">PA</th>
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Backlinks</th>
-			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Google</th>
-			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Bing</th>
+			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Indexed</th>
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Robots</th>
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">AI</th>
 			<th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Mobile</th>
@@ -275,7 +274,6 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['page_authority']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_backlinks']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_indexed'] ? $yesText : $noText?></td>
-				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['bing_indexed'] ? $yesText : $noText?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo !$listInfo['blocked_by_robots'] ? $yesText : $noText?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['ai_robot_allowed'] ? $yesText : $noText?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['mobile_friendly'] ? $yesText : $noText?></td>
@@ -294,7 +292,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	} else {
 		?>
 		<tr>
-			<td colspan="13" style="border: 1px solid #ddd; padding: 20px; text-align: center;"><?php echo $spText['common']['No Records Found']?></td>
+			<td colspan="12" style="border: 1px solid #ddd; padding: 20px; text-align: center;"><?php echo $spText['common']['No Records Found']?></td>
 		</tr>
 		<?php
 	}
@@ -318,8 +316,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<th style="width: 25%;"><?php echo $page_urlLink?></th>
 				<th><?php echo $page_authorityLink?></th>
 				<th><?php echo $google_backlinksLink?></th>
-				<th><?php echo $google_indexedLink?></th>
-				<th><?php echo $bing_indexedLink?></th>
+				<th><?php echo $indexedLink?></th>
 				<th>Robots</th>
 				<th>AI Bot</th>
 				<th>Mobile</th>
@@ -335,7 +332,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		</thead>
 		<tbody>
 	<?php
-	$colCount = 15;
+	$colCount = 14;
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){            
@@ -347,7 +344,6 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td><?php echo $listInfo['page_authority']?></td>
 				<td><?php echo $listInfo['google_backlinks']?></td>
 				<td><?php echo showStatusBadge($listInfo['google_indexed'], 'yesno')?></td>
-				<td><?php echo showStatusBadge($listInfo['bing_indexed'], 'yesno')?></td>
 				<td><?php echo showStatusBadge(!$listInfo['blocked_by_robots'], 'yesno')?></td>
 				<td><?php echo showStatusBadge($listInfo['ai_robot_allowed'], 'yesno')?></td>
 				<td><?php echo showStatusBadge($listInfo['mobile_friendly'], 'yesno')?></td>

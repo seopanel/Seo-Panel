@@ -153,7 +153,7 @@
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<?php echo $spTextHome['Pages Indexed']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by search engines (Google + Bing)"></i>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by Google"></i>
 							</h6>
 							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['indexed_pages'])?></span></h3>
 							<?php if (isset($websiteComparison['indexed_pages'])):

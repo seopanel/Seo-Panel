@@ -692,12 +692,8 @@ $dofollowCount = $totalLinks - $nofollowCount;
 			</div>
 			<div class="detail-grid">
 				<div class="detail-card">
-					<div class="detail-label"><i class="fab fa-google"></i> Google <?php echo $spTextHome['Indexed']?></div>
+					<div class="detail-label"><i class="fab fa-google"></i> <?php echo $spTextHome['Indexed']?></div>
 					<div class="detail-value"><?php echo showStatusBadge($reportInfo['google_indexed'], 'yesno')?></div>
-				</div>
-				<div class="detail-card">
-					<div class="detail-label"><i class="fab fa-microsoft"></i> Bing <?php echo $spTextHome['Indexed']?></div>
-					<div class="detail-value"><?php echo showStatusBadge($reportInfo['bing_indexed'], 'yesno')?></div>
 				</div>
 				<div class="detail-card">
 					<div class="detail-label"><i class="fas fa-unlink"></i> <?php echo $spText['label']['Brocken'] ?? 'Broken'?></div>
