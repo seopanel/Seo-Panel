@@ -26,7 +26,7 @@ class DownloadController extends Controller{
 	function downloadFile($fileInfo){
 
 		if ($fileName = $this->isValidFile($fileInfo['file'])) {
-			
+
 			$fileType = $fileInfo['filetype'];
 			$fileSec = $fileInfo['filesec'];
 			switch($fileSec) {
@@ -35,16 +35,22 @@ class DownloadController extends Controller{
 					$file = SP_TMPPATH."/".$fileName;
 					break;
 			}
-			
-			header("Content-type: application/$fileType;\n");
+
+			// Set appropriate Content-Type based on file type
+			if ($fileType == 'gz' || pathinfo($fileName, PATHINFO_EXTENSION) == 'gz') {
+				header("Content-type: application/gzip;\n");
+			} else {
+				header("Content-type: application/$fileType;\n");
+			}
+
 			header("Content-Transfer-Encoding: binary");
 			$len = filesize($file);
 			header("Content-Length: $len;\n");
 			header("Content-Disposition: attachment; filename=\"$fileName\";\n\n");
-			
+
 			ob_clean();
 	    	flush();
-			readfile($file);		
+			readfile($file);
 		} else {
 			echo "<font style='color:red;'>You are not allowed to access this file!</font>";
 			exit;
@@ -55,17 +61,17 @@ class DownloadController extends Controller{
 	function isValidFile($fileName) {
 		$fileName = urldecode($fileName);
 		$fileName = str_replace(array('../', './', '..'), '', $fileName);
-		
+
 		// check its any system file
 		if ($fileName[0] == '/') {
 			return false;
 		}
-		
-		// allow only these file format
-		if (preg_match('/\.xml$|\.html$|\.txt$/i', $fileName)) {
+
+		// allow only these file format (including compressed files)
+		if (preg_match('/\.xml$|\.xml\.gz$|\.gz$|\.html$|\.txt$/i', $fileName)) {
 			return $fileName;
 		}
-				
+
 		return false;
 	}
 }

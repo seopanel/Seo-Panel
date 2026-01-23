@@ -153,7 +153,7 @@
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<?php echo $spTextHome['Pages Indexed']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by search engines (Google + Bing)"></i>
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by Google"></i>
 							</h6>
 							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['indexed_pages'])?></span></h3>
 							<?php if (isset($websiteComparison['indexed_pages'])):
@@ -789,3 +789,29 @@
 	</div>
 
 </div>
+
+<script type="text/javascript">
+// Sync website selection with other tabs
+$(document).ready(function() {
+	if (sessionStorage.getItem('sp_dashboard_auto_loading')) {
+		sessionStorage.removeItem('sp_dashboard_auto_loading');
+		return;
+	}
+
+	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
+	var currentWebsiteId = '<?php echo $websiteId?>';
+
+	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
+		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
+			$('#website_id').val(storedWebsiteId);
+			sessionStorage.setItem('sp_dashboard_auto_loading', '1');
+			scriptDoLoadPost('dashboard.php', 'dashboard_form', 'content');
+			return;
+		}
+	}
+
+	if (currentWebsiteId) {
+		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
+	}
+});
+</script>

@@ -121,11 +121,20 @@ class SiteAuditorController extends Controller{
 		        $errorFlag = 1;
 		        $errMsg['max_links'] = $maxValidInfo['msg'];
 		    }
-		    
+
+		    // Validate sitemap URL if provided
+		    if (!empty($listInfo['sitemap_url'])) {
+		        $sitemapUrl = trim($listInfo['sitemap_url']);
+		        if (!filter_var($sitemapUrl, FILTER_VALIDATE_URL)) {
+		            $errorFlag = 1;
+		            $errMsg['sitemap_url'] = formatErrorMsg("Invalid sitemap URL format");
+		        }
+		    }
+
 		    if (!$errorFlag) {
     			if (!$this->isProjectExists($listInfo['website_id'])) {
-    				$sql = "insert into auditorprojects(website_id,max_links,exclude_links,check_pr,check_backlinks,check_indexed,store_links_in_page,check_brocken,cron)
-							values({$listInfo['website_id']},{$listInfo['max_links']},'".addslashes($listInfo['exclude_links'])."',
+    				$sql = "insert into auditorprojects(website_id,max_links,exclude_links,exclude_extensions,sitemap_url,check_pr,check_backlinks,check_indexed,store_links_in_page,check_brocken,cron)
+							values({$listInfo['website_id']},{$listInfo['max_links']},'".addslashes($listInfo['exclude_links'])."','".addslashes($listInfo['exclude_extensions'])."','".addslashes(trim($listInfo['sitemap_url']))."',
 							".intval($listInfo['check_pr']).",".intval($listInfo['check_backlinks']).",".intval($listInfo['check_indexed']).",
 							".intval($listInfo['store_links_in_page']).",".intval($listInfo['check_brocken']).",".intval($listInfo['cron']).")";
     				$this->db->query($sql);
@@ -243,6 +252,15 @@ class SiteAuditorController extends Controller{
 		        $errorFlag = 1;
 		        $errMsg['max_links'] = $maxValidInfo['msg'];
 		    }
+
+		    // Validate sitemap URL if provided
+		    if (!empty($listInfo['sitemap_url'])) {
+		        $sitemapUrl = trim($listInfo['sitemap_url']);
+		        if (!filter_var($sitemapUrl, FILTER_VALIDATE_URL)) {
+		            $errorFlag = 1;
+		            $errMsg['sitemap_url'] = formatErrorMsg("Invalid sitemap URL format");
+		        }
+		    }
 		    
 		    // if error occured
 		    if (!$errorFlag) {
@@ -256,7 +274,9 @@ class SiteAuditorController extends Controller{
     						store_links_in_page=".intval($listInfo['store_links_in_page']).",
     						check_brocken='".intval($listInfo['check_brocken'])."',
     						cron='".intval($listInfo['cron'])."',
-    						exclude_links='".addslashes($listInfo['exclude_links'])."'
+    						exclude_links='".addslashes($listInfo['exclude_links'])."',
+    						exclude_extensions='".addslashes($listInfo['exclude_extensions'])."',
+    						sitemap_url='".addslashes(trim($listInfo['sitemap_url']))."'
     						where id=".$listInfo['id'];
     				$this->db->query($sql);
     				$this->showAuditorProjects();
@@ -421,15 +441,23 @@ class SiteAuditorController extends Controller{
 		if (empty($listInfo['page_url'])) {
 		    $totalLinks = $this->getCountcrawledLinks($projectId);
 		    if ($totalLinks == 0) {
+		        // First run - discover and parse sitemaps
 		        $auditorComp = $this->createComponent('AuditorComponent');
 		        $projectInfo = $this->__getProjectInfo($projectId);
+
+		        // Add initial project URL
 		        $reportInfo['page_url'] = Spider::formatUrl($projectInfo['url']);
 		        $reportInfo['project_id'] = $projectId;
+		        $reportInfo['discovered_via'] = 'crawl';
 		        $auditorComp->saveReportInfo($reportInfo);
+
+		        // Discover and parse sitemaps
+		        $this->discoverAndParseSitemaps($projectInfo);
+
 		        return $reportInfo['page_url'];
 		    } else {
 		        return false;
-		    }    
+		    }
 		} else {
 		    return $listInfo['page_url'];
 		}
@@ -457,15 +485,15 @@ class SiteAuditorController extends Controller{
 	    $this->set('projectId', $projectId);
 	    $this->set('projectList', $projectList);
 	    $reportTypes = array(
-			'rp_links' => $this->spTextSA["Link Reports"],
 			'rp_summary' => $this->spTextSA["Report Summary"],
+			'rp_links' => $this->spTextSA["Link Reports"],
 			'page_title' => $this->spTextSA["Duplicate Title"],
 			'page_description' => $this->spTextSA["Duplicate Description"],
 			'page_keywords' => $this->spTextSA["Duplicate Keywords"],
 		);
-	    
+
 		$this->set('reportTypes', $reportTypes);
-		$this->set('repType', empty($info['report_type']) ? "rp_links" : $info['report_type']);	    
+		$this->set('repType', empty($info['report_type']) ? "rp_summary" : $info['report_type']);	    
 	    $this->render('siteauditor/viewreports');
 	}
 	
@@ -539,9 +567,214 @@ class SiteAuditorController extends Controller{
 		if(isset($data['crawled']) && ($data['crawled'] != -1) ) {
 		    $data['crawled'] = intval($data['crawled']);
 			$filter .= "&crawled=".$data['crawled'];
-			$sql .= " and crawled=".$data['crawled']; 
+			$sql .= " and crawled=".$data['crawled'];
 		}
-		
+
+		// check for blocked_by_robots
+		if(isset($data['blocked_by_robots']) && ($data['blocked_by_robots'] != -1) ) {
+		    $data['blocked_by_robots'] = intval($data['blocked_by_robots']);
+			$filter .= "&blocked_by_robots=".$data['blocked_by_robots'];
+			$sql .= " and blocked_by_robots=".$data['blocked_by_robots'];
+		}
+
+		// check for ai_robot_allowed
+		if(isset($data['ai_robot_allowed']) && ($data['ai_robot_allowed'] != -1) ) {
+		    $data['ai_robot_allowed'] = intval($data['ai_robot_allowed']);
+			$filter .= "&ai_robot_allowed=".$data['ai_robot_allowed'];
+			$sql .= " and ai_robot_allowed=".$data['ai_robot_allowed'];
+		}
+
+		// check for mobile_friendly
+		if(isset($data['mobile_friendly']) && ($data['mobile_friendly'] != -1) ) {
+		    $data['mobile_friendly'] = intval($data['mobile_friendly']);
+			$filter .= "&mobile_friendly=".$data['mobile_friendly'];
+			$sql .= " and mobile_friendly=".$data['mobile_friendly'];
+		}
+
+		// check for https_secure
+		if(isset($data['https_secure']) && ($data['https_secure'] != -1) ) {
+		    $data['https_secure'] = intval($data['https_secure']);
+			$filter .= "&https_secure=".$data['https_secure'];
+			$sql .= " and https_secure=".$data['https_secure'];
+		}
+
+		// check for has_og_tags
+		if(isset($data['has_og_tags']) && ($data['has_og_tags'] != -1) ) {
+		    $data['has_og_tags'] = intval($data['has_og_tags']);
+			$filter .= "&has_og_tags=".$data['has_og_tags'];
+			$sql .= " and has_og_tags=".$data['has_og_tags'];
+		}
+
+		// check for has_twitter_cards
+		if(isset($data['has_twitter_cards']) && ($data['has_twitter_cards'] != -1) ) {
+		    $data['has_twitter_cards'] = intval($data['has_twitter_cards']);
+			$filter .= "&has_twitter_cards=".$data['has_twitter_cards'];
+			$sql .= " and has_twitter_cards=".$data['has_twitter_cards'];
+		}
+
+		// check for discovered_via
+		if(!empty($data['discovered_via'])) {
+			$discoveredVia = addslashes($data['discovered_via']);
+			$filter .= "&discovered_via=".$data['discovered_via'];
+			$sql .= " and discovered_via='$discoveredVia'";
+		}
+
+		// check for google_indexed
+		if(isset($data['google_indexed']) && ($data['google_indexed'] != -1) ) {
+		    $data['google_indexed'] = intval($data['google_indexed']);
+			$filter .= "&google_indexed=".$data['google_indexed'];
+			$sql .= " and google_indexed=".$data['google_indexed'];
+		}
+
+		// check for bing_indexed
+		if(isset($data['bing_indexed']) && ($data['bing_indexed'] != -1) ) {
+		    $data['bing_indexed'] = intval($data['bing_indexed']);
+			$filter .= "&bing_indexed=".$data['bing_indexed'];
+			$sql .= " and bing_indexed=".$data['bing_indexed'];
+		}
+
+		// check for brocken
+		if(isset($data['brocken']) && ($data['brocken'] != -1) ) {
+		    $data['brocken'] = intval($data['brocken']);
+			$filter .= "&brocken=".$data['brocken'];
+			$sql .= " and brocken=".$data['brocken'];
+		}
+
+		// check for no backlinks
+		if(isset($data['no_backlinks']) && ($data['no_backlinks'] != -1) ) {
+		    $data['no_backlinks'] = intval($data['no_backlinks']);
+			$filter .= "&no_backlinks=".$data['no_backlinks'];
+			$sql .= " and google_backlinks=0";
+		}
+
+		// check for has backlinks
+		if(isset($data['has_backlinks']) && ($data['has_backlinks'] != -1) ) {
+		    $data['has_backlinks'] = intval($data['has_backlinks']);
+			$filter .= "&has_backlinks=".$data['has_backlinks'];
+			$sql .= " and google_backlinks>0";
+		}
+
+		// check for backlinks filter (from dropdown)
+		if(!empty($data['backlinks_filter'])) {
+			$blFilter = addslashes($data['backlinks_filter']);
+			$filter .= "&backlinks_filter=$blFilter";
+			if($blFilter == 'has') {
+				$sql .= " and google_backlinks > 0";
+			} else if($blFilter == 'no') {
+				$sql .= " and google_backlinks = 0";
+			}
+		}
+
+		// check for indexed filter (from dropdown)
+		if(!empty($data['indexed_filter'])) {
+			$idxFilter = addslashes($data['indexed_filter']);
+			$filter .= "&indexed_filter=$idxFilter";
+			switch($idxFilter) {
+				case 'google_yes':
+					$sql .= " and google_indexed > 0";
+					break;
+				case 'google_no':
+					$sql .= " and google_indexed = 0";
+					break;
+				case 'bing_yes':
+					$sql .= " and bing_indexed > 0";
+					break;
+				case 'bing_no':
+					$sql .= " and bing_indexed = 0";
+					break;
+			}
+		}
+
+		// Page Authority filters
+		$paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+		$paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+		// check for PA type filter (from dropdown)
+		if(!empty($data['pa_type'])) {
+			$paType = addslashes($data['pa_type']);
+			$filter .= "&pa_type=$paType";
+			switch($paType) {
+				case 'excellent':
+					$sql .= " and page_authority >= $paLevelSecond";
+					break;
+				case 'good':
+					$sql .= " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+					break;
+				case 'low':
+					$sql .= " and page_authority > 0 and page_authority < $paLevelFirst";
+					break;
+				case 'none':
+					$sql .= " and page_authority = 0";
+					break;
+			}
+		}
+
+		// check for excellent PA (>=75) - for card links
+		if(isset($data['pa_excellent']) && ($data['pa_excellent'] != -1) ) {
+			$filter .= "&pa_excellent=1";
+			$sql .= " and page_authority >= $paLevelSecond";
+		}
+
+		// check for good PA (>=40 and <75) - for card links
+		if(isset($data['pa_good']) && ($data['pa_good'] != -1) ) {
+			$filter .= "&pa_good=1";
+			$sql .= " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+		}
+
+		// check for low PA (>0 and <40) - for card links
+		if(isset($data['pa_low']) && ($data['pa_low'] != -1) ) {
+			$filter .= "&pa_low=1";
+			$sql .= " and page_authority > 0 and page_authority < $paLevelFirst";
+		}
+
+		// check for no PA (=0) - for card links
+		if(isset($data['pa_none']) && ($data['pa_none'] != -1) ) {
+			$filter .= "&pa_none=1";
+			$sql .= " and page_authority = 0";
+		}
+
+		// check for mobile friendly
+		if(isset($data['mobile_friendly']) && ($data['mobile_friendly'] != -1) ) {
+		    $data['mobile_friendly'] = intval($data['mobile_friendly']);
+			$filter .= "&mobile_friendly=".$data['mobile_friendly'];
+			$sql .= " and mobile_friendly=".$data['mobile_friendly'];
+		}
+
+		// check for https secure
+		if(isset($data['https_secure']) && ($data['https_secure'] != -1) ) {
+		    $data['https_secure'] = intval($data['https_secure']);
+			$filter .= "&https_secure=".$data['https_secure'];
+			$sql .= " and https_secure=".$data['https_secure'];
+		}
+
+		// check for ai robot allowed
+		if(isset($data['ai_robot_allowed']) && ($data['ai_robot_allowed'] != -1) ) {
+		    $data['ai_robot_allowed'] = intval($data['ai_robot_allowed']);
+			$filter .= "&ai_robot_allowed=".$data['ai_robot_allowed'];
+			$sql .= " and ai_robot_allowed=".$data['ai_robot_allowed'];
+		}
+
+		// check for open graph tags
+		if(isset($data['has_og_tags']) && ($data['has_og_tags'] != -1) ) {
+		    $data['has_og_tags'] = intval($data['has_og_tags']);
+			$filter .= "&has_og_tags=".$data['has_og_tags'];
+			$sql .= " and has_og_tags=".$data['has_og_tags'];
+		}
+
+		// check for twitter cards
+		if(isset($data['has_twitter_cards']) && ($data['has_twitter_cards'] != -1) ) {
+		    $data['has_twitter_cards'] = intval($data['has_twitter_cards']);
+			$filter .= "&has_twitter_cards=".$data['has_twitter_cards'];
+			$sql .= " and has_twitter_cards=".$data['has_twitter_cards'];
+		}
+
+		// check for robots.txt allowed
+		if(isset($data['allowed_by_robots']) && ($data['allowed_by_robots'] != -1) ) {
+		    $data['allowed_by_robots'] = intval($data['allowed_by_robots']);
+			$filter .= "&allowed_by_robots=".$data['allowed_by_robots'];
+			$sql .= " and allowed_by_robots=".$data['allowed_by_robots'];
+		}
+
 		// to find order col
         if (!empty($data['order_col'])) {
 		    $orderCol = $data['order_col'];
@@ -571,16 +804,13 @@ class SiteAuditorController extends Controller{
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$headArr =  array(
         	'page_url' => $this->spTextSA["Page Link"],
-        	'pagerank' => $_SESSION['text']['common']['MOZ Rank'],
         	'page_authority' => $_SESSION['text']['common']['Page Authority'],
         	'score' => $_SESSION['text']['label']["Score"],
         	'brocken' => $_SESSION['text']['label']["Brocken"],
             'external_links' => $this->spTextSA["External Links"],
         	'total_links' => $this->spTextSA["Total Links"],
-            'google_backlinks' => "Google {$spTextHome['Backlinks']}",
-            'bing_backlinks' => "Bing {$spTextHome['Backlinks']}",
-            'google_indexed' => "Google {$spTextHome['Indexed']}",
-            'bing_indexed' => "Bing {$spTextHome['Indexed']}",
+            'google_backlinks' => $spTextHome['Backlinks'],
+            'indexed' => $spTextHome['Indexed'],
 		    'crawled' => $this->spTextSA['Crawled'],
 		    'brocken' => $_SESSION['text']['label']['Brocken'],
 		    'page_title' => $_SESSION['text']['label']['Title'],
@@ -589,7 +819,7 @@ class SiteAuditorController extends Controller{
 		    'comments' => $_SESSION['text']['label']['Comments'],
         );
 		
-		if ($exportVersion) {			
+		if ($exportVersion) {
 			$spText = $_SESSION['text'];
 			$exportContent = createExportContent(array('', $this->spTextSA["Link Reports"], ''));
 			$exportContent .= createExportContent(array());
@@ -598,19 +828,68 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Updated'], $projectInfo['last_updated']));
 			$exportContent .= createExportContent(array($_SESSION['text']['label']['Total Results'], $this->db->noRows));
 			$exportContent .= createExportContent(array());
-			$exportContent .= createExportContent(array($spText['common']['No'],$headArr['page_url'],$headArr['pagerank'],$headArr['page_authority'],$headArr['google_backlinks'],$headArr['bing_backlinks'],$headArr['google_indexed'],$headArr['bing_indexed'],$headArr['external_links'],$headArr['total_links'],$headArr['score'],$headArr['brocken'],$headArr['crawled'],$headArr['page_title'],$headArr['page_description'],$headArr['page_keywords'],$headArr['comments']));
+			$exportContent .= createExportContent(array(
+				$spText['common']['No'],
+				$headArr['page_url'],
+				$headArr['page_authority'],
+				$headArr['google_backlinks'],
+				$headArr['indexed'],
+				'Robots Allowed',
+				'AI Bot Allowed',
+				'Mobile Friendly',
+				'HTTPS Secure',
+				'OG Tags',
+				'Twitter Cards',
+				$headArr['external_links'],
+				$headArr['total_links'],
+				$headArr['score'],
+				$headArr['brocken'],
+				$headArr['crawled'],
+				$headArr['page_title'],
+				$headArr['page_description'],
+				$headArr['page_keywords'],
+				$headArr['comments']
+			));
 			$auditorComp = $this->createComponent('AuditorComponent');
-			foreach($reportList as $i => $listInfo) {			    
-			    if ($listInfo['crawled']) {			        
+			foreach($reportList as $i => $listInfo) {
+			    if ($listInfo['crawled']) {
 			        $auditorComp->countReportPageScore($listInfo);
 			        $comments = strip_tags(implode("\n", $auditorComp->commentInfo));
 			    } else {
 			        $comments = "";
-			    }			    
+			    }
 			    $listInfo['crawled'] = $listInfo['crawled'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['brocken'] = $listInfo['brocken'] ? $spText['common']['Yes'] : $spText['common']['No'];
-				$exportContent .= createExportContent(array($i+1, $listInfo['page_url'],$listInfo['pagerank'],$listInfo['page_authority'],$listInfo['google_backlinks'],$listInfo['bing_backlinks'],$listInfo['google_indexed'],$listInfo['bing_indexed'],$listInfo['external_links'],$listInfo['total_links'],$listInfo['score'],$listInfo['brocken'],$listInfo['crawled'],$listInfo['page_title'],$listInfo['page_description'],$listInfo['page_keywords'],$comments));
-			}			
+			    $listInfo['robots_allowed'] = !$listInfo['blocked_by_robots'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['google_indexed'] = $listInfo['google_indexed'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['ai_robot_allowed'] = $listInfo['ai_robot_allowed'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['mobile_friendly'] = $listInfo['mobile_friendly'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['https_secure'] = $listInfo['https_secure'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['has_og_tags'] = $listInfo['has_og_tags'] ? $spText['common']['Yes'] : $spText['common']['No'];
+			    $listInfo['has_twitter_cards'] = $listInfo['has_twitter_cards'] ? $spText['common']['Yes'] : $spText['common']['No'];
+				$exportContent .= createExportContent(array(
+					$i+1,
+					$listInfo['page_url'],
+					$listInfo['page_authority'],
+					$listInfo['google_backlinks'],
+					$listInfo['google_indexed'],
+					$listInfo['robots_allowed'],
+					$listInfo['ai_robot_allowed'],
+					$listInfo['mobile_friendly'],
+					$listInfo['https_secure'],
+					$listInfo['has_og_tags'],
+					$listInfo['has_twitter_cards'],
+					$listInfo['external_links'],
+					$listInfo['total_links'],
+					$listInfo['score'],
+					$listInfo['brocken'],
+					$listInfo['crawled'],
+					$listInfo['page_title'],
+					$listInfo['page_description'],
+					$listInfo['page_keywords'],
+					$comments
+				));
+			}
 			exportToCsv('siteauditor_report', $exportContent);
 		} else {					
 			$this->set('totalResults', $this->db->noRows);					
@@ -664,25 +943,25 @@ class SiteAuditorController extends Controller{
 		// check for brocken
 		$conditions = " and brocken=1";
 	    $projectInfo['brocken'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-		
-		// check for pagerank
-		for ($i=0; $i<=10; $i++) {
-		    $prMax = $i + 0.5;
-		    $prMin = $i - 0.5;
-		    $conditions = " and pagerank<$prMax and pagerank>=$prMin";
-		    $projectInfo['PR'.$i] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);    
-		}
-		
+
 		// check for backlinks
 	    foreach ($this->seArr as $se) {
 		    $conditions = " and $se"."_backlinks>0";
 		    $projectInfo[$se."_backlinks"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);	        
 	    }
+
+	    // check for no backlinks
+	    $conditions = " and google_backlinks=0";
+	    $projectInfo['no_backlinks'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 	    
         // check for indexed
 	    foreach ($this->seArr as $se) {
 		    $conditions = " and $se"."_indexed>0";
-		    $projectInfo[$se."_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);	        
+		    $projectInfo[$se."_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+		    // check for NOT indexed
+		    $conditions = " and $se"."_indexed=0";
+		    $projectInfo[$se."_not_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 	    }
 	    
 	    // duplicate titles,descriptions and keywords
@@ -691,11 +970,46 @@ class SiteAuditorController extends Controller{
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
 	    }
+
+	    // Modern SEO features - Mobile, HTTPS, AI Robot, Social Media
+	    $conditions = " and mobile_friendly=1";
+	    $projectInfo['mobile_friendly'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and https_secure=1";
+	    $projectInfo['https_secure'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and ai_robot_allowed=1";
+	    $projectInfo['ai_robot_allowed'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and has_og_tags=1";
+	    $projectInfo['has_og_tags'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and has_twitter_cards=1";
+	    $projectInfo['has_twitter_cards'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and blocked_by_robots=0";
+	    $projectInfo['allowed_by_robots'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    // Page Authority metrics based on thresholds
+	    $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+	    $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+	    $conditions = " and page_authority >= $paLevelSecond";
+	    $projectInfo['pa_excellent'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+	    $projectInfo['pa_good'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
+	    $projectInfo['pa_low'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+	    $conditions = " and page_authority = 0";
+	    $projectInfo['pa_none'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
 	    $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 	    $this->set('spTextHome', $spTextHome);	    
 	    
-	    if ($exportVersion) {			
-			$spText = $_SESSION['text'];
+	    if ($exportVersion) {
 			$exportContent = createExportContent(array('', $this->spTextSA['Project Summary'], ''));
 			$exportContent .= createExportContent(array());
 			$exportContent .= createExportContent(array());
@@ -705,23 +1019,33 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($this->spTextSA['Maximum Pages'], $projectInfo['max_links']));		
 			$exportContent .= createExportContent(array($this->spTextSA['Pages Found'], $projectInfo['total_links']));		
 			$exportContent .= createExportContent(array($this->spTextSA['Crawled Pages'], $projectInfo['crawled_links']));
+
+			$exportContent .= createExportContent(array('Has Backlinks', $projectInfo['google_backlinks']));
+
+			$exportContent .= createExportContent(array($spTextHome['Indexed'], $projectInfo['google_indexed']));
+			$exportContent .= createExportContent(array('Not Indexed', $projectInfo['google_not_indexed']));
 			
-			foreach ($this->seArr as $se) {
-		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Backlinks']}", $projectInfo[$se."_backlinks"])); 
-			}
-			
-			foreach ($this->seArr as $se) {
-		        $exportContent .= createExportContent(array(ucfirst($se). " {$spTextHome['Indexed']}", $projectInfo[$se."_indexed"])); 
-			}
-			
-			foreach ($metaArr as $meta => $val) {			    		
+			foreach ($metaArr as $meta => $val) {
 			    $exportContent .= createExportContent(array($val, $projectInfo["duplicate_".$meta]));
 	        }
-	        
-    	    for ($i=0; $i<=10; $i++) {
-    	        $exportContent .= createExportContent(array("PR$i", $projectInfo["PR$i"]));     
-    		}
+
     		$exportContent .= createExportContent(array($_SESSION['text']['label']['Brocken'], $projectInfo['brocken']));
+    		$exportContent .= createExportContent(array('No Backlinks', $projectInfo['no_backlinks']));
+
+			// Export modern SEO features
+			$exportContent .= createExportContent(array($this->spTextSA['Mobile Friendly'], $projectInfo['mobile_friendly']));
+			$exportContent .= createExportContent(array($this->spTextSA['HTTPS Secure'], $projectInfo['https_secure']));
+			$exportContent .= createExportContent(array($this->spTextSA['AI Robot Compatibility'], $projectInfo['ai_robot_allowed']));
+			$exportContent .= createExportContent(array($this->spTextSA['Open Graph Tags'], $projectInfo['has_og_tags']));
+			$exportContent .= createExportContent(array($this->spTextSA['Twitter Cards'], $projectInfo['has_twitter_cards']));
+			$exportContent .= createExportContent(array($this->spTextSA['Robots.txt Allowed'], $projectInfo['allowed_by_robots']));
+
+			// Export Page Authority metrics
+			$exportContent .= createExportContent(array('Excellent Page Authority (>=75)', $projectInfo['pa_excellent']));
+			$exportContent .= createExportContent(array('Good Page Authority (40-74)', $projectInfo['pa_good']));
+			$exportContent .= createExportContent(array('Low Page Authority (1-39)', $projectInfo['pa_low']));
+			$exportContent .= createExportContent(array('No Page Authority (0)', $projectInfo['pa_none']));
+
 			exportToCsv('siteauditor_report_summary', $exportContent);
 		} else {
     		$this->set('projectInfo', $projectInfo);
@@ -957,6 +1281,83 @@ class SiteAuditorController extends Controller{
     
     	return $validation;
     }
-    
+
+    /**
+     * Discover and parse sitemaps for a project
+     *
+     * @param array $projectInfo Project information
+     * @return void
+     */
+    function discoverAndParseSitemaps($projectInfo) {
+        $sitemapParser = $this->createComponent('SitemapParser');
+        $sitemapUrls = array();
+
+        // PRIORITY 1: Check for manual sitemap URL in project settings
+        if (!empty($projectInfo['sitemap_url'])) {
+            $manualSitemap = trim($projectInfo['sitemap_url']);
+            $sitemapUrls[] = $manualSitemap;
+        }
+
+        // PRIORITY 2: Check robots.txt for sitemaps
+        $robotsSitemaps = $sitemapParser->discoverSitemapsFromRobots($projectInfo['url']);
+        $sitemapUrls = array_merge($sitemapUrls, $robotsSitemaps);
+
+        // PRIORITY 3: Try common sitemap locations if no sitemaps found yet
+        if (count($sitemapUrls) <= 1) { // Only manual sitemap or none at all
+            $commonSitemaps = $sitemapParser->discoverCommonSitemaps($projectInfo['url']);
+            $sitemapUrls = array_merge($sitemapUrls, $commonSitemaps);
+        }
+
+        // Parse all discovered sitemaps in priority order
+        $auditorComp = $this->createComponent('AuditorComponent');
+        $addedCount = 0;
+
+        foreach ($sitemapUrls as $sitemapUrl) {
+            // Save sitemap info
+            $sitemapParser->saveSitemapInfo($projectInfo['id'], $sitemapUrl, 'xml');
+
+            // Parse sitemap
+            $urls = $sitemapParser->parseSitemap($sitemapUrl, $projectInfo['id']);
+
+            // Add URLs to crawl queue
+            foreach ($urls as $url) {
+                $url = Spider::formatUrl($url);
+
+                // Check if excluded
+                if ($auditorComp->isExcludeLink($url, $projectInfo['exclude_links'])) {
+                    continue;
+                }
+
+                // Check if already exists
+                if ($auditorComp->getReportInfo(" and project_id={$projectInfo['id']} and page_url='".addslashes($url)."'")) {
+                    continue;
+                }
+
+                // Check max links limit
+                $totalLinks = $this->getCountcrawledLinks($projectInfo['id']);
+                if ($totalLinks >= $projectInfo['max_links']) {
+                    break 2; // Break out of both loops
+                }
+
+                // Add to queue
+                $reportInfo = array(
+                    'page_url' => $url,
+                    'project_id' => $projectInfo['id'],
+                    'discovered_via' => 'sitemap'
+                );
+                $auditorComp->saveReportInfo($reportInfo);
+                $addedCount++;
+            }
+
+            // Update sitemap URL count
+            $sitemapParser->updateSitemapUrlCount($projectInfo['id'], $sitemapUrl, count($urls));
+        }
+    }
+
+    // Show score information page
+    function showScoreInfo() {
+        $this->render('siteauditor/scoreinfo');
+    }
+
 }
 ?>

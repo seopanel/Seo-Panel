@@ -163,6 +163,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
             $settingCtrler->set('headLabel', $controller->spTextSA['Site Auditor Settings']);
 		    $settingCtrler->showSystemSettings('siteauditor');
 		    break;
+
+		case "scoreinfo":
+		    $controller->showScoreInfo();
+		    break;
 		
 		case "importlinks":
 		    $controller->showImportProjectLinks($_GET);

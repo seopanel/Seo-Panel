@@ -96,6 +96,23 @@ class MozController extends Controller {
             return $returnLog ? array($mozUrlMetrics, []) : $mozUrlMetrics;
         }
 
+        // Use sample API data if enabled (saves API credits)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            foreach ($urlList as $url) {
+                $mozUrlMetrics[] = array(
+                    'domain_authority' => rand(30, 70),
+                    'page_authority' => rand(20, 60),
+                    'spam_score' => rand(1, 15),
+                    'external_pages_to_page' => rand(100, 5000),
+                    'external_pages_to_root_domain' => rand(10, 500),
+                );
+            }
+
+            $crawlInfo['crawl_status'] = 1;
+            $crawlInfo['log_message'] = "Sample Moz data returned (SP_USE_SAMPLE_API_DATA enabled)";
+            return $returnLog ? array($mozUrlMetrics, $crawlInfo) : $mozUrlMetrics;
+        }
+
         $apiToken = SP_MOZ_API_SECRET;
         if (empty($apiToken)) {
             return $returnLog ? array($mozUrlMetrics, []) : $mozUrlMetrics;

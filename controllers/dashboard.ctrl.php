@@ -140,7 +140,159 @@ class DashboardController extends Controller {
 
         $this->render('dashboard/main');
     }
-    
+
+    function showSocialMediaDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            showErrorMsg($_SESSION['text']['common']['nowebsites']);
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: month)
+        $period = !empty($info['period']) ? $info['period'] : 'month';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = date('Y-m-d');
+        switch ($period) {
+            case 'day':
+                $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                break;
+            case 'week':
+                $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                break;
+            case 'year':
+                $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                break;
+            case 'month':
+            default:
+                $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                break;
+        }
+
+        // Calculate previous period end date
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get social media statistics
+        $socialMediaStats = $this->getSocialMediaStats($websiteId, $fromTime, $toTime);
+        $socialMediaDistribution = $this->getSocialMediaDistribution($websiteId, $toTime);
+        $socialMediaTrends = $this->getSocialMediaTrends($websiteId, $fromTime, $toTime);
+        $topSocialMediaLinks = $this->getTopSocialMediaLinks($websiteId, $toTime);
+
+        // Get previous period social media stats for comparison
+        $prevSocialMediaStats = $this->getSocialMediaStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate social media stats comparison
+        $socialMediaComparison = $this->calculateComparison($socialMediaStats, $prevSocialMediaStats);
+
+        // Pass social media data to view
+        $this->set('socialMediaStats', $socialMediaStats);
+        $this->set('socialMediaDistribution', $socialMediaDistribution);
+        $this->set('socialMediaTrends', $socialMediaTrends);
+        $this->set('topSocialMediaLinks', $topSocialMediaLinks);
+        $this->set('prevSocialMediaStats', $prevSocialMediaStats);
+        $this->set('socialMediaComparison', $socialMediaComparison);
+
+        $this->render('dashboard/social_media_main');
+    }
+
+    function showReviewDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            showErrorMsg($_SESSION['text']['common']['nowebsites']);
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: month)
+        $period = !empty($info['period']) ? $info['period'] : 'month';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = date('Y-m-d');
+        switch ($period) {
+            case 'day':
+                $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                break;
+            case 'week':
+                $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                break;
+            case 'year':
+                $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                break;
+            case 'month':
+            default:
+                $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                break;
+        }
+
+        // Calculate previous period end date
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get review statistics
+        $reviewStats = $this->getReviewStats($websiteId, $fromTime, $toTime);
+        $reviewDistribution = $this->getReviewDistribution($websiteId, $toTime);
+        $reviewTrends = $this->getReviewTrends($websiteId, $fromTime, $toTime);
+        $topReviewLinks = $this->getTopReviewLinks($websiteId, $toTime);
+
+        // Get previous period review stats for comparison
+        $prevReviewStats = $this->getReviewStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate review stats comparison
+        $reviewComparison = $this->calculateComparison($reviewStats, $prevReviewStats);
+
+        // Pass review data to view
+        $this->set('reviewStats', $reviewStats);
+        $this->set('reviewDistribution', $reviewDistribution);
+        $this->set('reviewTrends', $reviewTrends);
+        $this->set('topReviewLinks', $topReviewLinks);
+        $this->set('prevReviewStats', $prevReviewStats);
+        $this->set('reviewComparison', $reviewComparison);
+
+        $this->render('dashboard/review_main');
+    }
+
     function __getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime) {
         // Find the latest date within the date range where keywords have results with rank > 0
         $sql = "SELECT MAX(sr.result_date) as last_report_date
@@ -533,6 +685,355 @@ class DashboardController extends Controller {
         }
 
         return $distribution;
+    }
+
+    // Get social media statistics with comparison
+    private function getSocialMediaStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get total active social media links
+        $sql = "SELECT COUNT(*) as total_links
+                FROM social_media_links
+                WHERE website_id=" . intval($websiteId) . "
+                    AND status=1";
+        $result = $this->db->select($sql, true);
+        $stats['total_links'] = $result['total_links'] ?? 0;
+
+        // Get latest social media results within the time period
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    COALESCE(SUM(smlr.followers), 0) as total_followers,
+                    COALESCE(SUM(smlr.likes), 0) as total_likes
+                FROM social_media_links sml
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
+                LEFT JOIN social_media_link_results smlr
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
+                WHERE sml.website_id=" . intval($websiteId) . "
+                    AND sml.status=1";
+        $result = $this->db->select($sql, true);
+        $stats['total_followers'] = $result['total_followers'] ?? 0;
+        $stats['total_likes'] = $result['total_likes'] ?? 0;
+
+        return $stats;
+    }
+
+    // Get social media distribution by platform
+    private function getSocialMediaDistribution($websiteId, $date) {
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    sml.type,
+                    COUNT(sml.id) as link_count,
+                    COALESCE(SUM(smlr.followers), 0) as total_followers,
+                    COALESCE(SUM(smlr.likes), 0) as total_likes
+                FROM social_media_links sml
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
+                LEFT JOIN social_media_link_results smlr
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
+                WHERE sml.website_id=" . intval($websiteId) . "
+                    AND sml.status = 1
+                GROUP BY sml.type
+                ORDER BY total_followers DESC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get social media trends over time
+    private function getSocialMediaTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    smlr.report_date as date,
+                    SUM(smlr.followers) as total_followers,
+                    SUM(smlr.likes) as total_likes
+                FROM social_media_link_results smlr
+                INNER JOIN social_media_links sml ON smlr.sm_link_id = sml.id
+                WHERE sml.website_id=" . intval($websiteId) . "
+                    AND sml.status = 1
+                    AND smlr.report_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY smlr.report_date
+                ORDER BY smlr.report_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get top performing social media links
+    private function getTopSocialMediaLinks($websiteId, $date, $limit=10) {
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    sml.name,
+                    sml.type,
+                    sml.url,
+                    smlr.followers,
+                    smlr.likes,
+                    smlr.report_date
+                FROM social_media_links sml
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
+                LEFT JOIN social_media_link_results smlr
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
+                WHERE sml.website_id=" . intval($websiteId) . "
+                    AND sml.status = 1
+                ORDER BY smlr.followers DESC, smlr.likes DESC
+                LIMIT " . intval($limit);
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get review statistics with comparison
+    private function getReviewStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get total active review links
+        $sql = "SELECT COUNT(*) as total_links
+                FROM review_links
+                WHERE website_id=" . intval($websiteId) . "
+                    AND status=1";
+        $result = $this->db->select($sql, true);
+        $stats['total_links'] = $result['total_links'] ?? 0;
+
+        // Get latest review results within the time period
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    COALESCE(SUM(rlr.reviews), 0) as total_reviews,
+                    COALESCE(AVG(rlr.rating), 0) as avg_rating
+                FROM review_links rl
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
+                LEFT JOIN review_link_results rlr
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
+                WHERE rl.website_id=" . intval($websiteId) . "
+                    AND rl.status=1";
+        $result = $this->db->select($sql, true);
+        $stats['total_reviews'] = $result['total_reviews'] ?? 0;
+        $stats['avg_rating'] = round($result['avg_rating'], 2);
+
+        return $stats;
+    }
+
+    // Get review distribution by platform
+    private function getReviewDistribution($websiteId, $date) {
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    rl.type,
+                    COUNT(rl.id) as link_count,
+                    COALESCE(SUM(rlr.reviews), 0) as total_reviews,
+                    COALESCE(AVG(rlr.rating), 0) as avg_rating
+                FROM review_links rl
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
+                LEFT JOIN review_link_results rlr
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
+                WHERE rl.website_id=" . intval($websiteId) . "
+                    AND rl.status = 1
+                GROUP BY rl.type
+                ORDER BY total_reviews DESC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get review trends over time
+    private function getReviewTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    rlr.report_date as date,
+                    SUM(rlr.reviews) as total_reviews,
+                    AVG(rlr.rating) as avg_rating
+                FROM review_link_results rlr
+                INNER JOIN review_links rl ON rlr.review_link_id = rl.id
+                WHERE rl.website_id=" . intval($websiteId) . "
+                    AND rl.status = 1
+                    AND rlr.report_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY rlr.report_date
+                ORDER BY rlr.report_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get top performing review links
+    private function getTopReviewLinks($websiteId, $date, $limit=10) {
+        // Using derived table for better performance instead of correlated subquery
+        $sql = "SELECT
+                    rl.name,
+                    rl.type,
+                    rl.url,
+                    rlr.reviews,
+                    rlr.rating,
+                    rlr.report_date
+                FROM review_links rl
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
+                LEFT JOIN review_link_results rlr
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
+                WHERE rl.website_id=" . intval($websiteId) . "
+                    AND rl.status = 1
+                ORDER BY rlr.reviews DESC, rlr.rating DESC
+                LIMIT " . intval($limit);
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    function showSiteAuditorDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextSA = $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']);
+        $this->set('spTextSA', $spTextSA);
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+
+        // Get user websites (same as other dashboard tabs)
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noProjects', true);
+            $this->render('dashboard/siteauditor_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Get Site Auditor project for selected website
+        $siteAuditorCtrl = New SiteauditorController();
+        $sql = "SELECT ap.*, w.url, w.name FROM auditorprojects ap, websites w
+                WHERE w.id = ap.website_id AND ap.website_id = $websiteId AND ap.status = 1 LIMIT 1";
+        $projectInfo = $this->db->select($sql, true);
+
+        if (empty($projectInfo)) {
+            $this->set('noProjectForWebsite', true);
+            $this->set('selectedWebsiteId', $websiteId);
+            $this->render('dashboard/siteauditor_main');
+            return;
+        }
+
+        $projectId = $projectInfo['id'];
+        $this->set('projectId', $projectId);
+
+        // Get project statistics
+        $projectInfo['total_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id']);
+        $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
+        $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
+
+        // Status check for crawled filter - default to crawled=1 on first load
+        $statusCheck = false;
+        $statusVal = 0;
+        $crawledVal = isset($info['crawled']) ? $info['crawled'] : 1;
+        // Apply filter if crawled is set OR on first load (default to 1)
+        if($crawledVal != -1) {
+            $statusCheck = true;
+            $statusVal = intval($crawledVal);
+        }
+        $this->set('crawled', $crawledVal);
+
+        // Broken links
+        $conditions = " and brocken=1";
+        $projectInfo['brocken'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Backlinks
+        $seArr = ['google'];
+        foreach ($seArr as $se) {
+            $conditions = " and $se"."_backlinks>0";
+            $projectInfo[$se."_backlinks"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        }
+
+        // No backlinks
+        $conditions = " and google_backlinks=0";
+        $projectInfo['no_backlinks'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Indexed status
+        foreach ($seArr as $se) {
+            $conditions = " and $se"."_indexed>0";
+            $projectInfo[$se."_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+            $conditions = " and $se"."_indexed=0";
+            $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        }
+
+        // Bing indexed
+        $conditions = " and bing_indexed>0";
+        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and bing_indexed=0";
+        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Duplicate meta info
+        $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
+        $auditorComp = $siteAuditorCtrl->createComponent('AuditorComponent');
+        foreach ($metaArr as $meta => $val) {
+            $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
+        }
+
+        // Modern SEO features
+        $conditions = " and mobile_friendly=1";
+        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and https_secure=1";
+        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and ai_robot_allowed=1";
+        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and has_og_tags=1";
+        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and has_twitter_cards=1";
+        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and blocked_by_robots=0";
+        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        // Page Authority metrics
+        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+
+        $conditions = " and page_authority >= $paLevelSecond";
+        $projectInfo['pa_excellent'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
+        $projectInfo['pa_good'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
+        $projectInfo['pa_low'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $conditions = " and page_authority = 0";
+        $projectInfo['pa_none'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+
+        $this->set('projectInfo', $projectInfo);
+        $this->set('metaArr', $metaArr);
+        $this->set('seArr', $seArr);
+
+        $this->render('dashboard/siteauditor_main');
     }
 
 }
