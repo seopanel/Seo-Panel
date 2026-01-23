@@ -700,17 +700,19 @@ class DashboardController extends Controller {
         $stats['total_links'] = $result['total_links'] ?? 0;
 
         // Get latest social media results within the time period
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(smlr.followers), 0) as total_followers,
                     COALESCE(SUM(smlr.likes), 0) as total_likes
                 FROM social_media_links sml
-                LEFT JOIN social_media_link_results smlr ON sml.id = smlr.sm_link_id
-                    AND smlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM social_media_link_results
-                        WHERE sm_link_id = sml.id
-                            AND report_date BETWEEN '$fromTime' AND '$toTime'
-                    )
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
+                LEFT JOIN social_media_link_results smlr
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
                 WHERE sml.website_id=" . intval($websiteId) . "
                     AND sml.status=1";
         $result = $this->db->select($sql, true);
@@ -722,20 +724,21 @@ class DashboardController extends Controller {
 
     // Get social media distribution by platform
     private function getSocialMediaDistribution($websiteId, $date) {
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     sml.type,
                     COUNT(sml.id) as link_count,
                     COALESCE(SUM(smlr.followers), 0) as total_followers,
                     COALESCE(SUM(smlr.likes), 0) as total_likes
                 FROM social_media_links sml
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
                 LEFT JOIN social_media_link_results smlr
-                    ON sml.id = smlr.sm_link_id
-                    AND smlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM social_media_link_results
-                        WHERE sm_link_id = sml.id
-                            AND report_date <= '$date'
-                    )
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
                 WHERE sml.website_id=" . intval($websiteId) . "
                     AND sml.status = 1
                 GROUP BY sml.type
@@ -765,6 +768,7 @@ class DashboardController extends Controller {
 
     // Get top performing social media links
     private function getTopSocialMediaLinks($websiteId, $date, $limit=10) {
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     sml.name,
                     sml.type,
@@ -773,13 +777,14 @@ class DashboardController extends Controller {
                     smlr.likes,
                     smlr.report_date
                 FROM social_media_links sml
-                LEFT JOIN social_media_link_results smlr ON sml.id = smlr.sm_link_id
-                    AND smlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM social_media_link_results
-                        WHERE sm_link_id = sml.id
-                            AND report_date <= '$date'
-                    )
+                LEFT JOIN (
+                    SELECT sm_link_id, MAX(report_date) as max_date
+                    FROM social_media_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY sm_link_id
+                ) latest ON sml.id = latest.sm_link_id
+                LEFT JOIN social_media_link_results smlr
+                    ON sml.id = smlr.sm_link_id AND smlr.report_date = latest.max_date
                 WHERE sml.website_id=" . intval($websiteId) . "
                     AND sml.status = 1
                 ORDER BY smlr.followers DESC, smlr.likes DESC
@@ -802,17 +807,19 @@ class DashboardController extends Controller {
         $stats['total_links'] = $result['total_links'] ?? 0;
 
         // Get latest review results within the time period
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(rlr.reviews), 0) as total_reviews,
                     COALESCE(AVG(rlr.rating), 0) as avg_rating
                 FROM review_links rl
-                LEFT JOIN review_link_results rlr ON rl.id = rlr.review_link_id
-                    AND rlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM review_link_results
-                        WHERE review_link_id = rl.id
-                            AND report_date BETWEEN '$fromTime' AND '$toTime'
-                    )
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
+                LEFT JOIN review_link_results rlr
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
                 WHERE rl.website_id=" . intval($websiteId) . "
                     AND rl.status=1";
         $result = $this->db->select($sql, true);
@@ -824,20 +831,21 @@ class DashboardController extends Controller {
 
     // Get review distribution by platform
     private function getReviewDistribution($websiteId, $date) {
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     rl.type,
                     COUNT(rl.id) as link_count,
                     COALESCE(SUM(rlr.reviews), 0) as total_reviews,
                     COALESCE(AVG(rlr.rating), 0) as avg_rating
                 FROM review_links rl
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
                 LEFT JOIN review_link_results rlr
-                    ON rl.id = rlr.review_link_id
-                    AND rlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM review_link_results
-                        WHERE review_link_id = rl.id
-                            AND report_date <= '$date'
-                    )
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
                 WHERE rl.website_id=" . intval($websiteId) . "
                     AND rl.status = 1
                 GROUP BY rl.type
@@ -867,6 +875,7 @@ class DashboardController extends Controller {
 
     // Get top performing review links
     private function getTopReviewLinks($websiteId, $date, $limit=10) {
+        // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     rl.name,
                     rl.type,
@@ -875,13 +884,14 @@ class DashboardController extends Controller {
                     rlr.rating,
                     rlr.report_date
                 FROM review_links rl
-                LEFT JOIN review_link_results rlr ON rl.id = rlr.review_link_id
-                    AND rlr.report_date = (
-                        SELECT MAX(report_date)
-                        FROM review_link_results
-                        WHERE review_link_id = rl.id
-                            AND report_date <= '$date'
-                    )
+                LEFT JOIN (
+                    SELECT review_link_id, MAX(report_date) as max_date
+                    FROM review_link_results
+                    WHERE report_date <= '$date'
+                    GROUP BY review_link_id
+                ) latest ON rl.id = latest.review_link_id
+                LEFT JOIN review_link_results rlr
+                    ON rl.id = rlr.review_link_id AND rlr.report_date = latest.max_date
                 WHERE rl.website_id=" . intval($websiteId) . "
                     AND rl.status = 1
                 ORDER BY rlr.reviews DESC, rlr.rating DESC
@@ -970,6 +980,12 @@ class DashboardController extends Controller {
             $conditions = " and $se"."_indexed=0";
             $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
         }
+
+        // Bing indexed
+        $conditions = " and bing_indexed>0";
+        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and bing_indexed=0";
+        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 
         // Duplicate meta info
         $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
