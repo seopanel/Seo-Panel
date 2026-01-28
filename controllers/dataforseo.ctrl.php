@@ -333,14 +333,14 @@ class DataForSEOController extends Controller {
         if(empty($keywordInfo['name'])) {
             return $crawlResult;
         }
-        
+
         if(empty($keywordInfo['engine'])) {
             return $crawlResult;
         }
-        
+
         $keywordInfo['depth'] = 10;
         $result = $this->doSERPAPICall($keywordInfo, $keywordInfo['engine'], "organic", "live", "regular");
-        
+
         // check crawl status
         if(!empty($result['status'])) {
             $crawlResult['count'] = isset($result['data']['se_results_count']) ? $result['data']['se_results_count'] : 0;
@@ -350,9 +350,9 @@ class DataForSEOController extends Controller {
                         Error occured while crawling  keyword {$keywordInfo['name']} from {$keywordInfo['engine']} - ".formatErrorMsg($result['message']."<br>\n")."</p>";
             }
         }
-        
+
         $crawlResult['status'] = $result['status'];
-        
+
         // create crawl log
         $crawlLogCtrl = new CrawlLogController();
         $crawlInfo = [];
@@ -364,8 +364,420 @@ class DataForSEOController extends Controller {
         $crawlInfo['log_message'] = addslashes($result['message']);
         $crawlInfo['crawl_link'] = !empty($result['data']['check_url']) ? $result['data']['check_url'] : "";
         $crawlLogCtrl->createCrawlLog($crawlInfo);
-        
+
         return  $crawlResult;
+    }
+
+    // ==================== DFS Tasks Table Methods ====================
+
+    var $dfsTasksTable = 'dfs_tasks';
+
+    /**
+     * Save a new DFS task to database
+     *
+     * @param array $taskData Task data to save
+     * @return int|false Inserted ID or false on failure
+     */
+    function saveDFSTask($taskData) {
+        $data = [
+            'task_id' => $taskData['task_id'],
+            'category' => $taskData['category'],
+            'platform' => $taskData['platform'],
+            'ref_id|int' => $taskData['ref_id'],
+            'ref_url' => !empty($taskData['ref_url']) ? $taskData['ref_url'] : '',
+            'status' => 'pending',
+            'report_date' => !empty($taskData['report_date']) ? $taskData['report_date'] : date('Y-m-d'),
+            'created_at' => date('Y-m-d H:i:s'),
+        ];
+
+        $this->dbHelper->insertRow($this->dfsTasksTable, $data);
+        return $this->db->getMaxId($this->dfsTasksTable);
+    }
+
+    /**
+     * Get pending DFS tasks by category
+     *
+     * @param string $category Task category (review, serp, backlink, etc.)
+     * @param string $reportDate Report date (default: today)
+     * @return array List of pending tasks
+     */
+    function getPendingDFSTasks($category, $reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $category = addslashes($category);
+        $sql = "SELECT * FROM {$this->dfsTasksTable}
+                WHERE category='$category' AND status='pending' AND report_date='$reportDate'
+                ORDER BY created_at ASC";
+        return $this->db->select($sql);
+    }
+
+    /**
+     * Get pending DFS task for a specific reference
+     *
+     * @param string $category Task category
+     * @param int $refId Reference ID
+     * @param string $reportDate Report date
+     * @return array|false Task info or false if not found
+     */
+    function getPendingDFSTaskByRef($category, $refId, $reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $whereCond = "category='".addslashes($category)."' AND ref_id=".intval($refId)." AND report_date='$reportDate' AND status='pending'";
+        return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
+    }
+
+    /**
+     * Update DFS task status
+     *
+     * @param int $id Task ID in database
+     * @param string $status New status (pending, completed, failed)
+     * @param string $errorMessage Error message if failed
+     * @return bool Success
+     */
+    function updateDFSTaskStatus($id, $status, $errorMessage = '') {
+        $data = ['status' => $status];
+        if ($status == 'completed' || $status == 'failed') {
+            $data['completed_at'] = date('Y-m-d H:i:s');
+        }
+        if (!empty($errorMessage)) {
+            $data['error_message'] = $errorMessage;
+        }
+        return $this->dbHelper->updateRow($this->dfsTasksTable, $data, "id=".intval($id));
+    }
+
+    /**
+     * Get DFS task by task_id
+     *
+     * @param string $taskId DataForSEO task ID
+     * @return array|false Task info or false
+     */
+    function getDFSTaskByTaskId($taskId) {
+        $whereCond = "task_id='".addslashes($taskId)."'";
+        return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
+    }
+
+    // ==================== Review API Methods ====================
+
+    /**
+     * Post a review task to DataForSEO and save to database
+     *
+     * @param string $platform Platform name (google, trustpilot, tripadvisor)
+     * @param int $refId Reference ID (review_link_id)
+     * @param string $url Review page URL
+     * @param string $reportDate Report date
+     * @return array ['status' => bool, 'message' => string, 'task_id' => string, 'pending' => bool]
+     */
+    function postReviewTask($platform, $refId, $url, $reportDate = '') {
+        $result = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'],
+            'task_id' => '',
+            'pending' => false,
+        ];
+
+        $reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+
+        // Check if task already exists for this reference
+        $existingTask = $this->getPendingDFSTaskByRef('review', $refId, $reportDate);
+        if (!empty($existingTask)) {
+            $result['status'] = true;
+            $result['message'] = "Task already pending";
+            $result['task_id'] = $existingTask['task_id'];
+            $result['pending'] = true;
+            return $result;
+        }
+
+        // Build API parameters based on platform
+        $params = $this->__buildReviewTaskParams($platform, $url);
+        if (empty($params)) {
+            $result['message'] = "Could not extract required parameters from URL for platform: $platform";
+            return $result;
+        }
+
+        // Post task to DataForSEO
+        $apiResult = $this->__postReviewTaskToAPI($platform, $params);
+        if (!$apiResult['status']) {
+            $result['message'] = $apiResult['message'];
+            return $result;
+        }
+
+        // Save task to database
+        $taskData = [
+            'task_id' => $apiResult['task_id'],
+            'category' => 'review',
+            'platform' => $platform,
+            'ref_id' => $refId,
+            'ref_url' => $url,
+            'report_date' => $reportDate,
+        ];
+        $this->saveDFSTask($taskData);
+
+        $result['status'] = true;
+        $result['message'] = "Task posted successfully";
+        $result['task_id'] = $apiResult['task_id'];
+        $result['pending'] = true;
+
+        // Create crawl log
+        $this->__createReviewCrawlLog($url, $platform, true, "Task posted: " . $apiResult['task_id']);
+
+        return $result;
+    }
+
+    /**
+     * Fetch results for a pending review task
+     *
+     * @param array $taskInfo Task info from database
+     * @return array ['status' => 0|1, 'reviews' => int, 'rating' => float, 'msg' => string, 'completed' => bool]
+     */
+    function fetchReviewTaskResult($taskInfo) {
+        $result = ['status' => 0, 'reviews' => 0, 'rating' => 0, 'msg' => '', 'completed' => false];
+
+        $apiResult = $this->__getReviewTaskFromAPI($taskInfo['platform'], $taskInfo['task_id']);
+
+        // Task still processing
+        if ($apiResult['pending']) {
+            $result['msg'] = "Task still processing";
+            return $result;
+        }
+
+        // Task failed
+        if (!$apiResult['status']) {
+            $this->updateDFSTaskStatus($taskInfo['id'], 'failed', $apiResult['message']);
+            $result['msg'] = $apiResult['message'];
+            $result['completed'] = true;
+            $this->__createReviewCrawlLog($taskInfo['ref_url'], $taskInfo['platform'], false, $apiResult['message']);
+            return $result;
+        }
+
+        // Task completed successfully
+        $this->updateDFSTaskStatus($taskInfo['id'], 'completed');
+
+        $data = $apiResult['data'];
+        $result['status'] = 1;
+        $result['reviews'] = isset($data['reviews_count']) ? intval($data['reviews_count']) : 0;
+        $result['rating'] = isset($data['rating']['value']) ? round(floatval($data['rating']['value']), 2) : 0;
+        $result['msg'] = "Review details fetched successfully via DataForSEO";
+        $result['completed'] = true;
+
+        $this->__createReviewCrawlLog($taskInfo['ref_url'], $taskInfo['platform'], true, $result['msg']);
+
+        return $result;
+    }
+
+    /**
+     * Build review task parameters based on platform
+     *
+     * @param string $platform Platform name
+     * @param string $url Review page URL
+     * @return array|false Parameters array or false if extraction failed
+     */
+    function __buildReviewTaskParams($platform, $url) {
+        $params = [];
+
+        switch ($platform) {
+            case 'google':
+                $keyword = $this->__extractGoogleKeyword($url);
+                if (empty($keyword)) return false;
+                $params = [
+                    'keyword' => $keyword,
+                    'location_name' => 'United States',
+                    'language_name' => 'English',
+                    'depth' => 10,
+                    'priority' => 1,
+                ];
+                break;
+
+            case 'trustpilot':
+                $domain = $this->__extractTrustpilotDomain($url);
+                if (empty($domain)) return false;
+                $params = [
+                    'domain' => $domain,
+                    'depth' => 20,
+                    'priority' => 1,
+                ];
+                break;
+
+            case 'tripadvisor':
+                $urlPath = $this->__extractTripAdvisorPath($url);
+                if (empty($urlPath)) return false;
+                $params = [
+                    'url_path' => $urlPath,
+                    'depth' => 10,
+                    'priority' => 1,
+                ];
+                break;
+
+            default:
+                return false;
+        }
+
+        return $params;
+    }
+
+    /**
+     * Post review task to DataForSEO API
+     *
+     * @param string $platform Platform name
+     * @param array $params API parameters
+     * @return array ['status' => bool, 'message' => string, 'task_id' => string]
+     */
+    function __postReviewTaskToAPI($platform, $params) {
+        $connResult = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'],
+            'task_id' => '',
+        ];
+
+        $endpoint = "/v3/business_data/$platform/reviews/task_post";
+
+        try {
+            $result = $this->restClient->post($endpoint, [$params]);
+
+            if ($result['status_code'] == 20000) {
+                foreach ($result['tasks'] as $taskInfo) {
+                    if (in_array($taskInfo['status_code'], [20000, 20100]) && !empty($taskInfo['id'])) {
+                        $connResult['status'] = true;
+                        $connResult['message'] = "Task created successfully";
+                        $connResult['task_id'] = $taskInfo['id'];
+                    } else {
+                        $connResult['message'] = $taskInfo['status_message'];
+                    }
+                    break;
+                }
+            } else {
+                $connResult['message'] = $result['status_message'];
+            }
+        } catch (RestClientException $e) {
+            $connResult['message'] = "HTTP code: {$e->getHttpCode()}, Error: {$e->getMessage()}";
+        }
+
+        return $connResult;
+    }
+
+    /**
+     * Get review task result from DataForSEO API (single call, no polling)
+     *
+     * @param string $platform Platform name
+     * @param string $taskId Task ID
+     * @return array ['status' => bool, 'message' => string, 'data' => array, 'pending' => bool]
+     */
+    function __getReviewTaskFromAPI($platform, $taskId) {
+        $connResult = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'],
+            'data' => [],
+            'pending' => false,
+        ];
+
+        $endpoint = "/v3/business_data/$platform/reviews/task_get/$taskId";
+
+        try {
+            $result = $this->restClient->get($endpoint);
+
+            if ($result['status_code'] == 20000) {
+                foreach ($result['tasks'] as $taskInfo) {
+                    // Task completed successfully
+                    if ($taskInfo['status_code'] == 20000 && !empty($taskInfo['result'])) {
+                        $connResult['status'] = true;
+                        $connResult['message'] = "Success";
+                        $connResult['data'] = $taskInfo['result'][0];
+                        return $connResult;
+                    }
+                    // Task still processing
+                    elseif ($taskInfo['status_code'] == 20100) {
+                        $connResult['pending'] = true;
+                        $connResult['message'] = "Task still processing";
+                        return $connResult;
+                    }
+                    // Task failed
+                    else {
+                        $connResult['message'] = $taskInfo['status_message'];
+                        return $connResult;
+                    }
+                }
+            } else {
+                $connResult['message'] = $result['status_message'];
+            }
+        } catch (RestClientException $e) {
+            $connResult['message'] = "HTTP code: {$e->getHttpCode()}, Error: {$e->getMessage()}";
+        }
+
+        return $connResult;
+    }
+
+    /**
+     * Create crawl log for review operations
+     *
+     * @param string $url Review URL
+     * @param string $platform Platform name
+     * @param bool $status Success status
+     * @param string $message Log message
+     */
+    function __createReviewCrawlLog($url, $platform, $status, $message) {
+        $crawlLogCtrl = new CrawlLogController();
+        $crawlInfo = [];
+        $crawlInfo['crawl_type'] = 'review';
+        $crawlInfo['crawl_status'] = $status ? 1 : 0;
+        $crawlInfo['ref_id'] = $url;
+        $crawlInfo['subject'] = $platform;
+        $crawlInfo['crawl_referer'] = $this->apiUrl;
+        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['crawl_link'] = $url;
+        $crawlLogCtrl->createCrawlLog($crawlInfo);
+    }
+
+    /**
+     * Extract keyword/business name from Google search URL
+     *
+     * @param string $url Google URL
+     * @return string Extracted keyword or empty string
+     */
+    function __extractGoogleKeyword($url) {
+        $keyword = '';
+
+        // Parse URL and get query parameter
+        $parsedUrl = parse_url($url);
+        if (!empty($parsedUrl['query'])) {
+            parse_str($parsedUrl['query'], $queryParams);
+            if (!empty($queryParams['q'])) {
+                $keyword = $queryParams['q'];
+            }
+        }
+
+        return $keyword;
+    }
+
+    /**
+     * Extract domain from Trustpilot review URL
+     *
+     * @param string $url Trustpilot URL
+     * @return string Extracted domain or empty string
+     */
+    function __extractTrustpilotDomain($url) {
+        $domain = '';
+
+        // Pattern: https://www.trustpilot.com/review/domain.com
+        if (preg_match('/trustpilot\.com\/review\/([^\/\?]+)/i', $url, $matches)) {
+            $domain = $matches[1];
+        }
+
+        return $domain;
+    }
+
+    /**
+     * Extract URL path from TripAdvisor URL
+     *
+     * @param string $url TripAdvisor URL
+     * @return string Extracted URL path or empty string
+     */
+    function __extractTripAdvisorPath($url) {
+        $urlPath = '';
+
+        // Parse URL and get path
+        $parsedUrl = parse_url($url);
+        if (!empty($parsedUrl['path'])) {
+            $urlPath = ltrim($parsedUrl['path'], '/');
+        }
+
+        return $urlPath;
     }
 }
 ?>

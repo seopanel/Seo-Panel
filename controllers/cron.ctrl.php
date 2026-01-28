@@ -375,32 +375,80 @@ class CronController extends Controller {
 	function reviewCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/review_manager.ctrl.php");
 		$this->debugMsg("Starting review Checker cron for website: {$this->websiteInfo['name']}....<br>\n");
-	
+
 		$reviewController = New ReviewManagerController();
 		$websiteInfo = $this->websiteInfo;
-		
-		$linkList = $reviewController->getAllLinksWithOutReports($websiteInfo['id'], date('Y-m-d', $this->timeStamp));
-		if (SP_MULTIPLE_CRON_EXEC && empty($linkList)) {
-			$this->debugMsg("No review links left to generate report for website: {$this->websiteInfo['name']}....<br>\n");
-			return true;
-		}
-		
-		// loop through link list and save the data
-		foreach ($linkList as $linkInfo) {
-			$result = $reviewController->getReviewDetails($linkInfo['type'], $linkInfo['url']);
-			
-			if ($result['status']) {
-				echo "Crawled review results of <b>{$linkInfo['name']}</b>.....</br>\n";
-			} else {
-				echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>.....</br>\n";
-				echo $result['msg'];
+		$reportDate = date('Y-m-d', $this->timeStamp);
+
+		// Check if DFS Review is enabled
+		$useDFS = defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW
+			&& defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)
+			&& defined('SP_DFS_API_PASSWORD') && !empty(SP_DFS_API_PASSWORD);
+
+		if ($useDFS) {
+			// Phase 1: Post DFS tasks for supported platforms (google, trustpilot, tripadvisor)
+			$linksNeedingTask = $reviewController->getLinksNeedingDFSTaskPost($websiteInfo['id'], $reportDate);
+			foreach ($linksNeedingTask as $linkInfo) {
+				$taskResult = $reviewController->postReviewTaskToDFS($linkInfo['id'], $linkInfo['type'], $linkInfo['url'], $reportDate);
+				if ($taskResult['status']) {
+					echo "Posted DFS task for <b>{$linkInfo['name']}</b> ({$linkInfo['type']}).....</br>\n";
+				} else {
+					echo "Failed posting DFS task for <b>{$linkInfo['name']}</b>: {$taskResult['message']}.....</br>\n";
+				}
+				sleep(1); // Small delay between API calls
 			}
-			
-			// save the review data
-			$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
-			sleep(SP_CRAWL_DELAY + 5);
+
+			// Phase 2: Fetch results for pending DFS tasks
+			$completedResults = $reviewController->fetchPendingDFSReviewResults($reportDate);
+			foreach ($completedResults as $completedInfo) {
+				$linkInfo = $reviewController->__getReviewLinkInfo($completedInfo['link_id']);
+				if ($completedInfo['result']['status']) {
+					echo "Fetched DFS review results for <b>{$linkInfo['name']}</b>.....</br>\n";
+				} else {
+					echo "Failed fetching DFS results for <b>{$linkInfo['name']}</b>: {$completedInfo['result']['msg']}.....</br>\n";
+				}
+				// Save the review data
+				$reviewController->saveReviewLinkResults($completedInfo['link_id'], $completedInfo['result']);
+			}
+
+			// Phase 3: Process Yelp links using old scraping method (not supported by DFS)
+			$yelpLinks = $reviewController->getYelpLinksWithOutReports($websiteInfo['id'], $reportDate);
+			foreach ($yelpLinks as $linkInfo) {
+				$result = $reviewController->getReviewDetails($linkInfo['type'], $linkInfo['url']);
+				if ($result['status']) {
+					echo "Crawled review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
+				} else {
+					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
+					echo $result['msg'];
+				}
+				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
+				sleep(SP_CRAWL_DELAY + 5);
+			}
+		} else {
+			// DFS not enabled - use old scraping method for all platforms
+			$linkList = $reviewController->getAllLinksWithOutReports($websiteInfo['id'], $reportDate);
+			if (SP_MULTIPLE_CRON_EXEC && empty($linkList)) {
+				$this->debugMsg("No review links left to generate report for website: {$this->websiteInfo['name']}....<br>\n");
+				return true;
+			}
+
+			// loop through link list and save the data
+			foreach ($linkList as $linkInfo) {
+				$result = $reviewController->getReviewDetails($linkInfo['type'], $linkInfo['url']);
+
+				if ($result['status']) {
+					echo "Crawled review results of <b>{$linkInfo['name']}</b>.....</br>\n";
+				} else {
+					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>.....</br>\n";
+					echo $result['msg'];
+				}
+
+				// save the review data
+				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
+				sleep(SP_CRAWL_DELAY + 5);
+			}
 		}
-		
+
 		echo "Saved review results of website id: <b>$websiteId</b>.....</br>\n";
 	}	
 	

@@ -9,3 +9,26 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker');
 
+--
+-- Table for storing pending DataForSEO tasks
+--
+CREATE TABLE IF NOT EXISTS `dfs_tasks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `task_id` varchar(100) NOT NULL,
+  `category` varchar(50) NOT NULL COMMENT 'review, serp, backlink, etc.',
+  `platform` varchar(50) NOT NULL COMMENT 'google, trustpilot, tripadvisor, etc.',
+  `ref_id` int(11) NOT NULL COMMENT 'Reference ID (review_link_id, keyword_id, etc.)',
+  `ref_url` varchar(500) DEFAULT NULL COMMENT 'Original URL being checked',
+  `status` enum('pending','completed','failed') NOT NULL DEFAULT 'pending',
+  `report_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `error_message` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `task_id` (`task_id`),
+  KEY `category` (`category`),
+  KEY `status` (`status`),
+  KEY `report_date` (`report_date`),
+  KEY `ref_id_category` (`ref_id`, `category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+

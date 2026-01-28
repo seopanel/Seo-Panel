@@ -42,7 +42,8 @@ class DashboardController extends Controller {
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
         if (empty($websiteList)) {
-            showErrorMsg($_SESSION['text']['common']['nowebsites']);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/no_websites');
             return;
         }
 
@@ -152,7 +153,8 @@ class DashboardController extends Controller {
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
         if (empty($websiteList)) {
-            showErrorMsg($_SESSION['text']['common']['nowebsites']);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/no_websites');
             return;
         }
 
@@ -228,7 +230,8 @@ class DashboardController extends Controller {
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
         if (empty($websiteList)) {
-            showErrorMsg($_SESSION['text']['common']['nowebsites']);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/no_websites');
             return;
         }
 

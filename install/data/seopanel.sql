@@ -846,6 +846,26 @@ CREATE TABLE IF NOT EXISTS `review_link_results` (
   KEY `review_link_rel` (`review_link_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `dfs_tasks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `task_id` varchar(100) NOT NULL,
+  `category` varchar(50) NOT NULL COMMENT 'review, serp, backlink, etc.',
+  `platform` varchar(50) NOT NULL COMMENT 'google, trustpilot, tripadvisor, etc.',
+  `ref_id` int(11) NOT NULL COMMENT 'Reference ID (review_link_id, keyword_id, etc.)',
+  `ref_url` varchar(500) DEFAULT NULL COMMENT 'Original URL being checked',
+  `status` enum('pending','completed','failed') NOT NULL DEFAULT 'pending',
+  `report_date` date NOT NULL,
+  `created_at` datetime NOT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `error_message` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `task_id` (`task_id`),
+  KEY `category` (`category`),
+  KEY `status` (`status`),
+  KEY `report_date` (`report_date`),
+  KEY `ref_id_category` (`ref_id`, `category`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
