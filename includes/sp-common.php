@@ -673,22 +673,19 @@ function getRoundTabBot(){
 }
 
 # function to convert to pdf  from view file
-function exportToPdf($content, $fileName = "reports.pdf") {	
+function exportToPdf($content, $fileName = "reports.pdf") {
     include_once(SP_LIBPATH . "/mpdf_lib/vendor/autoload.php");
-    $mpdf = new \Mpdf\Mpdf(
-        [
-            'tempDir' => SP_TMPPATH,
-            'defaultCssFile' => SP_THEME_ABSPATH ."/css/screen.css",
-        ]
-    );
-    
+    $mpdf = new \Mpdf\Mpdf([
+        'tempDir' => SP_TMPPATH,
+        'defaultCssFile' => SP_THEME_ABSPATH . "/css/screen.css",
+    ]);
+
     $mpdf->autoScriptToLang = true;
     $mpdf->autoLangToFont = true;
-	$mpdf->useAdobeCJK = true;
-	$mpdf->SetDisplayMode('fullpage');
-	$mpdf->WriteHTML($content, \Mpdf\HTMLParserMode::HTML_BODY);
-	$mpdf->Output($fileName, "I");
-	exit;
+    $mpdf->SetDisplayMode('fullpage');
+    $mpdf->WriteHTML($content, \Mpdf\HTMLParserMode::HTML_BODY);
+    $mpdf->Output($fileName, "I");
+    exit;
 }
 
 # func to show pdf header
