@@ -101,49 +101,55 @@ class Install {
 		}
 		
 		?>
-		<h1 class="BlockHeader">Welcome to Seo panel Installation</h1>
+		<div class="steps">
+			<div class="step active"><span class="step-number">1</span> Requirements</div>
+			<div class="step-divider"></div>
+			<div class="step"><span class="step-number">2</span> Database</div>
+			<div class="step-divider"></div>
+			<div class="step"><span class="step-number">3</span> Complete</div>
+		</div>
+		<h1 class="BlockHeader">System Requirements Check</h1>
 		<form method="post">
-		<table width="100%" cellspacing="8px" cellpadding="0px" class="formtab">
-			<tr><th colspan="2" class="header">Installation compatibility</th></tr>
-			<tr><td colspan="2" class="error"><?php echo $errMsg;?></td></tr>
-			<tr>
-				<th>PHP version >= 5.4.0</th>
-				<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
-			</tr>
-			<tr>
-				<th>MySQL Support</th>
-				<td class="<?php echo $mysqlClass;?>"><?php echo $mysqlSupport;?></td>
-			</tr>
-			<tr>
-				<th>CURL Support</th>
-				<td class="<?php echo $curlClass;?>"><?php echo $curlSupport; ?></td>
-			</tr>
-			<?php /* ?>
-			<tr>
-				<th>PHP short_open_tag</th>
-				<td class="<?php echo $shorttagClass;?>"><?php echo $shorttagSupport; ?></td>
-			</tr>
-			<?php */ ?>
-			<tr>
-				<th>GD graphics support</th>
-				<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
-			</tr>
-			<tr>
-				<th>/config/sp-config.php</th>
-				<td class="<?php echo $configClass;?>"><?php echo $configSupport; ?></td>
-			</tr>
-			<tr>
-				<th>/tmp</th>
-				<td class="<?php echo $tmpClass;?>"><?php echo $tmpSupport; ?></td>
-			</tr>
-		</table>
+		<div class="content-section">
+			<?php if($errMsg){ ?>
+			<div class="alert alert-warning"><?php echo $errMsg;?></div>
+			<?php } ?>
+			<table width="100%" class="formtab">
+				<tr><th colspan="2" class="header">Server Compatibility</th></tr>
+				<tr>
+					<th>PHP Version >= 5.4.0</th>
+					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
+				</tr>
+				<tr>
+					<th>MySQL Support</th>
+					<td class="<?php echo $mysqlClass;?>"><?php echo $mysqlSupport;?></td>
+				</tr>
+				<tr>
+					<th>CURL Support</th>
+					<td class="<?php echo $curlClass;?>"><?php echo $curlSupport; ?></td>
+				</tr>
+				<tr>
+					<th>GD Graphics Support</th>
+					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>Config File</th>
+					<td class="<?php echo $configClass;?>"><?php echo $configSupport; ?></td>
+				</tr>
+				<tr>
+					<th>Temp Directory</th>
+					<td class="<?php echo $tmpClass;?>"><?php echo $tmpSupport; ?></td>
+				</tr>
+			</table>
+		</div>
 		<input type="hidden" value="<?php echo $phpClass;?>" name="php_support">
 		<input type="hidden" value="<?php echo $mysqlClass;?>" name="mysql_support">
 		<input type="hidden" value="<?php echo $curlClass;?>" name="curl_support">
-		<?php /* ?><input type="hidden" value="<?php echo $shorttagClass;?>" name="short_open_tag"><?php */ ?>
 		<input type="hidden" value="<?php echo $configClass;?>" name="config">
 		<input type="hidden" value="startinstall" name="sec">
-		<input type="submit" value="Proceed to next step >>" name="submit" class="button">
+		<div class="button-section">
+			<input type="submit" value="Continue &rarr;" name="submit" class="button">
+		</div>
 		</form>
 		<?php
 	}
@@ -162,44 +168,94 @@ class Install {
 		$info['db_user'] = !empty($info['db_user']) ? $info['db_user'] : getenv('MYSQL_USER');
 		$info['db_pass'] = !empty($info['db_pass']) ? $info['db_pass'] : getenv('MYSQL_PASSWORD');
 		?>
-		<h1 class="BlockHeader">Database Settings</h1>
-		<form method="post">
-		<table width="100%" cellspacing="8px" cellpadding="0px" class="formtab">
-			<tr><th colspan="2" class="header">Database configuration</th></tr>
-			<tr><td colspan="2" class="error"><?php echo $errMsg;?></td></tr>
-			<tr>
-				<th>Database type:</th>
-				<td>
-					<select name="db_engine">
-						<option value="mysql">MySQL</option>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<th>Database server hostname:</th>
-				<td><input type="text" name="db_host" value="<?php echo empty($info['db_host']) ? "localhost" : $info['db_host'];?>"></td>
-			</tr>
-			<tr>
-				<th>Database name:</th>
-				<td><input type="text" name="db_name" value="<?php echo $info['db_name'];?>"></td>
-			</tr>
-			<tr>
-				<th>Database username:</th>
-				<td><input type="text" name="db_user" value="<?php echo $info['db_user'];?>"></td>
-			</tr>
-			<tr>
-				<th>Database password:</th>
-				<td><input type="text" name="db_pass" value="<?php echo $info['db_pass'];?>"></td>
-			</tr>
-			<tr>
-				<th>Admin email address:</th>
-				<td><input type="text" name="email" value="<?php echo $info['email'];?>"></td>
-			</tr>
-		</table>		
-		<input type="hidden" value="proceedinstall" name="sec">		
-		<input type="submit" value="Proceed to next step >>" name="submit" class="button">
+		<div class="steps">
+			<div class="step completed"><span class="step-number"></span> Requirements</div>
+			<div class="step-divider"></div>
+			<div class="step active"><span class="step-number">2</span> Database</div>
+			<div class="step-divider"></div>
+			<div class="step"><span class="step-number">3</span> Complete</div>
+		</div>
+		<h1 class="BlockHeader">Database Configuration</h1>
+		<form method="post" id="installForm" onsubmit="return validateInstallForm()">
+		<div class="content-section">
+			<?php if($errMsg){ ?>
+			<div class="alert alert-warning"><?php echo $errMsg;?></div>
+			<?php } ?>
+			<div id="validationErrors" class="alert alert-warning" style="display:none;"></div>
+			<table width="100%" class="formtab">
+				<tr><th colspan="2" class="header">Database Settings</th></tr>
+				<tr>
+					<th>Database Type</th>
+					<td>
+						<select name="db_engine" required>
+							<option value="mysql">MySQL / MariaDB</option>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th>Database Host <span class="required">*</span></th>
+					<td><input type="text" name="db_host" id="db_host" value="<?php echo empty($info['db_host']) ? "localhost" : $info['db_host'];?>" placeholder="localhost" required></td>
+				</tr>
+				<tr>
+					<th>Database Name <span class="required">*</span></th>
+					<td><input type="text" name="db_name" id="db_name" value="<?php echo isset($info['db_name']) ? $info['db_name'] : '';?>" placeholder="seopanel" required></td>
+				</tr>
+				<tr>
+					<th>Database Username <span class="required">*</span></th>
+					<td><input type="text" name="db_user" id="db_user" value="<?php echo isset($info['db_user']) ? $info['db_user'] : '';?>" placeholder="root" required></td>
+				</tr>
+				<tr>
+					<th>Database Password</th>
+					<td><input type="password" name="db_pass" id="db_pass" value="<?php echo isset($info['db_pass']) ? $info['db_pass'] : '';?>" placeholder="Enter password"></td>
+				</tr>
+				<tr><th colspan="2" class="header" style="margin-top: 15px;">Administrator Settings</th></tr>
+				<tr>
+					<th>Admin Email <span class="required">*</span></th>
+					<td><input type="email" name="email" id="email" value="<?php echo isset($info['email']) ? $info['email'] : '';?>" placeholder="admin@example.com" required></td>
+				</tr>
+			</table>
+		</div>
+		<input type="hidden" value="proceedinstall" name="sec">
+		<div class="button-section">
+			<input type="submit" value="Install Seo Panel &rarr;" name="submit" class="button">
+		</div>
 		</form>
-		<?php		
+		<script>
+		function validateInstallForm() {
+			var errors = [];
+			var errDiv = document.getElementById('validationErrors');
+
+			var dbHost = document.getElementById('db_host').value.trim();
+			var dbName = document.getElementById('db_name').value.trim();
+			var dbUser = document.getElementById('db_user').value.trim();
+			var email = document.getElementById('email').value.trim();
+
+			if (!dbHost) errors.push('Database Host is required');
+			if (!dbName) errors.push('Database Name is required');
+			if (!dbUser) errors.push('Database Username is required');
+			if (!email) {
+				errors.push('Admin Email is required');
+			} else if (!isValidEmail(email)) {
+				errors.push('Please enter a valid email address');
+			}
+
+			if (errors.length > 0) {
+				errDiv.innerHTML = '<strong>Please fix the following errors:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>';
+				errDiv.style.display = 'block';
+				window.scrollTo(0, 0);
+				return false;
+			}
+
+			errDiv.style.display = 'none';
+			return true;
+		}
+
+		function isValidEmail(email) {
+			var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+			return re.test(email);
+		}
+		</script>
+		<?php
 	}
 	
 	# func to write to config file
@@ -330,71 +386,91 @@ class Install {
 		// select timezones
 		$sql = "select * from timezone order by id";
 		$timezoneList = $db->select($sql);
-		?>		
+		?>
+		<div class="steps">
+			<div class="step completed"><span class="step-number"></span> Requirements</div>
+			<div class="step-divider"></div>
+			<div class="step completed"><span class="step-number"></span> Database</div>
+			<div class="step-divider"></div>
+			<div class="step active"><span class="step-number">3</span> Complete</div>
+		</div>
+		<h1 class="BlockHeader">Installation Complete</h1>
 		<form method="post" action="<?php echo $info['web_path']."/login.php"; ?>">
-		<h1 class="BlockHeader">Seo Panel Installation Success</h1>
-		<table width="100%" cellspacing="8px" cellpadding="0px" class="formtab">
-			<tr><th colspan="2" class="headersuccess">Seo Panel installed successfully!</th></tr>
-			<tr>
-				<td class="warning" colspan="2">Warning!</td>
-			</tr>
-			<tr>
-				<td style="border: none;" colspan="2">
-					<ul class="list">
-						<li> Please change permission of config file <b><?php echo SP_CONFIG_FILE;?></b> to avoid security issues.</li>
-						<li>Please remove installation directory <b>install</b> to avoid security issues.</li>
-					</ul>
-				</td>
-			</tr>
-			<tr>
-				<td class="warning" style="color:black;" colspan="2">Admin Login</td>
-			</tr>
-			<tr>
-				<td style="border-left: none;">Default Language:</td>
-				<td>
-					<select name="lang_code">
-            			<?php
-            			foreach ($langList as $langInfo) {
-            				$selected = ($langInfo['lang_code'] == 'en') ? "selected" : "";
-            				?>			
-            				<option value="<?php echo $langInfo['lang_code']?>" <?php echo $selected?>><?php echo $langInfo['lang_name']?></option>
-            				<?php
-            			}
-            			?>
-            		</select>
-				</td>
-			</tr>
-			<tr>
-				<td style="border-left: none;">Default Time Zone:</td>
-				<td>
-					<select name="time_zone" style="width: 260px;">
-            			<?php
-            			$listInfo['set_val'] = ini_get('date.timezone');
-            			foreach ($timezoneList as $timezoneInfo) {
-            				$selected = (trim($timezoneInfo['timezone_name']) == $listInfo['set_val']) ? 'selected="selected"' : "";
-            				?>
-            				<option value="<?php echo $timezoneInfo['timezone_name']?>" <?php echo $selected?> ><?php echo $timezoneInfo['timezone_label']?></option>
-            				<?php
-            			}
-            			?>
-            		</select>
-				</td>
-			</tr>
-			<tr>
-				<td style="border: none;font-weight: normal;font-size: 13px;" colspan="2">
-					<b>Username:</b> <?php echo SP_ADMIN_USER?><br>
-					<b>Password:</b> <?php echo SP_ADMIN_PASS?><br><br>
-					<b>Note:</b> Please change password of admin after first login.
-				</td>
-			</tr>
-		</table>
+		<div class="content-section">
+			<div class="success-box">
+				<h3>Seo Panel Installed Successfully!</h3>
+				<p>Your SEO control panel is ready to use.</p>
+			</div>
+
+			<div class="alert alert-warning">
+				<strong>Important Security Steps:</strong>
+				<ul>
+					<li>Change permission of <b><?php echo SP_CONFIG_FILE;?></b> (chmod 644)</li>
+					<li>Remove the <b>install</b> directory completely</li>
+				</ul>
+			</div>
+
+			<div class="credentials-box">
+				<div class="row">
+					<div class="col">
+						<div class="label">Username</div>
+						<div class="value"><?php echo SP_ADMIN_USER?></div>
+					</div>
+					<div class="col">
+						<div class="label">Password</div>
+						<div class="value"><?php echo SP_ADMIN_PASS?></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="alert alert-info">
+				<strong>Note:</strong> Please change the admin password after your first login.
+			</div>
+
+			<table width="100%" class="formtab">
+				<tr><th colspan="2" class="header">Initial Settings</th></tr>
+				<tr>
+					<th>Default Language</th>
+					<td>
+						<select name="lang_code">
+							<?php
+							foreach ($langList as $langInfo) {
+								$selected = ($langInfo['lang_code'] == 'en') ? "selected" : "";
+								?>
+								<option value="<?php echo $langInfo['lang_code']?>" <?php echo $selected?>><?php echo $langInfo['lang_name']?></option>
+								<?php
+							}
+							?>
+						</select>
+					</td>
+				</tr>
+				<tr>
+					<th>Time Zone</th>
+					<td>
+						<select name="time_zone">
+							<?php
+							$listInfo['set_val'] = ini_get('date.timezone');
+							foreach ($timezoneList as $timezoneInfo) {
+								$selected = (trim($timezoneInfo['timezone_name']) == $listInfo['set_val']) ? 'selected="selected"' : "";
+								?>
+								<option value="<?php echo $timezoneInfo['timezone_name']?>" <?php echo $selected?>><?php echo $timezoneInfo['timezone_label']?></option>
+								<?php
+							}
+							?>
+						</select>
+					</td>
+				</tr>
+			</table>
+		</div>
 		<input type="hidden" name="sec" value="login">
 		<input type="hidden" name="userName" value="spadmin">
 		<input type="hidden" name="password" value="spadmin">
 		<input type="hidden" name="source" value="install">
-		<input type="submit" value="Proceed to admin login >>" name="submit" class="button">
+		<div class="button-section">
+			<input type="submit" value="Login to Admin Panel &rarr;" name="submit" class="button">
+		</div>
 		</form>
-		<?php		
+		<?php
 	}
 	
 	
@@ -488,55 +564,59 @@ class Install {
 		}
 		
 		?>
-		<h1 class="BlockHeader">Welcome to Seo panel Upgrade</h1>
+		<div class="steps">
+			<div class="step active"><span class="step-number">1</span> Check</div>
+			<div class="step-divider"></div>
+			<div class="step"><span class="step-number">2</span> Upgrade</div>
+		</div>
+		<h1 class="BlockHeader">Upgrade Requirements Check</h1>
 		<form method="post">
-		<table width="100%" cellspacing="8px" cellpadding="0px" class="formtab">
-			<tr><th colspan="2" class="header">Upgrade compatibility</th></tr>
-			<tr><td colspan="2" class="error"><?php echo $errMsg;?></td></tr>
-			<tr>
-				<th>PHP version >= 5.4.0</th>
-				<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
-			</tr>
-			<tr>
-				<th>MySQL Support</th>
-				<td class="<?php echo $mysqlClass;?>"><?php echo $mysqlSupport;?></td>
-			</tr>
-			<tr>
-				<th>CURL Support</th>
-				<td class="<?php echo $curlClass;?>"><?php echo $curlSupport; ?></td>
-			</tr>
-			<?php /*?>
-			<tr>
-				<th>PHP short_open_tag</th>
-				<td class="<?php echo $shorttagClass;?>"><?php echo $shorttagSupport; ?></td>
-			</tr>
-			<?php */ ?>
-			<tr>
-				<th>GD graphics support</th>
-				<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
-			</tr>
-			<tr>
-				<th>/config/sp-config.php</th>
-				<td class="<?php echo $configClass;?>"><?php echo $configSupport; ?></td>
-			</tr>
-			<tr>
-				<th>Database</th>
-				<td class="<?php echo $dbClass;?>"><?php echo $dbSupport; ?></td>
-			</tr>
-			<tr>
-				<th>/tmp</th>
-				<td class="<?php echo $tmpClass;?>"><?php echo $tmpSupport; ?></td>
-			</tr>
-		</table>
+		<div class="content-section">
+			<?php if($errMsg){ ?>
+			<div class="alert alert-warning"><?php echo $errMsg;?></div>
+			<?php } ?>
+			<table width="100%" class="formtab">
+				<tr><th colspan="2" class="header">System Compatibility</th></tr>
+				<tr>
+					<th>PHP Version >= 5.4.0</th>
+					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
+				</tr>
+				<tr>
+					<th>MySQL Support</th>
+					<td class="<?php echo $mysqlClass;?>"><?php echo $mysqlSupport;?></td>
+				</tr>
+				<tr>
+					<th>CURL Support</th>
+					<td class="<?php echo $curlClass;?>"><?php echo $curlSupport; ?></td>
+				</tr>
+				<tr>
+					<th>GD Graphics Support</th>
+					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>Config File</th>
+					<td class="<?php echo $configClass;?>"><?php echo $configSupport; ?></td>
+				</tr>
+				<tr>
+					<th>Database Connection</th>
+					<td class="<?php echo $dbClass;?>"><?php echo $dbSupport; ?></td>
+				</tr>
+				<tr>
+					<th>Temp Directory</th>
+					<td class="<?php echo $tmpClass;?>"><?php echo $tmpSupport; ?></td>
+				</tr>
+			</table>
+		</div>
 		<input type="hidden" value="<?php echo $phpClass;?>" name="php_support">
 		<input type="hidden" value="<?php echo $mysqlClass;?>" name="mysql_support">
 		<input type="hidden" value="<?php echo $curlClass;?>" name="curl_support">
-		<?php /* ?><input type="hidden" value="<?php echo $shorttagClass;?>" name="short_open_tag"><?php */ ?>
 		<input type="hidden" value="<?php echo $configClass;?>" name="config">
 		<input type="hidden" value="<?php echo $dbClass;?>" name="db_support">
 		<input type="hidden" value="proceedupgrade" name="sec">
-		<?php $submitLabel = defined('SP_INSTALLED') ? "Upgrade to Seo Panel v.".SP_INSTALLED : "Upgrade Seo Panel"; ?>
-		<input type="submit" value="<?php echo $submitLabel?> >>" name="submit" class="button">
+		<?php $submitLabel = defined('SP_INSTALLED') ? "Upgrade to v".SP_INSTALLED : "Upgrade Seo Panel"; ?>
+		<div class="button-section">
+			<input type="submit" value="<?php echo $submitLabel?> &rarr;" name="submit" class="button">
+		</div>
 		</form>
 		<?php
 	}
@@ -631,23 +711,30 @@ class Install {
 		$this->createSeoPanelAPIKey($db);
 		
 		?>
+		<div class="steps">
+			<div class="step completed"><span class="step-number"></span> Check</div>
+			<div class="step-divider"></div>
+			<div class="step active"><span class="step-number">2</span> Complete</div>
+		</div>
+		<h1 class="BlockHeader">Upgrade Complete</h1>
 		<form method="post" action="<?php echo SP_WEBPATH."/login.php"; ?>">
-		<h1 class="BlockHeader">Success Seo Panel v.<?php echo SP_INSTALLED;?> Upgrade</h1>
-		<table width="100%" cellspacing="8px" cellpadding="0px" class="formtab">
-			<tr><th colspan="2" class="headersuccess">Seo Panel upgraded successfully!</th></tr>
-			<tr>
-				<td class="warning">Warning!</td>
-			</tr>
-			<tr>
-				<td style="border: none;">
-					<ul class="list">
-						<li>Please remove installation directory <b>install</b> to avoid security issues.</li>
-					</ul>
-				</td>
-			</tr>
-		</table>
+		<div class="content-section">
+			<div class="success-box">
+				<h3>Upgraded to Seo Panel v<?php echo SP_INSTALLED;?></h3>
+				<p>Your SEO Panel has been upgraded successfully.</p>
+			</div>
+
+			<div class="alert alert-warning">
+				<strong>Important Security Step:</strong>
+				<ul>
+					<li>Remove the <b>install</b> directory to avoid security issues</li>
+				</ul>
+			</div>
+		</div>
 		<input type="hidden" name="source" value="install">
-		<input type="submit" value="Proceed to admin login >>" name="submit" class="button">
+		<div class="button-section">
+			<input type="submit" value="Login to Admin Panel &rarr;" name="submit" class="button">
+		</div>
 		</form>
 		<?php
 	}
@@ -656,26 +743,39 @@ class Install {
 	# func to show default install header
 	function showDefaultHeader() {
 		?>
-		<html>
+		<!DOCTYPE html>
+		<html lang="en">
 			<head>
-				<meta content="text/html; charset=UTF-8" http-equiv="content-type" />
+				<meta charset="UTF-8">
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
 				<link rel="shortcut icon" href="../images/favicon.ico" />
-				<title>Seo Panel installation interface</title>
-				<meta name="description" content="Seo Panel installation Steps to install seo control panel for managing seo of your sites.">
-				<link rel="stylesheet" type="text/css" href="install.css" media="all" />				
+				<title>Seo Panel Installation</title>
+				<meta name="description" content="Seo Panel installation - Install SEO control panel for managing SEO of your sites.">
+				<link rel="stylesheet" type="text/css" href="install.css" media="all" />
 			</head>
 			<body>
 				<div class="installdiv">
-		<?php		
+					<div class="logo-section">
+						<img src="../images/logo_red_sm.png" alt="Seo Panel">
+						<h2>Installation Wizard</h2>
+					</div>
+		<?php
 	}
 	
 	# func to show default install footer
 	function showDefaultFooter($content='') {
 		?>
+				<div class="install-footer">
+					<a href="https://www.seopanel.org" target="_blank">www.seopanel.org</a>
+					<span class="separator">|</span>
+					<a href="https://www.seopanel.org/contact/" target="_blank">Contact Us</a>
+					<span class="separator">|</span>
+					<a href="https://www.seopanel.org/docs/" target="_blank">Documentation</a>
+				</div>
 				</div>
 			</body>
 		</html>
-		<?php		
+		<?php
 	}
 	
 	# function to create seo panel API Key

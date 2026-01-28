@@ -27,16 +27,21 @@ class DBI{
 	var $error = false;   		# error while databse operations
 	
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
-		
-		$this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
-		
-		if (!$this->connectionId){
+
+		try {
+			$this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
+
+			if (!$this->connectionId){
+				$this->error = true;
+				$error = "Database connection failed. Please check your credentials.";
+				return $error;
+			}
+
+			return true;
+		} catch (Exception $e) {
 			$this->error = true;
-			$error =  "Mysql Error: Database connection failed.";
-			return $error;
+			return "Database Error: " . $e->getMessage();
 		}
-		
-		return true;
 	}
 
 	# func to Execute a general mysql query

@@ -27,11 +27,17 @@ class DB{
 	var $error = false;   		# error while databse operations
 	
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
-		$this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
-		if (!$this->connectionId){
-			return $this->getError();
+		try {
+			$this->connectionId = @mysql_connect($dbServer, $dbUser, $dbPassword, true);
+			if (!$this->connectionId){
+				$this->error = true;
+				return "Database connection failed. Please check your credentials.";
+			}
+			return $this->selectDatabase($dbName);
+		} catch (Exception $e) {
+			$this->error = true;
+			return "Database Error: " . $e->getMessage();
 		}
-		return $this->selectDatabase($dbName);
 	}
 
 	# func to select database

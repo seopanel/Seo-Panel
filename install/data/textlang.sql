@@ -32119,3 +32119,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('sl', 'siteauditor', 'Twitter Cards', 'Twitter kartice'),
 ('sl', 'siteauditor', 'URLs from Sitemap', 'URL-ji iz zemljevida strani'),
 ('sl', 'siteauditor', 'Yes', 'Da');
+
+--
+-- Seo Panel 5.2.0 changes
+--
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker');
