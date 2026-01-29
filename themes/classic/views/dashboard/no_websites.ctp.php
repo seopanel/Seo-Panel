@@ -7,7 +7,7 @@
         <p class="text-muted mb-4">
             <?php echo $spTextWebsite['Get started by adding your first website to track its SEO performance.'] ?? 'Get started by adding your first website to track its SEO performance.'?>
         </p>
-        <a href="websites.php?sec=newWebsite" class="btn btn-primary btn-lg">
+        <a href="<?php echo SP_WEBPATH?>/admin-panel.php?sec=newweb" class="btn btn-primary btn-lg">
             <i class="fas fa-plus-circle"></i> <?php echo $spTextWebsite['Create Website'] ?? 'Create Website'?>
         </a>
     </div>

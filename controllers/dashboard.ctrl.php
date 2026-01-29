@@ -153,8 +153,9 @@ class DashboardController extends Controller {
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
         if (empty($websiteList)) {
+            $this->set('noWebsites', true);
             $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
-            $this->render('dashboard/no_websites');
+            $this->render('dashboard/social_media_main');
             return;
         }
 
@@ -230,8 +231,9 @@ class DashboardController extends Controller {
         $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
         if (empty($websiteList)) {
+            $this->set('noWebsites', true);
             $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
-            $this->render('dashboard/no_websites');
+            $this->render('dashboard/review_main');
             return;
         }
 
@@ -920,6 +922,7 @@ class DashboardController extends Controller {
 
         if (empty($websiteList)) {
             $this->set('noProjects', true);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
             $this->render('dashboard/siteauditor_main');
             return;
         }
@@ -1037,6 +1040,713 @@ class DashboardController extends Controller {
         $this->set('seArr', $seArr);
 
         $this->render('dashboard/siteauditor_main');
+    }
+
+    function showWebsiteAnalyticsDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextBack = $this->getLanguageTexts('backlink', $_SESSION['lang_code']);
+        $this->set('spTextBack', $spTextBack);
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noWebsites', true);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/website_analytics_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: month)
+        $period = !empty($info['period']) ? $info['period'] : 'month';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = date('Y-m-d');
+        switch ($period) {
+            case 'day':
+                $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                break;
+            case 'week':
+                $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                break;
+            case 'year':
+                $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                break;
+            case 'month':
+            default:
+                $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                break;
+        }
+
+        // Calculate previous period end date
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get website analytics data
+        $analyticsStats = $this->getWebsiteAnalyticsStats($websiteId, $fromTime, $toTime);
+        $analyticsTrends = $this->getWebsiteAnalyticsTrends($websiteId, $fromTime, $toTime);
+        $backlinkTrends = $this->getBacklinkTrends($websiteId, $fromTime, $toTime);
+        $saturationTrends = $this->getSaturationTrends($websiteId, $fromTime, $toTime);
+
+        // Get previous period stats for comparison
+        $prevAnalyticsStats = $this->getWebsiteAnalyticsStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate analytics stats comparison
+        $analyticsComparison = $this->calculateComparison($analyticsStats, $prevAnalyticsStats);
+
+        // Pass analytics data to view
+        $this->set('analyticsStats', $analyticsStats);
+        $this->set('analyticsTrends', $analyticsTrends);
+        $this->set('backlinkTrends', $backlinkTrends);
+        $this->set('saturationTrends', $saturationTrends);
+        $this->set('prevAnalyticsStats', $prevAnalyticsStats);
+        $this->set('analyticsComparison', $analyticsComparison);
+
+        $this->render('dashboard/website_analytics_main');
+    }
+
+    // Get website analytics statistics
+    private function getWebsiteAnalyticsStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get latest rank results (DA, PA, Spam Score)
+        $sql = "SELECT domain_authority, page_authority, spam_score, result_date
+                FROM rankresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date DESC
+                LIMIT 1";
+        $result = $this->db->select($sql, true);
+        $stats['domain_authority'] = $result['domain_authority'] ?? 0;
+        $stats['page_authority'] = $result['page_authority'] ?? 0;
+        $stats['spam_score'] = $result['spam_score'] ?? 0;
+
+        // Get latest backlink results
+        $sql = "SELECT external_pages_to_page, external_pages_to_root_domain, result_date
+                FROM backlinkresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date DESC
+                LIMIT 1";
+        $result = $this->db->select($sql, true);
+        $stats['backlinks'] = $result['external_pages_to_page'] ?? 0;
+        $stats['domain_backlinks'] = $result['external_pages_to_root_domain'] ?? 0;
+
+        // Get latest saturation results
+        $sql = "SELECT google, msn, result_date
+                FROM saturationresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date DESC
+                LIMIT 1";
+        $result = $this->db->select($sql, true);
+        $stats['google_indexed'] = $result['google'] ?? 0;
+        $stats['bing_indexed'] = $result['msn'] ?? 0;
+
+        return $stats;
+    }
+
+    // Get website analytics trends over time
+    private function getWebsiteAnalyticsTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT result_date as date, domain_authority, page_authority, spam_score
+                FROM rankresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get backlink trends over time
+    private function getBacklinkTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT result_date as date, external_pages_to_page as backlinks, external_pages_to_root_domain as domain_backlinks
+                FROM backlinkresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get saturation/indexed pages trends over time
+    private function getSaturationTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT result_date as date, google as google_indexed, msn as bing_indexed
+                FROM saturationresults
+                WHERE website_id=" . intval($websiteId) . "
+                AND result_date BETWEEN '$fromTime' AND '$toTime'
+                ORDER BY result_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    function showAnalyticsDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noWebsites', true);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/analytics_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: week)
+        $period = !empty($info['period']) ? $info['period'] : 'week';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = date('Y-m-d');
+        switch ($period) {
+            case 'day':
+                $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                break;
+            case 'month':
+                $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                break;
+            case 'year':
+                $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                break;
+            case 'week':
+            default:
+                $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                break;
+        }
+
+        // Calculate previous period end date
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get website analytics data
+        $waStats = $this->getWAStats($websiteId, $fromTime, $toTime);
+        $waTrends = $this->getWATrends($websiteId, $fromTime, $toTime);
+        $waSourceDistribution = $this->getWASourceDistribution($websiteId, $toTime);
+
+        // Get previous period stats for comparison
+        $prevWAStats = $this->getWAStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate analytics stats comparison
+        $waComparison = $this->calculateWAComparison($waStats, $prevWAStats);
+
+        // Pass analytics data to view
+        $this->set('waStats', $waStats);
+        $this->set('waTrends', $waTrends);
+        $this->set('waSourceDistribution', $waSourceDistribution);
+        $this->set('prevWAStats', $prevWAStats);
+        $this->set('waComparison', $waComparison);
+
+        $this->render('dashboard/analytics_main');
+    }
+
+    // Get website analytics statistics
+    private function getWAStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get aggregated analytics data for the period
+        $sql = "SELECT
+                    SUM(users) as total_users,
+                    SUM(newUsers) as total_new_users,
+                    SUM(sessions) as total_sessions,
+                    AVG(bounceRate) as avg_bounce_rate,
+                    AVG(avgSessionDuration) as avg_session_duration,
+                    SUM(goalCompletionsAll) as total_goal_completions
+                FROM website_analytics
+                WHERE website_id=" . intval($websiteId) . "
+                AND report_date BETWEEN '$fromTime' AND '$toTime'";
+
+        $result = $this->db->select($sql, true);
+        $stats['total_users'] = intval($result['total_users'] ?? 0);
+        $stats['total_new_users'] = intval($result['total_new_users'] ?? 0);
+        $stats['total_sessions'] = intval($result['total_sessions'] ?? 0);
+        $stats['avg_bounce_rate'] = floatval($result['avg_bounce_rate'] ?? 0);
+        $stats['avg_session_duration'] = floatval($result['avg_session_duration'] ?? 0);
+        $stats['total_goal_completions'] = intval($result['total_goal_completions'] ?? 0);
+
+        return $stats;
+    }
+
+    // Get website analytics trends over time
+    private function getWATrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    report_date as date,
+                    SUM(users) as users,
+                    SUM(newUsers) as new_users,
+                    SUM(sessions) as sessions,
+                    AVG(bounceRate) as bounce_rate,
+                    AVG(avgSessionDuration) as session_duration
+                FROM website_analytics
+                WHERE website_id=" . intval($websiteId) . "
+                AND report_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY report_date
+                ORDER BY report_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get website analytics source distribution
+    private function getWASourceDistribution($websiteId, $date) {
+        $sql = "SELECT
+                    wa.source_id,
+                    ans.source_name,
+                    SUM(wa.users) as users,
+                    SUM(wa.sessions) as sessions,
+                    AVG(wa.bounceRate) as bounce_rate
+                FROM website_analytics wa
+                LEFT JOIN analytic_sources ans ON wa.source_id = ans.id
+                WHERE wa.website_id=" . intval($websiteId) . "
+                AND wa.report_date <= '$date'
+                AND wa.report_date >= DATE_SUB('$date', INTERVAL 30 DAY)
+                GROUP BY wa.source_id, ans.source_name
+                ORDER BY users DESC
+                LIMIT 10";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Calculate comparison for website analytics (bounce rate lower is better)
+    private function calculateWAComparison($current, $previous) {
+        $comparison = [];
+
+        foreach ($current as $key => $currentValue) {
+            $prevValue = isset($previous[$key]) ? $previous[$key] : 0;
+            $diff = $currentValue - $prevValue;
+
+            // Calculate percentage change
+            if ($prevValue > 0) {
+                $percentChange = round(($diff / $prevValue) * 100, 1);
+            } else {
+                $percentChange = ($currentValue > 0) ? 100 : 0;
+            }
+
+            // For bounce_rate, lower is better, so invert the direction
+            if ($key === 'avg_bounce_rate') {
+                $direction = $diff > 0 ? 'down' : ($diff < 0 ? 'up' : 'neutral');
+            } else {
+                $direction = $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral');
+            }
+
+            $comparison[$key] = [
+                'diff' => $diff,
+                'percent' => $percentChange,
+                'direction' => $direction
+            ];
+        }
+
+        return $comparison;
+    }
+
+    function showSearchConsoleDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noWebsites', true);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/search_console_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: week)
+        $period = !empty($info['period']) ? $info['period'] : 'week';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = date('Y-m-d');
+        switch ($period) {
+            case 'day':
+                $fromTime = date('Y-m-d', strtotime('-1 day'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
+                break;
+            case 'month':
+                $fromTime = date('Y-m-d', strtotime('-30 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
+                break;
+            case 'year':
+                $fromTime = date('Y-m-d', strtotime('-1 year'));
+                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
+                break;
+            case 'week':
+            default:
+                $fromTime = date('Y-m-d', strtotime('-7 days'));
+                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
+                break;
+        }
+
+        // Calculate previous period end date
+        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get search console data
+        $scStats = $this->getSCStats($websiteId, $fromTime, $toTime);
+        $scTrends = $this->getSCTrends($websiteId, $fromTime, $toTime);
+        $scSourceDistribution = $this->getSCSourceDistribution($websiteId, $fromTime, $toTime);
+
+        // Get previous period stats for comparison
+        $prevSCStats = $this->getSCStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate search console stats comparison
+        $scComparison = $this->calculateSCComparison($scStats, $prevSCStats);
+
+        // Pass search console data to view
+        $this->set('scStats', $scStats);
+        $this->set('scTrends', $scTrends);
+        $this->set('scSourceDistribution', $scSourceDistribution);
+        $this->set('prevSCStats', $prevSCStats);
+        $this->set('scComparison', $scComparison);
+
+        $this->render('dashboard/search_console_main');
+    }
+
+    // Get search console statistics
+    private function getSCStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get aggregated search console data for the period
+        $sql = "SELECT
+                    SUM(clicks) as total_clicks,
+                    SUM(impressions) as total_impressions,
+                    AVG(ctr) as avg_ctr,
+                    AVG(average_position) as avg_position
+                FROM website_search_analytics
+                WHERE website_id=" . intval($websiteId) . "
+                AND report_date BETWEEN '$fromTime' AND '$toTime'";
+
+        $result = $this->db->select($sql, true);
+        $stats['total_clicks'] = intval($result['total_clicks'] ?? 0);
+        $stats['total_impressions'] = intval($result['total_impressions'] ?? 0);
+        $stats['avg_ctr'] = floatval($result['avg_ctr'] ?? 0);
+        $stats['avg_position'] = floatval($result['avg_position'] ?? 0);
+
+        return $stats;
+    }
+
+    // Get search console trends over time
+    private function getSCTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    report_date as date,
+                    SUM(clicks) as clicks,
+                    SUM(impressions) as impressions,
+                    AVG(ctr) as ctr,
+                    AVG(average_position) as position
+                FROM website_search_analytics
+                WHERE website_id=" . intval($websiteId) . "
+                AND report_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY report_date
+                ORDER BY report_date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get search console source distribution
+    private function getSCSourceDistribution($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    source,
+                    SUM(clicks) as clicks,
+                    SUM(impressions) as impressions,
+                    AVG(ctr) as ctr,
+                    AVG(average_position) as position
+                FROM website_search_analytics
+                WHERE website_id=" . intval($websiteId) . "
+                AND report_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY source
+                ORDER BY clicks DESC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Calculate comparison for search console (position lower is better)
+    private function calculateSCComparison($current, $previous) {
+        $comparison = [];
+
+        foreach ($current as $key => $currentValue) {
+            $prevValue = isset($previous[$key]) ? $previous[$key] : 0;
+            $diff = $currentValue - $prevValue;
+
+            // Calculate percentage change
+            if ($prevValue > 0) {
+                $percentChange = round(($diff / $prevValue) * 100, 1);
+            } else {
+                $percentChange = ($currentValue > 0) ? 100 : 0;
+            }
+
+            // For avg_position, lower is better, so invert the direction
+            if ($key === 'avg_position') {
+                $direction = $diff > 0 ? 'down' : ($diff < 0 ? 'up' : 'neutral');
+            } else {
+                $direction = $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral');
+            }
+
+            $comparison[$key] = [
+                'diff' => $diff,
+                'percent' => $percentChange,
+                'direction' => $direction
+            ];
+        }
+
+        return $comparison;
+    }
+
+    // Directory Submission Dashboard
+    function showDirectorySubmissionDashboard($info=[]) {
+        $userId = isLoggedIn();
+
+        // Load dashboard language texts
+        $this->set('spTextDashboard', $this->getLanguageTexts('dashboard', $_SESSION['lang_code']));
+        $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
+        $this->set('spTextHome', $spTextHome);
+        $spTextDir = $this->getLanguageTexts('directory', $_SESSION['lang_code']);
+        $this->set('spTextDir', $spTextDir);
+
+        // Get user websites
+        $websiteCtrler = New WebsiteController();
+        $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+        if (empty($websiteList)) {
+            $this->set('noWebsites', true);
+            $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+            $this->render('dashboard/directory_submission_main');
+            return;
+        }
+
+        $this->set('siteList', $websiteList);
+        $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        $this->set('websiteId', $websiteId);
+
+        // Handle period selection (default: week)
+        $period = !empty($info['period']) ? $info['period'] : 'week';
+        $this->set('period', $period);
+
+        // Calculate date range based on period
+        $toTime = time();
+        switch ($period) {
+            case 'day':
+                $fromTime = strtotime('-1 day');
+                $prevFromTime = strtotime('-2 days');
+                break;
+            case 'month':
+                $fromTime = strtotime('-30 days');
+                $prevFromTime = strtotime('-60 days');
+                break;
+            case 'year':
+                $fromTime = strtotime('-1 year');
+                $prevFromTime = strtotime('-2 years');
+                break;
+            case 'week':
+            default:
+                $fromTime = strtotime('-7 days');
+                $prevFromTime = strtotime('-14 days');
+                break;
+        }
+
+        // Calculate previous period end time
+        $prevToTime = $fromTime - 1;
+
+        $this->set('fromTime', $fromTime);
+        $this->set('toTime', $toTime);
+        $this->set('prevFromTime', $prevFromTime);
+        $this->set('prevToTime', $prevToTime);
+
+        // Get directory submission data
+        $dsStats = $this->getDSStats($websiteId, $fromTime, $toTime);
+        $dsTrends = $this->getDSTrends($websiteId, $fromTime, $toTime);
+        $dsDirectoryDistribution = $this->getDSDirectoryDistribution($websiteId, $fromTime, $toTime);
+        $dsAllTimeStats = $this->getDSAllTimeStats($websiteId);
+
+        // Get previous period stats for comparison
+        $prevDSStats = $this->getDSStats($websiteId, $prevFromTime, $prevToTime);
+
+        // Calculate directory submission stats comparison
+        $dsComparison = $this->calculateDSComparison($dsStats, $prevDSStats);
+
+        // Pass directory submission data to view
+        $this->set('dsStats', $dsStats);
+        $this->set('dsTrends', $dsTrends);
+        $this->set('dsDirectoryDistribution', $dsDirectoryDistribution);
+        $this->set('dsAllTimeStats', $dsAllTimeStats);
+        $this->set('prevDSStats', $prevDSStats);
+        $this->set('dsComparison', $dsComparison);
+
+        $this->render('dashboard/directory_submission_main');
+    }
+
+    // Get directory submission statistics for a period
+    private function getDSStats($websiteId, $fromTime, $toTime) {
+        $stats = [];
+
+        // Get aggregated directory submission data for the period
+        $sql = "SELECT
+                    COUNT(*) as total_submissions,
+                    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as confirmed,
+                    SUM(CASE WHEN status = 0 THEN 1 ELSE 0 END) as not_confirmed,
+                    SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN active = 0 THEN 1 ELSE 0 END) as pending
+                FROM dirsubmitinfo
+                WHERE website_id=" . intval($websiteId) . "
+                AND submit_time BETWEEN $fromTime AND $toTime";
+
+        $result = $this->db->select($sql, true);
+        $stats['total_submissions'] = intval($result['total_submissions'] ?? 0);
+        $stats['confirmed'] = intval($result['confirmed'] ?? 0);
+        $stats['not_confirmed'] = intval($result['not_confirmed'] ?? 0);
+        $stats['approved'] = intval($result['approved'] ?? 0);
+        $stats['pending'] = intval($result['pending'] ?? 0);
+
+        // Calculate success rate
+        if ($stats['total_submissions'] > 0) {
+            $stats['success_rate'] = round(($stats['approved'] / $stats['total_submissions']) * 100, 1);
+        } else {
+            $stats['success_rate'] = 0;
+        }
+
+        return $stats;
+    }
+
+    // Get all-time directory submission statistics
+    private function getDSAllTimeStats($websiteId) {
+        $stats = [];
+
+        $sql = "SELECT
+                    COUNT(*) as total_submissions,
+                    SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as confirmed,
+                    SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN active = 0 THEN 1 ELSE 0 END) as pending
+                FROM dirsubmitinfo
+                WHERE website_id=" . intval($websiteId);
+
+        $result = $this->db->select($sql, true);
+        $stats['total_submissions'] = intval($result['total_submissions'] ?? 0);
+        $stats['confirmed'] = intval($result['confirmed'] ?? 0);
+        $stats['approved'] = intval($result['approved'] ?? 0);
+        $stats['pending'] = intval($result['pending'] ?? 0);
+
+        return $stats;
+    }
+
+    // Get directory submission trends over time
+    private function getDSTrends($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    DATE(FROM_UNIXTIME(submit_time)) as date,
+                    COUNT(*) as submissions,
+                    SUM(CASE WHEN active = 1 THEN 1 ELSE 0 END) as approved,
+                    SUM(CASE WHEN active = 0 THEN 1 ELSE 0 END) as pending
+                FROM dirsubmitinfo
+                WHERE website_id=" . intval($websiteId) . "
+                AND submit_time BETWEEN $fromTime AND $toTime
+                GROUP BY DATE(FROM_UNIXTIME(submit_time))
+                ORDER BY date ASC";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Get directory distribution for submissions
+    private function getDSDirectoryDistribution($websiteId, $fromTime, $toTime) {
+        $sql = "SELECT
+                    d.domain,
+                    d.pagerank,
+                    d.domain_authority,
+                    d.page_authority,
+                    COUNT(ds.id) as submission_count,
+                    SUM(CASE WHEN ds.active = 1 THEN 1 ELSE 0 END) as approved_count,
+                    SUM(CASE WHEN ds.active = 0 THEN 1 ELSE 0 END) as pending_count
+                FROM dirsubmitinfo ds
+                JOIN directories d ON ds.directory_id = d.id
+                WHERE ds.website_id=" . intval($websiteId) . "
+                AND ds.submit_time BETWEEN $fromTime AND $toTime
+                GROUP BY ds.directory_id
+                ORDER BY submission_count DESC
+                LIMIT 10";
+
+        $results = $this->db->select($sql);
+        return $results ? $results : [];
+    }
+
+    // Calculate comparison for directory submission stats
+    private function calculateDSComparison($current, $previous) {
+        $comparison = [];
+
+        foreach ($current as $key => $currentValue) {
+            $prevValue = isset($previous[$key]) ? $previous[$key] : 0;
+            $diff = $currentValue - $prevValue;
+
+            // Calculate percentage change
+            if ($prevValue > 0) {
+                $percentChange = round(($diff / $prevValue) * 100, 1);
+            } else {
+                $percentChange = ($currentValue > 0) ? 100 : 0;
+            }
+
+            $direction = $diff > 0 ? 'up' : ($diff < 0 ? 'down' : 'neutral');
+
+            $comparison[$key] = [
+                'diff' => $diff,
+                'percent' => $percentChange,
+                'direction' => $direction
+            ];
+        }
+
+        return $comparison;
     }
 
 }

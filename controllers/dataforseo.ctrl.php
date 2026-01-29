@@ -779,5 +779,598 @@ class DataForSEOController extends Controller {
 
         return $urlPath;
     }
+
+    // ==================== Cron Processing Methods ====================
+
+    /**
+     * Get all pending DFS tasks
+     *
+     * @param string $reportDate Report date (default: today)
+     * @return array List of pending tasks
+     */
+    function getAllPendingDFSTasks($reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $sql = "SELECT * FROM {$this->dfsTasksTable}
+                WHERE status='pending' AND report_date='$reportDate'
+                ORDER BY created_at ASC";
+        return $this->db->select($sql);
+    }
+
+    /**
+     * Process all pending DFS tasks - called from cron
+     *
+     * @param bool $verbose Print output messages
+     * @return array Processing results summary
+     */
+    function processPendingDFSTasks($verbose = true) {
+        $results = [
+            'total' => 0,
+            'completed' => 0,
+            'failed' => 0,
+            'still_pending' => 0,
+        ];
+
+        // Get all pending tasks
+        $pendingTasks = $this->getAllPendingDFSTasks();
+        if (empty($pendingTasks)) {
+            if ($verbose) echo "No pending DFS tasks found.\n";
+            return $results;
+        }
+
+        $results['total'] = count($pendingTasks);
+        if ($verbose) echo "\nProcessing " . $results['total'] . " pending DFS tasks...\n";
+
+        // Process each task based on category
+        foreach ($pendingTasks as $taskInfo) {
+            $taskResult = $this->processDFSTask($taskInfo, $verbose);
+
+            if ($taskResult['completed']) {
+                if ($taskResult['success']) {
+                    $results['completed']++;
+                } else {
+                    $results['failed']++;
+                }
+            } else {
+                $results['still_pending']++;
+            }
+        }
+
+        if ($verbose) {
+            echo "DFS Tasks Processing Summary:\n";
+            echo "  - Completed: {$results['completed']}\n";
+            echo "  - Failed: {$results['failed']}\n";
+            echo "  - Still Pending: {$results['still_pending']}\n";
+        }
+
+        return $results;
+    }
+
+    /**
+     * Process a single DFS task
+     *
+     * @param array $taskInfo Task information from database
+     * @param bool $verbose Print output messages
+     * @return array ['completed' => bool, 'success' => bool, 'message' => string]
+     */
+    function processDFSTask($taskInfo, $verbose = true) {
+        $result = ['completed' => false, 'success' => false, 'message' => ''];
+
+        switch ($taskInfo['category']) {
+            case 'review':
+                $result = $this->processReviewTask($taskInfo, $verbose);
+                break;
+
+            case 'serp':
+                $result = $this->processSerpTask($taskInfo, $verbose);
+                break;
+
+            default:
+                $result['completed'] = true;
+                $result['success'] = false;
+                $result['message'] = "Unknown task category: {$taskInfo['category']}";
+                $this->updateDFSTaskStatus($taskInfo['id'], 'failed', $result['message']);
+                if ($verbose) echo "  - Task {$taskInfo['task_id']}: {$result['message']}\n";
+                break;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Process a review task - fetch result and save to database
+     *
+     * @param array $taskInfo Task information from database
+     * @param bool $verbose Print output messages
+     * @return array ['completed' => bool, 'success' => bool, 'message' => string]
+     */
+    function processReviewTask($taskInfo, $verbose = true) {
+        $result = ['completed' => false, 'success' => false, 'message' => ''];
+
+        if ($verbose) echo "  - Processing review task {$taskInfo['task_id']} for {$taskInfo['platform']}...";
+
+        // Fetch result from DataForSEO
+        $apiResult = $this->fetchReviewTaskResult($taskInfo);
+
+        if (!$apiResult['completed']) {
+            // Task still pending on DataForSEO side
+            $result['message'] = "Still processing";
+            if ($verbose) echo " still processing\n";
+            return $result;
+        }
+
+        $result['completed'] = true;
+
+        if ($apiResult['status'] == 0) {
+            // Task failed
+            $result['success'] = false;
+            $result['message'] = $apiResult['msg'];
+            if ($verbose) echo " failed: {$result['message']}\n";
+            return $result;
+        }
+
+        // Task completed successfully - save results
+        include_once(SP_CTRLPATH . "/review_manager.ctrl.php");
+        $reviewCtrler = new ReviewManagerController();
+
+        // Check if result already exists for this date
+        $reportDate = $taskInfo['report_date'];
+        $existingResult = $this->dbHelper->getRow(
+            'review_link_results',
+            "review_link_id=" . intval($taskInfo['ref_id']) . " AND report_date='" . addslashes($reportDate) . "'"
+        );
+
+        if (empty($existingResult)) {
+            // Save new result
+            $linkInfo = [
+                'reviews' => $apiResult['reviews'],
+                'rating' => $apiResult['rating'],
+            ];
+
+            $dataList = [
+                'review_link_id|int' => $taskInfo['ref_id'],
+                'reviews|int' => $linkInfo['reviews'],
+                'rating|float' => $linkInfo['rating'],
+                'report_date' => $reportDate,
+            ];
+
+            $this->dbHelper->insertRow('review_link_results', $dataList);
+            $result['success'] = true;
+            $result['message'] = "Saved: {$apiResult['reviews']} reviews, {$apiResult['rating']} rating";
+            if ($verbose) echo " completed - {$result['message']}\n";
+        } else {
+            // Result already exists
+            $result['success'] = true;
+            $result['message'] = "Result already exists for this date";
+            if ($verbose) echo " {$result['message']}\n";
+        }
+
+        return $result;
+    }
+
+    // ==================== SERP Task Methods ====================
+
+    /**
+     * Post a SERP task to DataForSEO and save to database
+     *
+     * @param array $keywordInfo Keyword information (id, name, searchengines, country_code, lang_code, url)
+     * @param int $seId Search engine ID
+     * @param string $seUrl Search engine URL (e.g., google.com, bing.com)
+     * @param string $reportDate Report date
+     * @return array ['status' => bool, 'message' => string, 'task_id' => string, 'pending' => bool]
+     */
+    function postSERPTask($keywordInfo, $seId, $seUrl, $reportDate = '') {
+        $result = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'] ?? 'Internal error occurred',
+            'task_id' => '',
+            'pending' => false,
+        ];
+
+        $reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+
+        // Create unique ref_id combining keyword_id and se_id
+        $refId = intval($keywordInfo['id']);
+
+        // Check if task already exists for this keyword + search engine + date
+        $existingTask = $this->getPendingSERPTaskByRef($refId, $seId, $reportDate);
+        if (!empty($existingTask)) {
+            $result['status'] = true;
+            $result['message'] = "Task already pending";
+            $result['task_id'] = $existingTask['task_id'];
+            $result['pending'] = true;
+            return $result;
+        }
+
+        // Determine search engine category (google, bing, yahoo)
+        $seDomainCat = DataForSEOController::getSERPDomainCategory($seUrl);
+
+        // Build API parameters
+        $params = [
+            'keyword' => mb_convert_encoding($keywordInfo['name'], "UTF-8"),
+            'location_name' => $this->__getLocationName($keywordInfo['country_code']),
+            'language_name' => $this->__getLanguageName($keywordInfo['lang_code']),
+            'depth' => isset($keywordInfo['depth']) ? intval($keywordInfo['depth']) : 100,
+            'priority' => 1,
+        ];
+
+        // Add search engine domain for non-baidu
+        if ($seDomainCat != "baidu" && stristr($seUrl, ".")) {
+            $params['se_domain'] = $seUrl;
+        }
+
+        // Post task to DataForSEO
+        $apiResult = $this->__postSERPTaskToAPI($seDomainCat, $params);
+        if (!$apiResult['status']) {
+            $result['message'] = $apiResult['message'];
+            return $result;
+        }
+
+        // Save task to database
+        $taskData = [
+            'task_id' => $apiResult['task_id'],
+            'category' => 'serp',
+            'platform' => $seDomainCat,
+            'ref_id' => $refId,
+            'ref_url' => $seId, // Store search engine ID in ref_url for SERP tasks
+            'report_date' => $reportDate,
+        ];
+        $this->saveDFSTask($taskData);
+
+        $result['status'] = true;
+        $result['message'] = "Task posted successfully";
+        $result['task_id'] = $apiResult['task_id'];
+        $result['pending'] = true;
+
+        // Create crawl log
+        $this->__createSERPCrawlLog($keywordInfo['name'], $seDomainCat, true, "Task posted: " . $apiResult['task_id']);
+
+        return $result;
+    }
+
+    /**
+     * Get pending SERP task for a specific keyword and search engine
+     *
+     * @param int $keywordId Keyword ID
+     * @param int $seId Search engine ID
+     * @param string $reportDate Report date
+     * @return array|false Task info or false if not found
+     */
+    function getPendingSERPTaskByRef($keywordId, $seId, $reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $whereCond = "category='serp' AND ref_id=" . intval($keywordId) . " AND ref_url='" . intval($seId) . "' AND report_date='$reportDate' AND status='pending'";
+        return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
+    }
+
+    /**
+     * Post SERP task to DataForSEO API
+     *
+     * @param string $seDomainCat Search engine category (google, bing, yahoo)
+     * @param array $params API parameters
+     * @return array ['status' => bool, 'message' => string, 'task_id' => string]
+     */
+    function __postSERPTaskToAPI($seDomainCat, $params) {
+        $connResult = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'] ?? 'Internal error occurred',
+            'task_id' => '',
+        ];
+
+        $endpoint = "/v3/serp/$seDomainCat/organic/task_post";
+
+        try {
+            $result = $this->restClient->post($endpoint, [$params]);
+
+            if ($result['status_code'] == 20000) {
+                foreach ($result['tasks'] as $taskInfo) {
+                    if (in_array($taskInfo['status_code'], [20000, 20100]) && !empty($taskInfo['id'])) {
+                        $connResult['status'] = true;
+                        $connResult['message'] = "Task created successfully";
+                        $connResult['task_id'] = $taskInfo['id'];
+                    } else {
+                        $connResult['message'] = $taskInfo['status_message'];
+                    }
+                    break;
+                }
+            } else {
+                $connResult['message'] = $result['status_message'];
+            }
+        } catch (RestClientException $e) {
+            $connResult['message'] = "HTTP code: {$e->getHttpCode()}, Error: {$e->getMessage()}";
+        }
+
+        return $connResult;
+    }
+
+    /**
+     * Fetch results for a pending SERP task
+     *
+     * @param array $taskInfo Task info from database
+     * @return array ['status' => 0|1, 'data' => array, 'msg' => string, 'completed' => bool]
+     */
+    function fetchSERPTaskResult($taskInfo) {
+        $result = ['status' => 0, 'data' => [], 'msg' => '', 'completed' => false];
+
+        $apiResult = $this->__getSERPTaskFromAPI($taskInfo['platform'], $taskInfo['task_id']);
+
+        // Task still processing
+        if ($apiResult['pending']) {
+            $result['msg'] = "Task still processing";
+            return $result;
+        }
+
+        // Task failed
+        if (!$apiResult['status']) {
+            $this->updateDFSTaskStatus($taskInfo['id'], 'failed', $apiResult['message']);
+            $result['msg'] = $apiResult['message'];
+            $result['completed'] = true;
+            $this->__createSERPCrawlLog($taskInfo['ref_id'], $taskInfo['platform'], false, $apiResult['message']);
+            return $result;
+        }
+
+        // Task completed successfully
+        $this->updateDFSTaskStatus($taskInfo['id'], 'completed');
+
+        $result['status'] = 1;
+        $result['data'] = $apiResult['data'];
+        $result['msg'] = "SERP results fetched successfully via DataForSEO";
+        $result['completed'] = true;
+
+        $this->__createSERPCrawlLog($taskInfo['ref_id'], $taskInfo['platform'], true, $result['msg']);
+
+        return $result;
+    }
+
+    /**
+     * Get SERP task result from DataForSEO API
+     *
+     * @param string $seDomainCat Search engine category (google, bing, yahoo)
+     * @param string $taskId Task ID
+     * @return array ['status' => bool, 'message' => string, 'data' => array, 'pending' => bool]
+     */
+    function __getSERPTaskFromAPI($seDomainCat, $taskId) {
+        $connResult = [
+            'status' => false,
+            'message' => $_SESSION['text']['common']['Internal error occured'] ?? 'Internal error occurred',
+            'data' => [],
+            'pending' => false,
+        ];
+
+        $endpoint = "/v3/serp/$seDomainCat/organic/task_get/regular/$taskId";
+
+        try {
+            $result = $this->restClient->get($endpoint);
+
+            if ($result['status_code'] == 20000) {
+                foreach ($result['tasks'] as $taskInfo) {
+                    // Task completed successfully
+                    if ($taskInfo['status_code'] == 20000 && !empty($taskInfo['result'])) {
+                        $connResult['status'] = true;
+                        $connResult['message'] = "Success";
+                        $connResult['data'] = $taskInfo['result'][0];
+                        return $connResult;
+                    }
+                    // Task still processing
+                    elseif ($taskInfo['status_code'] == 20100) {
+                        $connResult['pending'] = true;
+                        $connResult['message'] = "Task still processing";
+                        return $connResult;
+                    }
+                    // Task failed
+                    else {
+                        $connResult['message'] = $taskInfo['status_message'];
+                        return $connResult;
+                    }
+                }
+            } else {
+                $connResult['message'] = $result['status_message'];
+            }
+        } catch (RestClientException $e) {
+            $connResult['message'] = "HTTP code: {$e->getHttpCode()}, Error: {$e->getMessage()}";
+        }
+
+        return $connResult;
+    }
+
+    /**
+     * Process a SERP task - fetch result and save to database
+     *
+     * @param array $taskInfo Task information from database
+     * @param bool $verbose Print output messages
+     * @return array ['completed' => bool, 'success' => bool, 'message' => string]
+     */
+    function processSerpTask($taskInfo, $verbose = true) {
+        $result = ['completed' => false, 'success' => false, 'message' => ''];
+
+        if ($verbose) echo "  - Processing SERP task {$taskInfo['task_id']} for {$taskInfo['platform']}...";
+
+        // Fetch result from DataForSEO
+        $apiResult = $this->fetchSERPTaskResult($taskInfo);
+
+        if (!$apiResult['completed']) {
+            // Task still pending on DataForSEO side
+            $result['message'] = "Still processing";
+            if ($verbose) echo " still processing\n";
+            return $result;
+        }
+
+        $result['completed'] = true;
+
+        if ($apiResult['status'] == 0) {
+            // Task failed
+            $result['success'] = false;
+            $result['message'] = $apiResult['msg'];
+            if ($verbose) echo " failed: {$result['message']}\n";
+            return $result;
+        }
+
+        // Task completed successfully - save results
+        $keywordId = $taskInfo['ref_id'];
+        $seId = intval($taskInfo['ref_url']); // Search engine ID stored in ref_url
+        $reportDate = $taskInfo['report_date'];
+
+        // Get keyword info
+        include_once(SP_CTRLPATH . "/keyword.ctrl.php");
+        include_once(SP_CTRLPATH . "/report.ctrl.php");
+        include_once(SP_CTRLPATH . "/website.ctrl.php");
+
+        $keywordCtrler = new KeywordController();
+        $keywordInfo = $keywordCtrler->__getKeywordInfo($keywordId);
+
+        if (empty($keywordInfo)) {
+            $result['success'] = false;
+            $result['message'] = "Keyword not found: $keywordId";
+            if ($verbose) echo " failed: {$result['message']}\n";
+            return $result;
+        }
+
+        // Get website URL
+        $websiteCtrler = new WebsiteController();
+        $websiteInfo = $websiteCtrler->__getWebsiteInfo($keywordInfo['website_id']);
+        $websiteUrl = formatUrl($websiteInfo['url'], false);
+        $websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);
+
+        // Process SERP results
+        $matchCount = 0;
+        if (!empty($apiResult['data']['items'])) {
+            $reportCtrler = new ReportController();
+            $firstMatch = true;
+
+            foreach ($apiResult['data']['items'] as $itemInfo) {
+                $url = $itemInfo['url'];
+
+                // Check if URL matches website
+                if (
+                    stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) ||
+                    stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
+                ) {
+                    $matchInfo = [];
+                    $matchInfo['url'] = $url;
+                    $matchInfo['title'] = $itemInfo['title'];
+                    $matchInfo['description'] = $itemInfo['description'];
+                    $matchInfo['rank'] = $itemInfo['rank_group'];
+                    $matchInfo['se_id'] = $seId;
+                    $matchInfo['keyword_id'] = $keywordId;
+
+                    // Remove previous results only for first match
+                    $reportCtrler->saveMatchedKeywordInfo($matchInfo, $firstMatch, $reportDate);
+                    $firstMatch = false;
+                    $matchCount++;
+                }
+            }
+        }
+
+        // Update cron track info
+        $time = strtotime($reportDate);
+        $reportCtrler = new ReportController();
+        $reportCtrler->saveCronTrackInfo($keywordId, $seId, $time);
+
+        $result['success'] = true;
+        $result['message'] = "Found $matchCount matches";
+        if ($verbose) echo " completed - {$result['message']}\n";
+
+        return $result;
+    }
+
+    /**
+     * Create crawl log for SERP operations
+     *
+     * @param string $keyword Keyword or keyword ID
+     * @param string $platform Platform name (google, bing, yahoo)
+     * @param bool $status Success status
+     * @param string $message Log message
+     */
+    function __createSERPCrawlLog($keyword, $platform, $status, $message) {
+        $crawlLogCtrl = new CrawlLogController();
+        $crawlInfo = [];
+        $crawlInfo['crawl_type'] = 'keyword';
+        $crawlInfo['crawl_status'] = $status ? 1 : 0;
+        $crawlInfo['ref_id'] = $keyword;
+        $crawlInfo['subject'] = $platform;
+        $crawlInfo['crawl_referer'] = $this->apiUrl;
+        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['crawl_link'] = '';
+        $crawlLogCtrl->createCrawlLog($crawlInfo);
+    }
+
+    /**
+     * Get keywords needing SERP task posting for a website
+     *
+     * @param int $websiteId Website ID
+     * @param string $reportDate Report date
+     * @return array List of keywords with search engines needing task posting
+     */
+    function getKeywordsNeedingSERPTaskPost($websiteId, $reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $websiteId = intval($websiteId);
+        $time = strtotime($reportDate);
+
+        // Get keywords that are active and not yet processed
+        $sql = "SELECT k.*, w.url as website_url
+                FROM keywords k
+                JOIN websites w ON k.website_id = w.id
+                WHERE k.website_id = $websiteId
+                AND k.status = 1
+                ORDER BY k.name";
+
+        $keywords = $this->db->select($sql);
+        $result = [];
+
+        if (empty($keywords)) {
+            return $result;
+        }
+
+        // Get search engines list
+        include_once(SP_CTRLPATH . "/searchengine.ctrl.php");
+        $seController = new SearchEngineController();
+        $seList = $seController->__getAllCrawlFormatedSearchEngines();
+
+        foreach ($keywords as $keywordInfo) {
+            $seIds = explode(':', $keywordInfo['searchengines']);
+
+            foreach ($seIds as $seId) {
+                if (empty($seList[$seId])) {
+                    continue;
+                }
+
+                // Check if already has a report for today
+                $existingReport = $this->dbHelper->getRow(
+                    'rankresults',
+                    "keyword_id=" . intval($keywordInfo['id']) . " AND searchengine_id=" . intval($seId) . " AND result_time=$time"
+                );
+
+                if (!empty($existingReport)) {
+                    continue;
+                }
+
+                // Check if already has a pending DFS task
+                $existingTask = $this->getPendingSERPTaskByRef($keywordInfo['id'], $seId, $reportDate);
+                if (!empty($existingTask)) {
+                    continue;
+                }
+
+                // Get search engine URL
+                $urlInfo = parse_url($seList[$seId]['url']);
+                $seUrl = $urlInfo['host'];
+
+                // Check if search engine is supported (google, bing, yahoo)
+                $seDomainCat = DataForSEOController::getSERPDomainCategory($seUrl);
+                if (!in_array($seDomainCat, ['google', 'bing', 'yahoo'])) {
+                    continue;
+                }
+
+                $result[] = [
+                    'keyword_id' => $keywordInfo['id'],
+                    'keyword_name' => $keywordInfo['name'],
+                    'se_id' => $seId,
+                    'se_url' => $seUrl,
+                    'se_name' => $seList[$seId]['domain'],
+                    'depth' => $seList[$seId]['max_results'],
+                    'keyword_info' => $keywordInfo,
+                ];
+            }
+        }
+
+        return $result;
+    }
 }
 ?>

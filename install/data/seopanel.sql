@@ -1457,6 +1457,7 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('DataForSEO Balance', 'SP_DFS_BALANCE', '0', 'dataforseo', 'small', 1),
 ('Enable for Backlink and Saturation Checker', 'SP_ENABLE_DFS_BACK_SATU', '0', 'dataforseo', 'bool', 1),
 ('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '0', 'dataforseo', 'bool', 1),
+('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '0', 'dataforseo', 'bool', 1),
 ('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1);
 
 --

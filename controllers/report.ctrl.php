@@ -871,9 +871,9 @@ class ReportController extends Controller {
 	}
 	
 	# func to save the report
-	function saveMatchedKeywordInfo($matchInfo, $remove=false) {
-		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-		$resultDate = date('Y-m-d');
+	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='') {
+		$resultDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+		$time = strtotime($resultDate);
 		$this->checkDBConn();
 		if($remove){
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
@@ -991,6 +991,13 @@ class ReportController extends Controller {
 		$keywordController = New KeywordController();
 		$websiteCtrler = New WebsiteController();
 		$websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+		if (empty($websiteList)) {
+			$this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+			$this->render('dashboard/no_websites');
+			return;
+		}
+
 		$this->set('siteList', $websiteList);
 		$websiteId = isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id'];
 		$websiteId = intval($websiteId);

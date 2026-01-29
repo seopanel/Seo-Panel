@@ -32125,4 +32125,5 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 --
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker');
+('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker'),
+('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker');

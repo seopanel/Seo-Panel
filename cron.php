@@ -109,13 +109,22 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	
 	$controller->executeCron($includeList, $userList);
 	echo "\n=== Cron job execution completed on - " . date("Y-m-d H:i:s") . " ===\n\n";
-	
+
 	// delete crawl logs before 2 months
 	include_once(SP_CTRLPATH."/crawllog.ctrl.php");
 	$crawlLog = new CrawlLogController();
 	$crawlLog->clearCrawlLog(SP_CRAWL_LOG_CLEAR_TIME);
 	echo "Clearing crawl logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";
 	$crawlLog->clearMaillLog(SP_CRAWL_LOG_CLEAR_TIME);
-	echo "Clearing mail logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";	
+	echo "Clearing mail logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";
+
+	// Process pending DataForSEO tasks
+	if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
+		echo "\n=== Processing pending DataForSEO tasks ===\n";
+		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+		$dfsCtrler = new DataForSEOController();
+		$dfsCtrler->processPendingDFSTasks(true);
+		echo "=== DataForSEO tasks processing completed ===\n";
+	}
 }
 ?>
