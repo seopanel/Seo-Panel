@@ -22,14 +22,20 @@
 
 include_once("includes/sp-load.php");
 checkLoggedIn();
-include_once(SP_CTRLPATH."/keyword.ctrl.php");
-include_once(SP_CTRLPATH."/overview.ctrl.php");
-$controller = New OverviewController();
-$controller->view->menu = 'home';
-$controller->layout = 'ajax';
 
-$spTextHome = $controller->getLanguageTexts('home', $_SESSION['lang_code']);
-$controller->set('spTextHome', $spTextHome);
+include_once(SP_CTRLPATH."/dashboard.ctrl.php");
+include_once(SP_CTRLPATH."/website.ctrl.php");
+$controller = New DashboardController();
+$controller->layout = __assign($_REQUEST, 'layout', 'ajax');
+
+$controller->spTextTools = $controller->getLanguageTexts('seotools', $_SESSION['lang_code']);
+$controller->set('spTextTools', $controller->spTextTools);
+$controller->spTextHome = $controller->getLanguageTexts('home', $_SESSION['lang_code']);
+$controller->set('spTextHome', $controller->spTextHome);
+$controller->spTextDashboard = $controller->getLanguageTexts('dashboard', $_SESSION['lang_code']);
+$controller->set('spTextDashboard', $controller->spTextDashboard);
+$controller->spTextDir = $controller->getLanguageTexts('directory', $_SESSION['lang_code']);
+$controller->set('spTextDir', $controller->spTextDir);
 
 // set site details according to customizer plugin
 $custSiteInfo = getCustomizerDetails();
@@ -37,43 +43,11 @@ if (!empty($custSiteInfo['site_title'])) $controller->set('spTitle', $custSiteIn
 if (!empty($custSiteInfo['site_description'])) $controller->set('spDescription', $custSiteInfo['site_description']);
 if (!empty($custSiteInfo['site_keywords'])) $controller->set('spKeywords', $custSiteInfo['site_keywords']);
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-
-    switch($_GET['sec']) {
-        
-        case "page-overview":
-            $controller->showPageOverview($_GET['website_id'], $_GET['from_time'], $_GET['to_time']);
-            break;
-            
-        case "page-overview-data":
-            $controller->showPageOverviewData($_GET);
-            break;
-
-	    case "keyword-overview":
-	        $controller->showKeywordOverview($_GET['website_id'], $_GET['from_time'], $_GET['to_time']);
-	        break;
-	        
-	    case "keyword-overview-data":
-	        $controller->showKeywordOverviewData($_GET);
-	        break;
-	    
-	    default:
-	        $controller->layout = 'default';
-		    $controller->showOverView($_GET);
+if(!empty($_SERVER['REQUEST_METHOD'])) {
+	switch($_REQUEST['sec']) {
+		default:
+			$controller->showDirectorySubmissionDashboard($_REQUEST);
 			break;
-			
-	}
-} elseif ($_SERVER['REQUEST_METHOD'] == 'POST') {
-	switch($_POST['sec']) {	    
-	    case "reports_dashboard":
-	        $controller->layout = 'default';
-	        $controller->showOverView($_POST);
-	        break;
-	    
-	    default:
-	        $controller->layout = 'default';
-	        $controller->showOverView($_POST);
-			break;			
 	}
 }
 ?>
