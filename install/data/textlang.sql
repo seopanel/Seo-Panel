@@ -32126,4 +32126,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker'),
-('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker');
+('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker'),
+('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),
+('en', 'settings', 'SP_SPAPI_EMAIL', 'Email'),
+('en', 'settings', 'SP_SPAPI_NAME', 'Name'),
+('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings');

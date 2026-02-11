@@ -12,6 +12,24 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker');
 
 --
+-- Seo Panel API settings
+--
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Seo Panel API URL', 'SP_SPAPI_URL', 'http://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
+('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
+('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
+('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
+('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1);
+
+ALTER TABLE `users` ADD COLUMN `spapi_skip` tinyint(1) NOT NULL DEFAULT 0;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),
+('en', 'settings', 'SP_SPAPI_EMAIL', 'Email'),
+('en', 'settings', 'SP_SPAPI_NAME', 'Name'),
+('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings');
+
+--
 -- Table for storing pending DataForSEO tasks
 --
 CREATE TABLE IF NOT EXISTS `dfs_tasks` (

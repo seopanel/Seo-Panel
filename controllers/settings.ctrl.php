@@ -94,8 +94,12 @@ class SettingsController extends Controller{
 				case "mail":
 				    $this->set('headLabel', $spTextPanel['Mail Settings']);
 				    break;
-					
-				default:					
+
+				case "seopanel_api":
+				    $this->set('headLabel', $spTextPanel['Seo Panel API Settings']);
+				    break;
+
+				default:
 					break;
 				
 			}
@@ -329,7 +333,7 @@ class SettingsController extends Controller{
 	public static function getSearchResultCount($keywordInfo, $cron = false) {
 	    $status = false;
 	    $results =  [];
-	    
+
 	    // check dataforseo is enabled for backlink and saturation checker
 	    if (SP_ENABLE_DFS && SP_ENABLE_DFS_BACK_SATU && (SP_DFS_API_LOGIN != "") && (SP_DFS_API_PASSWORD != "")) {
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
@@ -337,8 +341,92 @@ class SettingsController extends Controller{
 	        $status = true;
 	        $results = $dfsCtrler->__getSERPResultCount($keywordInfo, $cron);
 	    }
-	    
+
 	    return [$status, $results];
+	}
+
+	// check whether spAPI registration popup should be shown
+	function showSpApiRegistrationPopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // check if already registered
+	    if (defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED) {
+	        return false;
+	    }
+
+	    // check if user has skipped
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId));
+	    if (!empty($userInfo['spapi_skip'])) {
+	        return false;
+	    }
+
+	    return true;
+	}
+
+	// register with Seo Panel API
+	function registerSpApi($postInfo) {
+	    $firstName = trim($postInfo['first_name']);
+	    $lastName = trim($postInfo['last_name']);
+	    $email = trim($postInfo['email']);
+
+	    // validate inputs
+	    if (empty($firstName) || empty($email)) {
+	        echo json_encode(['status' => 'error', 'message' => 'Please fill in all required fields.']);
+	        return;
+	    }
+
+	    $errMsg = $this->validate->checkEmail($email);
+	    if ($this->validate->flagErr) {
+	        echo json_encode(['status' => 'error', 'message' => 'Please enter a valid email address.']);
+	        return;
+	    }
+
+	    // call spAPI register endpoint
+	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'http://api.seopanel.org/api/v1';
+	    $postData = http_build_query([
+	        'first_name' => $firstName,
+	        'last_name' => $lastName,
+	        'email' => $email,
+	        'site_url' => SP_WEBPATH,
+	        'version' => SP_VERSION_NUMBER,
+	    ]);
+
+	    $spider = new Spider();
+	    $spider->_CURLOPT_POSTFIELDS = $postData;
+	    $spider->_CURLOPT_TIMEOUT = 30;
+	    $result = $spider->getContent($apiUrl . '/register', false, false);
+
+	    if (!empty($result['page'])) {
+	        $response = json_decode($result['page'], true);
+
+	        if (!empty($response['status']) && $response['status'] == 'success') {
+	            $apiKey = addslashes($response['api_key'] ?? '');
+	            $this->db->query("UPDATE settings SET set_val='1' WHERE set_name='SP_SPAPI_REGISTERED'");
+	            $this->db->query("UPDATE settings SET set_val='" . addslashes($email) . "' WHERE set_name='SP_SPAPI_EMAIL'");
+	            $this->db->query("UPDATE settings SET set_val='" . addslashes($firstName . ' ' . $lastName) . "' WHERE set_name='SP_SPAPI_NAME'");
+	            $this->db->query("UPDATE settings SET set_val='" . $apiKey . "' WHERE set_name='SP_SPAPI_KEY'");
+	            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+	        } else {
+	            $errMsg = !empty($response['message']) ? $response['message'] : 'Registration failed. Please try again later.';
+	            echo json_encode(['status' => 'error', 'message' => $errMsg]);
+	        }
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'Could not connect to the API server. Please try again later.']);
+	    }
+	}
+
+	// skip spAPI registration for current user
+	function skipSpApiRegistration() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET spapi_skip=1 WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
 	}
 }
 ?>

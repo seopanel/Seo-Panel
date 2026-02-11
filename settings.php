@@ -40,15 +40,19 @@ $controller->set('spTextSubscription', $controller->spTextSubscription);
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 	
 	switch($_POST['sec']){
-		
+
 		case "update":
 			$controller->updateSystemSettings($_POST);
 			break;
-		
+
 		case "send_test_email":
 			if (!SP_DEMO) {
 				$controller->sendTestEmail($_POST);
 			}
+			break;
+
+		case "spapi_register":
+			$controller->registerSpApi($_POST);
 			break;
 	}
 	
@@ -142,8 +146,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    break;
 
+		case "spapi_skip":
+			$controller->skipSpApiRegistration();
+			break;
+
 		default:
-		    $category = empty($_GET['category']) ? 'system' : $_GET['category']; 
+		    $category = empty($_GET['category']) ? 'system' : $_GET['category'];
 			$controller->showSystemSettings($category);
 			break;
 	}

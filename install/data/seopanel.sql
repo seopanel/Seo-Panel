@@ -1206,11 +1206,12 @@ CREATE TABLE IF NOT EXISTS `users` (
   `expiry_date` date DEFAULT NULL,
   `confirm_code` varchar(120) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
   `confirm` tinyint(1) NOT NULL DEFAULT '0',
+  `spapi_skip` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0);
+INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`) VALUES
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
@@ -1458,7 +1459,12 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('Enable for Backlink and Saturation Checker', 'SP_ENABLE_DFS_BACK_SATU', '0', 'dataforseo', 'bool', 1),
 ('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '0', 'dataforseo', 'bool', 1),
 ('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '0', 'dataforseo', 'bool', 1),
-('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1);
+('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1),
+('Seo Panel API URL', 'SP_SPAPI_URL', 'http://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
+('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
+('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
+('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
+('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1);
 
 --
 -- Seo Panel 4.9.0 changes

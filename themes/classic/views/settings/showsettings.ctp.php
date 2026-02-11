@@ -42,6 +42,29 @@ if ($category == "moz") {
 		</a>
 	</div>
 	<?php
+} else if ($category == "seopanel_api") {
+	if (defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED) {
+		?>
+		<div class="alert alert-success mb-3">
+			You are registered with the Seo Panel API.
+		</div>
+		<?php
+	} else {
+		?>
+		<div class="alert alert-info mb-3">
+			Register for the Seo Panel API to access additional features and services. It's free!
+			<div class="mt-2">
+				<a href="javascript:void(0);" onclick="window.spapiShowPopup()" class="btn btn-primary">Register</a>
+			</div>
+		</div>
+		<?php
+		include(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
+		?>
+		<script type="text/javascript">
+		$('#spapi_popup_overlay').hide();
+		</script>
+		<?php
+	}
 }
 ?>
 <form id="updateSettings">

@@ -102,8 +102,20 @@
     	</div>
     </nav>
     	
-    <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>  
-    
+    <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
+    <?php
+    // show spAPI registration popup for admin users who haven't registered or skipped
+    if (isLoggedIn() && isAdmin()) {
+        if (defined('SP_SPAPI_REGISTERED') && !SP_SPAPI_REGISTERED) {
+            include_once(SP_CTRLPATH."/settings.ctrl.php");
+            $spApiCtrl = new SettingsController();
+            if ($spApiCtrl->showSpApiRegistrationPopup()) {
+                include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
+            }
+        }
+    }
+    ?>
+
     <div class="container-fluid" style="margin-bottom: 50px;">  	
     	<div class="row">
     		<?php echo $viewContent?>
