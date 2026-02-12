@@ -1196,10 +1196,14 @@ class DataForSEOController extends Controller {
         $result['completed'] = true;
 
         if ($apiResult['status'] == 0) {
-            // Task failed
+            // Task failed - copy yesterday's result as fallback
+            include_once(SP_CTRLPATH . "/report.ctrl.php");
+            $fallbackCtrler = new ReportController();
+            $fallbackCtrler->copyYesterdayResult($taskInfo['ref_id'], intval($taskInfo['ref_url']), $taskInfo['report_date']);
+
             $result['success'] = false;
             $result['message'] = $apiResult['msg'];
-            if ($verbose) echo " failed: {$result['message']}\n";
+            if ($verbose) echo " failed: {$result['message']}, copied yesterday's result\n";
             return $result;
         }
 
@@ -1259,11 +1263,19 @@ class DataForSEOController extends Controller {
             }
         }
 
-        // If no matches found, copy yesterday's result as fallback
+        // If no matches found, store rank 0
         if ($matchCount == 0) {
-            $fallbackCtrler = new ReportController();
-            $copied = $fallbackCtrler->copyYesterdayResult($keywordId, $seId, $reportDate);
-            if ($copied && $verbose) echo " no matches, copied yesterday's result";
+            $reportCtrler = new ReportController();
+            $matchInfo = [
+                'keyword_id' => $keywordId,
+                'se_id' => $seId,
+                'rank' => 0,
+                'url' => '',
+                'title' => '',
+                'description' => '',
+            ];
+            $reportCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+            if ($verbose) echo " no matches, stored rank 0";
         }
 
         // Update cron track info
@@ -1272,7 +1284,7 @@ class DataForSEOController extends Controller {
         $reportCtrler->saveCronTrackInfo($keywordId, $seId, $time);
 
         $result['success'] = true;
-        $result['message'] = $matchCount > 0 ? "Found $matchCount matches" : "No matches, used yesterday's result";
+        $result['message'] = $matchCount > 0 ? "Found $matchCount matches" : "No matches, stored rank 0";
         if ($verbose) echo " completed - {$result['message']}\n";
 
         return $result;

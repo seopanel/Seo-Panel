@@ -597,12 +597,25 @@ class CronController extends Controller {
 								$repCtrler->saveMatchedKeywordInfo($matchInfo, $remove);
 							}
 							$this->debugMsg("Successfully crawled keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain'].".....<br>\n");
-						}else{
-							// Crawl failed or no matches found - copy yesterday's result as fallback
+						} elseif ($matchList['status']) {
+							// Crawl succeeded but no matches - store rank 0
+							$repCtrler = New ReportController();
+							$matchInfo = [
+								'keyword_id' => $keywordInfo['id'],
+								'se_id' => $sengineId,
+								'rank' => 0,
+								'url' => '',
+								'title' => '',
+								'description' => '',
+							];
+							$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+							$this->debugMsg("No matches for keyword <b>{$keywordInfo['name']}</b> from ".$reportController->seList[$sengineId]['domain'].", stored rank 0.....<br>\n");
+						} else {
+							// Crawl failed - copy yesterday's result as fallback
 							$repCtrler = New ReportController();
 							$copied = $repCtrler->copyYesterdayResult($keywordInfo['id'], $sengineId, $reportDate);
 							if ($copied) {
-								$this->debugMsg("No results for keyword <b>{$keywordInfo['name']}</b> from ".$reportController->seList[$sengineId]['domain'].", copied yesterday's result.....<br>\n");
+								$this->debugMsg("Crawling keyword <b>{$keywordInfo['name']}</b> from ".$reportController->seList[$sengineId]['domain']." failed, copied yesterday's result.....<br>\n");
 							} else {
 								$this->debugMsg("Crawling keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain']." failed......<br>\n");
 							}
@@ -677,14 +690,18 @@ class CronController extends Controller {
 					if ($matchCount > 0) {
 						$this->debugMsg("SP API: Found $matchCount matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
 					} else {
-						// No results - copy yesterday's result
+						// API succeeded but no matches - store rank 0
 						$repCtrler = New ReportController();
-						$copied = $repCtrler->copyYesterdayResult($keywordInfo['id'], $seId, $reportDate);
-						if ($copied) {
-							$this->debugMsg("SP API: No results for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, copied yesterday's result.....<br>\n");
-						} else {
-							$this->debugMsg("SP API: No results for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
-						}
+						$matchInfo = [
+							'keyword_id' => $keywordInfo['id'],
+							'se_id' => $seId,
+							'rank' => 0,
+							'url' => '',
+							'title' => '',
+							'description' => '',
+						];
+						$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+						$this->debugMsg("SP API: No matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, stored rank 0.....<br>\n");
 					}
 
 					// Track cron execution
