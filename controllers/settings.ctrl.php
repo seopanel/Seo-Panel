@@ -368,12 +368,11 @@ class SettingsController extends Controller{
 
 	// register with Seo Panel API
 	function registerSpApi($postInfo) {
-	    $firstName = trim($postInfo['first_name']);
-	    $lastName = trim($postInfo['last_name']);
+	    $name = trim($postInfo['name']);
 	    $email = trim($postInfo['email']);
 
 	    // validate inputs
-	    if (empty($firstName) || empty($email)) {
+	    if (empty($name) || empty($email)) {
 	        echo json_encode(['status' => 'error', 'message' => 'Please fill in all required fields.']);
 	        return;
 	    }
@@ -387,8 +386,7 @@ class SettingsController extends Controller{
 	    // call spAPI register endpoint
 	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'http://api.seopanel.org/api/v1';
 	    $postData = http_build_query([
-	        'first_name' => $firstName,
-	        'last_name' => $lastName,
+	        'name' => $name,
 	        'email' => $email,
 	        'site_url' => SP_WEBPATH,
 	        'version' => SP_VERSION_NUMBER,
@@ -406,7 +404,7 @@ class SettingsController extends Controller{
 	            $apiKey = addslashes($response['api_key'] ?? '');
 	            $this->db->query("UPDATE settings SET set_val='1' WHERE set_name='SP_SPAPI_REGISTERED'");
 	            $this->db->query("UPDATE settings SET set_val='" . addslashes($email) . "' WHERE set_name='SP_SPAPI_EMAIL'");
-	            $this->db->query("UPDATE settings SET set_val='" . addslashes($firstName . ' ' . $lastName) . "' WHERE set_name='SP_SPAPI_NAME'");
+	            $this->db->query("UPDATE settings SET set_val='" . addslashes($name) . "' WHERE set_name='SP_SPAPI_NAME'");
 	            $this->db->query("UPDATE settings SET set_val='" . $apiKey . "' WHERE set_name='SP_SPAPI_KEY'");
 	            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
 	        } else {

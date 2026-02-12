@@ -11,12 +11,8 @@
 			</div>
 			<div id="spapi_popup_form" style="display:none;">
 				<div class="form-group mb-2">
-					<label><strong>First Name <span style="color:red;">*</span></strong></label>
-					<input type="text" id="spapi_first_name" class="form-control" placeholder="First Name">
-				</div>
-				<div class="form-group mb-2">
-					<label><strong>Last Name</strong></label>
-					<input type="text" id="spapi_last_name" class="form-control" placeholder="Last Name">
+					<label><strong>Name <span style="color:red;">*</span></strong></label>
+					<input type="text" id="spapi_name" class="form-control" placeholder="Name">
 				</div>
 				<div class="form-group mb-2">
 					<label><strong>Email <span style="color:red;">*</span></strong></label>
@@ -69,12 +65,11 @@ window.spapiShowForm = function() {
 };
 
 window.spapiSubmit = function() {
-	var firstName = $('#spapi_first_name').val();
-	var lastName = $('#spapi_last_name').val();
+	var name = $('#spapi_name').val();
 	var email = $('#spapi_email').val();
 
-	if (!firstName || !email) {
-		$('#spapi_popup_message').html('<div class="alert alert-danger">Please fill in First Name and Email.</div>');
+	if (!name || !email) {
+		$('#spapi_popup_message').html('<div class="alert alert-danger">Please fill in Name and Email.</div>');
 		return;
 	}
 
@@ -86,8 +81,7 @@ window.spapiSubmit = function() {
 		type: 'POST',
 		data: {
 			sec: 'spapi_register',
-			first_name: firstName,
-			last_name: lastName,
+			name: name,
 			email: email
 		},
 		dataType: 'json',
