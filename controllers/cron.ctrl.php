@@ -514,88 +514,207 @@ class CronController extends Controller {
 
 		$this->debugMsg("Starting keyword position checker cron for website: {$this->websiteInfo['name']}....<br>\n");
 
-		// Check if DFS SERP is enabled (use async task-based approach)
+		// Determine SERP source: 3-tier priority (dataforseo > spapi > crawl)
+		$serpSource = 'crawl';
+
+		// Tier 2: SP API (if configured, overrides crawl)
+		include_once(SP_CTRLPATH."/spapi.ctrl.php");
+		if (SPAPIController::isConfigured()) {
+			$serpSource = 'spapi';
+		}
+
+		// Tier 1: DataForSEO (highest priority, overrides all)
 		$useDFS = defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP
 			&& defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)
 			&& defined('SP_DFS_API_PASSWORD') && !empty(SP_DFS_API_PASSWORD);
-
 		if ($useDFS) {
-			// DFS enabled - Post tasks for keywords (results will be fetched at end of cron)
-			include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
-			$dfsCtrler = new DataForSEOController();
-			$reportDate = date('Y-m-d', $this->timeStamp);
-
-			// Get keywords needing SERP task posting
-			$keywordsNeedingTask = $dfsCtrler->getKeywordsNeedingSERPTaskPost($websiteId, $reportDate);
-
-			foreach ($keywordsNeedingTask as $taskItem) {
-				$keywordInfo = $taskItem['keyword_info'];
-				$keywordInfo['depth'] = $taskItem['depth'];
-
-				$taskResult = $dfsCtrler->postSERPTask($keywordInfo, $taskItem['se_id'], $taskItem['se_url'], $reportDate);
-				if ($taskResult['status']) {
-					echo "Posted DFS SERP task for <b>{$taskItem['keyword_name']}</b> on {$taskItem['se_name']}.....</br>\n";
-				} else {
-					echo "Failed posting DFS SERP task for <b>{$taskItem['keyword_name']}</b>: {$taskResult['message']}.....</br>\n";
-				}
-				sleep(1); // Small delay between API calls
-			}
-
-			echo "SERP tasks posted. Results will be fetched at end of cron job.....</br>\n";
-
-		} else {
-			// DFS not enabled - use old live API / scraping method
-			// get keywords not to be checked
-			$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-			$sql = "select distinct(keyword_id) from keywordcrontracker kc, keywords k where k.id=kc.keyword_id and k.website_id=$websiteId and time=$time";
-			$keyList = $this->db->select($sql);
-			$excludeKeyList = array(0);
-			foreach ($keyList as $info) {
-				$excludeKeyList[] = $info['keyword_id'];
-			}
-
-			// get keywords needs to be checked
-			$sql = "select k.*,w.url from keywords k,websites w where k.website_id=w.id and w.id=$websiteId and k.status=1 and k.crawled=0";
-			$sql .= " and k.id not in(".implode(",", $excludeKeyList).") order by k.name";
-			$keywordList = $reportController->db->select($sql);
-
-			// loop through each keyword
-			foreach ( $keywordList as $keywordInfo ) {
-				$reportController->seFound = 0;
-				$crawlResult = $reportController->crawlKeyword($keywordInfo, '', true);
-				foreach($crawlResult as $sengineId => $matchList){
-					if($matchList['status']){
-						foreach($matchList['matched'] as $i => $matchInfo){
-							$remove = ($i == 0) ? true : false;
-							$matchInfo['se_id'] = $sengineId;
-							$matchInfo['keyword_id'] = $keywordInfo['id'];
-
-							$repCtrler = New ReportController();
-							$repCtrler->saveMatchedKeywordInfo($matchInfo, $remove);
-						}
-						$this->debugMsg("Successfully crawled keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain'].".....<br>\n");
-					}else{
-						$this->debugMsg("Crawling keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain']." failed......<br>\n");
-					}
-				}
-
-				$keywordCtrler->__changeCrawledStatus(1, 'id=' . $keywordInfo['id']);
-
-				// to implement split cron execution feature
-				if ( (SP_NUMBER_KEYWORDS_CRON > 0) && !empty($crawlResult) ) {
-				    $this->checkedKeywords++;
-				    if ($this->checkedKeywords == SP_NUMBER_KEYWORDS_CRON) {
-				        die("Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job");
-				    }
-				}
-
-				if(empty($reportController->seFound)){
-					$this->debugMsg("Keyword <b>{$keywordInfo['name']}</b> not assigned to required search engines........\n");
-				}
-				sleep(SP_CRAWL_DELAY);
-			}
+			$serpSource = 'dataforseo';
 		}
-	}	
+
+		$this->debugMsg("Using SERP source: <b>$serpSource</b>....<br>\n");
+
+		switch ($serpSource) {
+
+			case 'dataforseo':
+				// DFS enabled - Post tasks for keywords (results will be fetched at end of cron)
+				include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+				$dfsCtrler = new DataForSEOController();
+				$reportDate = date('Y-m-d', $this->timeStamp);
+
+				// Get keywords needing SERP task posting
+				$keywordsNeedingTask = $dfsCtrler->getKeywordsNeedingSERPTaskPost($websiteId, $reportDate);
+
+				foreach ($keywordsNeedingTask as $taskItem) {
+					$keywordInfo = $taskItem['keyword_info'];
+					$keywordInfo['depth'] = $taskItem['depth'];
+
+					$taskResult = $dfsCtrler->postSERPTask($keywordInfo, $taskItem['se_id'], $taskItem['se_url'], $reportDate);
+					if ($taskResult['status']) {
+						echo "Posted DFS SERP task for <b>{$taskItem['keyword_name']}</b> on {$taskItem['se_name']}.....</br>\n";
+					} else {
+						echo "Failed posting DFS SERP task for <b>{$taskItem['keyword_name']}</b>: {$taskResult['message']}.....</br>\n";
+					}
+					sleep(1); // Small delay between API calls
+				}
+
+				echo "SERP tasks posted. Results will be fetched at end of cron job.....</br>\n";
+				break;
+
+			case 'spapi':
+				$this->keywordPositionCheckerCronSPAPI($websiteId, $reportController, $keywordCtrler);
+				break;
+
+			case 'crawl':
+			default:
+				// Direct crawl / scraping method
+				// get keywords not to be checked
+				$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+				$sql = "select distinct(keyword_id) from keywordcrontracker kc, keywords k where k.id=kc.keyword_id and k.website_id=$websiteId and time=$time";
+				$keyList = $this->db->select($sql);
+				$excludeKeyList = array(0);
+				foreach ($keyList as $info) {
+					$excludeKeyList[] = $info['keyword_id'];
+				}
+
+				// get keywords needs to be checked
+				$sql = "select k.*,w.url from keywords k,websites w where k.website_id=w.id and w.id=$websiteId and k.status=1 and k.crawled=0";
+				$sql .= " and k.id not in(".implode(",", $excludeKeyList).") order by k.name";
+				$keywordList = $reportController->db->select($sql);
+				$reportDate = date('Y-m-d', $this->timeStamp);
+
+				// loop through each keyword
+				foreach ( $keywordList as $keywordInfo ) {
+					$reportController->seFound = 0;
+					$crawlResult = $reportController->crawlKeyword($keywordInfo, '', true);
+					foreach($crawlResult as $sengineId => $matchList){
+						if($matchList['status'] && !empty($matchList['matched'])){
+							foreach($matchList['matched'] as $i => $matchInfo){
+								$remove = ($i == 0) ? true : false;
+								$matchInfo['se_id'] = $sengineId;
+								$matchInfo['keyword_id'] = $keywordInfo['id'];
+
+								$repCtrler = New ReportController();
+								$repCtrler->saveMatchedKeywordInfo($matchInfo, $remove);
+							}
+							$this->debugMsg("Successfully crawled keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain'].".....<br>\n");
+						}else{
+							// Crawl failed or no matches found - copy yesterday's result as fallback
+							$repCtrler = New ReportController();
+							$copied = $repCtrler->copyYesterdayResult($keywordInfo['id'], $sengineId, $reportDate);
+							if ($copied) {
+								$this->debugMsg("No results for keyword <b>{$keywordInfo['name']}</b> from ".$reportController->seList[$sengineId]['domain'].", copied yesterday's result.....<br>\n");
+							} else {
+								$this->debugMsg("Crawling keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain']." failed......<br>\n");
+							}
+						}
+					}
+
+					$keywordCtrler->__changeCrawledStatus(1, 'id=' . $keywordInfo['id']);
+
+					// to implement split cron execution feature
+					if ( (SP_NUMBER_KEYWORDS_CRON > 0) && !empty($crawlResult) ) {
+					    $this->checkedKeywords++;
+					    if ($this->checkedKeywords == SP_NUMBER_KEYWORDS_CRON) {
+					        die("Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job");
+					    }
+					}
+
+					if(empty($reportController->seFound)){
+						$this->debugMsg("Keyword <b>{$keywordInfo['name']}</b> not assigned to required search engines........\n");
+					}
+					sleep(SP_CRAWL_DELAY);
+				}
+				break;
+		}
+	}
+
+	# func to run keyword position checker via SP API
+	function keywordPositionCheckerCronSPAPI($websiteId, $reportController, $keywordCtrler) {
+		$spapiCtrler = new SPAPIController();
+		$reportDate = date('Y-m-d', $this->timeStamp);
+		$time = strtotime($reportDate);
+
+		// get keywords not to be checked (already tracked today)
+		$sql = "select distinct(keyword_id) from keywordcrontracker kc, keywords k where k.id=kc.keyword_id and k.website_id=$websiteId and time=$time";
+		$keyList = $this->db->select($sql);
+		$excludeKeyList = array(0);
+		foreach ($keyList as $info) {
+			$excludeKeyList[] = $info['keyword_id'];
+		}
+
+		// get keywords needs to be checked
+		$sql = "select k.*,w.url from keywords k,websites w where k.website_id=w.id and w.id=$websiteId and k.status=1 and k.crawled=0";
+		$sql .= " and k.id not in(".implode(",", $excludeKeyList).") order by k.name";
+		$keywordList = $this->db->select($sql);
+
+		$websiteUrl = $this->websiteInfo['url'];
+
+		foreach ($keywordList as $keywordInfo) {
+			// Get search engine IDs assigned to this keyword
+			$seIds = explode(':', $keywordInfo['searchengines']);
+			$seIds = array_filter($seIds, function($id) use ($reportController) {
+				return !empty($id) && !empty($reportController->seList[$id]);
+			});
+
+			if (empty($seIds)) {
+				$this->debugMsg("Keyword <b>{$keywordInfo['name']}</b> not assigned to required search engines........\n");
+				continue;
+			}
+
+			$seIds = array_values($seIds);
+
+			// Post to SP API
+			$apiResult = $spapiCtrler->postSERPKeyword($keywordInfo, $seIds);
+
+			if ($apiResult['status'] && !empty($apiResult['data'])) {
+				// Process SERP response
+				$matchResults = $spapiCtrler->processSERPResponse($apiResult['data'], $keywordInfo, $websiteUrl, $reportDate);
+
+				foreach ($seIds as $seId) {
+					$seId = intval($seId);
+					$matchCount = !empty($matchResults[$seId]) ? $matchResults[$seId] : 0;
+
+					if ($matchCount > 0) {
+						$this->debugMsg("SP API: Found $matchCount matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
+					} else {
+						// No results - copy yesterday's result
+						$repCtrler = New ReportController();
+						$copied = $repCtrler->copyYesterdayResult($keywordInfo['id'], $seId, $reportDate);
+						if ($copied) {
+							$this->debugMsg("SP API: No results for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, copied yesterday's result.....<br>\n");
+						} else {
+							$this->debugMsg("SP API: No results for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
+						}
+					}
+
+					// Track cron execution
+					$repCtrler = New ReportController();
+					$repCtrler->saveCronTrackInfo($keywordInfo['id'], $seId, $time);
+				}
+			} else {
+				// API call failed - copy yesterday's results for all SEs
+				$this->debugMsg("SP API call failed for <b>{$keywordInfo['name']}</b>: {$apiResult['message']}.....<br>\n");
+				foreach ($seIds as $seId) {
+					$seId = intval($seId);
+					$repCtrler = New ReportController();
+					$repCtrler->copyYesterdayResult($keywordInfo['id'], $seId, $reportDate);
+					$repCtrler->saveCronTrackInfo($keywordInfo['id'], $seId, $time);
+				}
+			}
+
+			$keywordCtrler->__changeCrawledStatus(1, 'id=' . $keywordInfo['id']);
+
+			// to implement split cron execution feature
+			if (SP_NUMBER_KEYWORDS_CRON > 0) {
+				$this->checkedKeywords++;
+				if ($this->checkedKeywords == SP_NUMBER_KEYWORDS_CRON) {
+					die("Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job");
+				}
+			}
+
+			sleep(SP_CRAWL_DELAY);
+		}
+	}
 	
 	# func to generate webmaster tools reports from cron
 	function webmasterToolsCron($websiteId){

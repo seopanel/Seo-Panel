@@ -1259,13 +1259,20 @@ class DataForSEOController extends Controller {
             }
         }
 
+        // If no matches found, copy yesterday's result as fallback
+        if ($matchCount == 0) {
+            $fallbackCtrler = new ReportController();
+            $copied = $fallbackCtrler->copyYesterdayResult($keywordId, $seId, $reportDate);
+            if ($copied && $verbose) echo " no matches, copied yesterday's result";
+        }
+
         // Update cron track info
         $time = strtotime($reportDate);
         $reportCtrler = new ReportController();
         $reportCtrler->saveCronTrackInfo($keywordId, $seId, $time);
 
         $result['success'] = true;
-        $result['message'] = "Found $matchCount matches";
+        $result['message'] = $matchCount > 0 ? "Found $matchCount matches" : "No matches, used yesterday's result";
         if ($verbose) echo " completed - {$result['message']}\n";
 
         return $result;

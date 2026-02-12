@@ -385,28 +385,39 @@ class SettingsController extends Controller{
 
 	    // call spAPI register endpoint
 	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'http://api.seopanel.org/api/v1';
-	    $postData = http_build_query([
-	        'name' => $name,
+	    $postData = json_encode([
+	        'customer_name' => $name,
 	        'email' => $email,
-	        'site_url' => SP_WEBPATH,
+	        'installation_url' => SP_WEBPATH,
 	        'version' => SP_VERSION_NUMBER,
 	    ]);
 
+	    ob_start();
 	    $spider = new Spider();
 	    $spider->_CURLOPT_POSTFIELDS = $postData;
+	    $spider->_CURL_HTTPHEADER = ['Content-Type: application/json'];
 	    $spider->_CURLOPT_TIMEOUT = 30;
 	    $result = $spider->getContent($apiUrl . '/register', false, false);
+	    ob_end_clean();
+
+	    header('Content-Type: application/json');
 
 	    if (!empty($result['page'])) {
 	        $response = json_decode($result['page'], true);
 
+	        if (json_last_error() !== JSON_ERROR_NONE) {
+	            echo json_encode(['status' => 'error', 'message' => 'Invalid response from API server. Please try again later.']);
+	            return;
+	        }
+
 	        if (!empty($response['status']) && $response['status'] == 'success') {
-	            $apiKey = addslashes($response['api_key'] ?? '');
+	            $data = $response['data'] ?? [];
+	            $apiKey = addslashes($data['api_key'] ?? '');
 	            $this->db->query("UPDATE settings SET set_val='1' WHERE set_name='SP_SPAPI_REGISTERED'");
 	            $this->db->query("UPDATE settings SET set_val='" . addslashes($email) . "' WHERE set_name='SP_SPAPI_EMAIL'");
 	            $this->db->query("UPDATE settings SET set_val='" . addslashes($name) . "' WHERE set_name='SP_SPAPI_NAME'");
 	            $this->db->query("UPDATE settings SET set_val='" . $apiKey . "' WHERE set_name='SP_SPAPI_KEY'");
-	            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+	            echo json_encode(['status' => 'success', 'message' => 'Registration successful! Please check your email inbox to verify your email address.']);
 	        } else {
 	            $errMsg = !empty($response['message']) ? $response['message'] : 'Registration failed. Please try again later.';
 	            echo json_encode(['status' => 'error', 'message' => $errMsg]);

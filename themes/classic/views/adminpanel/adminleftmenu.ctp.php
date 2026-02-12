@@ -177,10 +177,10 @@ foreach($menuList as $i => $menuInfo){
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php', 'content')"><?php echo $spTextPanel['System Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=reportsettings', 'content')"><?php echo $spTextPanel['Global Reports Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=moz', 'content')"><?php echo $spTextPanel['MOZ Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=google', 'content')"><?php echo $spTextPanel['Google Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=dataforseo', 'content')"><?php echo $spTextPanel['DataForSEO Settings']?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=mail', 'content')"><?php echo $spTextPanel['Mail Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=test_email', 'content')"><?php echo $spTextPanel['Test Email Settings']?></a></li>
 			</ul>

@@ -1457,14 +1457,15 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('DataForSEO API Password', 'SP_DFS_API_PASSWORD', '', 'dataforseo', 'large', 1),
 ('DataForSEO Balance', 'SP_DFS_BALANCE', '0', 'dataforseo', 'small', 1),
 ('Enable for Backlink and Saturation Checker', 'SP_ENABLE_DFS_BACK_SATU', '0', 'dataforseo', 'bool', 1),
-('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '0', 'dataforseo', 'bool', 1),
-('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '0', 'dataforseo', 'bool', 1),
+('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '1', 'dataforseo', 'bool', 1),
+('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '1', 'dataforseo', 'bool', 1),
 ('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1),
 ('Seo Panel API URL', 'SP_SPAPI_URL', 'http://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
 ('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
 ('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
 ('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
-('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1);
+('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1),
+('Enable for SERP Checker', 'SP_ENABLE_SPAPI_SERP', '1', 'seopanel_api', 'bool', 1);
 
 --
 -- Seo Panel 4.9.0 changes

@@ -22,7 +22,7 @@
 
 include_once("includes/sp-load.php");
 
-if( $_GET['sec'] == 'aboutus'){
+if( isset($_GET['sec']) && $_GET['sec'] == 'aboutus'){
 	isLoggedIn();
 }else{
 	checkAdminLoggedIn();

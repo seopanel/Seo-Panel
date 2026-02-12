@@ -1423,6 +1423,51 @@ div.tab button.active {	background-color: #ccc;}
     box-shadow: 0 4px 8px rgba(0, 64, 143, 0.35);
 }
 
+.spapi-plans-container {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.spapi-plan-card {
+    flex: 1 1 150px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    background: #f7fafc;
+    min-width: 140px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.spapi-plan-card.active {
+    border-color: #0a66d1;
+    border-width: 2px;
+    background: #ebf4ff;
+}
+
+.spapi-plan-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #2d3748;
+    margin-bottom: 4px;
+}
+
+.spapi-plan-price {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0a66d1;
+    margin-bottom: 8px;
+}
+
+.spapi-plan-detail {
+    font-size: 12px;
+    color: #718096;
+    margin-bottom: 2px;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }

@@ -54,7 +54,7 @@ if ($category == "moz") {
 		<div class="alert alert-info mb-3">
 			Register for the Seo Panel API to access additional features and services. It's free!
 			<div class="mt-2">
-				<a href="javascript:void(0);" onclick="window.spapiShowPopup()" class="btn btn-primary">Register</a>
+				<a href="javascript:void(0);" onclick="window.spapiShowPopup(false)" class="btn btn-primary">Register</a>
 			</div>
 		</div>
 		<?php
