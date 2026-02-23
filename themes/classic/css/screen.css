@@ -1052,6 +1052,72 @@ div.tab button.active {	background-color: #ccc;}
     }
 }
 
+/* === GDPR / RGPD COOKIE CONSENT BANNER === */
+#sp-gdpr-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1040;
+    background: #1a1e24;
+    color: #e9ecef;
+    border-top: 3px solid #4a8fc7;
+    box-shadow: 0 -3px 16px rgba(0, 0, 0, 0.45);
+    padding: 14px 20px;
+}
+
+.sp-gdpr-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sp-gdpr-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.sp-gdpr-text strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.sp-gdpr-text p {
+    margin: 0;
+    font-size: 13px;
+    color: #ced4da;
+    line-height: 1.5;
+}
+
+.sp-gdpr-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media screen and (max-width: 576px) {
+    .sp-gdpr-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sp-gdpr-buttons {
+        width: 100%;
+    }
+
+    .sp-gdpr-buttons .btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+
 /* === ALERT NOTIFICATION SECTION === */
 #alert_noti_sec {
     margin-left: 8px;

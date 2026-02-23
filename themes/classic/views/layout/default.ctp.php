@@ -129,24 +129,81 @@
     <div id="tmp"><form name="tmp" id="tmp"></form></div>
     <div id="dialogContent" style="display:none;"></div>
     <?php
-    // add google analytics code to verify the site hits 
-    if ( defined('SP_GOOGLE_ANALYTICS_TRACK_CODE')) {
-    	if (!stristr(SP_GOOGLE_ANALYTICS_TRACK_CODE, '<script')) {
-    		?>
-    		<!-- Global site tag (gtag.js) - Google Analytics -->
-			<script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo SP_GOOGLE_ANALYTICS_TRACK_CODE?>"></script>
-			<script>
-			  window.dataLayer = window.dataLayer || [];
-			  function gtag(){dataLayer.push(arguments);}
-			  gtag('js', new Date());
-			
-			  gtag('config', '<?php echo SP_GOOGLE_ANALYTICS_TRACK_CODE?>');
-			</script>
-    		<?php
-    	} else {
-    		echo SP_GOOGLE_ANALYTICS_TRACK_CODE;
-    	}
-    }
+    $spGdprEnabled = defined('SP_GDPR_COOKIE_BANNER') && SP_GDPR_COOKIE_BANNER;
+    $spGaCode      = defined('SP_GOOGLE_ANALYTICS_TRACK_CODE') ? SP_GOOGLE_ANALYTICS_TRACK_CODE : '';
+    $spGaSimple    = !empty($spGaCode) && !stristr($spGaCode, '<script');
     ?>
+
+    <?php if (!empty($spGaCode)): ?>
+    <?php if ($spGaSimple): ?>
+    <!-- Google Analytics (GDPR-aware) -->
+    <script>
+    function spLoadAnalytics() {
+        if (window._spGaLoaded) return;
+        window._spGaLoaded = true;
+        (function() {
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=<?php echo htmlspecialchars($spGaCode, ENT_QUOTES)?>';
+            document.head.appendChild(s);
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            window.gtag = gtag;
+            gtag('js', new Date());
+            gtag('config', '<?php echo htmlspecialchars($spGaCode, ENT_QUOTES)?>');
+        })();
+    }
+    <?php if (!$spGdprEnabled): ?>
+    spLoadAnalytics();
+    <?php else: ?>
+    if (localStorage.getItem('sp_gdpr_consent') === 'accepted') { spLoadAnalytics(); }
+    <?php endif; ?>
+    </script>
+    <?php else: ?>
+    <?php if (!$spGdprEnabled): ?>
+    <?php echo $spGaCode; ?>
+    <?php endif; ?>
+    <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($spGdprEnabled):
+        $spGdprText = !empty($spText['common']['SP_GDPR_COOKIE_BANNER_TEXT'])
+            ? htmlspecialchars($spText['common']['SP_GDPR_COOKIE_BANNER_TEXT'], ENT_QUOTES)
+            : 'This website uses cookies to improve your experience and analyse traffic. You may accept or decline the use of non-essential cookies in accordance with the GDPR/RGPD regulation.';
+        $spGdprAccept  = !empty($spText['button']['Accept'])  ? htmlspecialchars($spText['button']['Accept'],  ENT_QUOTES) : 'Accept';
+        $spGdprDecline = !empty($spText['button']['Decline']) ? htmlspecialchars($spText['button']['Decline'], ENT_QUOTES) : 'Decline';
+    ?>
+    <!-- GDPR / RGPD Cookie Consent Banner -->
+    <div id="sp-gdpr-banner" role="dialog" aria-live="polite" aria-label="Cookie consent">
+        <div class="sp-gdpr-content">
+            <div class="sp-gdpr-text">
+                <strong>Cookie Notice (GDPR / RGPD)</strong>
+                <p><?php echo $spGdprText?></p>
+            </div>
+            <div class="sp-gdpr-buttons">
+                <button id="sp-gdpr-accept"  class="btn btn-sm btn-success"      type="button"><?php echo $spGdprAccept?></button>
+                <button id="sp-gdpr-decline" class="btn btn-sm btn-secondary" type="button"><?php echo $spGdprDecline?></button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var banner  = document.getElementById('sp-gdpr-banner');
+        var consent = localStorage.getItem('sp_gdpr_consent');
+        if (!consent) {
+            banner.style.display = 'block';
+        }
+        document.getElementById('sp-gdpr-accept').addEventListener('click', function() {
+            localStorage.setItem('sp_gdpr_consent', 'accepted');
+            banner.style.display = 'none';
+            <?php if ($spGaSimple): ?>if (typeof spLoadAnalytics === 'function') { spLoadAnalytics(); }<?php endif; ?>
+        });
+        document.getElementById('sp-gdpr-decline').addEventListener('click', function() {
+            localStorage.setItem('sp_gdpr_consent', 'declined');
+            banner.style.display = 'none';
+        });
+    })();
+    </script>
+    <?php endif; ?>
 </body>
 </html>

@@ -54,3 +54,8 @@ CREATE TABLE IF NOT EXISTS `dfs_tasks` (
   KEY `ref_id_category` (`ref_id`, `category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- GDPR / RGPD cookie consent banner settings
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable GDPR/RGPD Cookie Consent Banner', 'SP_GDPR_COOKIE_BANNER', '0', 'system', 'bool', 1);
+
+
