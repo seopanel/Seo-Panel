@@ -47,6 +47,7 @@ if ($category == "moz") {
 		?>
 		<div class="alert alert-success mb-3">
 			You are registered with the Seo Panel API.
+			<div class="mt-2" style="font-size:13px;">For any questions about your Seo Panel API token, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong><i class="fas fa-envelope"></i> contact Seo Panel support</strong></a>.</div>
 		</div>
 		<?php
 	} else {
@@ -202,6 +203,12 @@ if ($category == "moz") {
 							<?php } else if ($listInfo['set_name'] == 'SP_DFS_API_PASSWORD') {?>
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkDataForSEOAPIConnection('settings.php?sec=checkDataForSEOAPI', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+								</div>
+								<div id="show_conn_res" class="mt-2"></div>
+							<?php } else if ($listInfo['set_name'] == 'SP_SPAPI_KEY') {?>
+								<div class="mt-2">
+									<a href="javascript:void(0);" onclick="checkSpApiConnection('settings.php?sec=checkSpApiCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+									<a href="javascript:void(0);" onclick="resetSpApiToken('show_conn_res')" class="btn btn-warning">Reset API Token &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php }?>

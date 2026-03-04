@@ -427,6 +427,24 @@ class SettingsController extends Controller{
 	    }
 	}
 
+	// reset SP API token
+	function resetSpApiToken() {
+	    checkAdminLoggedIn();
+	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+	    $spapiCtrler = new SPAPIController();
+	    list($newApiKey, $logInfo) = $spapiCtrler->__resetApiToken();
+
+	    header('Content-Type: application/json');
+
+	    if (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
+	        echo json_encode(['status' => 'error', 'message' => $logInfo['log_message']]);
+	        return;
+	    }
+
+	    $this->db->query("UPDATE settings SET set_val='" . addslashes($newApiKey) . "' WHERE set_name='SP_SPAPI_KEY'");
+	    echo json_encode(['status' => 'success', 'message' => 'API token reset successfully.', 'data' => ['api_key' => $newApiKey]]);
+	}
+
 	// skip spAPI registration for current user
 	function skipSpApiRegistration() {
 	    $userId = isLoggedIn();

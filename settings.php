@@ -54,6 +54,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "spapi_register":
 			$controller->registerSpApi($_POST);
 			break;
+
+		case "resetSpApiToken":
+			$controller->resetSpApiToken();
+			break;
 	}
 	
 }else{
@@ -145,6 +149,35 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    }
 		    
 		    break;
+
+		case "checkSpApiCon":
+			if (empty($_GET['api_key'])) {
+			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);
+			} else {
+			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
+			    $spapiCtrler = new SPAPIController();
+			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
+
+			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
+			        showErrorMsg($logInfo['log_message']);
+			    } else {
+			        $monthlyLimit = $usageData['monthly_limit'] ?? 0;
+			        $monthlyUsed  = $usageData['monthly_used'] ?? 0;
+			        $serpLimit    = $usageData['serp_limit'] ?? 0;
+			        $serpUsed     = $usageData['serp_used'] ?? 0;
+			        $planName     = $usageData['plan_name'] ?? '';
+			        $msg = "{$_SESSION['text']['label']['Success']}";
+			        if ($planName) {
+			            $msg .= "<br>Plan: <b>$planName</b>";
+			        }
+			        $msg .= "<br>Monthly Usage: <b>$monthlyUsed/$monthlyLimit</b>";
+			        if ($serpLimit > 0) {
+			            $msg .= "<br>SERP Usage: <b>$serpUsed/$serpLimit</b>";
+			        }
+			        showSuccessMsg($msg);
+			    }
+			}
+			break;
 
 		case "spapi_skip":
 			$controller->skipSpApiRegistration();

@@ -44,6 +44,105 @@ class SPAPIController extends Controller {
     }
 
     /**
+     * Get usage data for the SP API key
+     *
+     * @param string $apiKey Optional API key override
+     * @return array [usageData, logInfo]
+     */
+    function __getSpApiUsageData($apiKey = '') {
+        $apiKey = !empty($apiKey) ? $apiKey : $this->apiKey;
+        $logInfo = ['crawl_status' => 1];
+        $usageData = [];
+
+        if (empty($apiKey)) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'API key is required';
+            return [$usageData, $logInfo];
+        }
+
+        ob_start();
+        $spider = new Spider();
+        $spider->_CURL_HTTPHEADER = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ];
+        $spider->_CURLOPT_TIMEOUT = 30;
+        $response = $spider->getContent($this->apiUrl . '/account', false, false);
+        ob_end_clean();
+
+        if (empty($response['page'])) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'Could not connect to SP API server';
+            return [$usageData, $logInfo];
+        }
+
+        $responseData = json_decode($response['page'], true);
+        if (json_last_error() !== JSON_ERROR_NONE || empty($responseData)) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'Invalid response from SP API server';
+            return [$usageData, $logInfo];
+        }
+
+        if (!empty($responseData['status']) && $responseData['status'] == 'success') {
+            $usageData = $responseData['data'] ?? [];
+        } else {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API request failed';
+        }
+
+        return [$usageData, $logInfo];
+    }
+
+    /**
+     * Reset (regenerate) the SP API key
+     *
+     * @return array [newApiKey, logInfo]
+     */
+    function __resetApiToken() {
+        $logInfo = ['crawl_status' => 1];
+        $newApiKey = '';
+
+        if (empty($this->apiKey)) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'API key is required';
+            return [$newApiKey, $logInfo];
+        }
+
+        ob_start();
+        $spider = new Spider();
+        $spider->_CURLOPT_POSTFIELDS = '{}';
+        $spider->_CURL_HTTPHEADER = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $this->apiKey,
+        ];
+        $spider->_CURLOPT_TIMEOUT = 30;
+        $response = $spider->getContent($this->apiUrl . '/reset-token', false, false);
+        ob_end_clean();
+
+        if (empty($response['page'])) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'Could not connect to SP API server';
+            return [$newApiKey, $logInfo];
+        }
+
+        $responseData = json_decode($response['page'], true);
+        if (json_last_error() !== JSON_ERROR_NONE || empty($responseData)) {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = 'Invalid response from SP API server';
+            return [$newApiKey, $logInfo];
+        }
+
+        if (!empty($responseData['status']) && $responseData['status'] == 'success') {
+            $newApiKey = $responseData['data']['api_key'] ?? '';
+        } else {
+            $logInfo['crawl_status'] = 0;
+            $logInfo['log_message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API token reset failed';
+        }
+
+        return [$newApiKey, $logInfo];
+    }
+
+    /**
      * Post a SERP keyword request to the SP API
      *
      * @param array $keywordInfo Keyword info with name, lang_code, country_code
