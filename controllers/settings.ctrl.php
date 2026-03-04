@@ -97,6 +97,11 @@ class SettingsController extends Controller{
 
 				case "seopanel_api":
 				    $this->set('headLabel', $spTextPanel['Seo Panel API Settings']);
+				    include_once(SP_CTRLPATH . "/information.ctrl.php");
+				    $informationCtrler = new InformationController();
+				    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+				    $spapiCheckResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
+				    $this->set('spapiCheckResult', $spapiCheckResult);
 				    break;
 
 				default:

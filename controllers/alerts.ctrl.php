@@ -189,8 +189,41 @@ class AlertController extends Controller {
 	    }
 
 	    $informationCtrler = new InformationController();
-	    if (!empty($informationCtrler->__getTodayInformation('spapi_check'))) {
-	        return ['status' => false, 'result' => 'SP API check already done today.'];
+	    $todayInfo = $informationCtrler->__getTodayInformation('spapi_check');
+
+	    // If API was already checked today, recreate alert from stored result (handles deleted alerts)
+	    if (!empty($todayInfo)) {
+	        $storedResult = $todayInfo['page'];
+	        if ($storedResult === 'ok') {
+	            return ['status' => false, 'result' => 'SP API connection is working.'];
+	        }
+	        if ($storedResult === 'expired') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Subscription Expired',
+	                'alert_message' => 'Your Seo Panel API subscription has expired. Upgrade your plan to continue.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'warning',
+	                'alert_category' => 'general',
+	            ];
+	        } elseif ($storedResult === 'monthly_limit') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Usage Limit Reached',
+	                'alert_message' => 'You have reached your Seo Panel API usage limit (monthly or SERP). Upgrade your plan for more requests.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'warning',
+	                'alert_category' => 'general',
+	            ];
+	        } else {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Connection Error',
+	                'alert_message' => $storedResult,
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'danger',
+	                'alert_category' => 'general',
+	            ];
+	        }
+	        $this->createAlert($alertInfo, false, true);
+	        return ['status' => true, 'result' => 'SP API alert recreated: ' . $storedResult];
 	    }
 
 	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");

@@ -28,6 +28,7 @@ window.spapiShowUpgradePopup = function() {
 	$('#spapi_upgrade_plans').hide();
 	$('#spapi_upgrade_plans_list').html('');
 	$('#spapi_upgrade_btn_plans').show().prop('disabled', false).text('See Upgrade Plans');
+	window.spapiUpgradePlansData = [];
 	$('#spapi_upgrade_overlay').fadeIn(200);
 };
 
@@ -52,17 +53,19 @@ window.spapiUpgradeLoadPlans = function() {
 			}) : [];
 
 			if (plans.length > 0) {
+				window.spapiUpgradePlansData = plans;
 				var html = '';
 				for (var i = 0; i < plans.length; i++) {
 					var plan = plans[i];
-					html += '<div class="spapi-plan-card" style="cursor:pointer;" onclick="window.spapiUpgradeSelectPlan(' + JSON.stringify(plan.plan_link || '') + ')">';
+					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : 0;
+					html += '<div class="spapi-plan-card" style="cursor:pointer;" data-plan-index="' + i + '" onclick="window.spapiUpgradeSelectPlan(' + i + ')">';
 					html += '<div class="spapi-plan-name">' + (plan.name || plan.plan_name || 'Plan') + '</div>';
 					html += '<div class="spapi-plan-price">$' + plan.price + '/mo</div>';
 					if (plan.monthly_limit) {
 						html += '<div class="spapi-plan-detail">' + plan.monthly_limit.toLocaleString() + ' requests/mo</div>';
 					}
-					if (plan.serp_limit) {
-						html += '<div class="spapi-plan-detail">' + plan.serp_limit.toLocaleString() + ' SERPs/mo</div>';
+					if (serpLimit) {
+						html += '<div class="spapi-plan-detail">' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
 					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {
@@ -87,9 +90,12 @@ window.spapiUpgradeLoadPlans = function() {
 	});
 };
 
-window.spapiUpgradeSelectPlan = function(planLink) {
-	if (planLink) {
-		window.open(planLink, '_blank');
+window.spapiUpgradePlansData = [];
+
+window.spapiUpgradeSelectPlan = function(index) {
+	var plan = window.spapiUpgradePlansData[index];
+	if (plan && plan.plan_link) {
+		window.open(plan.plan_link, '_blank');
 	}
 };
 </script>

@@ -52,7 +52,12 @@ if ($category == "moz") {
 		<?php
 		include(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
 		?>
-		<script type="text/javascript">$('#spapi_upgrade_overlay').hide();</script>
+		<script type="text/javascript">
+		$('#spapi_upgrade_overlay').hide();
+		<?php if (!empty($spapiCheckResult) && in_array($spapiCheckResult, ['expired', 'monthly_limit'])): ?>
+		$(document).ready(function() { window.spapiShowUpgradePopup(); });
+		<?php endif; ?>
+		</script>
 		<?php
 	} else {
 		?>
