@@ -432,12 +432,11 @@ class Install {
 				<tr>
 					<th>Default Language</th>
 					<td>
-						<select name="lang_code">
+						<select name="lang_code" id="install_lang_code">
 							<?php
 							foreach ($langList as $langInfo) {
-								$selected = ($langInfo['lang_code'] == 'en') ? "selected" : "";
 								?>
-								<option value="<?php echo $langInfo['lang_code']?>" <?php echo $selected?>><?php echo $langInfo['lang_name']?></option>
+								<option value="<?php echo $langInfo['lang_code']?>"><?php echo $langInfo['lang_name']?></option>
 								<?php
 							}
 							?>
@@ -447,13 +446,11 @@ class Install {
 				<tr>
 					<th>Time Zone</th>
 					<td>
-						<select name="time_zone">
+						<select name="time_zone" id="install_time_zone">
 							<?php
-							$listInfo['set_val'] = ini_get('date.timezone');
 							foreach ($timezoneList as $timezoneInfo) {
-								$selected = (trim($timezoneInfo['timezone_name']) == $listInfo['set_val']) ? 'selected="selected"' : "";
 								?>
-								<option value="<?php echo $timezoneInfo['timezone_name']?>" <?php echo $selected?>><?php echo $timezoneInfo['timezone_label']?></option>
+								<option value="<?php echo $timezoneInfo['timezone_name']?>"><?php echo $timezoneInfo['timezone_label']?></option>
 								<?php
 							}
 							?>
@@ -470,6 +467,48 @@ class Install {
 			<input type="submit" value="Login to Admin Panel &rarr;" name="submit" class="button">
 		</div>
 		</form>
+		<script type="text/javascript">
+		(function() {
+			// Auto-select timezone based on browser
+			try {
+				var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+				if (tz) {
+					var tzSel = document.getElementById('install_time_zone');
+					if (tzSel) {
+						for (var i = 0; i < tzSel.options.length; i++) {
+							if (tzSel.options[i].value === tz) {
+								tzSel.selectedIndex = i;
+								break;
+							}
+						}
+					}
+				}
+			} catch(e) {}
+			// Auto-select language based on browser
+			try {
+				var lang = (navigator.language || navigator.userLanguage || 'en').split('-')[0].toLowerCase();
+				var langSel = document.getElementById('install_lang_code');
+				if (langSel) {
+					var matched = false;
+					for (var i = 0; i < langSel.options.length; i++) {
+						if (langSel.options[i].value === lang) {
+							langSel.selectedIndex = i;
+							matched = true;
+							break;
+						}
+					}
+					if (!matched) {
+						for (var i = 0; i < langSel.options.length; i++) {
+							if (langSel.options[i].value === 'en') {
+								langSel.selectedIndex = i;
+								break;
+							}
+						}
+					}
+				}
+			} catch(e) {}
+		})();
+		</script>
 		<?php
 	}
 	
