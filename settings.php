@@ -157,9 +157,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
 			    $spapiCtrler = new SPAPIController();
 			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
+			    $upgradeBtn = !empty($logInfo['needs_upgrade']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
 
 			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
-			        showErrorMsg($logInfo['log_message']);
+			        showErrorMsg($logInfo['log_message'] . $upgradeBtn);
 			    } else {
 			        $monthlyLimit = $usageData['monthly_limit'] ?? 0;
 			        $monthlyUsed  = $usageData['monthly_used'] ?? 0;
@@ -173,6 +174,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			        $msg .= "<br>Monthly Usage: <b>$monthlyUsed/$monthlyLimit</b>";
 			        if ($serpLimit > 0) {
 			            $msg .= "<br>SERP Usage: <b>$serpUsed/$serpLimit</b>";
+			        }
+			        if ($upgradeBtn) {
+			            $msg .= "<br>Monthly limit reached." . $upgradeBtn;
 			        }
 			        showSuccessMsg($msg);
 			    }

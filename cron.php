@@ -106,6 +106,11 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$alertCtrler = new AlertController();
 	$ret_sync = $alertCtrler->updateSystemAlerts();
 	echo $ret_sync['result'] . "\n";
+
+	// check SP API connection
+	include_once(SP_CTRLPATH . "/information.ctrl.php");
+	$ret_spapi = $alertCtrler->updateSpApiAlerts();
+	echo $ret_spapi['result'] . "\n";
 	
 	$controller->executeCron($includeList, $userList);
 	echo "\n=== Cron job execution completed on - " . date("Y-m-d H:i:s") . " ===\n\n";

@@ -83,11 +83,26 @@ class SPAPIController extends Controller {
             return [$usageData, $logInfo];
         }
 
+        $httpCode = !empty($response['http_code']) ? intval($response['http_code']) : 0;
+
         if (!empty($responseData['status']) && $responseData['status'] == 'success') {
             $usageData = $responseData['data'] ?? [];
+            $monthlyUsed  = intval($usageData['monthly_used'] ?? 0);
+            $monthlyLimit = intval($usageData['monthly_limit'] ?? 0);
+            $serpUsed     = intval($usageData['serp_used'] ?? 0);
+            $serpLimit    = intval($usageData['serp_limit'] ?? 0);
+            if (($monthlyLimit > 0 && $monthlyUsed >= $monthlyLimit) ||
+                ($serpLimit > 0 && $serpUsed >= $serpLimit)) {
+                $logInfo['needs_upgrade'] = true;
+                $logInfo['upgrade_reason'] = 'monthly_limit';
+            }
         } else {
             $logInfo['crawl_status'] = 0;
             $logInfo['log_message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API request failed';
+            if ($httpCode == 403) {
+                $logInfo['needs_upgrade'] = true;
+                $logInfo['upgrade_reason'] = 'expired';
+            }
         }
 
         return [$usageData, $logInfo];

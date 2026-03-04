@@ -50,6 +50,10 @@ if ($category == "moz") {
 			<div class="mt-2" style="font-size:13px;">For any questions about your Seo Panel API token, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong><i class="fas fa-envelope"></i> contact Seo Panel support</strong></a>.</div>
 		</div>
 		<?php
+		include(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
+		?>
+		<script type="text/javascript">$('#spapi_upgrade_overlay').hide();</script>
+		<?php
 	} else {
 		?>
 		<div class="alert alert-info mb-3">
