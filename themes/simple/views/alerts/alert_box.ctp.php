@@ -15,8 +15,8 @@ if (!empty($alertList)) {
 			<div>
 				<a href="<?php echo $alertLink?>"><?php echo $alertInfo["alert_subject"]?></a>
 			</div>
-			<div style="margin-top: 6px;"><?php echo $alertInfo["alert_message"]?></div>
-			<div style="margin-top: 6px;font-size: 12px;text-align: right;"><?php echo timeElapsedString($alertInfo['alert_time'])?></div>
+			<div style="margin-top: 8px; font-size: 13px; color: #4a5568; line-height: 1.6; word-wrap: break-word; white-space: normal;"><?php echo $alertInfo["alert_message"]?></div>
+			<div style="margin-top: 8px; font-size: 12px; text-align: right; color: #718096;"><?php echo timeElapsedString($alertInfo['alert_time'])?></div>
 		</li>
 		<?php
 	}
