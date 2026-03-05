@@ -100,8 +100,7 @@ class SettingsController extends Controller{
 				    include_once(SP_CTRLPATH . "/information.ctrl.php");
 				    $informationCtrler = new InformationController();
 				    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
-				    $spapiCheckResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
-				    $this->set('spapiCheckResult', $spapiCheckResult);
+				    $this->set('spapiCheckResult', !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '');
 				    break;
 
 				default:
@@ -455,6 +454,47 @@ class SettingsController extends Controller{
 	    $userId = isLoggedIn();
 	    if ($userId) {
 	        $this->db->query("UPDATE users SET spapi_skip=1 WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
+	}
+
+	// check if the upgrade popup should be shown
+	function showSpApiUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // only show if registered
+	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) {
+	        return false;
+	    }
+
+	    // only show if today's check shows expired or monthly_limit
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    $checkResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
+	    if (!in_array($checkResult, ['expired', 'monthly_limit'])) {
+	        return false;
+	    }
+
+	    // check if user has skipped today
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId), "spapi_upgrade_skip_date");
+	    if (!empty($userInfo['spapi_upgrade_skip_date']) && $userInfo['spapi_upgrade_skip_date'] === date('Y-m-d')) {
+	        return false;
+	    }
+
+	    return $checkResult;
+	}
+
+	// skip upgrade popup for today
+	function skipSpApiUpgrade() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET spapi_upgrade_skip_date='" . date('Y-m-d') . "' WHERE id=" . intval($userId));
 	        echo json_encode(['status' => 'success']);
 	    } else {
 	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);

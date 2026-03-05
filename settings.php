@@ -187,6 +187,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->skipSpApiRegistration();
 			break;
 
+		case "spapi_upgrade_skip":
+			$controller->skipSpApiUpgrade();
+			break;
+
 		default:
 		    $category = empty($_GET['category']) ? 'system' : $_GET['category'];
 			$controller->showSystemSettings($category);

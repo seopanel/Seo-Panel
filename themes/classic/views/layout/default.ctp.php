@@ -106,11 +106,17 @@
     <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
     if (isLoggedIn() && isAdmin()) {
+        include_once(SP_CTRLPATH."/settings.ctrl.php");
+        $spApiCtrl = new SettingsController();
         if (defined('SP_SPAPI_REGISTERED') && !SP_SPAPI_REGISTERED) {
-            include_once(SP_CTRLPATH."/settings.ctrl.php");
-            $spApiCtrl = new SettingsController();
             if ($spApiCtrl->showSpApiRegistrationPopup()) {
                 include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
+            }
+        } else {
+            $spapiCheckResult = $spApiCtrl->showSpApiUpgradePopup();
+            if ($spapiCheckResult) {
+                include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
+                echo '<script>$(document).ready(function(){ window.spapiShowUpgradePopup(); });</script>';
             }
         }
     }

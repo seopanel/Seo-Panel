@@ -208,7 +208,7 @@ class AlertController extends Controller {
 	        } elseif ($storedResult === 'monthly_limit') {
 	            $alertInfo = [
 	                'alert_subject' => 'Seo Panel API Usage Limit Reached',
-	                'alert_message' => 'You have reached your Seo Panel API usage limit (monthly or SERP). Upgrade your plan for more requests.',
+	                'alert_message' => 'Monthly API request limit reached. Upgrade your plan to continue.',
 	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
 	                'alert_type'    => 'warning',
 	                'alert_category' => 'general',

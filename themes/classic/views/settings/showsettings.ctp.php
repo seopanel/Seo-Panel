@@ -50,15 +50,6 @@ if ($category == "moz") {
 			<div class="mt-2" style="font-size:13px;">For any questions about your Seo Panel API token, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong><i class="fas fa-envelope"></i> contact Seo Panel support</strong></a>.</div>
 		</div>
 		<?php
-		include(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
-		?>
-		<script type="text/javascript">
-		$('#spapi_upgrade_overlay').hide();
-		<?php if (!empty($spapiCheckResult) && in_array($spapiCheckResult, ['expired', 'monthly_limit'])): ?>
-		$(document).ready(function() { window.spapiShowUpgradePopup(); });
-		<?php endif; ?>
-		</script>
-		<?php
 	} else {
 		?>
 		<div class="alert alert-info mb-3">
@@ -77,6 +68,25 @@ if ($category == "moz") {
 	}
 }
 ?>
+<?php if ($category == 'seopanel_api' && !empty($spapiCheckResult) && in_array($spapiCheckResult, ['expired', 'monthly_limit'])): ?>
+<?php include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php"); ?>
+<?php
+$inlineAlertClass = 'alert-warning';
+$inlineIcon       = $spapiCheckResult === 'expired' ? 'fa-calendar-times' : 'fa-tachometer-alt';
+$inlineMsg        = $spapiCheckResult === 'expired'
+    ? 'Your Seo Panel API subscription has <strong>expired</strong>. Upgrade your plan to restore access.'
+    : 'You have reached your <strong>monthly API request limit</strong>. Upgrade your plan to continue.';
+?>
+<div class="alert <?php echo $inlineAlertClass?> mb-3" style="display:flex; align-items:center; gap:12px;">
+    <i class="fas <?php echo $inlineIcon?>" style="font-size:20px; flex-shrink:0;"></i>
+    <div style="flex:1;">
+        <?php echo $inlineMsg?>
+    </div>
+    <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-warning btn-sm" style="flex-shrink:0;">
+        <i class="fas fa-rocket" style="margin-right:4px;"></i>Upgrade Plan
+    </a>
+</div>
+<?php endif; ?>
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
 <input type="hidden" value="<?php echo $category?>" name="category">

@@ -23,6 +23,7 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('Enable for SERP Checker', 'SP_ENABLE_SPAPI_SERP', '1', 'seopanel_api', 'bool', 1);
 
 ALTER TABLE `users` ADD COLUMN `spapi_skip` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `users` ADD COLUMN `spapi_upgrade_skip_date` date DEFAULT NULL;
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),

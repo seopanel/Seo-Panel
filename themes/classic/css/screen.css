@@ -1161,9 +1161,9 @@ div.tab button.active {	background-color: #ccc;}
 
 /* Dropdown Menu */
 #alert_noti_sec .dropdown-menu {
-    min-width: 24rem;
-    max-width: 28rem;
-    max-height: 500px;
+    min-width: 32rem;
+    max-width: 36rem;
+    max-height: 560px;
     overflow-y: auto;
     overflow-x: hidden;
     margin-top: 12px;
@@ -1195,7 +1195,7 @@ div.tab button.active {	background-color: #ccc;}
 }
 
 #alert_noti_sec .dropdown-menu li {
-    padding: 16px 20px;
+    padding: 18px 24px;
     margin: 0;
     border-top: none;
     border-left: none;
@@ -1478,6 +1478,17 @@ div.tab button.active {	background-color: #ccc;}
     background: #cbd5e0;
 }
 
+.sp-confirm-btn-skip {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.sp-confirm-btn-skip:hover {
+    background: #fde68a;
+    border-color: #f59e0b;
+}
+
 .sp-confirm-btn-confirm {
     background: linear-gradient(180deg, #0a66d1, #0056b3);
     color: #ffffff;
@@ -1505,7 +1516,7 @@ div.tab button.active {	background-color: #ccc;}
     background: #f7fafc;
     min-width: 140px;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
+    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .spapi-plan-card.active {
@@ -1531,7 +1542,110 @@ div.tab button.active {	background-color: #ccc;}
 .spapi-plan-detail {
     font-size: 12px;
     color: #718096;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.spapi-plan-detail i {
+    font-size: 10px;
+    color: #a0aec0;
+    width: 12px;
+    flex-shrink: 0;
+}
+
+.spapi-plan-icon {
+    font-size: 22px;
+    color: #0a66d1;
+    margin-bottom: 8px;
+}
+
+.spapi-plan-price span {
+    font-size: 13px;
+    font-weight: 400;
+    color: #718096;
+}
+
+.spapi-plan-divider {
+    border-top: 1px solid #e2e8f0;
+    margin: 10px 0;
+}
+
+.spapi-plan-cta {
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #0a66d1;
+    background: #ebf4ff;
+    border-radius: 4px;
+    padding: 5px 8px;
+    transition: background 0.2s;
+}
+
+.spapi-plan-card:hover .spapi-plan-cta {
+    background: #d6eaff;
+}
+
+.spapi-plan-card:hover {
+    border-color: #0a66d1;
+    background: #f0f7ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(10, 102, 209, 0.12);
+}
+
+.spapi-plans-header {
+    font-size: 14px;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.spapi-plans-header i {
+    color: #0a66d1;
+    margin-right: 4px;
+}
+
+.spapi-upgrade-alert-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #fff8e1;
+    border: 1px solid #f6cc4f;
+    border-left: 4px solid #f6cc4f;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 4px;
+}
+
+.spapi-upgrade-alert-icon {
+    font-size: 22px;
+    color: #d69e2e;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.spapi-upgrade-alert-text {
+    font-size: 14px;
+    color: #2d3748;
+    line-height: 1.5;
+}
+
+.spapi-upgrade-alert-sub {
+    font-size: 13px;
+    color: #718096;
+    margin-top: 4px;
+}
+
+.spapi-upgrade-contact {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #718096;
+}
+
+.spapi-upgrade-contact i {
+    color: #0a66d1;
+    margin-right: 3px;
 }
 
 @keyframes fadeIn {

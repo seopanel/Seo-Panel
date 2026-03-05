@@ -7,30 +7,52 @@
 		<div class="sp-confirm-body">
 			<div id="spapi_popup_message"></div>
 			<div id="spapi_popup_intro">
-				<p>Register to access Seo Panel API features and services. It's free!</p>
+				<div class="spapi-upgrade-alert-box" style="background:#e8f5e9; border-color:#66bb6a; border-left-color:#43a047;">
+					<div class="spapi-upgrade-alert-icon" style="color:#2e7d32;">
+						<i class="fas fa-plug"></i>
+					</div>
+					<div class="spapi-upgrade-alert-text">
+						<div>Connect to the <strong>Seo Panel API</strong> to unlock additional SEO features and services.</div>
+						<div class="spapi-upgrade-alert-sub">Registration is completely free — no credit card required.</div>
+					</div>
+				</div>
 			</div>
 			<div id="spapi_popup_plans" style="display:none;">
-				<p><strong>Available Plans:</strong></p>
+				<div class="spapi-plans-header">
+					<i class="fas fa-layer-group"></i> <strong>Choose a Plan</strong>
+				</div>
 				<div class="spapi-plans-container" id="spapi_plans_list"></div>
-				<div class="mt-2" style="font-size:13px;">For any questions, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong><i class="fas fa-envelope"></i> contact us</strong></a>.</div>
+				<div class="spapi-upgrade-contact">
+					<i class="fas fa-envelope"></i> For any questions, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong>contact us</strong></a>.
+				</div>
 			</div>
 			<div id="spapi_popup_form" style="display:none;">
 				<div class="form-group mb-2">
-					<label><strong>Name <span style="color:red;">*</span></strong></label>
-					<input type="text" id="spapi_name" class="form-control" placeholder="Name">
+					<label><strong><i class="fas fa-user" style="color:#0a66d1; margin-right:5px;"></i>Name <span style="color:red;">*</span></strong></label>
+					<input type="text" id="spapi_name" class="form-control" placeholder="Your full name">
 				</div>
 				<div class="form-group mb-2">
-					<label><strong>Email <span style="color:red;">*</span></strong></label>
-					<input type="email" id="spapi_email" class="form-control" placeholder="Email Address">
+					<label><strong><i class="fas fa-envelope" style="color:#0a66d1; margin-right:5px;"></i>Email <span style="color:red;">*</span></strong></label>
+					<input type="email" id="spapi_email" class="form-control" placeholder="Your email address">
 				</div>
 			</div>
 		</div>
 		<div class="sp-confirm-footer">
-			<button class="sp-confirm-btn sp-confirm-btn-cancel" id="spapi_btn_skip" onclick="window.spapiSkip()">Skip</button>
-			<button class="sp-confirm-btn sp-confirm-btn-cancel" id="spapi_btn_cancel" onclick="window.spapiCancel()">Cancel</button>
-			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_register" onclick="window.spapiLoadPlans()">Register</button>
-			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_continue" style="display:none;" onclick="window.spapiShowRegistrationForm()">Continue</button>
-			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_submit" style="display:none;" onclick="window.spapiSubmit()">Submit</button>
+			<button class="sp-confirm-btn sp-confirm-btn-skip" id="spapi_btn_skip" onclick="window.spapiSkip()">
+				<i class="fas fa-times" style="margin-right:5px;"></i>Skip
+			</button>
+			<button class="sp-confirm-btn sp-confirm-btn-cancel" id="spapi_btn_cancel" onclick="window.spapiCancel()">
+				<i class="fas fa-ban" style="margin-right:5px;"></i>Cancel
+			</button>
+			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_register" onclick="window.spapiLoadPlans()">
+				<i class="fas fa-rocket" style="margin-right:5px;"></i>Register
+			</button>
+			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_continue" style="display:none;" onclick="window.spapiShowRegistrationForm()">
+				<i class="fas fa-arrow-right" style="margin-right:5px;"></i>Continue
+			</button>
+			<button class="sp-confirm-btn sp-confirm-btn-confirm" id="spapi_btn_submit" style="display:none;" onclick="window.spapiSubmit()">
+				<i class="fas fa-paper-plane" style="margin-right:5px;"></i>Submit
+			</button>
 		</div>
 	</div>
 </div>
@@ -55,11 +77,11 @@ window.spapiResetPopup = function() {
 	$('#spapi_popup_intro').show();
 	$('#spapi_popup_plans').hide();
 	$('#spapi_popup_form').hide();
-	$('#spapi_btn_register').show().prop('disabled', false).text('Register');
+	$('#spapi_btn_register').show().prop('disabled', false).html('<i class="fas fa-rocket" style="margin-right:5px;"></i>Register');
 	$('#spapi_btn_skip').show();
-	$('#spapi_btn_cancel').show().text('Cancel');
+	$('#spapi_btn_cancel').show().html('<i class="fas fa-ban" style="margin-right:5px;"></i>Cancel');
 	$('#spapi_btn_continue').hide();
-	$('#spapi_btn_submit').hide().prop('disabled', false).text('Submit');
+	$('#spapi_btn_submit').hide().prop('disabled', false).html('<i class="fas fa-paper-plane" style="margin-right:5px;"></i>Submit');
 	$('#spapi_name').val('');
 	$('#spapi_email').val('');
 	window.spapiSelectedPlan = null;
@@ -89,7 +111,9 @@ window.spapiPlansData = [];
 
 window.spapiLoadPlans = function() {
 	var apiUrl = '<?php echo defined("SP_SPAPI_URL") ? SP_SPAPI_URL : "http://api.seopanel.org/api/v1"?>';
-	$('#spapi_btn_register').prop('disabled', true).text('Loading...');
+	$('#spapi_btn_register').prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Loading...');
+
+	var planIcons = ['fa-gift', 'fa-bolt', 'fa-star', 'fa-crown'];
 
 	$.ajax({
 		url: apiUrl + '/plans',
@@ -105,25 +129,34 @@ window.spapiLoadPlans = function() {
 					var plan = plans[i];
 					var isFree = !plan.price || parseFloat(plan.price) === 0;
 					var activeClass = isFree ? ' active' : '';
-					var priceText = isFree ? 'Free' : '$' + plan.price + '/mo';
+					var priceText = isFree ? 'Free' : '$' + plan.price + '<span>/mo</span>';
+					var icon = planIcons[i] || 'fa-layer-group';
+					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : (plan.serp_limit || 0);
 
 					if (isFree) {
 						window.spapiSelectedPlan = i;
 					}
 
 					html += '<div class="spapi-plan-card' + activeClass + '" data-plan-index="' + i + '" onclick="window.spapiSelectPlan(' + i + ')">';
+					html += '<div class="spapi-plan-icon"><i class="fas ' + icon + '"></i></div>';
 					html += '<div class="spapi-plan-name">' + (plan.name || plan.plan_name || 'Plan') + '</div>';
 					html += '<div class="spapi-plan-price">' + priceText + '</div>';
+					html += '<div class="spapi-plan-divider"></div>';
 					if (plan.monthly_limit) {
-						html += '<div class="spapi-plan-detail">' + plan.monthly_limit.toLocaleString() + ' requests/mo</div>';
+						html += '<div class="spapi-plan-detail"><i class="fas fa-database"></i>' + plan.monthly_limit.toLocaleString() + ' requests/mo</div>';
 					}
-					if (plan.serp_limit) {
-						html += '<div class="spapi-plan-detail">' + plan.serp_limit.toLocaleString() + ' SERPs/mo</div>';
+					if (serpLimit) {
+						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
 					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {
-							html += '<div class="spapi-plan-detail">' + plan.features[j] + '</div>';
+							html += '<div class="spapi-plan-detail"><i class="fas fa-check"></i>' + plan.features[j] + '</div>';
 						}
+					}
+					if (!isFree) {
+						html += '<div class="spapi-plan-cta"><i class="fas fa-external-link-alt"></i> Get Started</div>';
+					} else {
+						html += '<div class="spapi-plan-cta" style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-check-circle"></i> Select</div>';
 					}
 					html += '</div>';
 				}
@@ -170,14 +203,14 @@ window.spapiSubmit = function() {
 	var email = $('#spapi_email').val();
 
 	if (!name || !email) {
-		$('#spapi_popup_message').html('<div class="alert alert-danger">Please fill in Name and Email.</div>');
+		$('#spapi_popup_message').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>Please fill in Name and Email.</div>');
 		return;
 	}
 
-	$('#spapi_btn_submit').prop('disabled', true).text('Registering...');
+	$('#spapi_btn_submit').prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Registering...');
 	$('#spapi_popup_message').html('');
 
-	var contactNote = '<div class="mt-2" style="font-size:13px;">For any questions, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong><i class="fas fa-envelope"></i> contact us</strong></a>.</div>';
+	var contactNote = '<div class="spapi-upgrade-contact"><i class="fas fa-envelope"></i> For any questions, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong>contact us</strong></a>.</div>';
 
 	$.ajax({
 		url: '<?php echo SP_WEBPATH?>/settings.php',
@@ -190,23 +223,23 @@ window.spapiSubmit = function() {
 		dataType: 'json',
 		success: function(response) {
 			if (response.status == 'success') {
-				$('#spapi_popup_message').html('<div class="alert alert-success">' + response.message + contactNote + '</div>');
+				$('#spapi_popup_message').html('<div class="alert alert-success"><i class="fas fa-check-circle" style="margin-right:5px;"></i>' + response.message + contactNote + '</div>');
 				$('#spapi_popup_form').hide();
 				$('#spapi_btn_submit').hide();
 				$('#spapi_btn_skip').hide();
-				$('#spapi_btn_cancel').text('Close');
+				$('#spapi_btn_cancel').html('<i class="fas fa-times" style="margin-right:5px;"></i>Close');
 				setTimeout(function() {
 					$('#spapi_popup_overlay').fadeOut(200, function() { $(this).remove(); });
 					scriptDoLoad('settings.php?category=seopanel_api', 'content', 'layout=ajax');
 				}, 1500);
 			} else {
-				$('#spapi_popup_message').html('<div class="alert alert-danger">' + response.message + contactNote + '</div>');
-				$('#spapi_btn_submit').prop('disabled', false).text('Submit');
+				$('#spapi_popup_message').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>' + response.message + contactNote + '</div>');
+				$('#spapi_btn_submit').prop('disabled', false).html('<i class="fas fa-paper-plane" style="margin-right:5px;"></i>Submit');
 			}
 		},
 		error: function() {
-			$('#spapi_popup_message').html('<div class="alert alert-danger">An error occurred. Please try again later.' + contactNote + '</div>');
-			$('#spapi_btn_submit').prop('disabled', false).text('Submit');
+			$('#spapi_popup_message').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>An error occurred. Please try again later.' + contactNote + '</div>');
+			$('#spapi_btn_submit').prop('disabled', false).html('<i class="fas fa-paper-plane" style="margin-right:5px;"></i>Submit');
 		}
 	});
 };
