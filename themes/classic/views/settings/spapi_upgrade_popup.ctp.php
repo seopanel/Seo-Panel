@@ -145,8 +145,9 @@ window.spapiUpgradeLoadPlans = function() {
 
 window.spapiUpgradeSelectPlan = function(index) {
 	var plan = window.spapiUpgradePlansData[index];
-	if (plan && plan.plan_link) {
-		window.open(plan.plan_link, '_blank');
+	if (plan) {
+		var url = plan.plan_link || '<?php echo SP_CONTACT_LINK?>';
+		window.open(url, '_blank');
 	}
 };
 </script>

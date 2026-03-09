@@ -142,7 +142,8 @@ window.spapiLoadPlans = function() {
 					}
 					var isPopular = !isFree && paidIndex === 0;
 
-					html += '<div class="spapi-plan-card' + activeClass + '" data-plan-index="' + i + '" onclick="window.spapiSelectPlan(' + i + ')">';
+					var cardOnclick = isFree ? 'window.spapiSelectPlan(' + i + ')' : 'window.spapiOpenPlanLink(' + i + ')';
+					html += '<div class="spapi-plan-card' + activeClass + '" data-plan-index="' + i + '" onclick="' + cardOnclick + '">';
 					if (isPopular) {
 						html += '<span class="spapi-plan-badge">Popular</span>';
 					}
@@ -189,12 +190,21 @@ window.spapiSelectPlan = function(index) {
 	$('.spapi-plan-card[data-plan-index="' + index + '"]').addClass('active');
 };
 
+window.spapiOpenPlanLink = function(index) {
+	var plan = window.spapiPlansData[index];
+	if (plan) {
+		var url = plan.plan_link || '<?php echo SP_CONTACT_LINK?>';
+		window.open(url, '_blank');
+	}
+};
+
 window.spapiShowRegistrationForm = function() {
 	if (window.spapiSelectedPlan !== null && window.spapiPlansData[window.spapiSelectedPlan]) {
 		var plan = window.spapiPlansData[window.spapiSelectedPlan];
 		var isFree = !plan.price || parseFloat(plan.price) === 0;
-		if (!isFree && plan.plan_link) {
-			window.open(plan.plan_link, '_blank');
+		if (!isFree) {
+			var url = plan.plan_link || '<?php echo SP_CONTACT_LINK?>';
+			window.open(url, '_blank');
 			return;
 		}
 	}

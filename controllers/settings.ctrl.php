@@ -504,18 +504,24 @@ class SettingsController extends Controller{
 	        return false;
 	    }
 
-	    // only show if today's check shows expired or monthly_limit
-	    include_once(SP_CTRLPATH . "/information.ctrl.php");
-	    $informationCtrler = new InformationController();
-	    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
-	    $checkResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
-	    if (!in_array($checkResult, ['expired', 'monthly_limit'])) {
-	        return false;
-	    }
-
 	    // check if user has skipped today
 	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId), "spapi_upgrade_skip_date");
 	    if (!empty($userInfo['spapi_upgrade_skip_date']) && $userInfo['spapi_upgrade_skip_date'] === date('Y-m-d')) {
+	        return false;
+	    }
+
+	    // get today's cached check result; if missing (e.g. cleared on login), run a fresh check now
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    if (empty($spapiCheckInfo)) {
+	        include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+	        $alertCtrler = new AlertController();
+	        $alertCtrler->updateSpApiAlerts();
+	        $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    }
+	    $checkResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
+	    if (!in_array($checkResult, ['expired', 'monthly_limit'])) {
 	        return false;
 	    }
 
