@@ -30,7 +30,7 @@ class SPAPIController extends Controller {
 
     function __construct() {
         parent::__construct();
-        $this->apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'http://api.seopanel.org/api/v1';
+        $this->apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'https://api.seopanel.org/api/v1';
         $this->apiKey = defined('SP_SPAPI_KEY') ? SP_SPAPI_KEY : '';
     }
 
@@ -100,8 +100,14 @@ class SPAPIController extends Controller {
             $logInfo['crawl_status'] = 0;
             $logInfo['log_message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API request failed';
             if ($httpCode == 403) {
-                $logInfo['needs_upgrade'] = true;
-                $logInfo['upgrade_reason'] = 'expired';
+                $msg = strtolower($responseData['message'] ?? '');
+                if (strpos($msg, 'not verified') !== false || strpos($msg, 'verify') !== false) {
+                    $logInfo['needs_upgrade'] = true;
+                    $logInfo['upgrade_reason'] = 'unconfirmed';
+                } else {
+                    $logInfo['needs_upgrade'] = true;
+                    $logInfo['upgrade_reason'] = 'expired';
+                }
             }
         }
 

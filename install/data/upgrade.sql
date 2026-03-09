@@ -15,7 +15,7 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- Seo Panel API settings
 --
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('Seo Panel API URL', 'SP_SPAPI_URL', 'http://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
+('Seo Panel API URL', 'SP_SPAPI_URL', 'https://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
 ('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
 ('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
 ('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),

@@ -3824,70 +3824,104 @@ a:hover .far {
 
 /* ===== SP API Plan Cards & Upgrade Popup ===== */
 .spapi-plans-container {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .spapi-plan-card {
-    flex: 1 1 150px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 16px;
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 12px 12px;
     text-align: center;
-    background: #f7fafc;
-    min-width: 140px;
+    background: #ffffff;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s, transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.spapi-plan-card::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: #cbd5e0;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    border-radius: 10px 10px 0 0;
+    transition: background 0.2s;
 }
 
 .spapi-plan-card.active {
     border-color: #0a66d1;
-    border-width: 2px;
-    background: #ebf4ff;
+    box-shadow: 0 6px 20px rgba(10, 102, 209, 0.18);
+    transform: translateY(-3px);
+}
+
+.spapi-plan-card.active::before {
+    background: #0a66d1;
 }
 
 .spapi-plan-card:hover {
     border-color: #0a66d1;
-    background: #f0f7ff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(10, 102, 209, 0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(10, 102, 209, 0.15);
 }
 
-.spapi-plan-card:hover .spapi-plan-cta {
-    background: #d6eaff;
+.spapi-plan-card:hover::before {
+    background: #0a66d1;
+}
+
+.spapi-plan-icon-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    margin-top: 2px;
+}
+
+.spapi-plan-icon {
+    font-size: 18px;
+    color: #0a66d1;
+    flex-shrink: 0;
 }
 
 .spapi-plan-name {
     font-weight: 700;
-    font-size: 15px;
-    color: #2d3748;
-    margin-bottom: 4px;
+    font-size: 13px;
+    color: #1a202c;
+    letter-spacing: 0.01em;
 }
 
 .spapi-plan-price {
     font-size: 20px;
-    font-weight: 700;
+    font-weight: 800;
     color: #0a66d1;
-    margin-bottom: 8px;
+    margin-bottom: 2px;
+    line-height: 1.1;
 }
 
 .spapi-plan-price span {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 400;
     color: #718096;
 }
 
 .spapi-plan-divider {
-    border-top: 1px solid #e2e8f0;
-    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #edf2f7;
+    margin: 7px 0;
 }
 
 .spapi-plan-detail {
-    font-size: 12px;
-    color: #718096;
-    margin-bottom: 4px;
+    font-size: 11px;
+    color: #4a5568;
+    margin-bottom: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3896,37 +3930,76 @@ a:hover .far {
 
 .spapi-plan-detail i {
     font-size: 10px;
-    color: #a0aec0;
+    color: #0a66d1;
     width: 12px;
     flex-shrink: 0;
 }
 
-.spapi-plan-icon {
-    font-size: 22px;
-    color: #0a66d1;
-    margin-bottom: 8px;
+.spapi-plan-cta {
+    margin-top: auto;
+    padding-top: 8px;
 }
 
-.spapi-plan-cta {
-    margin-top: 12px;
-    font-size: 12px;
-    font-weight: 600;
+.spapi-plan-cta-btn {
+    display: block;
+    width: 100%;
+    font-size: 11px;
+    font-weight: 700;
     color: #0a66d1;
     background: #ebf4ff;
-    border-radius: 4px;
-    padding: 5px 8px;
-    transition: background 0.2s;
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid #bee3f8;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.spapi-plan-cta-btn.cta-free {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+.spapi-plan-card:hover .spapi-plan-cta-btn,
+.spapi-plan-card.active .spapi-plan-cta-btn {
+    background: #0a66d1;
+    color: #ffffff;
+    border-color: #0a66d1;
+}
+
+.spapi-plan-card:hover .spapi-plan-cta-btn.cta-free,
+.spapi-plan-card.active .spapi-plan-cta-btn.cta-free {
+    background: #2e7d32;
+    color: #ffffff;
+    border-color: #2e7d32;
+}
+
+.spapi-plan-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff7043;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .spapi-plans-header {
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: 600;
     color: #2d3748;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .spapi-plans-header i {
     color: #0a66d1;
-    margin-right: 4px;
+    margin-right: 5px;
 }
 
 .spapi-upgrade-alert-box {

@@ -388,7 +388,7 @@ class SettingsController extends Controller{
 	    }
 
 	    // call spAPI register endpoint
-	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'http://api.seopanel.org/api/v1';
+	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'https://api.seopanel.org/api/v1';
 	    $postData = json_encode([
 	        'customer_name' => $name,
 	        'email' => $email,
@@ -396,18 +396,23 @@ class SettingsController extends Controller{
 	        'version' => SP_VERSION_NUMBER,
 	    ]);
 
-	    ob_start();
-	    $spider = new Spider();
-	    $spider->_CURLOPT_POSTFIELDS = $postData;
-	    $spider->_CURL_HTTPHEADER = ['Content-Type: application/json'];
-	    $spider->_CURLOPT_TIMEOUT = 30;
-	    $result = $spider->getContent($apiUrl . '/register', false, false);
-	    ob_end_clean();
+	    $ch = curl_init($apiUrl . '/register');
+	    curl_setopt($ch, CURLOPT_POST, true);
+	    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+	    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	    curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	    $rawResponse = curl_exec($ch);
+	    curl_close($ch);
 
 	    header('Content-Type: application/json');
 
-	    if (!empty($result['page'])) {
-	        $response = json_decode($result['page'], true);
+	    if (!empty($rawResponse)) {
+	        $response = json_decode($rawResponse, true);
 
 	        if (json_last_error() !== JSON_ERROR_NONE) {
 	            echo json_encode(['status' => 'error', 'message' => 'Invalid response from API server. Please try again later.']);
@@ -447,6 +452,33 @@ class SettingsController extends Controller{
 
 	    $this->db->query("UPDATE settings SET set_val='" . addslashes($newApiKey) . "' WHERE set_name='SP_SPAPI_KEY'");
 	    echo json_encode(['status' => 'success', 'message' => 'API token reset successfully.', 'data' => ['api_key' => $newApiKey]]);
+	}
+
+	// proxy plans from Seo Panel API (avoids browser CORS)
+	function getSpApiPlans() {
+	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'https://api.seopanel.org/api/v1';
+
+	    $ch = curl_init($apiUrl . '/plans');
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+	    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	    $rawResponse = curl_exec($ch);
+	    curl_close($ch);
+
+	    header('Content-Type: application/json');
+
+	    if (!empty($rawResponse)) {
+	        $response = json_decode($rawResponse, true);
+	        if (json_last_error() === JSON_ERROR_NONE) {
+	            echo $rawResponse;
+	            return;
+	        }
+	    }
+
+	    echo json_encode(['status' => 'error', 'message' => 'Could not fetch plans.']);
 	}
 
 	// skip spAPI registration for current user

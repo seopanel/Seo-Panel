@@ -197,7 +197,15 @@ class AlertController extends Controller {
 	        if ($storedResult === 'ok') {
 	            return ['status' => false, 'result' => 'SP API connection is working.'];
 	        }
-	        if ($storedResult === 'expired') {
+	        if ($storedResult === 'unconfirmed') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Email Verification Required',
+	                'alert_message' => 'Please verify your email address to activate your Seo Panel API account.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'info',
+	                'alert_category' => 'general',
+	            ];
+	        } elseif ($storedResult === 'expired') {
 	            $alertInfo = [
 	                'alert_subject' => 'Seo Panel API Subscription Expired',
 	                'alert_message' => 'Your Seo Panel API subscription has expired. Upgrade your plan to continue.',
@@ -234,7 +242,11 @@ class AlertController extends Controller {
 	    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
 
 	    if ($needsUpgrade) {
-	        if ($upgradeReason === 'expired') {
+	        if ($upgradeReason === 'unconfirmed') {
+	            $subject = 'Seo Panel API Email Verification Required';
+	            $message = 'Please verify your email address to activate your Seo Panel API account.';
+	            $alertType = 'info';
+	        } elseif ($upgradeReason === 'expired') {
 	            $subject = 'Seo Panel API Subscription Expired';
 	            $message = 'Your Seo Panel API subscription has expired. Upgrade your plan to continue.';
 	            $alertType = 'warning';

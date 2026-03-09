@@ -39,6 +39,8 @@ class UserController extends Controller{
 		@Session::setSession('userInfo', $userInfo);
 		@Session::setSession('lang_code', $userInfo['lang_code']);
 		@Session::setSession('text', '');
+		// clear SP API check cache so a fresh check runs on the next page load
+		$this->db->query("DELETE FROM information_list WHERE info_type='spapi_check'");
 	}
 	
 	# login function

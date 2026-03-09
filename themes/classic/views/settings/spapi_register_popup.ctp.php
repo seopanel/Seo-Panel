@@ -1,5 +1,5 @@
 <div class="sp-confirm-overlay" id="spapi_popup_overlay" style="display:block;">
-	<div class="sp-confirm-box" style="max-width: 640px;">
+	<div class="sp-confirm-box" style="max-width: 920px; width: 95%">
 		<div class="sp-confirm-header">
 			<i class="fas fa-plug"></i>
 			<span>Register for Seo Panel API</span>
@@ -110,16 +110,15 @@ window.spapiSelectedPlan = null;
 window.spapiPlansData = [];
 
 window.spapiLoadPlans = function() {
-	var apiUrl = '<?php echo defined("SP_SPAPI_URL") ? SP_SPAPI_URL : "http://api.seopanel.org/api/v1"?>';
 	$('#spapi_btn_register').prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Loading...');
 
 	var planIcons = ['fa-gift', 'fa-bolt', 'fa-star', 'fa-crown'];
 
 	$.ajax({
-		url: apiUrl + '/plans',
+		url: '<?php echo SP_WEBPATH?>/settings.php?sec=spapi_plans',
 		type: 'GET',
 		dataType: 'json',
-		timeout: 10000,
+		timeout: 15000,
 		success: function(response) {
 			var plans = response.data || response.plans || response;
 			if (Array.isArray(plans) && plans.length > 0) {
@@ -137,7 +136,16 @@ window.spapiLoadPlans = function() {
 						window.spapiSelectedPlan = i;
 					}
 
+					var paidIndex = 0;
+					for (var k = 0; k < i; k++) {
+						if (plans[k].price && parseFloat(plans[k].price) > 0) paidIndex++;
+					}
+					var isPopular = !isFree && paidIndex === 0;
+
 					html += '<div class="spapi-plan-card' + activeClass + '" data-plan-index="' + i + '" onclick="window.spapiSelectPlan(' + i + ')">';
+					if (isPopular) {
+						html += '<span class="spapi-plan-badge">Popular</span>';
+					}
 					html += '<div class="spapi-plan-icon"><i class="fas ' + icon + '"></i></div>';
 					html += '<div class="spapi-plan-name">' + (plan.name || plan.plan_name || 'Plan') + '</div>';
 					html += '<div class="spapi-plan-price">' + priceText + '</div>';
@@ -154,9 +162,9 @@ window.spapiLoadPlans = function() {
 						}
 					}
 					if (!isFree) {
-						html += '<div class="spapi-plan-cta"><i class="fas fa-external-link-alt"></i> Get Started</div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt" style="margin-right:5px;"></i>Get Started</span></div>';
 					} else {
-						html += '<div class="spapi-plan-cta" style="background:#e8f5e9; color:#2e7d32;"><i class="fas fa-check-circle"></i> Select</div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn cta-free"><i class="fas fa-check-circle" style="margin-right:5px;"></i>Select</span></div>';
 					}
 					html += '</div>';
 				}
@@ -227,11 +235,10 @@ window.spapiSubmit = function() {
 				$('#spapi_popup_form').hide();
 				$('#spapi_btn_submit').hide();
 				$('#spapi_btn_skip').hide();
-				$('#spapi_btn_cancel').html('<i class="fas fa-times" style="margin-right:5px;"></i>Close');
-				setTimeout(function() {
+				$('#spapi_btn_cancel').html('<i class="fas fa-times" style="margin-right:5px;"></i>Close').off('click').on('click', function() {
 					$('#spapi_popup_overlay').fadeOut(200, function() { $(this).remove(); });
 					scriptDoLoad('settings.php?category=seopanel_api', 'content', 'layout=ajax');
-				}, 1500);
+				});
 			} else {
 				$('#spapi_popup_message').html('<div class="alert alert-danger"><i class="fas fa-exclamation-circle" style="margin-right:5px;"></i>' + response.message + contactNote + '</div>');
 				$('#spapi_btn_submit').prop('disabled', false).html('<i class="fas fa-paper-plane" style="margin-right:5px;"></i>Submit');

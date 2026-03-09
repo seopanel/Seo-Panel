@@ -13,7 +13,7 @@ if ($upgradeReason === 'expired') {
 }
 ?>
 <div class="sp-confirm-overlay" id="spapi_upgrade_overlay" style="display:none;">
-	<div class="sp-confirm-box" style="max-width: 640px;">
+	<div class="sp-confirm-box" style="max-width: 920px; width: 95%">
 		<div class="sp-confirm-header">
 			<i class="fas <?php echo $upgradeIcon?>"></i>
 			<span>Seo Panel <?php echo $upgradeTitle?></span>
@@ -81,15 +81,14 @@ window.spapiUpgradeSkip = function() {
 window.spapiUpgradePlansData = [];
 
 window.spapiUpgradeLoadPlans = function() {
-	var apiUrl = '<?php echo defined("SP_SPAPI_URL") ? SP_SPAPI_URL : "http://api.seopanel.org/api/v1"?>';
 	var contactNote = '<div class="spapi-upgrade-contact"><i class="fas fa-envelope"></i> For any questions, please <a href="<?php echo SP_CONTACT_LINK?>" target="_blank"><strong>contact us</strong></a>.</div>';
 	$('#spapi_upgrade_btn_proceed').prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Loading...');
 
 	$.ajax({
-		url: apiUrl + '/plans',
+		url: '<?php echo SP_WEBPATH?>/settings.php?sec=spapi_plans',
 		type: 'GET',
 		dataType: 'json',
-		timeout: 10000,
+		timeout: 15000,
 		success: function(response) {
 			var allPlans = response.data || response.plans || response;
 			var plans = Array.isArray(allPlans) ? allPlans.filter(function(p) {
@@ -105,7 +104,11 @@ window.spapiUpgradeLoadPlans = function() {
 					var plan = plans[i];
 					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : (plan.serp_limit || 0);
 					var icon = planIcons[i] || 'fa-layer-group';
+					var isPopularUpgrade = i === 0;
 					html += '<div class="spapi-plan-card" data-plan-index="' + i + '" onclick="window.spapiUpgradeSelectPlan(' + i + ')">';
+					if (isPopularUpgrade) {
+						html += '<span class="spapi-plan-badge">Popular</span>';
+					}
 					html += '<div class="spapi-plan-icon"><i class="fas ' + icon + '"></i></div>';
 					html += '<div class="spapi-plan-name">' + (plan.name || plan.plan_name || 'Plan') + '</div>';
 					html += '<div class="spapi-plan-price">$' + plan.price + '<span>/mo</span></div>';
@@ -121,7 +124,7 @@ window.spapiUpgradeLoadPlans = function() {
 							html += '<div class="spapi-plan-detail"><i class="fas fa-check"></i>' + plan.features[j] + '</div>';
 						}
 					}
-					html += '<div class="spapi-plan-cta"><i class="fas fa-external-link-alt"></i> Get Started</div>';
+					html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt" style="margin-right:5px;"></i>Get Started</span></div>';
 					html += '</div>';
 				}
 				$('#spapi_upgrade_plans_list').html(html);

@@ -1461,7 +1461,7 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '1', 'dataforseo', 'bool', 1),
 ('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '1', 'dataforseo', 'bool', 1),
 ('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1),
-('Seo Panel API URL', 'SP_SPAPI_URL', 'http://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
+('Seo Panel API URL', 'SP_SPAPI_URL', 'https://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
 ('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
 ('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
 ('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
@@ -1587,6 +1587,10 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 -- Add system-wide exclude file extensions setting for site auditor
 INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Exclude file extensions (comma-separated)', 'SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso', 'siteauditor', 'text', 1);
+
+-- GDPR / RGPD cookie consent banner settings
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable GDPR/RGPD Cookie Consent Banner', 'SP_GDPR_COOKIE_BANNER', '0', 'system', 'bool', 1);
 
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

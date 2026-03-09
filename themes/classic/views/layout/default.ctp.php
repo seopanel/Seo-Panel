@@ -114,8 +114,8 @@
             }
         } else {
             $spapiCheckResult = $spApiCtrl->showSpApiUpgradePopup();
+            include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
             if ($spapiCheckResult) {
-                include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
                 echo '<script>$(document).ready(function(){ window.spapiShowUpgradePopup(); });</script>';
             }
         }

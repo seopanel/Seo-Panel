@@ -68,7 +68,14 @@ if ($category == "moz") {
 	}
 }
 ?>
-<?php if ($category == 'seopanel_api' && !empty($spapiCheckResult) && in_array($spapiCheckResult, ['expired', 'monthly_limit'])): ?>
+<?php if ($category == 'seopanel_api' && !empty($spapiCheckResult) && $spapiCheckResult === 'unconfirmed'): ?>
+<div class="alert alert-info mb-3" style="display:flex; align-items:center; gap:12px;">
+    <i class="fas fa-envelope-open-text" style="font-size:20px; flex-shrink:0;"></i>
+    <div style="flex:1;">
+        Please <strong>verify your email address</strong> to activate your Seo Panel API account. Check your inbox for the verification email.
+    </div>
+</div>
+<?php elseif ($category == 'seopanel_api' && !empty($spapiCheckResult) && in_array($spapiCheckResult, ['expired', 'monthly_limit'])): ?>
 <?php include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php"); ?>
 <?php
 $inlineAlertClass = 'alert-warning';

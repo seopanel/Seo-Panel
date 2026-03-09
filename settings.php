@@ -157,7 +157,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
 			    $spapiCtrler = new SPAPIController();
 			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
-			    $upgradeBtn = !empty($logInfo['needs_upgrade']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
+			    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
+			    $upgradeBtn = in_array($upgradeReason, ['expired', 'monthly_limit']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
 
 			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
 			        showErrorMsg($logInfo['log_message'] . $upgradeBtn);
@@ -185,6 +186,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 		case "spapi_skip":
 			$controller->skipSpApiRegistration();
+			break;
+
+		case "spapi_plans":
+			$controller->getSpApiPlans();
 			break;
 
 		case "spapi_upgrade_skip":

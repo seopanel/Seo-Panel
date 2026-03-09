@@ -32130,7 +32130,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),
 ('en', 'settings', 'SP_SPAPI_EMAIL', 'Email'),
 ('en', 'settings', 'SP_SPAPI_NAME', 'Name'),
-('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings');
+('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings'),
+('en', 'settings', 'SP_ENABLE_SPAPI_SERP', 'Enable for SERP Checker');
 
 -- GDPR / RGPD cookie consent banner setting label
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
