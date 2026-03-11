@@ -32121,7 +32121,7 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('sl', 'siteauditor', 'Yes', 'Da');
 
 --
--- Seo Panel 5.2.0 changes
+-- Seo Panel 6.0.0 changes
 --
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
