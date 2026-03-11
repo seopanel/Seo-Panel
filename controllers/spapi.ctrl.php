@@ -179,7 +179,7 @@ class SPAPIController extends Controller {
 
         $postData = json_encode([
             'keyword' => mb_convert_encoding($keywordInfo['name'], "UTF-8"),
-            'searchengine_ids' => $seIds,
+            'searchengine_ids' => array_map('intval', $seIds),
             'lang_code' => !empty($keywordInfo['lang_code']) ? $keywordInfo['lang_code'] : '',
             'country_code' => !empty($keywordInfo['country_code']) ? $keywordInfo['country_code'] : '',
         ]);
@@ -192,7 +192,7 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 120;
-        $response = $spider->getContent($this->apiUrl . '/serp', false, false);
+        $response = $spider->getContent($this->apiUrl . '/SERP', false, false);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -236,7 +236,7 @@ class SPAPIController extends Controller {
         $websiteUrl = formatUrl($websiteUrl, false);
         $websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);
 
-        $seResults = !empty($responseData['searchengine_results']) ? $responseData['searchengine_results'] : [];
+        $seResults = !empty($responseData['searchengine_mappings']) ? $responseData['searchengine_mappings'] : [];
 
         foreach ($seResults as $seResult) {
             $seId = intval($seResult['searchengine_id']);
