@@ -717,6 +717,22 @@ class CronController extends Controller {
 					$repCtrler->copyYesterdayResult($keywordInfo['id'], $seId, $reportDate);
 					$repCtrler->saveCronTrackInfo($keywordInfo['id'], $seId, $time);
 				}
+
+				// If monthly/SERP limit exceeded, update cache and create alert
+				if (stripos($apiResult['message'], 'limit exceeded') !== false || stripos($apiResult['message'], 'limit reached') !== false) {
+					include_once(SP_CTRLPATH . "/information.ctrl.php");
+					include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+					$informationCtrler = new InformationController();
+					$informationCtrler->updateTodayInformation('monthly_limit', 'spapi_check');
+					$alertCtrler = new AlertController();
+					$alertCtrler->createAlert([
+						'alert_subject'  => 'Seo Panel API Usage Limit Reached',
+						'alert_message'  => 'Monthly SERP limit exceeded. Upgrade your plan to continue.',
+						'alert_url'      => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+						'alert_type'     => 'warning',
+						'alert_category' => 'general',
+					], false, true);
+				}
 			}
 
 			$keywordCtrler->__changeCrawledStatus(1, 'id=' . $keywordInfo['id']);
