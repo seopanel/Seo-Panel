@@ -82,12 +82,14 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$userList = array();
 	
 	// check whether user is passed with script as argument
-	if (!empty($argv[1])) {
+	if (isset($argv[1])) {
 		$userId = intval($argv[1]);
-		$userCtrler = new UserController();
-		$userInfo = $userCtrler->__getUserInfo($userId);
-		$userList[] = $userInfo;
-		
+		if ($userId > 0) {
+			$userCtrler = new UserController();
+			$userInfo = $userCtrler->__getUserInfo($userId);
+			$userList[] = $userInfo;
+		}
+
 		// check whether seo tools id passed with the script as second argument
 		if (!empty($argv[2])) {
 			$includeList[] = intval($argv[2]);

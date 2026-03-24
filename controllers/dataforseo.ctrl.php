@@ -420,7 +420,21 @@ class DataForSEOController extends Controller {
      */
     function getPendingDFSTaskByRef($category, $refId, $reportDate = '') {
         $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
-        $whereCond = "category='".addslashes($category)."' AND ref_id=".intval($refId)." AND report_date='$reportDate' AND status='pending'";
+        $whereCond = "category='".addslashes($category)."' AND ref_id=".intval($refId)." AND report_date='$reportDate' AND status != 'failed'";
+        return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
+    }
+
+    /**
+     * Get pending DFS task for a specific URL (used for quick checker where ref_id = 0)
+     *
+     * @param string $category Task category
+     * @param string $url Reference URL
+     * @param string $reportDate Report date
+     * @return array|false Task info or false if not found
+     */
+    function getPendingDFSTaskByUrl($category, $url, $reportDate = '') {
+        $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+        $whereCond = "category='".addslashes($category)."' AND ref_url='".addslashes($url)."' AND report_date='$reportDate' AND status != 'failed'";
         return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
     }
 
@@ -476,7 +490,12 @@ class DataForSEOController extends Controller {
         $reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
 
         // Check if task already exists for this reference
-        $existingTask = $this->getPendingDFSTaskByRef('review', $refId, $reportDate);
+        // For quick checker (ref_id=0), look up by URL since ref_id is not unique
+        if ($refId == 0) {
+            $existingTask = $this->getPendingDFSTaskByUrl('review', $url, $reportDate);
+        } else {
+            $existingTask = $this->getPendingDFSTaskByRef('review', $refId, $reportDate);
+        }
         if (!empty($existingTask)) {
             $result['status'] = true;
             $result['message'] = "Task already pending";
@@ -791,7 +810,7 @@ class DataForSEOController extends Controller {
     function getAllPendingDFSTasks($reportDate = '') {
         $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
         $sql = "SELECT * FROM {$this->dfsTasksTable}
-                WHERE status='pending' AND report_date='$reportDate'
+                WHERE status='pending' AND report_date='$reportDate' AND ref_id != 0
                 ORDER BY created_at ASC";
         return $this->db->select($sql);
     }
@@ -1037,7 +1056,7 @@ class DataForSEOController extends Controller {
      */
     function getPendingSERPTaskByRef($keywordId, $seId, $reportDate = '') {
         $reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
-        $whereCond = "category='serp' AND ref_id=" . intval($keywordId) . " AND ref_url='" . intval($seId) . "' AND report_date='$reportDate' AND status='pending'";
+        $whereCond = "category='serp' AND ref_id=" . intval($keywordId) . " AND ref_url='" . intval($seId) . "' AND report_date='$reportDate' AND status != 'failed'";
         return $this->dbHelper->getRow($this->dfsTasksTable, $whereCond);
     }
 
@@ -1347,14 +1366,19 @@ class DataForSEOController extends Controller {
             $seIds = explode(':', $keywordInfo['searchengines']);
 
             foreach ($seIds as $seId) {
+                $seId = trim($seId);
+                if (empty($seId)) {
+                    continue;
+                }
+
                 if (empty($seList[$seId])) {
                     continue;
                 }
 
                 // Check if already has a report for today
                 $existingReport = $this->dbHelper->getRow(
-                    'rankresults',
-                    "keyword_id=" . intval($keywordInfo['id']) . " AND searchengine_id=" . intval($seId) . " AND result_time=$time"
+                    'searchresults',
+                    "keyword_id=" . intval($keywordInfo['id']) . " AND searchengine_id=" . intval($seId) . " AND result_date='$reportDate'"
                 );
 
                 if (!empty($existingReport)) {

@@ -365,21 +365,13 @@ class ReviewManagerController extends ReviewBase{
 			return;
 		}
 
-		// If task already completed, check the status
-		if ($taskInfo['status'] == 'completed') {
-			// Task was already processed, but we don't have the results stored for quick checker
-			// Show a message to try again
-			showErrorMsg("Task was already processed. Please submit a new request.");
-			return;
-		}
-
 		if ($taskInfo['status'] == 'failed') {
 			$errorMsg = !empty($taskInfo['error_message']) ? $taskInfo['error_message'] : "Task failed";
 			showErrorMsg($errorMsg);
 			return;
 		}
 
-		// Task is pending, try to fetch results
+		// Fetch results from DFS API (works for both pending and completed tasks)
 		$result = $dfsCtrler->fetchReviewTaskResult($taskInfo);
 
 		if ($result['completed']) {
