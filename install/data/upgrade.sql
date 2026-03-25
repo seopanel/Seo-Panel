@@ -7,10 +7,6 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '1', 'dataforseo', 'bool', 1),
 ('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '1', 'dataforseo', 'bool', 1);
 
-INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker'),
-('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker');
-
 --
 -- Seo Panel API settings
 --
@@ -24,13 +20,6 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 
 ALTER TABLE `users` ADD COLUMN `spapi_skip` tinyint(1) NOT NULL DEFAULT 0;
 ALTER TABLE `users` ADD COLUMN `spapi_upgrade_skip_date` date DEFAULT NULL;
-
-INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),
-('en', 'settings', 'SP_SPAPI_EMAIL', 'Email'),
-('en', 'settings', 'SP_SPAPI_NAME', 'Name'),
-('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings'),
-('en', 'settings', 'SP_ENABLE_SPAPI_SERP', 'Enable for SERP Checker');
 
 --
 -- Table for storing pending DataForSEO tasks
