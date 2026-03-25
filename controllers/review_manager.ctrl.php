@@ -476,7 +476,8 @@ class ReviewManagerController extends ReviewBase{
 		}
 
 		// Check if DFS Review is enabled and API credentials are set
-		if (defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW
+		if (defined('SP_ENABLE_DFS') && SP_ENABLE_DFS
+			&& defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW
 			&& defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)
 			&& defined('SP_DFS_API_PASSWORD') && !empty(SP_DFS_API_PASSWORD)) {
 			return true;
