@@ -700,6 +700,9 @@ class DataForSEOController extends Controller {
 
         $endpoint = "/v3/business_data/$platform/reviews/task_get/$taskId";
 
+        // DataForSEO status codes that mean the task is still pending (not yet processed)
+        $pendingStatusCodes = [20100, 40602];
+
         try {
             $result = $this->restClient->get($endpoint);
 
@@ -712,10 +715,12 @@ class DataForSEOController extends Controller {
                         $connResult['data'] = $taskInfo['result'][0];
                         return $connResult;
                     }
-                    // Task still processing
-                    elseif ($taskInfo['status_code'] == 20100) {
+                    // Task still in queue or processing
+                    elseif (in_array($taskInfo['status_code'], $pendingStatusCodes)
+                        || stripos($taskInfo['status_message'], 'queue') !== false
+                        || stripos($taskInfo['status_message'], 'processing') !== false) {
                         $connResult['pending'] = true;
-                        $connResult['message'] = "Task still processing";
+                        $connResult['message'] = $taskInfo['status_message'];
                         return $connResult;
                     }
                     // Task failed
