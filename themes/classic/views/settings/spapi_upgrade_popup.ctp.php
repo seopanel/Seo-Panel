@@ -5,11 +5,16 @@ if ($upgradeReason === 'expired') {
     $upgradeIcon     = 'fa-calendar-times';
     $upgradeAlertMsg = 'Your Seo Panel API subscription has <strong>expired</strong>.';
     $upgradeSubMsg   = 'Upgrade your plan to restore access to the Seo Panel API.';
-} else {
+} elseif ($upgradeReason === 'monthly_limit') {
     $upgradeTitle    = 'API Monthly Limit Reached';
     $upgradeIcon     = 'fa-tachometer-alt';
     $upgradeAlertMsg = 'You have reached your <strong>monthly API request limit</strong>.';
     $upgradeSubMsg   = 'Upgrade your plan to continue using the Seo Panel API without interruption.';
+} else {
+    $upgradeTitle    = 'Upgrade Seo Panel API Plan';
+    $upgradeIcon     = 'fa-rocket';
+    $upgradeAlertMsg = 'Upgrade your Seo Panel API plan to unlock more features and higher limits.';
+    $upgradeSubMsg   = 'Choose a plan that fits your needs and get the most out of the Seo Panel API.';
 }
 ?>
 <div class="sp-confirm-overlay" id="spapi_upgrade_overlay" style="display:none;">

@@ -112,7 +112,7 @@ window.spapiPlansData = [];
 window.spapiLoadPlans = function() {
 	$('#spapi_btn_register').prop('disabled', true).html('<i class="fas fa-spinner fa-spin" style="margin-right:5px;"></i>Loading...');
 
-	var planIcons = ['fa-gift', 'fa-bolt', 'fa-star', 'fa-crown'];
+	var planIcons = ['fa-gift', 'fa-bolt', 'fa-star', 'fa-crown', 'fa-layer-group'];
 
 	$.ajax({
 		url: '<?php echo SP_WEBPATH?>/settings.php?sec=spapi_plans',

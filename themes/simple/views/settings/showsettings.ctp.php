@@ -44,6 +44,9 @@ if ($category == "moz") {
 	<?php
 } else if ($category == "seopanel_api") {
 	if (defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED) {
+		if (empty($spapiCheckResult) || !in_array($spapiCheckResult, ['expired', 'monthly_limit'])) {
+			include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
+		}
 		?>
 		<div class="alert alert-success mb-3">
 			You are registered with the Seo Panel API.
@@ -235,7 +238,7 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkSpApiConnection('settings.php?sec=checkSpApiCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 									<a href="javascript:void(0);" onclick="resetSpApiToken('show_conn_res')" class="btn btn-warning">Reset API Token &gt;&gt;</a>
-									<a href="<?php echo SP_MAIN_SITE; ?>/apiplans/" target="_blank" class="btn btn-success">Upgrade Token &gt;&gt;</a>
+									<a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-success">Upgrade Token &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php }?>

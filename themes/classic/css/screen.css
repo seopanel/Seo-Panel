@@ -1502,8 +1502,8 @@ div.tab button.active {	background-color: #ccc;}
 
 .spapi-plans-container {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
     margin-top: 10px;
 }
 
