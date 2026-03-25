@@ -50,13 +50,25 @@ class DataForSEOController extends Controller {
             if ($connResult['status']) {
                 $result = $connResult['data'];
                 if ($result['status_code'] == 20000) {
+                    $taskFound = false;
                     foreach ($result['tasks'] as $taskInfo) {
-                        if ($taskInfo['status_code'] == 20000 && $taskInfo['data']['function'] == 'user_data') {
-                            $balance = isset($taskInfo['result'][0]['money']['balance']) ? $taskInfo['result'][0]['money']['balance'] : 0;
-                            $connResult['balance'] = $balance;
-                            $this->updateAPIBalance($balance);
+                        if ($taskInfo['data']['function'] == 'user_data') {
+                            if ($taskInfo['status_code'] == 20000) {
+                                $balance = isset($taskInfo['result'][0]['money']['balance']) ? $taskInfo['result'][0]['money']['balance'] : 0;
+                                $connResult['balance'] = $balance;
+                                $this->updateAPIBalance($balance);
+                                $taskFound = true;
+                            } else {
+                                $connResult['status'] = false;
+                                $connResult['message'] = $taskInfo['status_message'] ?? $_SESSION['text']['common']['Internal error occured'];
+                                $taskFound = true;
+                            }
                             break;
                         }
+                    }
+                    if (!$taskFound) {
+                        $connResult['status'] = false;
+                        $connResult['message'] = $_SESSION['text']['common']['Internal error occured'];
                     }
                 } else {
                     $connResult['status'] = false;
