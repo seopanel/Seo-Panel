@@ -61,6 +61,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->index($info);
 			break;
 		
+		case "spapi-register":
+			$info['menu_selected'] = 'settings';
+			$info['start_script'] = 'settings.php?category=seopanel_api';
+			$controller->index($info);
+			break;
+
 		case "settings":
 			$info['menu_selected'] = 'settings';
 			$info['start_script'] = 'settings.php';

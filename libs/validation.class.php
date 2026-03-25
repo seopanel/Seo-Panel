@@ -117,11 +117,12 @@ class Validation{
         
         // check email using php function
         $entry = stripslashes(trim($entry));
+        $msg = '';
         if (filter_var($entry, FILTER_VALIDATE_EMAIL) === false) {
             $msg = $_SESSION['text']['common']["Invalid email address entered"];
             $this->flagErr = true;
         }
-        
+
         return $msg;
     }
     

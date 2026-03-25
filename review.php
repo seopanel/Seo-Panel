@@ -35,11 +35,15 @@ $controller->spTextRM = $controller->getLanguageTexts('review', $_SESSION['lang_
 $controller->set('spTextRM', $controller->spTextRM);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-	
+
     switch($_POST['sec']){
-			
+
 		case "doQuickChecker":
 			$controller->doQuickChecker($_POST);
+			break;
+
+		case "checkQuickCheckerStatus":
+			$controller->checkQuickCheckerStatus($_POST);
 			break;
         
         case "updateReviewLink":
