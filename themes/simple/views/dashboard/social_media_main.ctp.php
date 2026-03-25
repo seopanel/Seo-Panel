@@ -1,3 +1,23 @@
+<?php
+// Helper function to get social media platform colors
+if (!function_exists('getSocialMediaColor')) {
+	function getSocialMediaColor($type) {
+		$colors = [
+			'facebook' => '#1877f2',
+			'twitter' => '#1da1f2',
+			'instagram' => '#e4405f',
+			'linkedin' => '#0a66c2',
+			'pinterest' => '#bd081c',
+			'youtube' => '#ff0000',
+			'reddit' => '#ff4500'
+		];
+		return isset($colors[$type]) ? $colors[$type] : '#6c757d';
+	}
+}
+
+if (!empty($noWebsites)) {
+	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
+} else { ?>
 <form id='social_media_dashboard_form' method="post">
 <table class="search">
 	<tr>
@@ -220,22 +240,6 @@
 
 </div>
 
-<?php
-// Helper function to get social media platform colors
-function getSocialMediaColor($type) {
-	$colors = [
-		'facebook' => '#1877f2',
-		'twitter' => '#1da1f2',
-		'instagram' => '#e4405f',
-		'linkedin' => '#0a66c2',
-		'pinterest' => '#bd081c',
-		'youtube' => '#ff0000',
-		'reddit' => '#ff4500'
-	];
-	return isset($colors[$type]) ? $colors[$type] : '#6c757d';
-}
-?>
-
 <script type="text/javascript">
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawAllCharts);
@@ -401,3 +405,4 @@ $(document).ready(function() {
 	}
 });
 </script>
+<?php } ?>

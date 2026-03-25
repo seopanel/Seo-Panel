@@ -1,3 +1,22 @@
+<?php
+// Helper function to get review platform colors
+if (!function_exists('getReviewPlatformColor')) {
+	function getReviewPlatformColor($type) {
+		$colors = [
+			'google' => '#4285f4',
+			'yelp' => '#d32323',
+			'facebook' => '#1877f2',
+			'tripadvisor' => '#00af87',
+			'trustpilot' => '#00b67a',
+			'amazon' => '#ff9900'
+		];
+		return isset($colors[$type]) ? $colors[$type] : '#6c757d';
+	}
+}
+
+if (!empty($noWebsites)) {
+	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
+} else { ?>
 <form id='review_dashboard_form' method="post">
 <table class="search">
 	<tr>
@@ -224,21 +243,6 @@
 
 </div>
 
-<?php
-// Helper function to get review platform colors
-function getReviewPlatformColor($type) {
-	$colors = [
-		'google' => '#4285f4',
-		'yelp' => '#d32323',
-		'facebook' => '#1877f2',
-		'tripadvisor' => '#00af87',
-		'trustpilot' => '#00b67a',
-		'amazon' => '#ff9900'
-	];
-	return isset($colors[$type]) ? $colors[$type] : '#6c757d';
-}
-?>
-
 <script type="text/javascript">
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawAllCharts);
@@ -408,3 +412,4 @@ $(document).ready(function() {
 	}
 });
 </script>
+<?php } ?>
