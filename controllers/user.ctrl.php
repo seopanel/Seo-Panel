@@ -94,6 +94,8 @@ class UserController extends Controller{
 						
 						if ($referer = isValidReferer($_POST['red_referer'])) {
 							redirectUrl($referer);
+						} else if (!empty($_POST['source']) && $_POST['source'] == 'install') {
+							redirectUrl(SP_WEBPATH."/admin-panel.php");
 						} else {
 						    $extArgs = !empty($_POST['source']) ? "?source=" . $_POST['source'] : "";
 							redirectUrl(SP_WEBPATH."/" . $extArgs);

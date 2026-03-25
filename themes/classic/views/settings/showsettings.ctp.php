@@ -235,6 +235,7 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkSpApiConnection('settings.php?sec=checkSpApiCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 									<a href="javascript:void(0);" onclick="resetSpApiToken('show_conn_res')" class="btn btn-warning">Reset API Token &gt;&gt;</a>
+									<a href="<?php echo SP_MAIN_SITE; ?>/apiplans/" target="_blank" class="btn btn-success">Upgrade Token &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
 							<?php }?>
