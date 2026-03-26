@@ -38,9 +38,8 @@ class SPAPIController extends Controller {
      * Check if SP API is configured for SERP checking
      */
     static function isConfigured() {
-        return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP
-            && defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED
-            && defined('SP_SPAPI_KEY') && !empty(SP_SPAPI_KEY);
+        include_once(SP_CTRLPATH."/settings.ctrl.php");
+        return SettingsController::isSpApiEnabled('serp');
     }
 
     /**
@@ -161,6 +160,92 @@ class SPAPIController extends Controller {
         }
 
         return [$newApiKey, $logInfo];
+    }
+
+    /**
+     * Get SERP results from SP API in the same format as DataForSEO's __getSERPResults
+     * Used by SettingsController::getSearchResults() for the UI flow
+     *
+     * @param array $keywordInfo Keyword info
+     * @param bool $showAll Whether to return all results or only matched
+     * @param int|bool $seId Optional specific search engine ID to check
+     * @param bool $cron Whether called from cron
+     * @return array crawlResult keyed by seInfoId
+     */
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+        $crawlResult = array();
+        $websiteUrl = formatUrl($keywordInfo['url'], false);
+        if (empty($websiteUrl) || empty($keywordInfo['name'])) {
+            return $crawlResult;
+        }
+
+        $seController = new SearchEngineController();
+        $seList = $seController->__getAllCrawlFormatedSearchEngines();
+        $websiteOtherUrl = SettingsController::getWebsiteOtherUrl($websiteUrl);
+
+        // Collect valid SE IDs for this keyword
+        $keySeList = explode(':', $keywordInfo['searchengines']);
+        $seIds = [];
+        foreach ($keySeList as $seInfoId) {
+            if (!empty($seId) && ($seInfoId != $seId)) {
+                continue;
+            }
+            if (empty($seList[$seInfoId])) {
+                continue;
+            }
+            $seIds[] = $seInfoId;
+        }
+
+        if (empty($seIds)) {
+            return $crawlResult;
+        }
+
+        // Initialize result entries
+        foreach ($seIds as $seInfoId) {
+            $crawlResult[$seInfoId]['seFound'] = true;
+            $crawlResult[$seInfoId]['matched'] = [];
+            $crawlResult[$seInfoId]['status'] = false;
+        }
+
+        // Call SP API with all SE IDs at once
+        $apiResult = $this->postSERPKeyword($keywordInfo, $seIds);
+
+        if (!$apiResult['status']) {
+            return $crawlResult;
+        }
+
+        // Mark all SEs as successful (API responded)
+        foreach ($seIds as $seInfoId) {
+            $crawlResult[$seInfoId]['status'] = true;
+        }
+
+        // Map results back to local SE IDs
+        $seResults = !empty($apiResult['data']['searchengine_mappings']) ? $apiResult['data']['searchengine_mappings'] : [];
+        foreach ($seResults as $seResult) {
+            $seInfoId = intval($seResult['searchengine_id']);
+            if (!isset($crawlResult[$seInfoId])) {
+                continue;
+            }
+            if (empty($seResult['crawled_result']) || !is_array($seResult['crawled_result'])) {
+                continue;
+            }
+            foreach ($seResult['crawled_result'] as $itemInfo) {
+                $url = $itemInfo['url'] ?? '';
+                $isMatch = stristr($url, "http://".$websiteUrl) || stristr($url, "https://".$websiteUrl) ||
+                           stristr($url, "http://".$websiteOtherUrl) || stristr($url, "https://".$websiteOtherUrl);
+                if ($showAll || $isMatch) {
+                    $matchInfo = [];
+                    $matchInfo['url'] = $url;
+                    $matchInfo['title'] = $itemInfo['title'] ?? '';
+                    $matchInfo['description'] = $itemInfo['description'] ?? '';
+                    $matchInfo['rank'] = $itemInfo['rank'] ?? 0;
+                    $matchInfo['found'] = $isMatch ? 1 : 0;
+                    $crawlResult[$seInfoId]['matched'][] = $matchInfo;
+                }
+            }
+        }
+
+        return $crawlResult;
     }
 
     /**

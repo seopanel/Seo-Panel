@@ -381,10 +381,7 @@ class CronController extends Controller {
 		$reportDate = date('Y-m-d', $this->timeStamp);
 
 		// Check if DFS Review is enabled
-		$useDFS = defined('SP_ENABLE_DFS') && SP_ENABLE_DFS
-			&& defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW
-			&& defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)
-			&& defined('SP_DFS_API_PASSWORD') && !empty(SP_DFS_API_PASSWORD);
+		$useDFS = SettingsController::isDFSEnabled('review');
 
 		if ($useDFS) {
 			// Post DFS tasks for supported platforms (google, trustpilot, tripadvisor)
@@ -525,11 +522,7 @@ class CronController extends Controller {
 		}
 
 		// Tier 1: DataForSEO (highest priority, overrides all)
-		$useDFS = defined('SP_ENABLE_DFS') && SP_ENABLE_DFS
-			&& defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP
-			&& defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)
-			&& defined('SP_DFS_API_PASSWORD') && !empty(SP_DFS_API_PASSWORD);
-		if ($useDFS) {
+		if (SettingsController::isDFSEnabled('serp')) {
 			$serpSource = 'dataforseo';
 		}
 

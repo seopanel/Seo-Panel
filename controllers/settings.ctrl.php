@@ -319,18 +319,48 @@ class SettingsController extends Controller{
 	    return $websiteOtherUrl;
 	}
 	
+	public static function isSpApiEnabled($feature = 'serp') {
+	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) return false;
+	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) return false;
+	    switch ($feature) {
+	        case 'serp': return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
+	        default:     return true;
+	    }
+	}
+
+	public static function isDFSEnabled($feature = 'serp') {
+	    if (!defined('SP_ENABLE_DFS') || !SP_ENABLE_DFS) return false;
+	    if ((SP_DFS_API_LOGIN == "") || (SP_DFS_API_PASSWORD == "")) return false;
+	    switch ($feature) {
+	        case 'serp':     return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
+	        case 'backsatu': return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'review':   return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
+	        default:         return true;
+	    }
+	}
+
 	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
 	    $status = false;
 	    $results =  [];
-	    
-	    // check dataforseo is enabled
-	    if (SP_ENABLE_DFS && (SP_DFS_API_LOGIN != "") && (SP_DFS_API_PASSWORD != "")) {
+
+	    // Tier 1: DataForSEO (highest priority)
+	    if (SettingsController::isDFSEnabled('serp')) {
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
 	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        return [$status, $results];
 	    }
-	    
+
+	    // Tier 2: SP API
+	    if (SettingsController::isSpApiEnabled('serp')) {
+	        include_once(SP_CTRLPATH."/spapi.ctrl.php");
+	        $spapiCtrler = new SPAPIController();
+	        $status = true;
+	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        return [$status, $results];
+	    }
+
 	    return [$status, $results];
 	}
 	
@@ -339,7 +369,7 @@ class SettingsController extends Controller{
 	    $results =  [];
 
 	    // check dataforseo is enabled for backlink and saturation checker
-	    if (SP_ENABLE_DFS && SP_ENABLE_DFS_BACK_SATU && (SP_DFS_API_LOGIN != "") && (SP_DFS_API_PASSWORD != "")) {
+	    if (SettingsController::isDFSEnabled('backsatu')) {
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
