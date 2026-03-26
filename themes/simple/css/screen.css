@@ -3826,7 +3826,7 @@ a:hover .far {
 .spapi-plans-container {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
+    gap: 12px;
     margin-top: 10px;
 }
 
@@ -3834,7 +3834,7 @@ a:hover .far {
     position: relative;
     border: 2px solid #e2e8f0;
     border-radius: 10px;
-    padding: 14px 12px 12px;
+    padding: 20px 14px 16px;
     text-align: center;
     background: #ffffff;
     cursor: pointer;
@@ -3886,20 +3886,20 @@ a:hover .far {
 }
 
 .spapi-plan-icon {
-    font-size: 18px;
+    font-size: 22px;
     color: #0a66d1;
     flex-shrink: 0;
 }
 
 .spapi-plan-name {
     font-weight: 700;
-    font-size: 13px;
+    font-size: 15px;
     color: #1a202c;
     letter-spacing: 0.01em;
 }
 
 .spapi-plan-price {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 800;
     color: #0a66d1;
     margin-bottom: 2px;
@@ -3907,21 +3907,28 @@ a:hover .far {
 }
 
 .spapi-plan-price span {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 400;
     color: #718096;
+}
+
+.spapi-plan-annual {
+    font-size: 14px;
+    color: #2e7d32;
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
 .spapi-plan-divider {
     border: none;
     border-top: 1px solid #edf2f7;
-    margin: 7px 0;
+    margin: 8px 0;
 }
 
 .spapi-plan-detail {
-    font-size: 11px;
+    font-size: 12px;
     color: #4a5568;
-    margin-bottom: 3px;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -18,7 +18,7 @@ if ($upgradeReason === 'expired') {
 }
 ?>
 <div class="sp-confirm-overlay" id="spapi_upgrade_overlay" style="display:none;">
-	<div class="sp-confirm-box" style="max-width: 920px; width: 95%">
+	<div class="sp-confirm-box" style="max-width: 1100px; width: 95%">
 		<div class="sp-confirm-header">
 			<i class="fas <?php echo $upgradeIcon?>"></i>
 			<span>Seo Panel <?php echo $upgradeTitle?></span>
@@ -117,6 +117,10 @@ window.spapiUpgradeLoadPlans = function() {
 					html += '<div class="spapi-plan-icon"><i class="fas ' + icon + '"></i></div>';
 					html += '<div class="spapi-plan-name">' + (plan.name || plan.plan_name || 'Plan') + '</div>';
 					html += '<div class="spapi-plan-price">$' + plan.price + '<span>/mo</span></div>';
+					if (plan.yearly_discount && parseFloat(plan.yearly_discount) > 0) {
+						var annualPrice = ((parseFloat(plan.price) * 12) * (1 - parseFloat(plan.yearly_discount) / 100)).toFixed(2);
+						html += '<div class="spapi-plan-annual"><i class="fas fa-tag" style="margin-right:3px;"></i>Save ' + plan.yearly_discount + '% annually — $' + annualPrice + '/yr</div>';
+					}
 					html += '<div class="spapi-plan-divider"></div>';
 					if (plan.monthly_limit) {
 						html += '<div class="spapi-plan-detail"><i class="fas fa-database"></i>' + plan.monthly_limit.toLocaleString() + ' requests/mo</div>';
