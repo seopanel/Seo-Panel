@@ -1052,6 +1052,72 @@ div.tab button.active {	background-color: #ccc;}
     }
 }
 
+/* === GDPR / RGPD COOKIE CONSENT BANNER === */
+#sp-gdpr-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1040;
+    background: #1a1e24;
+    color: #e9ecef;
+    border-top: 3px solid #4a8fc7;
+    box-shadow: 0 -3px 16px rgba(0, 0, 0, 0.45);
+    padding: 14px 20px;
+}
+
+.sp-gdpr-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.sp-gdpr-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.sp-gdpr-text strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #ffffff;
+}
+
+.sp-gdpr-text p {
+    margin: 0;
+    font-size: 13px;
+    color: #ced4da;
+    line-height: 1.5;
+}
+
+.sp-gdpr-buttons {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media screen and (max-width: 576px) {
+    .sp-gdpr-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sp-gdpr-buttons {
+        width: 100%;
+    }
+
+    .sp-gdpr-buttons .btn {
+        flex: 1;
+        text-align: center;
+    }
+}
+
 /* === ALERT NOTIFICATION SECTION === */
 #alert_noti_sec {
     margin-left: 8px;
@@ -1095,9 +1161,9 @@ div.tab button.active {	background-color: #ccc;}
 
 /* Dropdown Menu */
 #alert_noti_sec .dropdown-menu {
-    min-width: 24rem;
-    max-width: 28rem;
-    max-height: 500px;
+    min-width: 32rem;
+    max-width: 36rem;
+    max-height: 560px;
     overflow-y: auto;
     overflow-x: hidden;
     margin-top: 12px;
@@ -1129,7 +1195,7 @@ div.tab button.active {	background-color: #ccc;}
 }
 
 #alert_noti_sec .dropdown-menu li {
-    padding: 16px 20px;
+    padding: 18px 24px;
     margin: 0;
     border-top: none;
     border-left: none;
@@ -1412,6 +1478,17 @@ div.tab button.active {	background-color: #ccc;}
     background: #cbd5e0;
 }
 
+.sp-confirm-btn-skip {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.sp-confirm-btn-skip:hover {
+    background: #fde68a;
+    border-color: #f59e0b;
+}
+
 .sp-confirm-btn-confirm {
     background: linear-gradient(180deg, #0a66d1, #0056b3);
     color: #ffffff;
@@ -1421,6 +1498,234 @@ div.tab button.active {	background-color: #ccc;}
 .sp-confirm-btn-confirm:hover {
     background: linear-gradient(180deg, #0056b3, #00408f);
     box-shadow: 0 4px 8px rgba(0, 64, 143, 0.35);
+}
+
+.spapi-plans-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.spapi-plan-card {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 14px 16px;
+    text-align: center;
+    background: #ffffff;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.spapi-plan-card::before {
+    content: '';
+    display: block;
+    height: 4px;
+    background: #cbd5e0;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    border-radius: 10px 10px 0 0;
+    transition: background 0.2s;
+}
+
+.spapi-plan-card.active {
+    border-color: #0a66d1;
+    box-shadow: 0 6px 20px rgba(10, 102, 209, 0.18);
+    transform: translateY(-3px);
+}
+
+.spapi-plan-card.active::before {
+    background: #0a66d1;
+}
+
+.spapi-plan-card:hover {
+    border-color: #0a66d1;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(10, 102, 209, 0.15);
+}
+
+.spapi-plan-card:hover::before {
+    background: #0a66d1;
+}
+
+.spapi-plan-icon-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin-bottom: 5px;
+    margin-top: 2px;
+}
+
+.spapi-plan-icon {
+    font-size: 22px;
+    color: #0a66d1;
+    flex-shrink: 0;
+}
+
+.spapi-plan-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #1a202c;
+    letter-spacing: 0.01em;
+}
+
+.spapi-plan-price {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0a66d1;
+    margin-bottom: 2px;
+    line-height: 1.1;
+}
+
+.spapi-plan-price span {
+    font-size: 13px;
+    font-weight: 400;
+    color: #718096;
+}
+
+.spapi-plan-annual {
+    font-size: 14px;
+    color: #2e7d32;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.spapi-plan-divider {
+    border: none;
+    border-top: 1px solid #edf2f7;
+    margin: 8px 0;
+}
+
+.spapi-plan-detail {
+    font-size: 12px;
+    color: #4a5568;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.spapi-plan-detail i {
+    font-size: 10px;
+    color: #0a66d1;
+    width: 12px;
+    flex-shrink: 0;
+}
+
+.spapi-plan-cta {
+    margin-top: auto;
+    padding-top: 8px;
+}
+
+.spapi-plan-cta-btn {
+    display: block;
+    width: 100%;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0a66d1;
+    background: #ebf4ff;
+    border-radius: 6px;
+    padding: 6px 8px;
+    border: 1px solid #bee3f8;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.spapi-plan-cta-btn.cta-free {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+.spapi-plan-card:hover .spapi-plan-cta-btn,
+.spapi-plan-card.active .spapi-plan-cta-btn {
+    background: #0a66d1;
+    color: #ffffff;
+    border-color: #0a66d1;
+}
+
+.spapi-plan-card:hover .spapi-plan-cta-btn.cta-free,
+.spapi-plan-card.active .spapi-plan-cta-btn.cta-free {
+    background: #2e7d32;
+    color: #ffffff;
+    border-color: #2e7d32;
+}
+
+.spapi-plan-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #ff7043;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.spapi-plans-header {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 12px;
+}
+
+.spapi-plans-header i {
+    color: #0a66d1;
+    margin-right: 5px;
+}
+
+.spapi-upgrade-alert-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: #fff8e1;
+    border: 1px solid #f6cc4f;
+    border-left: 4px solid #f6cc4f;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 4px;
+}
+
+.spapi-upgrade-alert-icon {
+    font-size: 22px;
+    color: #d69e2e;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.spapi-upgrade-alert-text {
+    font-size: 14px;
+    color: #2d3748;
+    line-height: 1.5;
+}
+
+.spapi-upgrade-alert-sub {
+    font-size: 13px;
+    color: #718096;
+    margin-top: 4px;
+}
+
+.spapi-upgrade-contact {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #718096;
+}
+
+.spapi-upgrade-contact i {
+    color: #0a66d1;
+    margin-right: 3px;
 }
 
 @keyframes fadeIn {

@@ -25,7 +25,14 @@ class AdminPanelController extends Controller{
 	
 	# index function
 	function index($info=[]){
-		
+
+		if (isAdmin()) {
+		    include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+		    include_once(SP_CTRLPATH . "/information.ctrl.php");
+		    $alertCtrler = new AlertController();
+		    $alertCtrler->updateSpApiAlerts();
+		}
+
 		if (isAdmin() || !SP_CUSTOM_DEV) {
 			$menuList[] = array(
 						'id' => 1,

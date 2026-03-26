@@ -24,24 +24,28 @@
 class OverviewController extends Controller {
     var $baseUrl = "overview.php"; 
 	
-	function showOverView($searchInfo = '') {		
+	function showOverView($searchInfo = '') {
 	    $userId = isLoggedIn();
 	    $websiteCtrler = New WebsiteController();
 	    $websiteList = $websiteCtrler->__getAllWebsites($userId, true);
-	    
+
 	    if (empty($websiteList)) {
-	        showErrorMsg($_SESSION['text']['common']['nowebsites']);
+	        $this->set('noWebsites', true);
+	        $this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+	        $this->set("custSubMenu", "overview");
+	        $this->render('user/userhome');
+	        return;
 	    }
-	    
+
 	    $this->set('siteList', $websiteList);
 	    $websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : $websiteList[0]['id'];
 	    $this->set('websiteId', $websiteId);
-	    
+
 	    $fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-14 days'));
 	    $toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
 	    $this->set('fromTime', $fromTime);
 	    $this->set('toTime', $toTime);
-	    
+
 		$this->set("custSubMenu", "overview");
 		$this->render('user/userhome');
 	}

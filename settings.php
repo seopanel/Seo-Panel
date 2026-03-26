@@ -22,7 +22,7 @@
 
 include_once("includes/sp-load.php");
 
-if( $_GET['sec'] == 'aboutus'){
+if( isset($_GET['sec']) && $_GET['sec'] == 'aboutus'){
 	isLoggedIn();
 }else{
 	checkAdminLoggedIn();
@@ -40,15 +40,23 @@ $controller->set('spTextSubscription', $controller->spTextSubscription);
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 	
 	switch($_POST['sec']){
-		
+
 		case "update":
 			$controller->updateSystemSettings($_POST);
 			break;
-		
+
 		case "send_test_email":
 			if (!SP_DEMO) {
 				$controller->sendTestEmail($_POST);
 			}
+			break;
+
+		case "spapi_register":
+			$controller->registerSpApi($_POST);
+			break;
+
+		case "resetSpApiToken":
+			$controller->resetSpApiToken();
 			break;
 	}
 	
@@ -142,8 +150,54 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    break;
 
+		case "checkSpApiCon":
+			if (empty($_GET['api_key'])) {
+			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);
+			} else {
+			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
+			    $spapiCtrler = new SPAPIController();
+			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
+			    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
+			    $upgradeBtn = in_array($upgradeReason, ['expired', 'monthly_limit']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
+
+			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
+			        showErrorMsg($logInfo['log_message'] . $upgradeBtn);
+			    } else {
+			        $monthlyLimit = $usageData['monthly_limit'] ?? 0;
+			        $monthlyUsed  = $usageData['monthly_used'] ?? 0;
+			        $serpLimit    = $usageData['serp_limit'] ?? 0;
+			        $serpUsed     = $usageData['serp_used'] ?? 0;
+			        $planName     = $usageData['plan_name'] ?? '';
+			        $msg = "{$_SESSION['text']['label']['Success']}";
+			        if ($planName) {
+			            $msg .= "<br>Plan: <b>$planName</b>";
+			        }
+			        $msg .= "<br>Monthly Usage: <b>$monthlyUsed/$monthlyLimit</b>";
+			        if ($serpLimit > 0) {
+			            $msg .= "<br>SERP Usage: <b>$serpUsed/$serpLimit</b>";
+			        }
+			        if ($upgradeBtn) {
+			            $msg .= "<br>Monthly limit reached." . $upgradeBtn;
+			        }
+			        showSuccessMsg($msg);
+			    }
+			}
+			break;
+
+		case "spapi_skip":
+			$controller->skipSpApiRegistration();
+			break;
+
+		case "spapi_plans":
+			$controller->getSpApiPlans();
+			break;
+
+		case "spapi_upgrade_skip":
+			$controller->skipSpApiUpgrade();
+			break;
+
 		default:
-		    $category = empty($_GET['category']) ? 'system' : $_GET['category']; 
+		    $category = empty($_GET['category']) ? 'system' : $_GET['category'];
 			$controller->showSystemSettings($category);
 			break;
 	}

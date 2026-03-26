@@ -8,6 +8,10 @@
         $smTabView = "";
         $rvTabView = "";
         $saTabView = "";
+        $waTabView = "";
+        $anTabView = "";
+        $scTabView = "";
+        $dsTabView = "";
 
         if (!empty($custSubMenu)) {
             $ovTabView = "active";
@@ -29,6 +33,22 @@
                     $saTabView = "active";
                     break;
 
+                case "website_analytics":
+                    $waTabView = "active";
+                    break;
+
+                case "analytics":
+                    $anTabView = "active";
+                    break;
+
+                case "search_console":
+                    $scTabView = "active";
+                    break;
+
+                case "directory_submission":
+                    $dsTabView = "active";
+                    break;
+
                 default:
                     $mainTabClass = "active";
                     break;
@@ -47,8 +67,23 @@
             	</a>
             </li>
             <li class="nav-item">
+            	<a class="nav-link <?php echo $waTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=website_analytics" onclick="return navigateDashboardTab(this, 'website_analytics');">
+            		<i class="fas fa-globe"></i> <?php echo $spText['label']['Website'] ?? 'Website'?>
+            	</a>
+            </li>
+            <li class="nav-item">
             	<a class="nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');">
             		<i class="fas fa-key"></i> <?php echo $spText['common']['Keywords']?>
+            	</a>
+            </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $anTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=analytics" onclick="return navigateDashboardTab(this, 'analytics');">
+            		<i class="fas fa-chart-area"></i> <?php echo $spText['label']['Analytics'] ?? 'Analytics'?>
+            	</a>
+            </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $scTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=search_console" onclick="return navigateDashboardTab(this, 'search_console');">
+            		<i class="fas fa-search-plus"></i> <?php echo $spText['label']['Search Console'] ?? 'Search Console'?>
             	</a>
             </li>
             <li class="nav-item">
@@ -66,12 +101,21 @@
             		<i class="fas fa-star"></i> <?php echo $spText['label']['Reviews']?>
             	</a>
             </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $dsTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=directory_submission" onclick="return navigateDashboardTab(this, 'directory_submission');">
+            		<i class="fas fa-folder-open"></i> <?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?>
+            	</a>
+            </li>
         </ul>
     	<?php
     }?>
     
     <?php if ($showOverview && !empty($custSubMenu)) {?>
-    	<?php include(SP_VIEWPATH."/report/overview.ctp.php");?>
+    	<?php if (!empty($noWebsites)) {
+    		include(SP_VIEWPATH."/dashboard/no_websites.ctp.php");
+    	} else {
+    		include(SP_VIEWPATH."/report/overview.ctp.php");
+    	}?>
     <?php } else {?> 
         <div id="content">
         	<script type="text/javascript">
@@ -83,6 +127,14 @@
                		scriptDoLoad('review_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } elseif ($saTabView == "active") {?>
                		scriptDoLoad('siteauditor_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($waTabView == "active") {?>
+               		scriptDoLoad('website_analytics_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($anTabView == "active") {?>
+               		scriptDoLoad('analytics_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($scTabView == "active") {?>
+               		scriptDoLoad('search_console_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($dsTabView == "active") {?>
+               		scriptDoLoad('directory_submission_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } else {?>
                		scriptDoLoad('dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php }?>
@@ -118,6 +170,22 @@ function getCurrentWebsiteId() {
     // Try to get from site auditor dashboard form
     else if ($('#siteauditor_dashboard_form select[name="website_id"]').length) {
         websiteId = $('#siteauditor_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from website analytics dashboard form
+    else if ($('#website_analytics_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#website_analytics_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from analytics dashboard form
+    else if ($('#analytics_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#analytics_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from search console dashboard form
+    else if ($('#search_console_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#search_console_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from directory submission dashboard form
+    else if ($('#directory_submission_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#directory_submission_dashboard_form select[name="website_id"]').val();
     }
     // Try to get from URL parameter
     else {

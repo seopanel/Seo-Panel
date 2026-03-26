@@ -32119,3 +32119,68 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('sl', 'siteauditor', 'Twitter Cards', 'Twitter kartice'),
 ('sl', 'siteauditor', 'URLs from Sitemap', 'URL-ji iz zemljevida strani'),
 ('sl', 'siteauditor', 'Yes', 'Da');
+
+--
+-- Seo Panel 6.0.0 changes
+--
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_REVIEW', 'Enable for Review Checker'),
+('en', 'settings', 'SP_ENABLE_DFS_SERP', 'Enable for SERP Checker'),
+('en', 'settings', 'SP_SPAPI_KEY', 'API Key'),
+('en', 'settings', 'SP_SPAPI_EMAIL', 'Email'),
+('en', 'settings', 'SP_SPAPI_NAME', 'Name'),
+('en', 'panel', 'Seo Panel API Settings', 'Seo Panel API Settings'),
+('en', 'settings', 'SP_ENABLE_SPAPI_SERP', 'Enable for SERP Checker');
+
+-- GDPR / RGPD cookie consent banner setting label
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_GDPR_COOKIE_BANNER', 'Enable GDPR/RGPD Cookie Consent Banner');
+
+-- GDPR banner message translations (all supported languages)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'This website uses cookies to improve your experience and analyse traffic. You may accept or decline the use of non-essential cookies in accordance with the GDPR/RGPD regulation.'),
+('fr', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ce site web utilise des cookies pour améliorer votre expérience et analyser le trafic. Vous pouvez accepter ou refuser l\'utilisation de cookies non essentiels conformément à la réglementation RGPD/GDPR.'),
+('de', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Diese Website verwendet Cookies, um Ihre Erfahrung zu verbessern und den Datenverkehr zu analysieren. Sie können die Verwendung nicht wesentlicher Cookies gemäß der DSGVO/RGPD-Verordnung akzeptieren oder ablehnen.'),
+('es', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Este sitio web utiliza cookies para mejorar su experiencia y analizar el tráfico. Puede aceptar o rechazar el uso de cookies no esenciales de acuerdo con la regulación GDPR/RGPD.'),
+('es-ar', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Este sitio web utiliza cookies para mejorar su experiencia y analizar el tráfico. Puede aceptar o rechazar el uso de cookies no esenciales de acuerdo con la regulación GDPR/RGPD.'),
+('it', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Questo sito web utilizza i cookie per migliorare la tua esperienza e analizzare il traffico. Puoi accettare o rifiutare l\'uso di cookie non essenziali in conformità con il regolamento GDPR/RGPD.'),
+('pt', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Este site usa cookies para melhorar a sua experiência e analisar o tráfego. Pode aceitar ou recusar a utilização de cookies não essenciais em conformidade com o regulamento GDPR/RGPD.'),
+('pt-br', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Este site usa cookies para melhorar sua experiência e analisar o tráfego. Você pode aceitar ou recusar o uso de cookies não essenciais de acordo com o regulamento GDPR/LGPD.'),
+('nl', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Deze website gebruikt cookies om uw ervaring te verbeteren en het verkeer te analyseren. U kunt het gebruik van niet-essentiële cookies accepteren of weigeren in overeenstemming met de AVG/GDPR-verordening.'),
+('ru', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Этот веб-сайт использует файлы cookie для улучшения вашего опыта и анализа трафика. Вы можете принять или отказаться от использования несущественных файлов cookie в соответствии с регламентом GDPR/RGPD.'),
+('pl', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ta strona internetowa używa plików cookie w celu poprawy komfortu korzystania z niej i analizy ruchu. Możesz zaakceptować lub odrzucić używanie nieistotnych plików cookie zgodnie z rozporządzeniem RODO/GDPR.'),
+('ar', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'يستخدم هذا الموقع ملفات تعريف الارتباط لتحسين تجربتك وتحليل حركة المرور. يمكنك قبول أو رفض استخدام ملفات تعريف الارتباط غير الضرورية وفقاً لأنظمة GDPR/RGPD.'),
+('zh', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', '本網站使用Cookie來改善您的體驗並分析流量。您可以根據GDPR/RGPD法規接受或拒絕使用非必要Cookie。'),
+('cn', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', '本网站使用Cookie来改善您的体验并分析流量。您可以根据GDPR/RGPD法规接受或拒绝使用非必要Cookie。'),
+('ja', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'このウェブサイトはお客様のエクスペリエンス向上とトラフィック分析のためにCookieを使用しています。GDPR/RGPD規制に従い、必須でないCookieの使用を承認または拒否できます。'),
+('ko', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', '이 웹사이트는 귀하의 경험을 향상시키고 트래픽을 분석하기 위해 쿠키를 사용합니다. GDPR/RGPD 규정에 따라 필수적이지 않은 쿠키의 사용을 수락하거나 거부할 수 있습니다.'),
+('tr', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Bu web sitesi deneyiminizi geliştirmek ve trafiği analiz etmek için çerezler kullanmaktadır. GDPR/KVKK düzenlemesine uygun olarak zorunlu olmayan çerezlerin kullanımını kabul edebilir veya reddedebilirsiniz.'),
+('sv', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Den här webbplatsen använder cookies för att förbättra din upplevelse och analysera trafiken. Du kan acceptera eller avböja användningen av icke-väsentliga cookies i enlighet med GDPR/RGPD-förordningen.'),
+('da', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Dette websted bruger cookies til at forbedre din oplevelse og analysere trafikken. Du kan acceptere eller afvise brugen af ikke-essentielle cookies i overensstemmelse med GDPR/RGPD-forordningen.'),
+('no', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Dette nettstedet bruker informasjonskapsler for å forbedre din opplevelse og analysere trafikken. Du kan godta eller avslå bruken av ikke-essensielle informasjonskapsler i samsvar med GDPR/RGPD-forordningen.'),
+('fi', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Tämä verkkosivusto käyttää evästeitä parantaakseen käyttökokemustasi ja analysoidakseen liikennettä. Voit hyväksyä tai hylätä muiden kuin välttämättömien evästeiden käytön GDPR/RGPD-asetuksen mukaisesti.'),
+('cs', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Tato webová stránka používá soubory cookie ke zlepšení vašeho zážitku a analýze provozu. Můžete přijmout nebo odmítnout použití nepodstatných souborů cookie v souladu s nařízením GDPR/RGPD.'),
+('sk', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Táto webová stránka používa súbory cookie na zlepšenie vášho zážitku a analýzu prevádzky. Môžete prijať alebo odmietnuť používanie nepodstatných súborov cookie v súlade s nariadením GDPR/RGPD.'),
+('hu', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ez a weboldal sütiket használ a felhasználói élmény javítása és a forgalom elemzése érdekében. A GDPR/RGPD rendeletnek megfelelően elfogadhatja vagy visszautasíthatja a nem alapvető sütik használatát.'),
+('ro', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Acest site web utilizează cookie-uri pentru a îmbunătăți experiența dvs. și a analiza traficul. Puteți accepta sau refuza utilizarea cookie-urilor neesențiale în conformitate cu regulamentul GDPR/RGPD.'),
+('bg', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Този уебсайт използва бисквитки за подобряване на вашето преживяване и анализ на трафика. Можете да приемете или откажете използването на несъществени бисквитки в съответствие с регламента GDPR/RGPD.'),
+('hr', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ova web stranica koristi kolačiće kako bi poboljšala vaše iskustvo i analizirala promet. Možete prihvatiti ili odbiti korištenje neobaveznih kolačića u skladu s GDPR/RGPD propisima.'),
+('sr', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ova web stranica koristi kolačiće kako bi poboljšala vaše iskustvo i analizirala saobraćaj. Možete prihvatiti ili odbiti korišćenje neobaveznih kolačića u skladu sa GDPR/RGPD propisima.'),
+('bs', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ova web stranica koristi kolačiće kako bi poboljšala vaše iskustvo i analizirala promet. Možete prihvatiti ili odbiti korištenje neobaveznih kolačića u skladu s GDPR/RGPD propisima.'),
+('sl', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'To spletno mesto uporablja piškotke za izboljšanje vaše izkušnje in analizo prometa. V skladu z uredbo GDPR/RGPD lahko sprejmete ali zavrnete uporabo nebistvenih piškotkov.'),
+('uk', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Цей веб-сайт використовує файли cookie для покращення вашого досвіду та аналізу трафіку. Ви можете прийняти або відхилити використання несуттєвих файлів cookie відповідно до регламенту GDPR/RGPD.'),
+('el', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Αυτός ο ιστότοπος χρησιμοποιεί cookies για να βελτιώσει την εμπειρία σας και να αναλύσει την κυκλοφορία. Μπορείτε να αποδεχτείτε ή να αρνηθείτε τη χρήση μη απαραίτητων cookies σύμφωνα με τον κανονισμό GDPR/RGPD.'),
+('he', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'אתר זה משתמש בעוגיות כדי לשפר את חוויתך ולנתח את התנועה. באפשרותך לקבל או לדחות את השימוש בעוגיות שאינן חיוניות בהתאם לתקנות GDPR/RGPD.'),
+('fa', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'این وب‌سایت از کوکی‌ها برای بهبود تجربه شما و تجزیه و تحلیل ترافیک استفاده می‌کند. می‌توانید استفاده از کوکی‌های غیرضروری را مطابق مقررات GDPR/RGPD بپذیرید یا رد کنید.'),
+('hi', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'यह वेबसाइट आपके अनुभव को बेहतर बनाने और ट्रैफ़िक का विश्लेषण करने के लिए कुकीज़ का उपयोग करती है। आप GDPR/RGPD विनियमन के अनुसार गैर-आवश्यक कुकीज़ के उपयोग को स्वीकार या अस्वीकार कर सकते हैं।'),
+('id', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Situs web ini menggunakan cookie untuk meningkatkan pengalaman Anda dan menganalisis lalu lintas. Anda dapat menerima atau menolak penggunaan cookie yang tidak penting sesuai dengan peraturan GDPR/RGPD.'),
+('th', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'เว็บไซต์นี้ใช้คุกกี้เพื่อปรับปรุงประสบการณ์ของคุณและวิเคราะห์การเข้าชม คุณสามารถยอมรับหรือปฏิเสธการใช้คุกกี้ที่ไม่จำเป็นตามกฎระเบียบ GDPR/RGPD'),
+('vn', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Trang web này sử dụng cookie để cải thiện trải nghiệm của bạn và phân tích lưu lượng truy cập. Bạn có thể chấp nhận hoặc từ chối việc sử dụng cookie không cần thiết theo quy định GDPR/RGPD.'),
+('tl', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Gumagamit ang website na ito ng cookies upang mapabuti ang iyong karanasan at suriin ang trapiko. Maaari mong tanggapin o tanggihan ang paggamit ng hindi mahahalagang cookies alinsunod sa GDPR/RGPD na regulasyon.'),
+('sw', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Tovuti hii hutumia vidakuzi kuboresha uzoefu wako na kuchambua trafiki. Unaweza kukubali au kukataa matumizi ya vidakuzi visivyo muhimu kulingana na kanuni ya GDPR/RGPD.'),
+('ca', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Aquest lloc web utilitza galetes per millorar la vostra experiència i analitzar el trànsit. Podeu acceptar o rebutjar l\'ús de galetes no essencials d\'acord amb la normativa GDPR/RGPD.'),
+('lt', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ši svetainė naudoja slapukus, kad pagerintų jūsų patirtį ir analizuotų srautą. Galite priimti arba atsisakyti nebūtinų slapukų naudojimo pagal GDPR/RGPD reglamentą.'),
+('mk', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Оваа веб-страница користи колачиња за да го подобри вашето искуство и да го анализира сообраќајот. Можете да прифатите или одбиете употреба на неесенцијални колачиња во согласност со регулативата GDPR/RGPD.'),
+('sq', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ky faqe interneti përdor skedarë cookie për të përmirësuar përvojën tuaj dhe për të analizuar trafikun. Mund të pranoni ose refuzoni përdorimin e skedarëve cookie jo thelbësorë në përputhje me rregulloren GDPR/RGPD.'),
+('hy', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Այս կայքը օգտագործում է թխուկներ՝ ձեր փորձը բարելավելու և երթևեկությունը վերլուծելու համար: Կարող եք ընդունել կամ մերժել ոչ էական թխուկների օգտագործումը՝ GDPR/RGPD կանոնակարգին համապատասխան:');

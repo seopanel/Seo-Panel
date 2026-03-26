@@ -179,6 +179,113 @@ class AlertController extends Controller {
 	}	
 	
 	/**
+	 * Check SP API connection and create an alert if there is an error (once per day)
+	 */
+	function updateSpApiAlerts() {
+
+	    // Only run if SP API key is set
+	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) {
+	        return ['status' => false, 'result' => 'SP API not configured.'];
+	    }
+
+	    $informationCtrler = new InformationController();
+	    $todayInfo = $informationCtrler->__getTodayInformation('spapi_check');
+
+	    // If API was already checked today, recreate alert from stored result (handles deleted alerts)
+	    if (!empty($todayInfo)) {
+	        $storedResult = $todayInfo['page'];
+	        if ($storedResult === 'ok') {
+	            return ['status' => false, 'result' => 'SP API connection is working.'];
+	        }
+	        if ($storedResult === 'unconfirmed') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Email Verification Required',
+	                'alert_message' => 'Please verify your email address to activate your Seo Panel API account.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'info',
+	                'alert_category' => 'general',
+	            ];
+	        } elseif ($storedResult === 'expired') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Subscription Expired',
+	                'alert_message' => 'Your Seo Panel API subscription has expired. Upgrade your plan to continue.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'warning',
+	                'alert_category' => 'general',
+	            ];
+	        } elseif ($storedResult === 'monthly_limit') {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Usage Limit Reached',
+	                'alert_message' => 'Monthly API request limit reached. Upgrade your plan to continue.',
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'warning',
+	                'alert_category' => 'general',
+	            ];
+	        } else {
+	            $alertInfo = [
+	                'alert_subject' => 'Seo Panel API Connection Error',
+	                'alert_message' => $storedResult,
+	                'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	                'alert_type'    => 'danger',
+	                'alert_category' => 'general',
+	            ];
+	        }
+	        $this->createAlert($alertInfo, false, true);
+	        return ['status' => true, 'result' => 'SP API alert recreated: ' . $storedResult];
+	    }
+
+	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+	    $spapiCtrler = new SPAPIController();
+	    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData();
+
+	    $needsUpgrade = !empty($logInfo['needs_upgrade']);
+	    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
+
+	    if ($needsUpgrade) {
+	        if ($upgradeReason === 'unconfirmed') {
+	            $subject = 'Seo Panel API Email Verification Required';
+	            $message = 'Please verify your email address to activate your Seo Panel API account.';
+	            $alertType = 'info';
+	        } elseif ($upgradeReason === 'expired') {
+	            $subject = 'Seo Panel API Subscription Expired';
+	            $message = 'Your Seo Panel API subscription has expired. Upgrade your plan to continue.';
+	            $alertType = 'warning';
+	        } else {
+	            $subject = 'Seo Panel API Usage Limit Reached';
+	            $message = 'You have reached your Seo Panel API usage limit (monthly or SERP). Upgrade your plan for more requests.';
+	            $alertType = 'warning';
+	        }
+	        $alertInfo = [
+	            'alert_subject' => $subject,
+	            'alert_message' => $message,
+	            'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	            'alert_type'    => $alertType,
+	            'alert_category' => 'general',
+	        ];
+	        $this->createAlert($alertInfo, false, true);
+	        $informationCtrler->updateTodayInformation($upgradeReason, 'spapi_check');
+	        return ['status' => true, 'result' => 'SP API upgrade required: ' . $upgradeReason];
+	    }
+
+	    if (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
+	        $errMessage = $logInfo['log_message'];
+	        $alertInfo = [
+	            'alert_subject' => 'Seo Panel API Connection Error',
+	            'alert_message' => $errMessage,
+	            'alert_url'     => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+	            'alert_type'    => 'danger',
+	            'alert_category' => 'general',
+	        ];
+	        $this->createAlert($alertInfo, false, true);
+	        $informationCtrler->updateTodayInformation($errMessage, 'spapi_check');
+	        return ['status' => true, 'result' => 'SP API connection error: ' . $errMessage];
+	    }
+
+	    $informationCtrler->updateTodayInformation('ok', 'spapi_check');
+	    return ['status' => false, 'result' => 'SP API connection is working.'];
+	}
+
+	/**
 	 * function to update system alerts, eg: installation uptodate etc
 	 */
 	function updateSystemAlerts() {

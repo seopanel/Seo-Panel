@@ -46,7 +46,6 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		    <th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 			<td>
     			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('archive.php', 'search_form', 'content')" class="custom-select">
-    				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
     				<?php foreach($siteList as $websiteInfo){?>
     					<?php if($websiteInfo['id'] == $websiteId){?>
     						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>

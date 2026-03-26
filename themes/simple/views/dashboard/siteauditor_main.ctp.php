@@ -1,8 +1,6 @@
-<?php if (!empty($noProjects)) { ?>
-<div class="alert alert-warning mt-4">
-	<i class="fas fa-exclamation-triangle"></i>
-	<?php echo $spText['common']['nowebsites'] ?? 'No websites found.'?>
-</div>
+<?php if (!empty($noProjects)) {
+	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
+?>
 <?php } elseif (!empty($noProjectForWebsite)) { ?>
 <form id='siteauditor_dashboard_form' method="post">
 <table class="search">

@@ -480,7 +480,7 @@ class Spider {
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_POSTFIELDS , $this -> _CURLOPT_POSTFIELDS );
 		}
 
-		if( strlen( $this -> _CURLOPT_USERPWD ) > 2 ) {
+		if( strlen( $this -> _CURLOPT_USERPWD ?? '' ) > 2 ) {
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_USERPWD, $this -> _CURLOPT_USERPWD );
 		}
 		

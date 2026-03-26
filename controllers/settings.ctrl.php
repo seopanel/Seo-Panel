@@ -94,8 +94,16 @@ class SettingsController extends Controller{
 				case "mail":
 				    $this->set('headLabel', $spTextPanel['Mail Settings']);
 				    break;
-					
-				default:					
+
+				case "seopanel_api":
+				    $this->set('headLabel', $spTextPanel['Seo Panel API Settings']);
+				    include_once(SP_CTRLPATH . "/information.ctrl.php");
+				    $informationCtrler = new InformationController();
+				    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+				    $this->set('spapiCheckResult', !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '');
+				    break;
+
+				default:
 					break;
 				
 			}
@@ -311,34 +319,254 @@ class SettingsController extends Controller{
 	    return $websiteOtherUrl;
 	}
 	
+	public static function isSpApiEnabled($feature = 'serp') {
+	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) return false;
+	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) return false;
+	    switch ($feature) {
+	        case 'serp': return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
+	        default:     return true;
+	    }
+	}
+
+	public static function isDFSEnabled($feature = 'serp') {
+	    if (!defined('SP_ENABLE_DFS') || !SP_ENABLE_DFS) return false;
+	    if ((SP_DFS_API_LOGIN == "") || (SP_DFS_API_PASSWORD == "")) return false;
+	    switch ($feature) {
+	        case 'serp':     return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
+	        case 'backsatu': return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'review':   return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
+	        default:         return true;
+	    }
+	}
+
 	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
 	    $status = false;
 	    $results =  [];
-	    
-	    // check dataforseo is enabled
-	    if (SP_ENABLE_DFS && (SP_DFS_API_LOGIN != "") && (SP_DFS_API_PASSWORD != "")) {
+
+	    // Tier 1: DataForSEO (highest priority)
+	    if (SettingsController::isDFSEnabled('serp')) {
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
 	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        return [$status, $results];
 	    }
-	    
+
+	    // Tier 2: SP API
+	    if (SettingsController::isSpApiEnabled('serp')) {
+	        include_once(SP_CTRLPATH."/spapi.ctrl.php");
+	        $spapiCtrler = new SPAPIController();
+	        $status = true;
+	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        return [$status, $results];
+	    }
+
 	    return [$status, $results];
 	}
 	
 	public static function getSearchResultCount($keywordInfo, $cron = false) {
 	    $status = false;
 	    $results =  [];
-	    
+
 	    // check dataforseo is enabled for backlink and saturation checker
-	    if (SP_ENABLE_DFS && SP_ENABLE_DFS_BACK_SATU && (SP_DFS_API_LOGIN != "") && (SP_DFS_API_PASSWORD != "")) {
+	    if (SettingsController::isDFSEnabled('backsatu')) {
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
 	        $results = $dfsCtrler->__getSERPResultCount($keywordInfo, $cron);
 	    }
-	    
+
 	    return [$status, $results];
+	}
+
+	// check whether spAPI registration popup should be shown
+	function showSpApiRegistrationPopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // check if already registered
+	    if (defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED) {
+	        return false;
+	    }
+
+	    // check if user has skipped
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId));
+	    if (!empty($userInfo['spapi_skip'])) {
+	        return false;
+	    }
+
+	    return true;
+	}
+
+	// register with Seo Panel API
+	function registerSpApi($postInfo) {
+	    $name = trim($postInfo['name']);
+	    $email = trim($postInfo['email']);
+
+	    // validate inputs
+	    if (empty($name) || empty($email)) {
+	        echo json_encode(['status' => 'error', 'message' => 'Please fill in all required fields.']);
+	        return;
+	    }
+
+	    $errMsg = $this->validate->checkEmail($email);
+	    if ($this->validate->flagErr) {
+	        echo json_encode(['status' => 'error', 'message' => 'Please enter a valid email address.']);
+	        return;
+	    }
+
+	    // call spAPI register endpoint
+	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'https://api.seopanel.org/api/v1';
+	    $postData = json_encode([
+	        'customer_name' => $name,
+	        'email' => $email,
+	        'installation_url' => SP_WEBPATH,
+	        'version' => SP_VERSION_NUMBER,
+	    ]);
+
+	    $ch = curl_init($apiUrl . '/register');
+	    curl_setopt($ch, CURLOPT_POST, true);
+	    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+	    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Accept: application/json']);
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	    curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	    $rawResponse = curl_exec($ch);
+	    curl_close($ch);
+
+	    header('Content-Type: application/json');
+
+	    if (!empty($rawResponse)) {
+	        $response = json_decode($rawResponse, true);
+
+	        if (json_last_error() !== JSON_ERROR_NONE) {
+	            echo json_encode(['status' => 'error', 'message' => 'Invalid response from API server. Please try again later.']);
+	            return;
+	        }
+
+	        if (!empty($response['status']) && $response['status'] == 'success') {
+	            $data = $response['data'] ?? [];
+	            $apiKey = addslashes($data['api_key'] ?? '');
+	            $this->db->query("UPDATE settings SET set_val='1' WHERE set_name='SP_SPAPI_REGISTERED'");
+	            $this->db->query("UPDATE settings SET set_val='" . addslashes($email) . "' WHERE set_name='SP_SPAPI_EMAIL'");
+	            $this->db->query("UPDATE settings SET set_val='" . addslashes($name) . "' WHERE set_name='SP_SPAPI_NAME'");
+	            $this->db->query("UPDATE settings SET set_val='" . $apiKey . "' WHERE set_name='SP_SPAPI_KEY'");
+	            echo json_encode(['status' => 'success', 'message' => 'Registration successful! Please check your email inbox to verify your email address.']);
+	        } else {
+	            $errMsg = !empty($response['message']) ? $response['message'] : 'Registration failed. Please try again later.';
+	            echo json_encode(['status' => 'error', 'message' => $errMsg]);
+	        }
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'Could not connect to the API server. Please try again later.']);
+	    }
+	}
+
+	// reset SP API token
+	function resetSpApiToken() {
+	    checkAdminLoggedIn();
+	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+	    $spapiCtrler = new SPAPIController();
+	    list($newApiKey, $logInfo) = $spapiCtrler->__resetApiToken();
+
+	    header('Content-Type: application/json');
+
+	    if (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
+	        echo json_encode(['status' => 'error', 'message' => $logInfo['log_message']]);
+	        return;
+	    }
+
+	    $this->db->query("UPDATE settings SET set_val='" . addslashes($newApiKey) . "' WHERE set_name='SP_SPAPI_KEY'");
+	    echo json_encode(['status' => 'success', 'message' => 'API token reset successfully.', 'data' => ['api_key' => $newApiKey]]);
+	}
+
+	// proxy plans from Seo Panel API (avoids browser CORS)
+	function getSpApiPlans() {
+	    $apiUrl = defined('SP_SPAPI_URL') ? SP_SPAPI_URL : 'https://api.seopanel.org/api/v1';
+
+	    $ch = curl_init($apiUrl . '/plans');
+	    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+	    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
+	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	    $rawResponse = curl_exec($ch);
+	    curl_close($ch);
+
+	    header('Content-Type: application/json');
+
+	    if (!empty($rawResponse)) {
+	        $response = json_decode($rawResponse, true);
+	        if (json_last_error() === JSON_ERROR_NONE) {
+	            echo $rawResponse;
+	            return;
+	        }
+	    }
+
+	    echo json_encode(['status' => 'error', 'message' => 'Could not fetch plans.']);
+	}
+
+	// skip spAPI registration for current user
+	function skipSpApiRegistration() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET spapi_skip=1 WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
+	}
+
+	// check if the upgrade popup should be shown
+	function showSpApiUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // only show if registered
+	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) {
+	        return false;
+	    }
+
+	    // check if user has skipped today
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId), "spapi_upgrade_skip_date");
+	    if (!empty($userInfo['spapi_upgrade_skip_date']) && $userInfo['spapi_upgrade_skip_date'] === date('Y-m-d')) {
+	        return false;
+	    }
+
+	    // get today's cached check result; if missing (e.g. cleared on login), run a fresh check now
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    if (empty($spapiCheckInfo)) {
+	        include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+	        $alertCtrler = new AlertController();
+	        $alertCtrler->updateSpApiAlerts();
+	        $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    }
+	    $checkResult = !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '';
+	    if (!in_array($checkResult, ['expired', 'monthly_limit'])) {
+	        return false;
+	    }
+
+	    return $checkResult;
+	}
+
+	// skip upgrade popup for today
+	function skipSpApiUpgrade() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET spapi_upgrade_skip_date='" . date('Y-m-d') . "' WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
 	}
 }
 ?>

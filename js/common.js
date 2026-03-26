@@ -420,6 +420,36 @@ function checkGoogleAPIConnection(scriptUrl, scriptPos, scriptArgs) {
     scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 
+function checkSpApiConnection(scriptUrl, scriptPos, scriptArgs) {
+	apiKey = $('input:text[name=SP_SPAPI_KEY]').val();
+	scriptArgs += "&api_key=" + apiKey;
+	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}
+
+function resetSpApiToken(scriptPos) {
+	spCustomConfirm('Are you sure you want to reset your API token? The current token will be immediately invalidated.', function(agreed) {
+		if (!agreed) return;
+		$('#' + scriptPos).html('<span>Resetting...</span>');
+		$.ajax({
+			type: 'POST',
+			url: 'settings.php',
+			data: { sec: 'resetSpApiToken' },
+			dataType: 'json',
+			success: function(response) {
+				if (response.status == 'success') {
+					$('input:text[name=SP_SPAPI_KEY]').val(response.data.api_key);
+					$('#' + scriptPos).html('<span class="success">' + response.message + '</span>');
+				} else {
+					$('#' + scriptPos).html('<span class="error">' + response.message + '</span>');
+				}
+			},
+			error: function() {
+				$('#' + scriptPos).html('<span class="error">Failed to reset API token. Please try again.</span>');
+			}
+		});
+	});
+}
+
 function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	apiLogin = $('input:text[name=SP_DFS_API_LOGIN]').val();
 	apiPassword = $('input:text[name=SP_DFS_API_PASSWORD]').val();

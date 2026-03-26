@@ -285,48 +285,134 @@ class ReviewManagerController extends ReviewBase{
 	}
 
 	function doQuickChecker($listInfo = '') {
-		
+
 		if (!stristr($listInfo['url'], $listInfo['type'])) {
 			$errorMsg = formatErrorMsg($_SESSION['text']['common']["Invalid value"]);
 			$this->validate->flagErr = true;
 		}
-		
+
 		// if no error occured find review details
 		if (!$this->validate->flagErr) {
 			$smLink = addHttpToUrl($listInfo['url']);
-			$result = $this->getReviewDetails($listInfo['type'], $smLink);
-			
-			// if call is success
+			$smType = $listInfo['type'];
+
+			// Check if DFS should be used (not for Yelp)
+			if ($this->__shouldUseDFS($smType)) {
+				// Use DFS async flow
+				include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+				$dfsCtrler = new DataForSEOController();
+
+				// Use ref_id = 0 for quick checker (not linked to a review_link)
+				$taskResult = $dfsCtrler->postReviewTask($smType, 0, $smLink);
+
+				if ($taskResult['status']) {
+					// Task posted successfully, show pending view
+					$this->set('smType', $smType);
+					$this->set('smLink', $smLink);
+					$this->set('taskId', $taskResult['task_id']);
+					$this->set('taskPending', true);
+					$this->render('review/quick_checker_pending');
+					exit;
+				} else {
+					$errorMsg = $taskResult['message'];
+				}
+			} else {
+				// Use old scraping method for Yelp or when DFS is disabled
+				$result = $this->getReviewDetails($smType, $smLink);
+
+				// if call is success
+				if ($result['status']) {
+					$this->set('smType', $smType);
+					$this->set('smLink', $smLink);
+					$this->set('statInfo', $result);
+					$this->render('review/quick_checker_results');
+					exit;
+				} else {
+					$errorMsg = $result['msg'];
+				}
+			}
+
+		}
+
+		$errorMsg = !empty($errorMsg) ? $errorMsg : $_SESSION['text']['common']['Internal error occured'];
+		showErrorMsg($errorMsg);
+
+	}
+
+	/**
+	 * Check status of a quick checker DFS task and fetch results if ready
+	 *
+	 * @param array $listInfo Contains task_id, type, url
+	 */
+	function checkQuickCheckerStatus($listInfo = '') {
+		$taskId = !empty($listInfo['task_id']) ? $listInfo['task_id'] : '';
+		$smType = !empty($listInfo['type']) ? $listInfo['type'] : '';
+		$smLink = !empty($listInfo['url']) ? $listInfo['url'] : '';
+
+		if (empty($taskId) || empty($smType)) {
+			showErrorMsg($_SESSION['text']['common']['Internal error occured']);
+			return;
+		}
+
+		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+		$dfsCtrler = new DataForSEOController();
+
+		// Get task from database
+		$taskInfo = $dfsCtrler->getDFSTaskByTaskId($taskId);
+
+		if (empty($taskInfo)) {
+			showErrorMsg("Task not found");
+			return;
+		}
+
+		if ($taskInfo['status'] == 'failed') {
+			$errorMsg = !empty($taskInfo['error_message']) ? $taskInfo['error_message'] : "Task failed";
+			showErrorMsg($errorMsg);
+			return;
+		}
+
+		// Fetch results from DFS API (works for both pending and completed tasks)
+		$result = $dfsCtrler->fetchReviewTaskResult($taskInfo);
+
+		if ($result['completed']) {
 			if ($result['status']) {
-				$this->set('smType', $listInfo['type']);
+				// Results ready, show them
+				$this->set('smType', $smType);
 				$this->set('smLink', $smLink);
 				$this->set('statInfo', $result);
 				$this->render('review/quick_checker_results');
 				exit;
 			} else {
-				$errorMsg = $result['msg'];
+				showErrorMsg($result['msg']);
+				return;
 			}
-			
+		} else {
+			// Task still pending, show pending view again
+			$this->set('smType', $smType);
+			$this->set('smLink', $smLink);
+			$this->set('taskId', $taskId);
+			$this->set('taskPending', true);
+			$this->set('statusMessage', $result['msg']);
+			$this->render('review/quick_checker_pending');
+			exit;
 		}
-		
-		$errorMsg = !empty($errorMsg) ? $errorMsg : $_SESSION['text']['common']['Internal error occured'];
-		showErrorMsg($errorMsg);
-		
 	}	
 	
 	function getReviewDetails($smType, $smLink) {
 		$result = ['status' => 0, 'reviews' => 0, 'rating' => 0, 'msg' => $_SESSION['text']['common']['Internal error occured']];
 		$smInfo = $this->serviceList[$smType];
-		
+
 		if (!empty($smInfo) && !empty($smLink)) {
-			
+
+			// Web scraping method - used for quick checker and when DFS is disabled
+			// For async DFS processing, use postReviewTaskToDFS() and fetchPendingDFSReviewResults() via cron
 			// if params needs to be added with url
 			if (!empty($smInfo['url_part'])) {
 				$smLink .= stristr($smLink, '?') ? str_replace("?", "&", $smInfo['url_part']) : $smInfo['url_part'];
 			}
-			
+
 			$smContentInfo = $this->spider->getContent($smLink);
-			
+
 			// testing val
 			/*$myfile = fopen(SP_TMPPATH . "/gbusiness.html", "w") or die("Unable to open file!");
 			fwrite($myfile, $smContentInfo['page']);
@@ -337,30 +423,30 @@ class ReviewManagerController extends ReviewBase{
 			$myfile = fopen(SP_TMPPATH . "/gbusiness.html", "r") or die("Unable to open file!");
 			$smContentInfo['page'] = fread($myfile,filesize(SP_TMPPATH . "/gbusiness.html"));
 			fclose($myfile);*/
-			
+
 			if (!empty($smContentInfo['page'])) {
 			    $matches = [];
 
 				// find reviews
 				if (!empty($smInfo['regex']['reviews'])) {
 				    preg_match($smInfo['regex']['reviews'], $smContentInfo['page'], $matches);
-					
+
 					if (!empty($matches[1])) {
 						$result['status'] = 1;
 						$result['reviews'] = formatNumber($matches[1]);
 					}
 				}
-				
+
 				// find rating
 				if (!empty($smInfo['regex']['rating'])) {
 					preg_match($smInfo['regex']['rating'], $smContentInfo['page'], $matches);
-						
+
 					if (!empty($matches[1])) {
 						$result['status'] = 1;
 						$result['rating'] = round(formatNumber($matches[1]), 2);
-					}	
+					}
 				}
-				
+
 				// if not found any details
 				if (!$result['status']) {
 				    $result['msg'] = "Review page details not found.";
@@ -371,9 +457,114 @@ class ReviewManagerController extends ReviewBase{
 				$result['msg'] = $smContentInfo['errmsg'];
 			}
 		}
-		
+
 		return $result;
-		
+
+	}
+
+	/**
+	 * Check if DataForSEO should be used for review fetching
+	 * Yelp is not supported by DataForSEO API
+	 *
+	 * @param string $smType Review platform type
+	 * @return bool True if DFS should be used
+	 */
+	function __shouldUseDFS($smType) {
+		// Yelp is not available in DataForSEO API
+		if ($smType === 'yelp') {
+			return false;
+		}
+
+		return SettingsController::isDFSEnabled('review');
+	}
+
+	/**
+	 * Post a review task to DataForSEO (async - doesn't wait for results)
+	 *
+	 * @param int $linkId Review link ID
+	 * @param string $smType Review platform type (google, trustpilot, tripadvisor)
+	 * @param string $smLink Review page URL
+	 * @param string $reportDate Report date (default: today)
+	 * @return array ['status' => bool, 'message' => string, 'pending' => bool]
+	 */
+	function postReviewTaskToDFS($linkId, $smType, $smLink, $reportDate = '') {
+		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+		$dfsCtrler = new DataForSEOController();
+		return $dfsCtrler->postReviewTask($smType, $linkId, $smLink, $reportDate);
+	}
+
+	/**
+	 * Fetch results for pending DFS review tasks
+	 *
+	 * @param string $reportDate Report date
+	 * @return array List of completed results with link info
+	 */
+	function fetchPendingDFSReviewResults($reportDate = '') {
+		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+		$dfsCtrler = new DataForSEOController();
+
+		$reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+		$pendingTasks = $dfsCtrler->getPendingDFSTasks('review', $reportDate);
+		$completedResults = [];
+
+		foreach ($pendingTasks as $taskInfo) {
+			$result = $dfsCtrler->fetchReviewTaskResult($taskInfo);
+
+			if ($result['completed']) {
+				$completedResults[] = [
+					'link_id' => $taskInfo['ref_id'],
+					'platform' => $taskInfo['platform'],
+					'result' => $result,
+				];
+			}
+		}
+
+		return $completedResults;
+	}
+
+	/**
+	 * Get all review links that need DFS task posting (no pending task for today)
+	 *
+	 * @param int $websiteId Website ID
+	 * @param string $reportDate Report date
+	 * @return array List of links needing task posting
+	 */
+	function getLinksNeedingDFSTaskPost($websiteId, $reportDate = '') {
+		$websiteId = intval($websiteId);
+		$reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+
+		// Get links that:
+		// 1. Are active
+		// 2. Don't have a report for today
+		// 3. Don't have a pending DFS task for today
+		// 4. Are DFS-supported platforms (not yelp)
+		$sql = "SELECT link.* FROM review_links link
+			LEFT JOIN review_link_results lr ON (link.id=lr.review_link_id AND lr.report_date='$reportDate')
+			LEFT JOIN dfs_tasks dt ON (link.id=dt.ref_id AND dt.category='review' AND dt.report_date='$reportDate' AND dt.status='pending')
+			WHERE link.status=1 AND link.website_id=$websiteId
+			AND lr.id IS NULL AND dt.id IS NULL
+			AND link.type IN ('google', 'trustpilot', 'tripadvisor')";
+
+		return $this->db->select($sql);
+	}
+
+	/**
+	 * Get all Yelp links without reports for today (use old scraping method)
+	 *
+	 * @param int $websiteId Website ID
+	 * @param string $reportDate Report date
+	 * @return array List of Yelp links
+	 */
+	function getYelpLinksWithOutReports($websiteId, $reportDate = '') {
+		$websiteId = intval($websiteId);
+		$reportDate = !empty($reportDate) ? addslashes($reportDate) : date('Y-m-d');
+
+		$sql = "SELECT link.*, lr.id result_id FROM review_links link
+			LEFT JOIN review_link_results lr ON (link.id=lr.review_link_id AND lr.report_date='$reportDate')
+			WHERE link.status=1 AND link.website_id=$websiteId AND lr.id IS NULL
+			AND link.type='yelp'";
+
+		return $this->db->select($sql);
 	}
 	
 	/*

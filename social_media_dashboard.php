@@ -22,7 +22,6 @@
 
 include_once("includes/sp-load.php");
 checkLoggedIn();
-isHavingWebsite();
 
 include_once(SP_CTRLPATH."/dashboard.ctrl.php");
 include_once(SP_CTRLPATH."/report.ctrl.php");

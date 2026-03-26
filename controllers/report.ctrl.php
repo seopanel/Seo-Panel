@@ -871,9 +871,9 @@ class ReportController extends Controller {
 	}
 	
 	# func to save the report
-	function saveMatchedKeywordInfo($matchInfo, $remove=false) {
-		$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-		$resultDate = date('Y-m-d');
+	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='') {
+		$resultDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+		$time = strtotime($resultDate);
 		$this->checkDBConn();
 		if($remove){
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
@@ -899,9 +899,57 @@ class ReportController extends Controller {
 		$recordId = $this->db->getMaxId('searchresults');		
 		$sql = "insert into searchresultdetails(searchresult_id,url,title,description)
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
-		$this->db->query($sql); 
+		$this->db->query($sql);
 	}
-	
+
+	# func to copy yesterday's result into today when no results found
+	function copyYesterdayResult($keywordId, $seId, $todayDate = '') {
+		$todayDate = !empty($todayDate) ? $todayDate : date('Y-m-d');
+		$this->checkDBConn();
+
+		// Check if today already has a result
+		$sql = "SELECT id FROM searchresults WHERE keyword_id=" . intval($keywordId) .
+			" AND searchengine_id=" . intval($seId) . " AND result_date='$todayDate'";
+		$existingResults = $this->db->select($sql);
+		if (!empty($existingResults)) {
+			return false;
+		}
+
+		// Get yesterday's date
+		$yesterdayDate = date('Y-m-d', strtotime($todayDate . ' -1 day'));
+
+		// Get yesterday's results
+		$sql = "SELECT sr.*, srd.url, srd.title, srd.description
+			FROM searchresults sr
+			LEFT JOIN searchresultdetails srd ON srd.searchresult_id = sr.id
+			WHERE sr.keyword_id=" . intval($keywordId) .
+			" AND sr.searchengine_id=" . intval($seId) .
+			" AND sr.result_date='$yesterdayDate'
+			ORDER BY sr.rank ASC";
+		$yesterdayResults = $this->db->select($sql);
+
+		if (empty($yesterdayResults)) {
+			return false;
+		}
+
+		// Copy each result into today
+		$firstMatch = true;
+		foreach ($yesterdayResults as $result) {
+			$matchInfo = [];
+			$matchInfo['keyword_id'] = $keywordId;
+			$matchInfo['se_id'] = $seId;
+			$matchInfo['rank'] = $result['rank'];
+			$matchInfo['url'] = $result['url'] ?? '';
+			$matchInfo['title'] = $result['title'] ?? '';
+			$matchInfo['description'] = $result['description'] ?? '';
+
+			$this->saveMatchedKeywordInfo($matchInfo, $firstMatch, $todayDate);
+			$firstMatch = false;
+		}
+
+		return true;
+	}
+
 	# func to check keyword rank
 	function quickRankChecker($searchInfo=[]) {		
 		$seController = New SearchEngineController();
@@ -991,6 +1039,13 @@ class ReportController extends Controller {
 		$keywordController = New KeywordController();
 		$websiteCtrler = New WebsiteController();
 		$websiteList = $websiteCtrler->__getAllWebsites($userId, true);
+
+		if (empty($websiteList)) {
+			$this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+			$this->render('dashboard/no_websites');
+			return;
+		}
+
 		$this->set('siteList', $websiteList);
 		$websiteId = isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id'];
 		$websiteId = intval($websiteId);

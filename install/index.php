@@ -23,7 +23,7 @@ include_once 'install.class.php';
 include_once 'db.class.php';
 include_once 'dbi.class.php';
 
-@ini_set("display_erros", "Off");
+@ini_set("display_errors", "Off");
 @ini_set("display_startup_errors", "Off");
 error_reporting(0);
 

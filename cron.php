@@ -49,6 +49,13 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 			
 			case "generate":
 				$controller->routeCronJob($_GET['website_id'], $_GET['repTools']);
+				if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
+					echo "<br>=== Processing pending DataForSEO tasks ===<br>";
+					include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+					$dfsCtrler = new DataForSEOController();
+					$dfsCtrler->processPendingDFSTasks(true);
+					echo "<br>=== DataForSEO tasks processing completed ===<br>";
+				}
 				break;
 			
 			case "croncommand":
@@ -82,12 +89,14 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$userList = array();
 	
 	// check whether user is passed with script as argument
-	if (!empty($argv[1])) {
+	if (isset($argv[1])) {
 		$userId = intval($argv[1]);
-		$userCtrler = new UserController();
-		$userInfo = $userCtrler->__getUserInfo($userId);
-		$userList[] = $userInfo;
-		
+		if ($userId > 0) {
+			$userCtrler = new UserController();
+			$userInfo = $userCtrler->__getUserInfo($userId);
+			$userList[] = $userInfo;
+		}
+
 		// check whether seo tools id passed with the script as second argument
 		if (!empty($argv[2])) {
 			$includeList[] = intval($argv[2]);
@@ -106,16 +115,30 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$alertCtrler = new AlertController();
 	$ret_sync = $alertCtrler->updateSystemAlerts();
 	echo $ret_sync['result'] . "\n";
+
+	// check SP API connection
+	include_once(SP_CTRLPATH . "/information.ctrl.php");
+	$ret_spapi = $alertCtrler->updateSpApiAlerts();
+	echo $ret_spapi['result'] . "\n";
 	
 	$controller->executeCron($includeList, $userList);
 	echo "\n=== Cron job execution completed on - " . date("Y-m-d H:i:s") . " ===\n\n";
-	
+
 	// delete crawl logs before 2 months
 	include_once(SP_CTRLPATH."/crawllog.ctrl.php");
 	$crawlLog = new CrawlLogController();
 	$crawlLog->clearCrawlLog(SP_CRAWL_LOG_CLEAR_TIME);
 	echo "Clearing crawl logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";
 	$crawlLog->clearMaillLog(SP_CRAWL_LOG_CLEAR_TIME);
-	echo "Clearing mail logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";	
+	echo "Clearing mail logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";
+
+	// Process pending DataForSEO tasks
+	if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
+		echo "\n=== Processing pending DataForSEO tasks ===\n";
+		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+		$dfsCtrler = new DataForSEOController();
+		$dfsCtrler->processPendingDFSTasks(true);
+		echo "=== DataForSEO tasks processing completed ===\n";
+	}
 }
 ?>
