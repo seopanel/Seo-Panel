@@ -657,6 +657,13 @@ class CronController extends Controller {
 
 		$websiteUrl = $this->websiteInfo['url'];
 
+		$totalKeywords = count($keywordList);
+		if (empty($keywordList)) {
+			$this->debugMsg("SP API: No keywords to process for <b>$websiteUrl</b>.....<br>\n");
+			return;
+		}
+		$this->debugMsg("SP API: Processing <b>$totalKeywords</b> keyword(s) for <b>$websiteUrl</b>.....<br>\n");
+
 		foreach ($keywordList as $keywordInfo) {
 			// Get search engine IDs assigned to this keyword
 			$seIds = explode(':', $keywordInfo['searchengines']);
@@ -731,6 +738,10 @@ class CronController extends Controller {
 			}
 
 			$keywordCtrler->__changeCrawledStatus(1, 'id=' . $keywordInfo['id']);
+
+			// flush output so UI shows progress live
+			if (ob_get_level()) ob_flush();
+			flush();
 
 			// to implement split cron execution feature
 			if (SP_NUMBER_KEYWORDS_CRON > 0) {
