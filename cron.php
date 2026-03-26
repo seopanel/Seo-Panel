@@ -49,6 +49,13 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 			
 			case "generate":
 				$controller->routeCronJob($_GET['website_id'], $_GET['repTools']);
+				if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
+					echo "<br>=== Processing pending DataForSEO tasks ===<br>";
+					include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+					$dfsCtrler = new DataForSEOController();
+					$dfsCtrler->processPendingDFSTasks(true);
+					echo "<br>=== DataForSEO tasks processing completed ===<br>";
+				}
 				break;
 			
 			case "croncommand":
