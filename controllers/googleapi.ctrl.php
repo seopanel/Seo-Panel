@@ -145,7 +145,6 @@ class GoogleAPIController extends Controller{
 	        Google_Service_Webmasters::WEBMASTERS,
 	        Google_Service_AnalyticsReporting::ANALYTICS_READONLY,
 	        Google_Service_Analytics::ANALYTICS_READONLY,
-	        'https://www.googleapis.com/auth/analytics.edit',
 	    ]);
 	    return $client;
 	}
