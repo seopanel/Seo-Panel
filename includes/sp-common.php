@@ -522,12 +522,12 @@ function debugVar($value, $exitFlag = true) {
 
 # func to send mail
 function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $debugMail = false){
-	$mail = new PHPMailer();
+	$mail = new \PHPMailer\PHPMailer\PHPMailer();
 	$mail->CharSet = 'UTF-8';
 
 	# check whether the mail send by smtp or not
 	if(SP_SMTP_MAIL){
-		$mail->IsSMTP();
+		$mail->isSMTP();
 		$mail->SMTPAuth = true;
 		$mail->Host = SP_SMTP_HOST;
 		$mail->Username = SP_SMTP_USERNAME;
@@ -551,9 +551,11 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $d
 
 	$mail->From = $from;
 	$mail->FromName = $fromName;
-	$mail->AddAddress($to);
+	foreach (array_map('trim', explode(',', $to)) as $toAddr) {
+		if (!empty($toAddr)) $mail->addAddress($toAddr);
+	}
 	$mail->WordWrap = 70;
-	$mail->IsHTML(true);
+	$mail->isHTML(true);
 
 	$mail->Subject = $subject;
 	$mail->Body = $content;
@@ -562,7 +564,7 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $d
 
 	// if attachments are there
 	if (!empty($attachment)) {
-		$mail->AddAttachment($attachment);
+		$mail->addAttachment($attachment);
 	}
 
 	$mailLogInfo = [];
@@ -574,7 +576,7 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $d
 	} else {
 
 		// normal mail send fails or not
-		if($mail->Send()){
+		if($mail->send()){
 			$sendLog['status'] = 1;
 			$sendLog['log_message'] = "Success";
 		} else {
