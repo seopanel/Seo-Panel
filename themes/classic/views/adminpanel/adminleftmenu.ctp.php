@@ -166,6 +166,7 @@ foreach($menuList as $i => $menuInfo){
 				<?php if (isAdmin()) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('apimanager.php?sec=showconnect', 'content')"><?php echo $spTextPanel['API Connection']?></a></li>
     				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=apisettings', 'content')"><?php echo $spTextPanel['API Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
 				<?php }?>
 			</ul>
 			<?php
@@ -176,8 +177,8 @@ foreach($menuList as $i => $menuInfo){
 			<script type="text/javascript">scriptList[<?php echo $i?>] = 'settings.php';</script>			
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php', 'content')"><?php echo $spTextPanel['System Settings']?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=reportsettings', 'content')"><?php echo $spTextPanel['Global Reports Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=reportsettings', 'content')"><?php echo $spTextPanel['Global Reports Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=moz', 'content')"><?php echo $spTextPanel['MOZ Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=google', 'content')"><?php echo $spTextPanel['Google Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=dataforseo', 'content')"><?php echo $spTextPanel['DataForSEO Settings']?></a></li>
