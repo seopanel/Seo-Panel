@@ -595,10 +595,11 @@ class ReportController extends Controller {
 			foreach($crawlResult as $sengineId => $matchList){
 				if($matchList['status']){
 					foreach($matchList['matched'] as $i => $matchInfo){
-						$remove = ($i == 0) ? true : false;						
-						$matchInfo['se_id'] = $sengineId;						
+						$remove = ($i == 0) ? true : false;
+						$matchInfo['se_id'] = $sengineId;
 						$matchInfo['keyword_id'] = $keywordInfo['id'];
-						$this->saveMatchedKeywordInfo($matchInfo, $remove);
+						$serpData = ($i == 0 && !empty($matchList['all'])) ? $matchList['all'] : null;
+						$this->saveMatchedKeywordInfo($matchInfo, $remove, '', $serpData);
 					}
 					echo "<p class='note notesuccess'>".$this->spTextKeyword['Successfully crawled keyword']." <b>{$keywordInfo['name']}</b> ".$this->spTextKeyword['results from']." <b>".$this->seList[$sengineId]['domain']."</b>.....</p>";
 				}else{
@@ -767,11 +768,12 @@ class ReportController extends Controller {
 			    	
 					$urlList = $matches[$seInfo['url_index']];
 					$crawlResult[$seInfoId]['matched'] = array();
+					$crawlResult[$seInfoId]['all'] = array();
 					$rank = 1;
 					$previousDomain = "";
 					foreach($urlList as $i => $url) {
 						$url = urldecode(strip_tags($url));
-						
+
 						// add special condition for baidu
 						if (stristr($seInfo['domain'], "baidu")) {
 							$url =  addHttpToUrl($url);
@@ -782,11 +784,11 @@ class ReportController extends Controller {
 						if ($isGoogle && stristr($url, '/url?q=')) {
 							$url = preg_replace(array('/\/url\?q=/i', '/\&amp;sa=U.*$/i'), array("", ""), $url);
 						}
-						
+
 						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) {
 						    continue;
 						}
-						
+
 						// check for to remove bing ad links in page
 						if(stristr($url, 'bat.bing.com')) {
 						    continue;
@@ -796,36 +798,39 @@ class ReportController extends Controller {
 						if ($removeDuplicate && $isGoogle) {
 						    $currentDomain = parse_url($url, PHP_URL_HOST);
 						    if ($previousDomain == $currentDomain) {
-						        continue;        
+						        continue;
 						    }
-						    
+
 						    $previousDomain = $currentDomain;
 						}
-						
-						if($this->showAll || ( 
-						      stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
+
+						// always collect full SERP snapshot
+						$crawlResult[$seInfoId]['all'][] = ['rank' => $rank, 'url' => $url];
+
+						if($this->showAll || (
+						      stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) ||
 						      stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
 						    )) {
 
 							if ($this->showAll && (
-                                    stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
+                                    stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) ||
                                     stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
 							    )) {
-								$matchInfo['found'] = 1; 
+								$matchInfo['found'] = 1;
 							} else {
 								$matchInfo['found'] = 0;
 							}
-							
+
 							$matchInfo['url'] = $url;
 							$matchInfo['title'] = strip_tags($matches[$seInfo['title_index']][$i]);
 							$matchInfo['description'] = strip_tags($matches[$seInfo['description_index']][$i]);
 							$matchInfo['rank'] = $rank;
 							$crawlResult[$seInfoId]['matched'][] = $matchInfo;
 						}
-						
-						$rank++;							
+
+						$rank++;
 					}
-					
+
 					$crawlStatus = 1;					
 				} else {					
 					// set crawl log info
@@ -871,7 +876,7 @@ class ReportController extends Controller {
 	}
 	
 	# func to save the report
-	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='') {
+	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='', $serpResults=null) {
 		$resultDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
 		$time = strtotime($resultDate);
 		$this->checkDBConn();
@@ -879,24 +884,25 @@ class ReportController extends Controller {
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
 			and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 			$recordList = $this->db->select($sql);
-		
+
 			if(count($recordList) > 0){
 				foreach($recordList as $recordInfo){
 					$sql = "delete from searchresultdetails where searchresult_id=".$recordInfo['id'];
 					$this->db->query($sql);
 				}
-				
+
 				$sql = "delete from searchresults where keyword_id={$matchInfo['keyword_id']}
 				and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 				$this->db->query($sql);
 			}
 		}
-		
-		$sql = "insert into searchresults(keyword_id,searchengine_id,`rank`,`time`,result_date)
-				values({$matchInfo['keyword_id']},{$matchInfo['se_id']},{$matchInfo['rank']},$time,'$resultDate')";
+
+		$serpJson = !empty($serpResults) ? "'" . addslashes(json_encode($serpResults)) . "'" : 'NULL';
+		$sql = "insert into searchresults(keyword_id,searchengine_id,`rank`,`time`,result_date,serp_results)
+				values({$matchInfo['keyword_id']},{$matchInfo['se_id']},{$matchInfo['rank']},$time,'$resultDate',$serpJson)";
 		$this->db->query($sql);
-		
-		$recordId = $this->db->getMaxId('searchresults');		
+
+		$recordId = $this->db->getMaxId('searchresults');
 		$sql = "insert into searchresultdetails(searchresult_id,url,title,description)
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
 		$this->db->query($sql);
@@ -1652,7 +1658,32 @@ class ReportController extends Controller {
 		$this->set('logList', $logList);
 		$this->set('spTextUser', $this->getLanguageTexts('user', $_SESSION['lang_code']));
 		$this->render('report/report_generation_logs');
-	
+
+	}
+
+	# func to show SERP results popup for a keyword across all search engines for a date
+	function showSerpResults($info) {
+		$keywordId = intval($info['keyword_id']);
+		$date      = addslashes($info['date']);
+
+		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain
+				FROM searchresults sr
+				JOIN searchengines se ON sr.searchengine_id = se.id
+				WHERE sr.keyword_id = $keywordId AND sr.result_date = '$date'
+				AND sr.serp_results IS NOT NULL
+				GROUP BY sr.searchengine_id
+				ORDER BY se.domain";
+		$serpList = $this->db->select($sql);
+
+		foreach ($serpList as &$item) {
+			$item['serp_data'] = json_decode($item['serp_results'], true);
+		}
+
+		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$this->set('serpList', $serpList);
+		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
+		$this->set('date', $date);
+		$this->render('report/serp_results_popup', '');
 	}
 }
 ?>

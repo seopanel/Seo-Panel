@@ -79,7 +79,7 @@
     
     <nav class="navbar navbar-expand-md <?php echo $siteNavFontClass?> <?php echo $siteBgClass;?>">
     	<a class="navbar-brand" href="<?php echo SP_WEBPATH?>">
-    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>">
+    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>" width="131" height="31">
     	</a>
       	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
       		aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">

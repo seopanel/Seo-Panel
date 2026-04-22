@@ -161,7 +161,11 @@ class MysqliHelper extends Database{
 			if (substr(trim($line), -1, 1) == ';'){
 				
 				if(!empty($tmpline)){
-					$this->query($tmpline);
+					try {
+						$this->query($tmpline);
+					} catch (Exception $e) {
+						// skip failed statements and continue with the rest
+					}
 				}
 				$tmpline = '';
 			}

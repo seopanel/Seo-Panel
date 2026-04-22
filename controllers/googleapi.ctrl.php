@@ -232,38 +232,51 @@ class GoogleAPIController extends Controller{
 	}
 	
 	function getanalyticWebsitesPropertyIds($userId) {
+	    $debug = [];
+	    $debug[] = "-- getanalyticWebsitesPropertyIds START (userId=$userId) --";
+
 	    $websites = array();
 	    $client = $this->getAuthClient($userId);
-	    
+
 	    // if error occured
 	    if (!is_object($client)) {
-	        return [FALSE, $websites, $client];
+	        $debug[] = "getAuthClient FAILED. Error: $client";
+	        return [FALSE, $websites, $client, $debug];
 	    }
-	    
+	    $debug[] = "getAuthClient OK";
+
 	    // Create a Google_Service_Analytics object
-	    $analytics = new Google_Service_Analytics($client);	    
-	    
+	    $analytics = new Google_Service_Analytics($client);
+
 	    // Retrieve the list of accounts
 	    $accounts = $analytics->management_accounts->listManagementAccounts();
-	    
+	    $accountItems = $accounts->getItems();
+	    $debug[] = "Total GA accounts found: " . count($accountItems);
+
 	    // Loop through the accounts
-	    foreach ($accounts->getItems() as $account) {
+	    foreach ($accountItems as $account) {
 	        // Get the account ID and name
 	        $accountId = $account->getId();
 	        $accountName = $account->getName();
-	        
+	        $debug[] = "Account: $accountName (ID: $accountId)";
+
 	        // get analytics admin properties
 	        $accessToken = $this->__getAccessToken($client);
 	        $apiUrl = "https://analyticsadmin.googleapis.com/v1alpha/properties?filter=parent:accounts/$accountId";
-	        $ret = $this->plainAPICall($apiUrl, $accessToken);	        
+	        $debug[] = "  Calling API: $apiUrl";
+	        $ret = $this->plainAPICall($apiUrl, $accessToken);
+
 	        if (!empty($ret['error'])) {
+	            $debug[] = "  API error for account $accountId: HTTP " . $ret['error'] . " - " . ($ret['errmsg'] ?? 'no message');
 	            continue;
 	        }
-	        
-	        if (!empty($ret['page']['properties'])) {	            
+
+	        if (!empty($ret['page']['properties'])) {
+	            $debug[] = "  Properties found: " . count($ret['page']['properties']);
 	            foreach ($ret['page']['properties'] as $property) {
 	                $propertyId = str_replace("properties/", "", $property['name']);
 	                $propertyName = $property['displayName'];
+	                $debug[] = "    Property: $propertyName (ID: $propertyId)";
 	                $websites[] = array(
 	                    'account_name' => $accountName,
 	                    'account_id' => $accountId,
@@ -271,10 +284,13 @@ class GoogleAPIController extends Controller{
 	                    'property_id' => $propertyId,
 	                );
 	            }
+	        } else {
+	            $debug[] = "  No properties found for account $accountId";
 	        }
 	    }
-	    
-	    return [TRUE, $websites, "success"];
+
+	    $debug[] = "-- getanalyticWebsitesPropertyIds END, total websites: " . count($websites) . " --";
+	    return [TRUE, $websites, "success", $debug];
 	}
 	
 	// Function to get GA4 properties

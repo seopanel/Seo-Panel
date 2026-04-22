@@ -1091,18 +1091,34 @@ class WebsiteController extends Controller{
 	}	
 	
 	function syncGoogleAnalyticProperties($userId) {
+	    $debug = [];
+	    $debug[] = "--- syncGoogleAnalyticProperties START ---";
+
 	    $userId = intval($userId);
+	    $debug[] = "User ID: $userId";
+
 	    $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");
+	    $debug[] = "Existing DB properties count: " . count($analyticList);
+
 	    $propertyList = createSelectList($analyticList, "ALL", 'property_id');
-	    
+
 	    $GoogleCtrl  = new GoogleAPIController();
-	    [$status, $result, $errMsg] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    $debug[] = "Calling getanalyticWebsitesPropertyIds...";
+
+	    [$status, $result, $errMsg, $apiDebug] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    $debug = array_merge($debug, $apiDebug);
+	    $debug[] = "API call status: " . ($status ? 'TRUE' : 'FALSE');
+	    $debug[] = "API msg: $errMsg";
+	    $debug[] = "Properties returned from API: " . count($result);
+
 	    if($status && !empty($result)) {
 	        foreach ($result as $data) {
 	            $propertyId = $data['property_id'];
-	            
+	            $debug[] = "Processing property: {$data['property_name']} (ID: $propertyId, Account: {$data['account_name']})";
+
 	            if (!empty($propertyList[$propertyId])) {
 	                $propertyDbId = $propertyList[$propertyId]['id'];
+	                $debug[] = "  -> EXISTS in DB (db_id=$propertyDbId), updating...";
 	                $dataList = [
 	                    'user_id' => $userId,
 	                    'account_name' => $data['account_name'],
@@ -1110,9 +1126,11 @@ class WebsiteController extends Controller{
 	                    'property_name' => $data['property_name'],
 	                    'datetime_updated' => date('Y-m-d H:i:s'),
 	                ];
-	                
+
 	                $this->dbHelper->updateRow('analytics_properties', $dataList, "id=$propertyDbId");
+	                $debug[] = "  -> Updated OK";
 	            } else {
+	                $debug[] = "  -> NEW property, inserting...";
 	                $dataList = [
 	                    'user_id' => $userId,
 	                    'account_name' => $data['account_name'],
@@ -1120,29 +1138,43 @@ class WebsiteController extends Controller{
 	                    'property_name' => $data['property_name'],
 	                    'property_id' => $data['property_id'],
 	                ];
-	                
+
 	                $this->dbHelper->insertRow('analytics_properties', $dataList);
+	                $debug[] = "  -> Inserted OK";
 	            }
 	        }
+	    } else {
+	        $debug[] = "No properties returned or API call failed.";
 	    }
-	    
-	    return [$status, $errMsg];
+
+	    $debug[] = "--- syncGoogleAnalyticProperties END ---";
+	    return [$status, $errMsg, $debug];
 	}
 	
 	function fetchGoogleAnalyticProperties() {
-	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error"];
+	    $debug = [];
+	    $debug[] = "[" . date('Y-m-d H:i:s') . "] fetchGoogleAnalyticProperties triggered";
+
+	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error", 'debug' => []];
 	    $userId = isLoggedIn();
-	    
-	    // sync google analytics properties using the connectin
-	    [$status, $errMsg] = $this->syncGoogleAnalyticProperties($userId);
+	    $debug[] = "Logged-in user ID: $userId";
+
+	    // sync google analytics properties using the connection
+	    [$status, $errMsg, $syncDebug] = $this->syncGoogleAnalyticProperties($userId);
+	    $debug = array_merge($debug, $syncDebug);
+	    $debug[] = "syncGoogleAnalyticProperties returned status: " . ($status ? 'TRUE' : 'FALSE') . ", msg: $errMsg";
+
 	    if ($status) {
 	        $propertyList = $this->__getAllAnalyticProperties(TRUE);
+	        $debug[] = "Final property list count for dropdown: " . count($propertyList);
 	        $response['data'] = $propertyList;
 	        $response['status'] = TRUE;
 	    } else {
 	        $response['msg'] = $errMsg;
+	        $debug[] = "Returning error response: $errMsg";
 	    }
-	    
+
+	    $response['debug'] = $debug;
 	    return $response;
 	}
 	
