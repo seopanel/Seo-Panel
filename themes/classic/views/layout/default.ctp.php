@@ -104,6 +104,19 @@
     	
     <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
     <?php
+    // show initial setup wizard for logged-in users who haven't completed or dismissed it
+    if (isLoggedIn() && defined('SP_SETUP_WIZARD') && SP_SETUP_WIZARD) {
+        include_once(SP_CTRLPATH . "/setup_wizard.ctrl.php");
+        $spWizardCtrl = new SetupWizardController();
+        $spWizardState = $spWizardCtrl->getWizardState(isLoggedIn());
+        if (!empty($spWizardState['show'])) {
+            $wizardStep = intval($spWizardState['step']);
+            include_once(SP_VIEWPATH . "/layout/setup_wizard_popup.ctp.php");
+            echo '<script>$(document).ready(function(){ window.setupWizardShow(' . $wizardStep . '); });</script>';
+        }
+    }
+    ?>
+    <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
     if (isLoggedIn() && isAdmin()) {
         include_once(SP_CTRLPATH."/settings.ctrl.php");
