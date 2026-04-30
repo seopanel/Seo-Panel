@@ -776,27 +776,28 @@ class SiteAuditorController extends Controller{
 		}
 
 		// to find order col
-        if (!empty($data['order_col'])) {
+		$validLinkOrderCols = array('page_url', 'page_authority', 'score', 'brocken', 'external_links', 'total_links', 'google_backlinks', 'indexed', 'crawled', 'page_title', 'page_description', 'page_keywords', 'comments');
+        if (!empty($data['order_col']) && in_array($data['order_col'], $validLinkOrderCols)) {
 		    $orderCol = $data['order_col'];
-		    $orderVal = $data['order_val'];
+		    $orderVal = (strtoupper($data['order_val']) === 'ASC') ? 'ASC' : 'DESC';
 		} else {
 		    $orderCol = 'score';
-		    $orderVal = 'DESC';    
+		    $orderVal = 'DESC';
 		}
 		$filter .= "&order_col=$orderCol&order_val=$orderVal";
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
-		
+
 		$pgScriptPath = "siteauditor.php?sec=showreport&report_type=rp_links&project_id=$projectId".$filter;
 		$this->set('filter', $filter);
-				
-		// pagination setup		
+
+		// pagination setup
 		$this->db->query($sql, true);
 		$this->paging->setDivClass('pagingdiv');
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
-		$pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');		
-		$this->set('pagingDiv', $pagingDiv);		
-		$sql .= " order by ".addslashes($orderCol)." ".addslashes($orderVal);		
+		$pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');
+		$this->set('pagingDiv', $pagingDiv);
+		$sql .= " order by $orderCol $orderVal";		
 		
 		$sql .= in_array($data['doc_type'], array('pdf', 'print', 'export')) ? "" : " limit ".$this->paging->start .",". $this->paging->per_page; 
 		
@@ -1077,24 +1078,25 @@ class SiteAuditorController extends Controller{
 		}
 	    
 	    // to find order col
-        if (!empty($data['order_col'])) {
+		$validDupMetaOrderCols = array('page_title', 'page_description', 'page_keywords', 'count');
+        if (!empty($data['order_col']) && in_array($data['order_col'], $validDupMetaOrderCols)) {
 		    $orderCol = $data['order_col'];
-		    $orderVal = $data['order_val'];
+		    $orderVal = (strtoupper($data['order_val']) === 'ASC') ? 'ASC' : 'DESC';
 		} else {
 		    $orderCol = 'count';
 		    $orderVal = 'DESC';
 		}
-		$filter .= "&order_col=$orderCol&order_val=$orderVal";		
-		$pgScriptPath = SP_WEBPATH."/siteauditor.php?sec=showreport&report_type=$repType&project_id=".$projectId.$filter;		
+		$filter .= "&order_col=$orderCol&order_val=$orderVal";
+		$pgScriptPath = SP_WEBPATH."/siteauditor.php?sec=showreport&report_type=$repType&project_id=".$projectId.$filter;
 
-		// pagination setup		
-		$sql .= " group by $repType having count>1"; 
+		// pagination setup
+		$sql .= " group by $repType having count>1";
 		$this->db->query($sql, true);
 		$this->paging->setDivClass('pagingdiv');
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
-		$pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');		
-		$this->set('pagingDiv', $pagingDiv);		
-		$sql .= " order by ".addslashes($orderCol)." ".addslashes($orderVal);		
+		$pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');
+		$this->set('pagingDiv', $pagingDiv);
+		$sql .= " order by $orderCol $orderVal";		
 		$sql .= in_array($data['doc_type'], array('pdf', 'print', 'export')) ? "" : " limit ".$this->paging->start .",". $this->paging->per_page;
 		
 	    $totalResults = $this->db->noRows;

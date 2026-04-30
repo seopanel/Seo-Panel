@@ -720,33 +720,37 @@ class WebsiteController extends Controller{
 		// process file upload option
 		$fileInfo = $_FILES['website_csv_file'];
 		if (!empty($fileInfo['name']) && !empty($userId)) {
-			if ($fileInfo["type"] == "text/csv" || $fileInfo["type"] == "application/vnd.ms-excel") {
-				$targetFile = SP_TMPPATH . "/".$fileInfo['name'];
+			$uploadedExt = strtolower(pathinfo($fileInfo['name'], PATHINFO_EXTENSION));
+			if ($uploadedExt === 'csv' && ($fileInfo["type"] == "text/csv" || $fileInfo["type"] == "application/vnd.ms-excel")) {
+				// Use a random server-generated filename to prevent attacker-controlled filenames
+				$safeFilename = uniqid('import_', true) . '.csv';
+				$targetFile = SP_TMPPATH . "/" . $safeFilename;
 				if(move_uploaded_file($fileInfo['tmp_name'], $targetFile)) {
 
 					$delimiterChar = empty($info['delimiter']) ? ',' : $info['delimiter'];
 					$enclosureChar = empty($info['enclosure']) ? '"' : $info['enclosure'];
 					$escapeChar = empty($info['escape']) ? '\\' : $info['escape'];
-					
+
 					// open file read through csv file
 					if (($handle = fopen($targetFile, "r")) !== FALSE) {
-					
+
 						// loop through the data row
 						while (($websiteInfo = fgetcsv($handle, 4096, $delimiterChar, $enclosureChar, $escapeChar)) !== FALSE) {
 							if (empty($websiteInfo[0])) continue;
 							$count++;
 						}
-					
+
 						fclose($handle);
 					}
-					
+
 					// Check the user website count for validation
 					if (!$this->validateWebsiteCount($userId, $count)) {
+						@unlink($targetFile);
 						$validationMag = strip_tags($this->setValidationMessageForLimit($userId));
 						print "<script>alert('$validationMag')</script>";
 						return False;
 					}
-					
+
 					// open file read through csv file
 					if (($handle = fopen($targetFile, "r")) !== FALSE) {
 
@@ -757,9 +761,11 @@ class WebsiteController extends Controller{
 							$resultInfo[$status] += 1;
 							$resultInfo['total'] += 1;
 						}
-						
+
 						fclose($handle);
-					}					
+					}
+
+					@unlink($targetFile);
 				}
 			}
 		}
