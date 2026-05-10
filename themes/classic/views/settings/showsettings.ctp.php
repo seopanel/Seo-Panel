@@ -211,6 +211,19 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 								}
 								?>
 							</select>
+						<?php } else if ($listInfo['set_name'] == 'SP_MAIL_ENCRYPTION') {?>
+							<select name="<?php echo $listInfo['set_name']?>" class="custom-select" style="width:150px;">
+								<option value="">-- <?php echo $spText['common']['Select']?> --</option>
+								<?php
+								$encryptions = ['ssl', 'tls'];
+								foreach ($encryptions as $encryption) {
+									$selectedVal = (strtolower($listInfo['set_val']) == $encryption) ? 'selected' : '';
+									?>
+									<option value="<?php echo $encryption?>" <?php echo $selectedVal?>><?php echo strtoupper($encryption)?></option>
+									<?php
+								}
+								?>
+							</select>
 						<?php } else if ($listInfo['set_name'] == 'SP_DFS_BALANCE') {?>
 							<label id='sp_dfs_balance'><?php echo stripslashes($listInfo['set_val'])?></label>
 						<?php } else {

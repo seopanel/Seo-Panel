@@ -295,7 +295,8 @@ class SettingsController extends Controller{
 			$this->set('adminName', $adminName);
 			$content = $this->getViewContent('email/test_email');
 			
-			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content)) {
+			$debugMail = !empty($info['debug_mail']) ? intval($info['debug_mail']) : false;
+			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content, '', $debugMail)) {
 				showErrorMsg('An internal error occured while sending mail!');
 			} else {
 				showSuccessMsg("Email send successfully to " . $info['test_email']);

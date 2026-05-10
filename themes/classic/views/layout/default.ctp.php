@@ -79,7 +79,7 @@
     
     <nav class="navbar navbar-expand-md <?php echo $siteNavFontClass?> <?php echo $siteBgClass;?>">
     	<a class="navbar-brand" href="<?php echo SP_WEBPATH?>">
-    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>">
+    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>" width="131" height="31">
     	</a>
       	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
       		aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,6 +103,19 @@
     </nav>
     	
     <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
+    <?php
+    // show initial setup wizard for logged-in users who haven't completed or dismissed it
+    if (isLoggedIn() && defined('SP_SETUP_WIZARD') && SP_SETUP_WIZARD) {
+        include_once(SP_CTRLPATH . "/setup_wizard.ctrl.php");
+        $spWizardCtrl = new SetupWizardController();
+        $spWizardState = $spWizardCtrl->getWizardState(isLoggedIn());
+        if (!empty($spWizardState['show'])) {
+            $wizardStep = intval($spWizardState['step']);
+            include_once(SP_VIEWPATH . "/layout/setup_wizard_popup.ctp.php");
+            echo '<script>$(document).ready(function(){ window.setupWizardShow(' . $wizardStep . '); });</script>';
+        }
+    }
+    ?>
     <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
     if (isLoggedIn() && isAdmin()) {

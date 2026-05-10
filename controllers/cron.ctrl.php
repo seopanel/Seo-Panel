@@ -587,9 +587,10 @@ class CronController extends Controller {
 								$remove = ($i == 0) ? true : false;
 								$matchInfo['se_id'] = $sengineId;
 								$matchInfo['keyword_id'] = $keywordInfo['id'];
+								$serpData = ($i == 0 && !empty($matchList['all'])) ? $matchList['all'] : null;
 
 								$repCtrler = New ReportController();
-								$repCtrler->saveMatchedKeywordInfo($matchInfo, $remove);
+								$repCtrler->saveMatchedKeywordInfo($matchInfo, $remove, '', $serpData);
 							}
 							$this->debugMsg("Successfully crawled keyword <b>{$keywordInfo['name']}</b> results from ".$reportController->seList[$sengineId]['domain'].".....<br>\n");
 						} elseif ($matchList['status']) {
@@ -603,7 +604,8 @@ class CronController extends Controller {
 								'title' => '',
 								'description' => '',
 							];
-							$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+							$serpData = !empty($matchList['all']) ? $matchList['all'] : null;
+							$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate, $serpData);
 							$this->debugMsg("No matches for keyword <b>{$keywordInfo['name']}</b> from ".$reportController->seList[$sengineId]['domain'].", stored rank 0.....<br>\n");
 						} else {
 							// Crawl failed - copy yesterday's result as fallback

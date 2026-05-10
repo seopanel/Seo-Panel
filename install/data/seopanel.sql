@@ -919,6 +919,7 @@ CREATE TABLE IF NOT EXISTS `searchresults` (
   `rank` int(8) DEFAULT NULL,
   `time` int(11) DEFAULT NULL,
   `result_date` date DEFAULT NULL,
+  `serp_results` mediumtext COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `result_date` (`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
@@ -1022,7 +1023,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (40, 'API Secret', 'API_SECRET', '', 'api', 'medium', 1),
 (41, 'Company Name', 'SP_COMPANY_NAME', 'Seo Panel', 'system', 'medium', 1),
 (42, 'Currency', 'SP_PAYMENT_CURRENCY', 'USD', 'system', 'medium', 1),
-(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '6.0.0', 'system', 'medium', 0),
+(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '6.1.0', 'system', 'medium', 0),
 (44, 'Moz API Link', 'SP_MOZ_API_LINK', 'http://lsapi.seomoz.com/linkscape', 'moz', 'medium', 0),
 (45, 'Moz API Link', 'SP_MOZ_API_ACCESS_ID', '', 'moz', 'large', 1),
 (46, 'Moz API Link', 'SP_MOZ_API_SECRET', '', 'moz', 'large', 1),
@@ -1065,6 +1066,20 @@ CREATE TABLE IF NOT EXISTS `social_media_link_results` (
   `report_date` date NOT NULL,
   PRIMARY KEY (`id`),
   KEY `social_media_link_rel` (`sm_link_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `sp_recommendations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `website_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `type` enum('error','warning','todo') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'todo',
+  `category` varchar(100) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `title` varchar(500) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `description` text COLLATE utf8_unicode_ci,
+  `meta` text COLLATE utf8_unicode_ci,
+  `refreshed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_user` (`website_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `testplugin` (
@@ -1208,11 +1223,13 @@ CREATE TABLE IF NOT EXISTS `users` (
   `confirm` tinyint(1) NOT NULL DEFAULT '0',
   `spapi_skip` tinyint(1) NOT NULL DEFAULT 0,
   `spapi_upgrade_skip_date` date DEFAULT NULL,
+  `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0,
+  `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL);
+INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`) VALUES
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, 0, 0);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
@@ -1591,6 +1608,10 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 -- GDPR / RGPD cookie consent banner settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Enable GDPR/RGPD Cookie Consent Banner', 'SP_GDPR_COOKIE_BANNER', '0', 'system', 'bool', 1);
+
+-- Initial setup wizard
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
 
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

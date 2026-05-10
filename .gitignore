@@ -3,6 +3,8 @@
 .settings
 .env
 .gitignore.swp
+.claude
+.idea
 *.sublime-workspace
 *.sublime-project
 plugins/*

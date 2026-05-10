@@ -12,6 +12,7 @@
         $anTabView = "";
         $scTabView = "";
         $dsTabView = "";
+        $rcTabView = "";
 
         if (!empty($custSubMenu)) {
             $ovTabView = "active";
@@ -47,6 +48,10 @@
 
                 case "directory_submission":
                     $dsTabView = "active";
+                    break;
+
+                case "recommendations":
+                    $rcTabView = "active";
                     break;
 
                 default:
@@ -106,6 +111,11 @@
             		<i class="fas fa-folder-open"></i> <?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?>
             	</a>
             </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
+            		<i class="fas fa-lightbulb"></i> Recommendations
+            	</a>
+            </li>
         </ul>
     	<?php
     }?>
@@ -135,6 +145,8 @@
                		scriptDoLoad('search_console_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } elseif ($dsTabView == "active") {?>
                		scriptDoLoad('directory_submission_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($rcTabView == "active") {?>
+               		scriptDoLoad('recommendations_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } else {?>
                		scriptDoLoad('dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php }?>
@@ -186,6 +198,10 @@ function getCurrentWebsiteId() {
     // Try to get from directory submission dashboard form
     else if ($('#directory_submission_dashboard_form select[name="website_id"]').length) {
         websiteId = $('#directory_submission_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from recommendations dashboard form
+    else if ($('#recommendations_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#recommendations_dashboard_form select[name="website_id"]').val();
     }
     // Try to get from URL parameter
     else {
