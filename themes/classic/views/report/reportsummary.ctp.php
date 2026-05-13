@@ -154,7 +154,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				$serpKwIcon = '';
 				if (empty($pdfVersion) && empty($printVersion)) {
 					$serpKwUrl = SP_WEBPATH . "/reports.php?sec=serpresults&keyword_id={$listInfo['id']}&date=$toTime";
-					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#6c757d; font-size:0.75rem;"></i></a>';
+					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#d35400; font-size:0.75rem;"></i></a>';
 				}
 				?>
 				<?php if (empty($websiteId)) {?>

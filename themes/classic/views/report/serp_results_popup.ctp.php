@@ -19,6 +19,10 @@
 		<?php endforeach; ?>
 	</ul>
 
+	<?php
+	$matchBase = preg_replace('#^https?://(www\.)?#i', '', $websiteUrl);
+	$matchBase = rtrim($matchBase, '/');
+	?>
 	<div class="tab-content">
 		<?php foreach ($serpList as $i => $seInfo): ?>
 			<div class="tab-pane fade <?php echo $i == 0 ? 'show active' : ''?>"
@@ -33,11 +37,18 @@
 								</tr>
 							</thead>
 							<tbody>
-								<?php foreach ($seInfo['serp_data'] as $result): ?>
-									<tr>
+								<?php foreach ($seInfo['serp_data'] as $result):
+									$resultBase = preg_replace('#^https?://(www\.)?#i', '', $result['url']);
+									$isMatch    = !empty($matchBase) && (stripos($resultBase, $matchBase) === 0);
+								?>
+									<tr <?php echo $isMatch ? 'style="background:#fffbe6;"' : ''?>>
 										<td class="text-center text-muted"><?php echo intval($result['rank'])?></td>
 										<td style="font-size: 0.85rem; word-break: break-all;">
-											<a href="<?php echo htmlspecialchars($result['url'])?>" target="_blank" rel="noopener">
+											<?php if ($isMatch): ?>
+												<i class="fas fa-star" style="color:#f0ad4e; margin-right:4px;" title="Your website"></i>
+											<?php endif; ?>
+											<a href="<?php echo htmlspecialchars($result['url'])?>" target="_blank" rel="noopener"
+											   <?php echo $isMatch ? 'style="font-weight:600;"' : ''?>>
 												<?php echo htmlspecialchars($result['url'])?>
 											</a>
 										</td>

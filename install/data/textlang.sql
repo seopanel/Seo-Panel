@@ -32184,3 +32184,15 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('mk', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Оваа веб-страница користи колачиња за да го подобри вашето искуство и да го анализира сообраќајот. Можете да прифатите или одбиете употреба на неесенцијални колачиња во согласност со регулативата GDPR/RGPD.'),
 ('sq', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ky faqe interneti përdor skedarë cookie për të përmirësuar përvojën tuaj dhe për të analizuar trafikun. Mund të pranoni ose refuzoni përdorimin e skedarëve cookie jo thelbësorë në përputhje me rregulloren GDPR/RGPD.'),
 ('hy', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Այս կայքը օգտագործում է թխուկներ՝ ձեր փորձը բարելավելու և երթևեկությունը վերլուծելու համար: Կարող եք ընդունել կամ մերժել ոչ էական թխուկների օգտագործումը՝ GDPR/RGPD կանոնակարգին համապատասխան:');
+
+--
+-- Seo Panel 6.1.0 changes
+--
+
+-- SERP Results Archive menu item and view labels
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'SERP Results Archive', 'SERP Results Archive'),
+('en', 'seotools', 'View SERP', 'View SERP');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'common', 'Go', 'Go');

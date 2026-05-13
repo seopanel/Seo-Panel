@@ -1661,6 +1661,77 @@ class ReportController extends Controller {
 
 	}
 
+	# func to show SERP results archive - latest serp snapshot for a selected keyword, tabs per search engine
+	function showSerpResultsArchive($searchInfo = []) {
+		$userId = isLoggedIn();
+
+		// website list
+		$websiteController = new WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		$websiteId = !empty($searchInfo['website_id'])
+			? intval($searchInfo['website_id'])
+			: (!empty($websiteList) ? $websiteList[0]['id'] : 0);
+		$this->set('websiteId', $websiteId);
+
+		// pass website URL for highlighting matched results
+		$websiteUrl = '';
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteUrl = $w['url']; break; }
+		}
+		$this->set('websiteUrl', rtrim($websiteUrl, '/'));
+
+		// keywords that have serp_results for the selected website
+		$kwSql = "SELECT DISTINCT k.id, k.name
+		          FROM keywords k
+		          JOIN searchresults sr ON sr.keyword_id = k.id
+		          JOIN websites w ON k.website_id = w.id
+		          WHERE sr.serp_results IS NOT NULL AND k.status = 1";
+		if (!empty($websiteId)) $kwSql .= " AND k.website_id = $websiteId";
+		if (!empty($userId) && !isAdmin()) $kwSql .= " AND w.user_id = $userId";
+		$kwSql .= " ORDER BY k.name";
+		$keywordList = $this->db->select($kwSql);
+		$this->set('keywordList', $keywordList);
+
+		// use submitted keyword only if it belongs to this website's keyword list
+		$submittedKwId = !empty($searchInfo['keyword_id']) ? intval($searchInfo['keyword_id']) : 0;
+		$validKwIds    = array_column($keywordList, 'id');
+		$keywordId     = in_array($submittedKwId, $validKwIds)
+			? $submittedKwId
+			: (!empty($keywordList) ? $keywordList[0]['id'] : 0);
+		$this->set('keywordId', $keywordId);
+
+		// latest serp snapshot for selected keyword, one row per search engine
+		$engines = [];
+		if (!empty($keywordId)) {
+			$sql = "SELECT sr.searchengine_id, sr.rank, sr.result_date, sr.serp_results,
+			               se.domain AS se_domain
+			        FROM searchresults sr
+			        JOIN searchengines se ON sr.searchengine_id = se.id
+			        INNER JOIN (
+			            SELECT searchengine_id, MAX(result_date) AS max_date
+			            FROM searchresults
+			            WHERE keyword_id = $keywordId AND serp_results IS NOT NULL
+			            GROUP BY searchengine_id
+			        ) latest ON sr.searchengine_id = latest.searchengine_id
+			                 AND sr.result_date = latest.max_date
+			        WHERE sr.keyword_id = $keywordId AND sr.serp_results IS NOT NULL
+			        ORDER BY se.domain";
+			foreach ($this->db->select($sql) as $row) {
+				$engines[] = [
+					'domain'    => $row['se_domain'],
+					'rank'      => $row['rank'],
+					'date'      => $row['result_date'],
+					'serp_data' => json_decode($row['serp_results'], true) ?: [],
+				];
+			}
+		}
+
+		$this->set('engines', $engines);
+		$this->render('report/serp_results_archive');
+	}
+
 	# func to show SERP results popup for a keyword across all search engines for a date
 	function showSerpResults($info) {
 		$keywordId = intval($info['keyword_id']);
@@ -1680,9 +1751,15 @@ class ReportController extends Controller {
 		}
 
 		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$websiteUrl = '';
+		if (!empty($keyword['website_id'])) {
+			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
+			$websiteUrl = !empty($website['url']) ? rtrim($website['url'], '/') : '';
+		}
 		$this->set('serpList', $serpList);
 		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
 		$this->set('date', $date);
+		$this->set('websiteUrl', $websiteUrl);
 		$this->render('report/serp_results_popup', '');
 	}
 }

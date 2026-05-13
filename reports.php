@@ -57,6 +57,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			}
 			break;
 		
+		case "serparchive":
+			$controller->showSerpResultsArchive($_POST);
+			break;
+
 		case "reportsum":
 			$controller->showKeywordReportSummary($_POST);
 			break;
@@ -80,6 +84,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		
 		case "serpresults":
 			$controller->showSerpResults($_GET);
+			break;
+
+		case "serparchive":
+			$controller->showSerpResultsArchive($_GET);
 			break;
 
 		case "show-info":

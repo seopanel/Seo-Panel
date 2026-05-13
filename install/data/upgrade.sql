@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS `sp_recommendations` (
 
 
 -- Setup wizard columns and setting
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0;
-ALTER TABLE `users` ADD COLUMN IF NOT EXISTS `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `users` ADD COLUMN `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `users` ADD COLUMN `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
