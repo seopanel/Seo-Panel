@@ -125,8 +125,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<th id="head" colspan="3"><?php echo $linkName; ?></th>
 			<?php
 		}
-		?>
-	</tr>	
+		if (!empty($showSearchVolume)): ?>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spText['keyword']['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
+		<?php endif; ?>
+	</tr>
 	<tr>
 		<?php
 		$pTxt = str_replace("-", "/", substr($fromTime, -5));
@@ -141,7 +143,8 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		?>
 	</tr>
 	<?php
-	$colCount = empty($websiteId) ? ($seCount * 3) + 2 : ($seCount * 3) + 1; 
+	$svExtra = !empty($showSearchVolume) ? 1 : 0;
+	$colCount = empty($websiteId) ? ($seCount * 3) + 2 + $svExtra : ($seCount * 3) + 1 + $svExtra; 
 	if (count($list) > 0) {
 		foreach($indexList as $keywordId => $rankValue){
 		    $listInfo = $list[$keywordId];
@@ -190,9 +193,20 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<td><?php echo $prevRankLink; ?></td>
 					<td><?php echo $currRankLink; ?></td>
 					<td><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
-					<?php					
+					<?php
 				}
-				?>				
+				?>
+				<?php if (!empty($showSearchVolume)): ?>
+				<td class="text-center">
+					<?php if (!is_null($listInfo['search_volume'])): ?>
+						<strong><?php echo number_format($listInfo['search_volume'])?></strong>
+					<?php elseif (!empty($listInfo['sv_status'])): ?>
+						<span class="badge badge-secondary"><?php echo htmlspecialchars($listInfo['sv_status'])?></span>
+					<?php else: ?>
+						&mdash;
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
 			</tr>
 			<?php
 		}

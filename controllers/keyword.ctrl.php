@@ -60,7 +60,14 @@ class KeywordController extends Controller{
 		}		
 		$this->set('keyword', $info['keyword']);
 		
-		$sql = "select k.*,w.name website,w.status webstatus from keywords k,websites w where k.website_id=w.id and w.status=1";
+		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume');
+		$this->set('showSearchVolume', $showSearchVolume);
+
+		$svJoin = $showSearchVolume ? " LEFT JOIN keyword_search_volume sv ON sv.keyword_id = k.id AND sv.source = 'google'" : "";
+		$svCols = $showSearchVolume ? ", sv.search_volume, sv.last_crawl_status sv_status" : "";
+		$sql = "select k.*, w.name website, w.status webstatus$svCols from keywords k INNER JOIN websites w ON k.website_id = w.id AND w.status = 1$svJoin where 1=1";
 		$sql .= isAdmin() ? "" : " and w.user_id=$userId";
 		$sql .= " $conditions order by k.name";
 		

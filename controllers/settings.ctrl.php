@@ -324,8 +324,9 @@ class SettingsController extends Controller{
 	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) return false;
 	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) return false;
 	    switch ($feature) {
-	        case 'serp': return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
-	        default:     return true;
+	        case 'serp':          return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
+	        case 'search_volume': return defined('SP_ENABLE_SPAPI_SEARCH_VOLUME') && SP_ENABLE_SPAPI_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 
@@ -333,10 +334,11 @@ class SettingsController extends Controller{
 	    if (!defined('SP_ENABLE_DFS') || !SP_ENABLE_DFS) return false;
 	    if ((SP_DFS_API_LOGIN == "") || (SP_DFS_API_PASSWORD == "")) return false;
 	    switch ($feature) {
-	        case 'serp':     return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
-	        case 'backsatu': return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
-	        case 'review':   return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
-	        default:         return true;
+	        case 'serp':          return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
+	        case 'backsatu':      return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'review':        return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
+	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 

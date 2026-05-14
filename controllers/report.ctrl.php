@@ -1162,27 +1162,39 @@ class ReportController extends Controller {
     		
     		# set keywords list
     		$list = $this->db->select($sql);
-    		
+
+    		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+    		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+    		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume');
+    		$this->set('showSearchVolume', $showSearchVolume);
+
     		$indexList = array();
     		foreach($list as $keywordInfo){
     			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
-    			
+
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeShort]) ? 10000 : $positionInfo[$orderCol][$toTimeShort];
-    			
+
     			$keywordInfo['position_info'] = $positionInfo;
+
+    			if ($showSearchVolume) {
+    				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
+    				$keywordInfo['search_volume'] = isset($svRow['search_volume']) ? $svRow['search_volume'] : null;
+    				$keywordInfo['sv_status']     = !empty($svRow['last_crawl_status']) ? $svRow['last_crawl_status'] : null;
+    			}
+
     			$keywordList[$keywordInfo['id']] = $keywordInfo;
     		}
-    
+
     		// sort array according the value
-    		if ($orderCol != 'keyword') { 
+    		if ($orderCol != 'keyword') {
         		if ($orderVal == 'DESC') {
         		    arsort($indexList);
         		} else {
         		    asort($indexList);
         		}
     		}
-    		
+
     		$this->set('indexList', $indexList);    
     		if ($exportVersion) {
     			$spText = $_SESSION['text'];

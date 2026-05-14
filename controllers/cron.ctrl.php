@@ -255,6 +255,11 @@ class CronController extends Controller {
 				
 				case "keyword-position-checker":
 					$this->keywordPositionCheckerCron($websiteId);
+					// Check search volumes via DataForSEO (if enabled) or SP API (if configured)
+					include_once(SP_CTRLPATH . "/settings.ctrl.php");
+					if (SettingsController::isDFSEnabled('search_volume') || SettingsController::isSpApiEnabled('search_volume')) {
+						$this->searchVolumeCheckerCron($websiteId);
+					}
 					break;
 					
 				case "rank-checker":
@@ -498,6 +503,84 @@ class CronController extends Controller {
 		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 	}
 	
+	# func to check search volume for all active keywords of a website
+	# Priority: DataForSEO (live) > SP API
+	function searchVolumeCheckerCron($websiteId) {
+		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+
+		$useDFS = SettingsController::isDFSEnabled('search_volume');
+		$source = 'search volume';
+
+		if ($useDFS) {
+			include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
+			$dfsCtrler  = new DataForSEOController();
+			$source = 'DataForSEO';
+		}
+
+		$spapiCtrler = new SPAPIController();
+		$this->debugMsg("Starting Search Volume cron via <b>$source</b> for website: {$this->websiteInfo['name']}....<br>\n");
+
+		// Sync interval: 30 days, based on crawled_time (matches manager's ARCHIVE_SEARCH_VOL_SYNC_INTERVAL)
+		$sql = "SELECT k.* FROM keywords k
+		        LEFT JOIN keyword_search_volume sv ON sv.keyword_id = k.id AND sv.source = 'google'
+		        WHERE k.website_id=" . intval($websiteId) . " AND k.status=1
+		        AND (sv.crawled_time IS NULL OR (sv.crawled_time + INTERVAL 30 DAY) < NOW())
+		        ORDER BY k.id";
+		$keywordList = $this->db->select($sql);
+
+		if (empty($keywordList)) {
+			$this->debugMsg("Search Volume: No keywords need updating for <b>{$this->websiteInfo['name']}</b>....<br>\n");
+			return;
+		}
+
+		foreach ($keywordList as $keywordInfo) {
+
+			if ($useDFS) {
+				// --- DataForSEO path ---
+				$dfsResult = $dfsCtrler->getSearchVolumeFromDFS($keywordInfo);
+
+				if ($dfsResult['status'] && !empty($dfsResult['data'])) {
+					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', $dfsResult['data'], 'success');
+					$sv = number_format($dfsResult['data']['search_volume'] ?? 0);
+					$this->debugMsg("DFS: Search volume <b>$sv</b> for <b>{$keywordInfo['name']}</b>.....<br>\n");
+				} else {
+					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
+					$this->debugMsg("DFS: Search volume failed for <b>{$keywordInfo['name']}</b>: {$dfsResult['message']}.....<br>\n");
+				}
+
+			} else {
+				// --- SP API path ---
+				$apiResult = $spapiCtrler->postSearchVolumeKeyword($keywordInfo, 'google');
+
+				if ($apiResult['status'] && !empty($apiResult['data'])) {
+					$spapiCtrler->saveSearchVolumeResult($keywordInfo['id'], $apiResult['data']);
+					$status = $apiResult['data']['mapping']['last_crawl_status'] ?? 'pending';
+					$this->debugMsg("SP API: Search volume ({$status}) for <b>{$keywordInfo['name']}</b>.....<br>\n");
+				} else {
+					$this->debugMsg("SP API: Search volume failed for <b>{$keywordInfo['name']}</b>: {$apiResult['message']}.....<br>\n");
+
+					if (stripos($apiResult['message'], 'limit exceeded') !== false || stripos($apiResult['message'], 'limit reached') !== false) {
+						include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+						$alertCtrler = new AlertController();
+						$alertCtrler->createAlert([
+							'alert_subject'  => 'SP API Search Volume Limit Reached',
+							'alert_message'  => 'Monthly search volume limit exceeded. Upgrade your plan to continue.',
+							'alert_url'      => SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=settings&category=seopanel_api',
+							'alert_type'     => 'warning',
+							'alert_category' => 'general',
+						], false, true);
+						break;
+					}
+				}
+			}
+
+			sleep(1);
+		}
+
+		echo "Saved search volume results for website: <b>{$this->websiteInfo['name']}</b>.....</br>\n";
+	}
+
 	# func to find the keyword position checker
 	function keywordPositionCheckerCron($websiteId){
 

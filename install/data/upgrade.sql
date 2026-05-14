@@ -28,3 +28,30 @@ ALTER TABLE `users` ADD COLUMN `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0
 ALTER TABLE `users` ADD COLUMN `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
+
+-- Search volume results table (populated via SP API /v1/search-volume)
+CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` bigint unsigned NOT NULL,
+  `source` varchar(20) NOT NULL DEFAULT 'google',
+  `sv_mapping_id` int DEFAULT NULL,
+  `search_volume` int DEFAULT NULL,
+  `cpc` decimal(10,2) DEFAULT NULL,
+  `competition` float DEFAULT NULL,
+  `keyword_difficulty` float DEFAULT NULL,
+  `monthly_searches` text DEFAULT NULL,
+  `crawled_result` text DEFAULT NULL,
+  `last_crawl_status` varchar(20) DEFAULT 'pending',
+  `crawled_time` datetime DEFAULT NULL,
+  `result_date` date DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_keyword_source` (`keyword_id`, `source`),
+  KEY `idx_keyword_id` (`keyword_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Search volume feature toggles (DataForSEO and SP API)
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable for Search Volume', 'SP_ENABLE_DFS_SEARCH_VOLUME', '1', 'dataforseo', 'bool', 1),
+('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1);

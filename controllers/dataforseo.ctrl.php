@@ -1437,5 +1437,73 @@ class DataForSEOController extends Controller {
 
         return $result;
     }
+
+    /**
+     * Fetch search volume for a keyword from DataForSEO Google Ads API (live mode)
+     *
+     * @param array $keywordInfo Keyword info (name, country_code)
+     * @return array ['status' => bool, 'message' => string, 'data' => array]
+     */
+    function getSearchVolumeFromDFS($keywordInfo) {
+        $result = ['status' => false, 'message' => 'Internal error occurred', 'data' => []];
+
+        if (empty($keywordInfo['name'])) {
+            $result['message'] = 'Keyword name is required';
+            return $result;
+        }
+
+        // Google Ads does not use language_name; location is optional
+        $postData = ['keywords' => [mb_convert_encoding($keywordInfo['name'], 'UTF-8')]];
+        $locationName = $this->__getLocationName($keywordInfo['country_code'], false);
+        if (!empty($locationName)) {
+            $postData['location_name'] = $locationName;
+        }
+
+        try {
+            $apiResult = $this->restClient->post('/v3/keywords_data/google_ads/search_volume/live', [$postData]);
+        } catch (RestClientException $e) {
+            $result['message'] = "HTTP {$e->getHttpCode()}: {$e->getMessage()}";
+            return $result;
+        }
+
+        if (empty($apiResult) || $apiResult['status_code'] != 20000) {
+            $result['message'] = !empty($apiResult['status_message']) ? $apiResult['status_message'] : 'DataForSEO API error';
+            return $result;
+        }
+
+        list($svData, $status) = self::__parseSearchVolumeResults($apiResult);
+        if ($status && !empty($svData)) {
+            $result['status'] = true;
+            $result['message'] = 'Search volume fetched successfully';
+            $result['data']    = $svData;
+        } else {
+            $result['message'] = 'No search volume data returned';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse search volume results from DataForSEO Google Ads API response
+     *
+     * @param array $result Raw API response
+     * @return array [$matchInfo, $status]
+     */
+    public static function __parseSearchVolumeResults($result) {
+        $matchInfo = [];
+        $status = false;
+
+        if (!empty($result['tasks'][0]['result'][0])) {
+            $item = $result['tasks'][0]['result'][0];
+            $matchInfo['search_volume']      = $item['search_volume'] ?? null;
+            $matchInfo['monthly_searches']   = $item['monthly_searches'] ?? null;
+            $matchInfo['competition']        = $item['competition'] ?? null;
+            $matchInfo['keyword_difficulty'] = $item['competition_index'] ?? null;
+            $matchInfo['cpc']                = isset($item['low_top_of_page_bid']) ? round($item['low_top_of_page_bid'], 2) : null;
+            $status = true;
+        }
+
+        return [$matchInfo, $status];
+    }
 }
 ?>
