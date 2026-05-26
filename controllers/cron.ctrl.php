@@ -559,6 +559,7 @@ class CronController extends Controller {
 					$this->debugMsg("SP API: Search volume ({$status}) for <b>{$keywordInfo['name']}</b>.....<br>\n");
 				} else {
 					$this->debugMsg("SP API: Search volume failed for <b>{$keywordInfo['name']}</b>: {$apiResult['message']}.....<br>\n");
+					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
 
 					if (stripos($apiResult['message'], 'limit exceeded') !== false || stripos($apiResult['message'], 'limit reached') !== false) {
 						include_once(SP_CTRLPATH . "/alerts.ctrl.php");

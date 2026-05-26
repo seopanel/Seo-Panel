@@ -412,9 +412,7 @@ class SPAPIController extends Controller {
         if (!is_null($svMappingId)) {
             $dataList['sv_mapping_id|int'] = $svMappingId;
         }
-        if (!empty($crawledTime)) {
-            $dataList['crawled_time'] = $crawledTime;
-        }
+        $dataList['crawled_time'] = !empty($crawledTime) ? $crawledTime : 'NOW()';
         if (!is_null($searchVolume)) {
             $dataList['search_volume|int']        = $searchVolume;
             $dataList['cpc|float']                = $cpc;
