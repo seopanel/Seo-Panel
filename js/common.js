@@ -203,6 +203,48 @@ function spCustomConfirm(message, callback) {
 	});
 }
 
+function spCustomAlert(message, callback) {
+	$('.sp-confirm-overlay').remove();
+
+	var alertHtml = `
+		<div class="sp-confirm-overlay">
+			<div class="sp-confirm-box">
+				<div class="sp-confirm-header">
+					<i class="fa fa-info-circle"></i>
+					<span>Information</span>
+				</div>
+				<div class="sp-confirm-body">${message}</div>
+				<div class="sp-confirm-footer">
+					<button class="sp-confirm-btn sp-confirm-btn-confirm">OK</button>
+				</div>
+			</div>
+		</div>
+	`;
+
+	$('body').append(alertHtml);
+	$('.sp-confirm-overlay').fadeIn(200);
+
+	$('.sp-confirm-btn-confirm').on('click', function() {
+		$('.sp-confirm-overlay').fadeOut(200, function() { $(this).remove(); });
+		if (typeof callback === 'function') callback();
+	});
+
+	$('.sp-confirm-overlay').on('click', function(e) {
+		if ($(e.target).hasClass('sp-confirm-overlay')) {
+			$(this).fadeOut(200, function() { $(this).remove(); });
+			if (typeof callback === 'function') callback();
+		}
+	});
+
+	$(document).on('keydown.spalert', function(e) {
+		if (e.key === 'Escape' || e.key === 'Enter') {
+			$('.sp-confirm-overlay').fadeOut(200, function() { $(this).remove(); });
+			$(document).off('keydown.spalert');
+			if (typeof callback === 'function') callback();
+		}
+	});
+}
+
 function confirmLoad(scriptUrl, scriptPos, scriptArgs) {
 
 	if (chkObject('wantproceed')) {

@@ -475,7 +475,7 @@ class Spider {
 			curl_setopt($this -> _CURL_RESOURCE, CURLOPT_REFERER, $this-> _CURLOPT_REFERER); 
 		}		
 		
-		if( strlen( $this -> _CURLOPT_POSTFIELDS ) > 1 ) {
+		if( strlen( $this -> _CURLOPT_POSTFIELDS ?? '' ) > 1 ) {
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_POST , $this -> _CURLOPT_POST );
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_POSTFIELDS , $this -> _CURLOPT_POSTFIELDS );
 		}
@@ -519,7 +519,7 @@ class Spider {
 			$crawlInfo['ref_id'] = $crawlInfo['crawl_link'] = addslashes($this->effectiveUrl);
 			$crawlInfo['crawl_referer'] = addslashes($this-> _CURLOPT_REFERER);
 			$crawlInfo['crawl_cookie'] = addslashes($this -> _CURLOPT_COOKIE);
-			$crawlInfo['crawl_post_fields'] = addslashes($this -> _CURLOPT_POSTFIELDS);
+			$crawlInfo['crawl_post_fields'] = addslashes($this -> _CURLOPT_POSTFIELDS ?? '');
 			$crawlInfo['crawl_useragent'] = addslashes($this->_CURLOPT_USERAGENT);
 			$crawlInfo['proxy_id'] = isset($proxyInfo['id']) ? intval($proxyInfo['id']) : 0;
 			$crawlInfo['log_message'] = addslashes($ret['errmsg']);
