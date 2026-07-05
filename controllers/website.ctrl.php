@@ -704,7 +704,8 @@ class WebsiteController extends Controller{
 		}
 		
 		// if csv file is not uploaded
-		if (mime_content_type($_FILES['website_csv_file']['tmp_name']) != 'text/plain') {
+		$spCsvMime = mime_content_type($_FILES['website_csv_file']['tmp_name']);
+		if (!in_array($spCsvMime, array('text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel'))) {
 		    print "<script>alert('".$this->spTextWeb['Please enter CSV file']."')</script>";
 		    return False;
 		}
