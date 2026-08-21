@@ -148,13 +148,6 @@ $(function() {
                 } else {
                 	$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>'+ response.msg +'</span>');
                 }
-
-                if (response.debug && response.debug.length) {
-                    var debugHtml = '<pre style="text-align:left;background:#1e1e1e;color:#d4d4d4;padding:10px;margin-top:10px;border-radius:4px;font-size:12px;max-height:300px;overflow-y:auto;">';
-                    debugHtml += response.debug.join("\n");
-                    debugHtml += '</pre>';
-                    $("#connection_refresh_content").append(debugHtml);
-                }
             },
             beforeSend: function() {
 				$('#connection_refresh_loading').show();

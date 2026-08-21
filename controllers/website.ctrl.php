@@ -1180,7 +1180,9 @@ class WebsiteController extends Controller{
 	        $debug[] = "Returning error response: $errMsg";
 	    }
 
-	    $response['debug'] = $debug;
+	    // Internal diagnostics only — never expose account/property IDs or API
+	    // error internals to the browser outside of debug mode.
+	    $response['debug'] = (defined('SP_DEBUG') && SP_DEBUG) ? $debug : [];
 	    return $response;
 	}
 	

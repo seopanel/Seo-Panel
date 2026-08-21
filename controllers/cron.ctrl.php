@@ -254,12 +254,14 @@ class CronController extends Controller {
 					break;
 				
 				case "keyword-position-checker":
-					$this->keywordPositionCheckerCron($websiteId);
-					// Check search volumes via DataForSEO (if enabled) or SP API (if configured)
+					// Check search volumes via DataForSEO (if enabled) or SP API (if configured).
+					// Run before keywordPositionCheckerCron(), which can die() early once
+					// SP_NUMBER_KEYWORDS_CRON is reached, so search volume still gets a turn.
 					include_once(SP_CTRLPATH . "/settings.ctrl.php");
 					if (SettingsController::isDFSEnabled('search_volume') || SettingsController::isSpApiEnabled('search_volume')) {
 						$this->searchVolumeCheckerCron($websiteId);
 					}
+					$this->keywordPositionCheckerCron($websiteId);
 					break;
 					
 				case "rank-checker":
