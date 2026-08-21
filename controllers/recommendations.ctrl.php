@@ -15,6 +15,7 @@ class RecommendationsController extends Controller {
         $websiteController = new WebsiteController();
         $websiteList = $websiteController->__getAllWebsites($userId, true);
         $this->set('websiteList', $websiteList);
+        $this->set('noWebsites', empty($websiteList));
 
         $websiteId = !empty($data['website_id']) ? intval($data['website_id']) : 0;
         if (empty($websiteId) && !empty($websiteList)) {

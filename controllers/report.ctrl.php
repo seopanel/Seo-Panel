@@ -25,6 +25,7 @@ class ReportController extends Controller {
 	var $seLIst;
 	var $showAll = false;
 	var $proxyCheckCount = 1;
+	var $sessionCats = array('common', 'login', 'button', 'label', 'keyword');
 
 	# func to get keyword report summary
 	function __getKeywordSearchReport($keywordId, $fromTime, $toTime, $apiCall = false){
@@ -1165,7 +1166,7 @@ class ReportController extends Controller {
 
     		include_once(SP_CTRLPATH . "/settings.ctrl.php");
     		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
-    		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume');
+    		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
     		$this->set('showSearchVolume', $showSearchVolume);
 
     		$indexList = array();

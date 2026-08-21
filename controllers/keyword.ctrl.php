@@ -23,6 +23,8 @@
 # class defines all keyword controller functions
 class KeywordController extends Controller{
 
+	var $sessionCats = array('common', 'login', 'button', 'label', 'keyword');
+
 	# func to show keywords
 	function listKeywords($info=[]){		
 		
@@ -62,7 +64,7 @@ class KeywordController extends Controller{
 		
 		include_once(SP_CTRLPATH . "/settings.ctrl.php");
 		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
-		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume');
+		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
 		$this->set('showSearchVolume', $showSearchVolume);
 
 		$svJoin = $showSearchVolume ? " LEFT JOIN keyword_search_volume sv ON sv.keyword_id = k.id AND sv.source = 'google'" : "";
