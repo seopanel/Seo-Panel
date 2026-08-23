@@ -32205,3 +32205,22 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_SEARCH_VOLUME', 'Enable for Search Volume'),
 ('en', 'settings', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', 'Enable for Search Volume');
+
+-- AI Overview tracking UI labels
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'AI Overview', 'AI Overview'),
+('en', 'keyword', 'Cited', 'Cited'),
+('en', 'keyword', 'Sources', 'Sources'),
+('en', 'keyword', 'Present', 'Present'),
+('en', 'keyword', 'Absent', 'Absent'),
+('en', 'keyword', 'Not available', 'Not available'),
+('en', 'keyword', 'Yes', 'Yes'),
+('en', 'keyword', 'No', 'No'),
+('en', 'keyword', 'stale', 'stale'),
+('en', 'keyword', 'present in', 'present in'),
+('en', 'keyword', 'of last observations', 'of last observations'),
+('en', 'keyword', 'AI Overview is not available on your current data source', 'AI Overview is not available on your current data source.'),
+('en', 'keyword', 'Configure DataForSEO credentials to enable this feature immediately', 'Configure DataForSEO credentials to enable this feature immediately.'),
+('en', 'keyword', 'Data older than the configured freshness threshold', 'Data older than the configured freshness threshold'),
+('en', 'keyword', 'AI Overview Cited Sources', 'AI Overview Cited Sources'),
+('en', 'keyword', 'No AI Overview citations recorded for this keyword yet', 'No AI Overview citations recorded for this keyword yet.');

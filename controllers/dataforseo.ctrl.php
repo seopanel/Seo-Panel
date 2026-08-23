@@ -1034,6 +1034,13 @@ class DataForSEOController extends Controller {
             $params['se_domain'] = $seUrl;
         }
 
+        // AI Overview only exists on Google SERPs. Always request the async
+        // variant - DataForSEO refunds the surcharge when a cached (synchronous)
+        // overview is already present, so this is pay-per-hit, not pay-per-keyword.
+        if ($seDomainCat == "google") {
+            $params['load_async_ai_overview'] = true;
+        }
+
         // Post task to DataForSEO
         $apiResult = $this->__postSERPTaskToAPI($seDomainCat, $params);
         if (!$apiResult['status']) {
@@ -1171,7 +1178,11 @@ class DataForSEOController extends Controller {
             'pending' => false,
         ];
 
-        $endpoint = "/v3/serp/$seDomainCat/organic/task_get/regular/$taskId";
+        // 'advanced' includes SERP features (ai_overview among them); 'regular' omits
+        // them entirely. Only Google needs it - AI Overview is a Google-only feature,
+        // and switching bing/yahoo would be an unrelated pricing/behaviour change.
+        $taskGetType = ($seDomainCat == "google") ? "advanced" : "regular";
+        $endpoint = "/v3/serp/$seDomainCat/organic/task_get/$taskGetType/$taskId";
 
         // DataForSEO status codes that mean the task is still pending (not yet processed)
         $pendingStatusCodes = [20100, 40602];
@@ -1281,6 +1292,14 @@ class DataForSEOController extends Controller {
             $firstMatch = true;
 
             foreach ($apiResult['data']['items'] as $itemInfo) {
+                // advanced responses interleave non-organic SERP features
+                // (ai_overview, people_also_ask, etc.) in the same items array
+                if (isset($itemInfo['type']) && $itemInfo['type'] !== 'organic') {
+                    continue;
+                }
+                if (empty($itemInfo['url'])) {
+                    continue;
+                }
                 $url = $itemInfo['url'];
 
                 // Check if URL matches website
@@ -1317,6 +1336,16 @@ class DataForSEOController extends Controller {
             ];
             $reportCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
             if ($verbose) echo " no matches, stored rank 0";
+        }
+
+        // AI Overview is a Google-only SERP feature - only parse/store it for
+        // the google platform, using the advanced task_get response fetched above.
+        if ($taskInfo['platform'] == 'google') {
+            include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+            $aioCtrler = new AIOverviewController();
+            $subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+            $normalized = AIOverviewController::parseDataForSEO($apiResult['data']['items'] ?? [], $reportDate);
+            $aioCtrler->saveResult($keywordId, $seId, $reportDate, 'dataforseo', $normalized, $websiteUrl, $subdomainPolicy);
         }
 
         // Update cron track info

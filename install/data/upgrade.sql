@@ -53,3 +53,57 @@ CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Enable for Search Volume', 'SP_ENABLE_DFS_SEARCH_VOLUME', '1', 'dataforseo', 'bool', 1),
 ('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1);
+
+-- AI Overview tracking: columns on searchresults (provider + AIO measurement)
+ALTER TABLE `searchresults` ADD COLUMN `provider` VARCHAR(20) DEFAULT NULL COMMENT 'dataforseo, spapi; NULL for direct-crawl/legacy rows';
+ALTER TABLE `searchresults` ADD COLUMN `aio_present` TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `searchresults` ADD COLUMN `aio_cited` TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `searchresults` ADD COLUMN `aio_async` TINYINT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `searchresults` ADD COLUMN `aio_reference_count` SMALLINT UNSIGNED NOT NULL DEFAULT 0;
+ALTER TABLE `searchresults` ADD COLUMN `aio_cited_position` SMALLINT UNSIGNED DEFAULT NULL;
+ALTER TABLE `searchresults` ADD COLUMN `aio_supported` TINYINT(1) DEFAULT NULL COMMENT 'NULL=not measured, 0=provider cannot answer, 1=provider checked';
+ALTER TABLE `searchresults` ADD COLUMN `aio_checked_at` DATETIME DEFAULT NULL COMMENT 'NULL means this row predates AI Overview tracking';
+ALTER TABLE `searchresults` ADD COLUMN `aio_data_date` DATE DEFAULT NULL COMMENT 'freshness date of the AI Overview observation itself';
+
+-- AI Overview tracking: citation detail table
+CREATE TABLE IF NOT EXISTS `aio_references` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` int unsigned NOT NULL,
+  `result_id` bigint unsigned DEFAULT NULL COMMENT 'FK to searchresults.id, if one exists',
+  `checked_date` date NOT NULL,
+  `ref_position` smallint unsigned NOT NULL COMMENT '1-based order in references array',
+  `domain` varchar(255) NOT NULL,
+  `url` varchar(2048) NOT NULL,
+  `title` varchar(512) DEFAULT NULL,
+  `source_name` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `keyword_date` (`keyword_id`, `checked_date`),
+  KEY `domain_date` (`domain`, `checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- AI Overview tracking settings
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('AI Overview reference retention (days)', 'SP_AIO_RETENTION_DAYS', '90', 'report', 'small', 1),
+('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'small', 1),
+('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'small', 1),
+('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'small', 1);
+
+-- AI Overview tracking UI labels
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'AI Overview', 'AI Overview'),
+('en', 'keyword', 'Cited', 'Cited'),
+('en', 'keyword', 'Sources', 'Sources'),
+('en', 'keyword', 'Present', 'Present'),
+('en', 'keyword', 'Absent', 'Absent'),
+('en', 'keyword', 'Not available', 'Not available'),
+('en', 'keyword', 'Yes', 'Yes'),
+('en', 'keyword', 'No', 'No'),
+('en', 'keyword', 'stale', 'stale'),
+('en', 'keyword', 'present in', 'present in'),
+('en', 'keyword', 'of last observations', 'of last observations'),
+('en', 'keyword', 'AI Overview is not available on your current data source', 'AI Overview is not available on your current data source.'),
+('en', 'keyword', 'Configure DataForSEO credentials to enable this feature immediately', 'Configure DataForSEO credentials to enable this feature immediately.'),
+('en', 'keyword', 'Data older than the configured freshness threshold', 'Data older than the configured freshness threshold'),
+('en', 'keyword', 'AI Overview Cited Sources', 'AI Overview Cited Sources'),
+('en', 'keyword', 'No AI Overview citations recorded for this keyword yet', 'No AI Overview citations recorded for this keyword yet.');

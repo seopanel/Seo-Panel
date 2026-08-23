@@ -866,6 +866,22 @@ CREATE TABLE IF NOT EXISTS `dfs_tasks` (
   KEY `ref_id_category` (`ref_id`, `category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `aio_references` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` int unsigned NOT NULL,
+  `result_id` bigint unsigned DEFAULT NULL COMMENT 'FK to searchresults.id, if one exists',
+  `checked_date` date NOT NULL,
+  `ref_position` smallint unsigned NOT NULL COMMENT '1-based order in references array',
+  `domain` varchar(255) NOT NULL,
+  `url` varchar(2048) NOT NULL,
+  `title` varchar(512) DEFAULT NULL,
+  `source_name` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `keyword_date` (`keyword_id`, `checked_date`),
+  KEY `domain_date` (`domain`, `checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
@@ -920,6 +936,15 @@ CREATE TABLE IF NOT EXISTS `searchresults` (
   `time` int(11) DEFAULT NULL,
   `result_date` date DEFAULT NULL,
   `serp_results` mediumtext COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'dataforseo, spapi; NULL for direct-crawl/legacy rows',
+  `aio_present` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_cited` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_async` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_reference_count` smallint(5) unsigned NOT NULL DEFAULT 0,
+  `aio_cited_position` smallint(5) unsigned DEFAULT NULL,
+  `aio_supported` tinyint(1) DEFAULT NULL COMMENT 'NULL=not measured, 0=provider cannot answer, 1=provider checked',
+  `aio_checked_at` datetime DEFAULT NULL COMMENT 'NULL means this row predates AI Overview tracking',
+  `aio_data_date` date DEFAULT NULL COMMENT 'freshness date of the AI Overview observation itself',
   PRIMARY KEY (`id`),
   KEY `result_date` (`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
@@ -1614,6 +1639,13 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 -- Initial setup wizard
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
+
+-- AI Overview tracking settings
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('AI Overview reference retention (days)', 'SP_AIO_RETENTION_DAYS', '90', 'report', 'small', 1),
+('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'small', 1),
+('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'small', 1),
+('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'small', 1);
 
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

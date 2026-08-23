@@ -86,6 +86,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showSerpResults($_GET);
 			break;
 
+		case "aiosources":
+			$controller->showAIOverviewSources($_GET);
+			break;
+
 		case "serparchive":
 			$controller->showSerpResultsArchive($_GET);
 			break;

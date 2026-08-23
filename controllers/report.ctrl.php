@@ -340,6 +340,23 @@ class ReportController extends Controller {
 			$i++;
 		}
 
+		// AI Overview rolling-window trend for this keyword/search-engine pair
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+		$aioCtrler = new AIOverviewController();
+		$rollingWindow = defined('SP_AIO_ROLLING_WINDOW') ? SP_AIO_ROLLING_WINDOW : 7;
+		$this->set('aioWindow', $aioCtrler->getRollingWindow($keywordId, $seId, $rollingWindow));
+		$this->set('aioStaleDays', defined('SP_AIO_STALE_DAYS') ? SP_AIO_STALE_DAYS : 7);
+
+		// hint for spAPI users without AI Overview support that DFS unlocks it
+		$showAioUpsellHint = false;
+		foreach ($reportList as $repInfo) {
+			if ($repInfo['aio_checked_at'] !== null && intval($repInfo['aio_supported']) === 0) {
+				$showAioUpsellHint = true;
+				break;
+			}
+		}
+		$this->set('showAioUpsellHint', $showAioUpsellHint);
+
 		$this->set('list', array_reverse($reportList, true));
 		$this->render('report/report');
 	}
@@ -1774,6 +1791,28 @@ class ReportController extends Controller {
 		$this->set('date', $date);
 		$this->set('websiteUrl', $websiteUrl);
 		$this->render('report/serp_results_popup', '');
+	}
+
+	# func to show AI Overview cited-sources popup for a keyword - most recent check, ordered by position
+	function showAIOverviewSources($info) {
+		$keywordId = intval($info['keyword_id']);
+
+		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$websiteUrl = '';
+		if (!empty($keyword['website_id'])) {
+			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
+			$websiteUrl = !empty($website['url']) ? rtrim($website['url'], '/') : '';
+		}
+
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+		$aioCtrler = new AIOverviewController();
+		$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+		$sources = $aioCtrler->getCompetitorPanel($keywordId, $websiteUrl, $subdomainPolicy);
+
+		$this->set('sources', $sources);
+		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
+		$this->set('websiteUrl', $websiteUrl);
+		$this->render('report/aio_sources_popup', '');
 	}
 }
 ?>

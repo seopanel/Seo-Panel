@@ -140,5 +140,11 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 		$dfsCtrler->processPendingDFSTasks(true);
 		echo "=== DataForSEO tasks processing completed ===\n";
 	}
+
+	// prune AI Overview reference detail rows past the configured retention window
+	include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+	$aioCtrler = new AIOverviewController();
+	$aioCtrler->pruneOldReferences();
+	echo "Pruned AI Overview references older than " . (defined('SP_AIO_RETENTION_DAYS') ? SP_AIO_RETENTION_DAYS : 90) . " days\n";
 }
 ?>
