@@ -1,7 +1,7 @@
 --
 -- Seo Panel 6.1.0 changes
 --
-update `settings` set set_val='6.1.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
+update `settings` set set_val='7.0.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
 
 -- Store full SERP snapshot in searchresults
 ALTER TABLE `searchresults` ADD COLUMN `serp_results` MEDIUMTEXT DEFAULT NULL;
