@@ -150,7 +150,15 @@ class DataForSEOController extends Controller {
         if (!empty($keywordInfo['stop_crawl_on_match'])) {
             $searchInfo['stop_crawl_on_match'] = $keywordInfo['stop_crawl_on_match'];
         }
-        
+
+        // AI Overview only exists in Google's "advanced" responses. A caller
+        // that explicitly asks for advanced on google also gets the async
+        // overview fetch - DataForSEO refunds the surcharge when a cached
+        // (synchronous) overview is already present, so this is pay-per-hit.
+        if ($seDomianCat == "google" && $dataType == "advanced") {
+            $searchInfo['load_async_ai_overview'] = true;
+        }
+
         // for debugging purpose
         /*debugVar(["/v3/serp/$seDomianCat/$cat/$subCat/$dataType", $searchInfo]);*/
 
@@ -219,7 +227,7 @@ class DataForSEOController extends Controller {
         return $langName;
     }
     
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
         $crawlResult = array();
         $seFound = false;
         $websiteUrl = formatUrl($keywordInfo['url'], false);
@@ -273,22 +281,41 @@ class DataForSEOController extends Controller {
             // call serp api to get the results
             $seFound = true;
             $urlInfo = parse_url($seList[$seInfoId]['url']);
-            $seachEngine = $urlInfo['host']; 
-            $result = $this->doSERPAPICall($keywordInfo, $seachEngine);
-            
+            $seachEngine = $urlInfo['host'];
+            $seDomianCatForSe = DataForSEOController::getSERPDomainCategory($seachEngine);
+            $wantAio = $includeAio && ($seDomianCatForSe == "google");
+            $dataType = $wantAio ? "advanced" : "regular";
+            $result = $this->doSERPAPICall($keywordInfo, $seachEngine, "organic", "live", $dataType);
+
             // check crawl status
-            if(!empty($result['status'])) {                
+            if(!empty($result['status'])) {
                 // to update cron that report executed for akeyword on a search engine
                 if ($cron) {
                     $reportCtrler->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
                 }
-                
+
+                if ($wantAio) {
+                    include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+                    $crawlResult[$seInfoId]['aio'] = AIOverviewController::parseDataForSEO(
+                        $result['data']['items'] ?? [],
+                        date('Y-m-d')
+                    );
+                }
+
                 // verify results array having search results
                 if (!empty($result['data']['items'])) {
                     $crawlResult[$seInfoId]['matched'] = array();
                     
                     // loop through the results
                     foreach ($result['data']['items'] as $itemInfo) {
+                        // advanced responses interleave non-organic SERP features
+                        // (ai_overview, people_also_ask, etc.) in the same items array
+                        if (isset($itemInfo['type']) && $itemInfo['type'] !== 'organic') {
+                            continue;
+                        }
+                        if (empty($itemInfo['url'])) {
+                            continue;
+                        }
                         $url = $itemInfo['url'];
                         if (
                             $showAll || (

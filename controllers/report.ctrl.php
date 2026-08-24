@@ -646,9 +646,9 @@ class ReportController extends Controller {
 	}
 	
 	# func to crawl keyword
-	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true) {
+	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true, $includeAio=false) {
 	    // check whether any api source is enabled for crawl keyword
-	    list($resDataStatus, $resData) = SettingsController::getSearchResults($keywordInfo, $this->showAll, $seId, $cron);
+	    list($resDataStatus, $resData) = SettingsController::getSearchResults($keywordInfo, $this->showAll, $seId, $cron, $includeAio);
 	    if ($resDataStatus) {
 	        $this->seFound = true;
 	        if (!empty($seId)) {
@@ -1004,16 +1004,25 @@ class ReportController extends Controller {
 		$seController = New SearchEngineController();
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
 		
-		$crawlResult = $this->crawlKeyword($keywordInfo);
+		$crawlResult = $this->crawlKeyword($keywordInfo, '', false, true, true);
 
 		$resultList = array();
 		$pending = false;
+		$aio = null;
 		if(!empty($crawlResult[$keywordInfo['se_id']]['status'])){
 			$resultList = $crawlResult[$keywordInfo['se_id']]['matched'];
 			$pending = empty($resultList) && !empty($crawlResult[$keywordInfo['se_id']]['pending']);
+
+			if (!empty($crawlResult[$keywordInfo['se_id']]['aio'])) {
+				include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+				$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+				$websiteUrl = formatUrl($keywordInfo['url'], false);
+				$aio = AIOverviewController::computeCitation($crawlResult[$keywordInfo['se_id']]['aio'], $websiteUrl, $subdomainPolicy);
+			}
 		}
 		$this->set('list', $resultList);
 		$this->set('pending', $pending);
+		$this->set('aio', $aio);
 
 		$this->render('report/showquickrankchecker');
 	}

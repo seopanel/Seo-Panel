@@ -223,26 +223,17 @@ class AIOverviewController extends Controller {
     }
 
     /**
-     * Persist a normalised AI Overview result onto every searchresults row
-     * for this keyword/search-engine/date (so whichever row a report query
-     * picks as "the" row for that date carries correct AIO data), and
-     * upsert the deduplicated reference detail rows.
+     * Compute display-ready, deduped/positioned references and citation
+     * status for a normalised AI Overview struct, without touching the DB.
+     * Shared by saveResult() (persisted cron path) and the ad-hoc Quick
+     * Keyword Position Checker (display-only, no keyword_id to persist against).
      *
-     * @param int         $keywordId
-     * @param int         $seId
-     * @param string      $checkedDate    Y-m-d
-     * @param string      $provider       'dataforseo' | 'spapi'
-     * @param array|null  $normalized     Struct from parseDataForSEO()/mapSpApi(), or null to skip (pending)
-     * @param string      $trackedDomain  The tracked website's domain/URL
-     * @param string      $subdomainPolicy 'registrable' | 'exact'
+     * @param array  $normalized      Struct from parseDataForSEO()/mapSpApi()
+     * @param string $trackedDomain
+     * @param string $subdomainPolicy 'registrable' | 'exact'
+     * @return array ['supported'=>bool,'present'=>bool,'async'=>bool,'dataDate'=>string|null,'refs'=>[...],'citedPosition'=>int|null]
      */
-    function saveResult($keywordId, $seId, $checkedDate, $provider, $normalized, $trackedDomain, $subdomainPolicy = 'registrable') {
-        if (empty($normalized)) return; // pending on the provider side - leave unmeasured for now
-
-        $keywordId = intval($keywordId);
-        $seId = intval($seId);
-        $checkedDate = addslashes($checkedDate);
-
+    public static function computeCitation($normalized, $trackedDomain, $subdomainPolicy = 'registrable') {
         // dedupe defensively (parsers already dedupe, but stay safe) and assign display order
         $refs = [];
         $seenUrls = [];
@@ -269,7 +260,44 @@ class AIOverviewController extends Controller {
 
         $supported = !empty($normalized['supported']) || !array_key_exists('supported', $normalized);
         $present   = $supported && !empty($normalized['present']);
-        $dataDate  = !empty($normalized['data_date']) ? $normalized['data_date'] : $checkedDate;
+
+        return [
+            'supported'     => $supported,
+            'present'       => $present,
+            'async'         => !empty($normalized['async']),
+            'dataDate'      => !empty($normalized['data_date']) ? $normalized['data_date'] : null,
+            'refs'          => $refs,
+            'citedPosition' => $citedPosition,
+        ];
+    }
+
+    /**
+     * Persist a normalised AI Overview result onto every searchresults row
+     * for this keyword/search-engine/date (so whichever row a report query
+     * picks as "the" row for that date carries correct AIO data), and
+     * upsert the deduplicated reference detail rows.
+     *
+     * @param int         $keywordId
+     * @param int         $seId
+     * @param string      $checkedDate    Y-m-d
+     * @param string      $provider       'dataforseo' | 'spapi'
+     * @param array|null  $normalized     Struct from parseDataForSEO()/mapSpApi(), or null to skip (pending)
+     * @param string      $trackedDomain  The tracked website's domain/URL
+     * @param string      $subdomainPolicy 'registrable' | 'exact'
+     */
+    function saveResult($keywordId, $seId, $checkedDate, $provider, $normalized, $trackedDomain, $subdomainPolicy = 'registrable') {
+        if (empty($normalized)) return; // pending on the provider side - leave unmeasured for now
+
+        $keywordId = intval($keywordId);
+        $seId = intval($seId);
+        $checkedDate = addslashes($checkedDate);
+
+        $computed = self::computeCitation($normalized, $trackedDomain, $subdomainPolicy);
+        $refs = $computed['refs'];
+        $citedPosition = $computed['citedPosition'];
+        $supported = $computed['supported'];
+        $present = $computed['present'];
+        $dataDate = $computed['dataDate'] ?: $checkedDate;
 
         $updateData = [
             'provider'                 => $provider,

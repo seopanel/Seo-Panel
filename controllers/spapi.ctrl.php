@@ -172,7 +172,7 @@ class SPAPIController extends Controller {
      * @param bool $cron Whether called from cron
      * @return array crawlResult keyed by seInfoId
      */
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
         $crawlResult = array();
         $websiteUrl = formatUrl($keywordInfo['url'], false);
         if (empty($websiteUrl) || empty($keywordInfo['name'])) {
@@ -218,6 +218,19 @@ class SPAPIController extends Controller {
         // Mark all SEs as successful (API responded)
         foreach ($seIds as $seInfoId) {
             $crawlResult[$seInfoId]['status'] = true;
+        }
+
+        // AI Overview is a single field on the response, tied to whichever
+        // requested search engine is Google - not per search engine like
+        // crawled_result, and independent of that SE's own crawl state
+        if ($includeAio) {
+            include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+            include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+            foreach ($seIds as $seInfoId) {
+                if (DataForSEOController::getSERPDomainCategory($seList[$seInfoId]['domain']) == 'google') {
+                    $crawlResult[$seInfoId]['aio'] = AIOverviewController::mapSpApi($apiResult['data'], date('Y-m-d'));
+                }
+            }
         }
 
         // Map results back to local SE IDs

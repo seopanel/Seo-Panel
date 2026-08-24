@@ -342,7 +342,7 @@ class SettingsController extends Controller{
 	    }
 	}
 
-	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
 	    $status = false;
 	    $results =  [];
 
@@ -351,7 +351,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
-	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 
@@ -360,7 +360,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/spapi.ctrl.php");
 	        $spapiCtrler = new SPAPIController();
 	        $status = true;
-	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 
