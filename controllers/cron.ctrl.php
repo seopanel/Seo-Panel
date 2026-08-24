@@ -796,13 +796,18 @@ class CronController extends Controller {
 
 					// AI Overview is a Google-only SERP feature and is only present in the
 					// spAPI response once the Google-domain mapping has actually been crawled.
-					include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
-					if (DataForSEOController::getSERPDomainCategory($reportController->seList[$seId]['domain']) == 'google') {
-						include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
-						$aioCtrler = new AIOverviewController();
-						$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
-						$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate);
-						$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
+					// A failure here must not abort the rest of the batch, so it is isolated.
+					try {
+						include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
+						if (DataForSEOController::getSERPDomainCategory($reportController->seList[$seId]['domain']) == 'google') {
+							include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+							$aioCtrler = new AIOverviewController();
+							$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+							$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate);
+							$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
+						}
+					} catch (Exception $e) {
+						$this->debugMsg("AI Overview parse/save failed for <b>{$keywordInfo['name']}</b>: {$e->getMessage()}.....<br>\n");
 					}
 
 					// Track cron execution

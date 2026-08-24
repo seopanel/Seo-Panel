@@ -1340,12 +1340,17 @@ class DataForSEOController extends Controller {
 
         // AI Overview is a Google-only SERP feature - only parse/store it for
         // the google platform, using the advanced task_get response fetched above.
+        // A failure here must not abort the rest of the batch, so it is isolated.
         if ($taskInfo['platform'] == 'google') {
-            include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
-            $aioCtrler = new AIOverviewController();
-            $subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
-            $normalized = AIOverviewController::parseDataForSEO($apiResult['data']['items'] ?? [], $reportDate);
-            $aioCtrler->saveResult($keywordId, $seId, $reportDate, 'dataforseo', $normalized, $websiteUrl, $subdomainPolicy);
+            try {
+                include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+                $aioCtrler = new AIOverviewController();
+                $subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+                $normalized = AIOverviewController::parseDataForSEO($apiResult['data']['items'] ?? [], $reportDate);
+                $aioCtrler->saveResult($keywordId, $seId, $reportDate, 'dataforseo', $normalized, $websiteUrl, $subdomainPolicy);
+            } catch (Exception $e) {
+                if ($verbose) echo "  - AI Overview parse/save failed for keyword {$keywordId}: {$e->getMessage()}\n";
+            }
         }
 
         // Update cron track info
