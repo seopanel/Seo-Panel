@@ -938,6 +938,32 @@ CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   PRIMARY KEY (`bucket_key`,`window_start`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
+CREATE TABLE IF NOT EXISTS `cron_run_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `trigger_source` varchar(20) NOT NULL DEFAULT 'cli',
+  `started_at` datetime NOT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  `duration_ms` int unsigned DEFAULT NULL,
+  `status` enum('running','completed','incomplete') NOT NULL DEFAULT 'running',
+  `websites_processed` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `started_at` (`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
+CREATE TABLE IF NOT EXISTS `cron_job_timing` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `run_id` bigint unsigned NOT NULL,
+  `website_id` int unsigned NOT NULL,
+  `url_section` varchar(100) NOT NULL,
+  `started_at` datetime NOT NULL,
+  `duration_ms` int unsigned NOT NULL,
+  `status` enum('success','failed') NOT NULL DEFAULT 'success',
+  `error_message` text,
+  PRIMARY KEY (`id`),
+  KEY `run_id` (`run_id`),
+  KEY `url_section_started` (`url_section`,`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,

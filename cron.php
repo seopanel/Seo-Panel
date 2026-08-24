@@ -84,7 +84,27 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
     include_once(SP_CTRLPATH."/information.ctrl.php");
 	$controller = New CronController();
 	$controller->timeStamp = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-	
+
+	// Non-blocking: if another cron.php invocation already holds the lock,
+	// exit immediately with no output and no error - this is the normal
+	// case (e.g. a run still in progress from a previous, longer-than-usual
+	// invocation), not a failure. The lock releases automatically if this
+	// process dies for any reason (killed, fatal error, die()).
+	if (!$controller->acquireSchedulerLock()) {
+		exit;
+	}
+
+	// Fallback cleanup for any exit path that skips the normal end of this
+	// branch (a fatal error, or a die() inside a tool's cron method, e.g.
+	// keywordPositionCheckerCron()'s SP_NUMBER_KEYWORDS_CRON cap). Marks
+	// the run 'incomplete' only if it never reached the normal completion
+	// call below (finishRunLog() is idempotent - see its own docblock).
+	register_shutdown_function(function() use ($controller) {
+		$controller->finishRunLog('incomplete');
+		$controller->releaseSchedulerLock();
+	});
+	$controller->startRunLog('cli');
+
 	$includeList = array();
 	$userList = array();
 	
@@ -153,5 +173,8 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aivCtrler->pruneOldReferrals();
 	$aivCtrler->pruneRateLimitBuckets();
 	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
+
+	$controller->finishRunLog('completed');
+	$controller->releaseSchedulerLock();
 }
 ?>

@@ -31,9 +31,93 @@ class CronController extends Controller {
 	var $debug = true;		    // to show debug message or not
 	var $layout = 'ajax';       // ajax layout or not
 	var $timeStamp;             // timestamp for storing reports
-	var $checkedKeywords = 0;   // the number of keywords checked in cron, this is used for split cron execution feature 
-	var $checkedWebsites = 0;   // the number of websites checked in cron, this is used for split cron execution feature       	
-	
+	var $checkedKeywords = 0;   // the number of keywords checked in cron, this is used for split cron execution feature
+	var $checkedWebsites = 0;   // the number of websites checked in cron, this is used for split cron execution feature
+	var $currentRunId;          // cron_run_log.id for the in-progress run, set by startRunLog()
+	var $currentRunWebsiteCount = 0; // websites routed through routeCronJob() during the current run
+
+	/**
+	 * Non-blocking MySQL advisory lock so overlapping cron.php invocations
+	 * don't duplicate work. Released automatically if the connection dies
+	 * (process killed, fatal error, die()), so it can never be left stuck
+	 * held by a crashed process - this is why GET_LOCK is used instead of
+	 * a file lock (see Zero-Setup Scheduler spec discovery notes).
+	 */
+	function acquireSchedulerLock($timeoutSec = 0) {
+		$result = $this->db->select("SELECT GET_LOCK('seopanel_scheduler', $timeoutSec) as locked", true);
+		return !empty($result['locked']);
+	}
+
+	function releaseSchedulerLock() {
+		$this->db->query("SELECT RELEASE_LOCK('seopanel_scheduler')");
+	}
+
+	# func to open a cron_run_log row for the current invocation
+	function startRunLog($triggerSource = 'cli') {
+		// insertRow()/escapeValue() already addslashes() string values - do not pre-escape here
+		$this->dbHelper->insertRow('cron_run_log', [
+			'trigger_source' => $triggerSource,
+			'started_at'     => 'NOW()',
+			'status'         => 'running',
+		]);
+		$this->currentRunId = intval($this->dbHelper->dbConObj->lastInsertId);
+	}
+
+	/**
+	 * Close the current run's log row. Idempotent - only the first call
+	 * (whether the normal end-of-script call, or the shutdown-function
+	 * fallback for a run that died mid-way) actually updates the row,
+	 * since the WHERE clause only matches while status is still 'running'.
+	 */
+	function finishRunLog($status = 'completed') {
+		if (empty($this->currentRunId)) return;
+		$status = addslashes($status);
+		$this->db->query("UPDATE cron_run_log
+			SET finished_at = NOW(),
+			    duration_ms = TIMESTAMPDIFF(MICROSECOND, started_at, NOW()) / 1000,
+			    status = '$status',
+			    websites_processed = " . intval($this->currentRunWebsiteCount) . "
+			WHERE id = " . intval($this->currentRunId) . " AND status = 'running'");
+	}
+
+	/**
+	 * Run one tool's cron method with timing + failure isolation. A
+	 * Throwable here is caught and recorded rather than left to abort the
+	 * rest of this website's (and every subsequent website's) cron run -
+	 * today nothing catches these at all, so one tool's exception kills
+	 * everything queued after it for the remainder of the process.
+	 */
+	function __runCronJob($websiteId, $urlSection, $methodName, $args = []) {
+		$start = microtime(true);
+		$status = 'success';
+		$errorMessage = null;
+
+		try {
+			call_user_func_array([$this, $methodName], $args);
+		} catch (Throwable $e) {
+			$status = 'failed';
+			$errorMessage = $e->getMessage();
+			$this->debugMsg("Cron job failed - tool: $urlSection, website: $websiteId - " . $e->getMessage() . "\n");
+		}
+
+		$durationMs = intval((microtime(true) - $start) * 1000);
+
+		if (!empty($this->currentRunId)) {
+			// insertRow()/escapeValue() already addslashes() string values - do not pre-escape here
+			$this->dbHelper->insertRow('cron_job_timing', [
+				'run_id|int'     => $this->currentRunId,
+				'website_id|int' => intval($websiteId),
+				'url_section'    => $urlSection,
+				'started_at'     => date('Y-m-d H:i:s', (int) $start),
+				'duration_ms|int'=> $durationMs,
+				'status'         => $status,
+				// isDBConstantValue() only recognises the literal string
+				// 'NULL' (not PHP null) as an unquoted SQL NULL
+				'error_message'  => is_null($errorMessage) ? 'NULL' : $errorMessage,
+			]);
+		}
+	}
+
 	# function to load all tools required for report generation 
 	function loadReportGenerationTools($includeList=array()){
 		$includeList = formatSQLParamList($includeList);
@@ -240,60 +324,64 @@ class CronController extends Controller {
 		    $toolAccessList = $userTypeCtrler->getSeoToolAccessSettings($userInfo['utype_id']);
 		}
 		
+		if ($cron) {
+			$this->currentRunWebsiteCount++;
+		}
+
 		foreach ($seoTools as $cronInfo) {
-		    
+
 		    // check whether user have acccess to the tool
 		    if (!$isAdmin && empty($toolAccessList[$cronInfo['id']]['value']) ) {
 		        continue;
 		    }
-		    
+
 			switch($cronInfo['url_section']){
-				
+
 				case "webmaster-tools":
-					$this->webmasterToolsCron($websiteId);
+					$this->__runCronJob($websiteId, 'webmaster-tools', 'webmasterToolsCron', [$websiteId]);
 					break;
-				
+
 				case "keyword-position-checker":
 					// Check search volumes via DataForSEO (if enabled) or SP API (if configured).
 					// Run before keywordPositionCheckerCron(), which can die() early once
 					// SP_NUMBER_KEYWORDS_CRON is reached, so search volume still gets a turn.
 					include_once(SP_CTRLPATH . "/settings.ctrl.php");
 					if (SettingsController::isDFSEnabled('search_volume') || SettingsController::isSpApiEnabled('search_volume')) {
-						$this->searchVolumeCheckerCron($websiteId);
+						$this->__runCronJob($websiteId, 'search-volume', 'searchVolumeCheckerCron', [$websiteId]);
 					}
-					$this->keywordPositionCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'keyword-position-checker', 'keywordPositionCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "rank-checker":
-					$this->rankCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'rank-checker', 'rankCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "backlink-checker":
-					$this->backlinkCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'backlink-checker', 'backlinkCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "saturation-checker":
-					$this->saturationCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'saturation-checker', 'saturationCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "pagespeed":
-					$this->pageSpeedCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'pagespeed', 'pageSpeedCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "sm-checker":
-					$this->socialMediaCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'sm-checker', 'socialMediaCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "review-manager":
-					$this->reviewCheckerCron($websiteId);
+					$this->__runCronJob($websiteId, 'review-manager', 'reviewCheckerCron', [$websiteId]);
 					break;
-					
+
 				case "web-analytics":
-					$this->analyticsCron($websiteId);
+					$this->__runCronJob($websiteId, 'web-analytics', 'analyticsCron', [$websiteId]);
 					break;
 			}
 		}
-		
+
 	}
 	
 	# func to generate search engine saturation reports from cron
