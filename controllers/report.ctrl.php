@@ -1005,13 +1005,16 @@ class ReportController extends Controller {
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
 		
 		$crawlResult = $this->crawlKeyword($keywordInfo);
-		
+
 		$resultList = array();
+		$pending = false;
 		if(!empty($crawlResult[$keywordInfo['se_id']]['status'])){
 			$resultList = $crawlResult[$keywordInfo['se_id']]['matched'];
+			$pending = empty($resultList) && !empty($crawlResult[$keywordInfo['se_id']]['pending']);
 		}
 		$this->set('list', $resultList);
-		
+		$this->set('pending', $pending);
+
 		$this->render('report/showquickrankchecker');
 	}
 	

@@ -205,6 +205,7 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['seFound'] = true;
             $crawlResult[$seInfoId]['matched'] = [];
             $crawlResult[$seInfoId]['status'] = false;
+            $crawlResult[$seInfoId]['pending'] = false;
         }
 
         // Call SP API with all SE IDs at once
@@ -227,6 +228,10 @@ class SPAPIController extends Controller {
                 continue;
             }
             if (empty($seResult['crawled_result']) || !is_array($seResult['crawled_result'])) {
+                // no data yet - the archive has registered the keyword but hasn't
+                // crawled it, as opposed to a completed crawl with a genuine zero-match result
+                $lastCrawlStatus = !empty($seResult['last_crawl_status']) ? $seResult['last_crawl_status'] : 'pending';
+                $crawlResult[$seInfoId]['pending'] = ($lastCrawlStatus !== 'success');
                 continue;
             }
             foreach ($seResult['crawled_result'] as $itemInfo) {

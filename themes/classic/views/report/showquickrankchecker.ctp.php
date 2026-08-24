@@ -20,7 +20,11 @@
 			<?php
 		}
 	} else {
-	    echo showNoRecordsList($colCount - 2);		
-	} 
+	    if (!empty($pending)) {
+	        echo showNoRecordsList($colCount - 2, $spTextKeyword['SEO Panel API is still processing this keyword']);
+	    } else {
+	        echo showNoRecordsList($colCount - 2);
+	    }
+	}
 	?>
 </table>

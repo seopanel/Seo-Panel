@@ -32224,3 +32224,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'Data older than the configured freshness threshold', 'Data older than the configured freshness threshold'),
 ('en', 'keyword', 'AI Overview Cited Sources', 'AI Overview Cited Sources'),
 ('en', 'keyword', 'No AI Overview citations recorded for this keyword yet', 'No AI Overview citations recorded for this keyword yet.');
+
+-- Quick Keyword Position Checker: distinguish "SP API archive hasn't crawled
+-- this keyword yet" from a genuine zero-match result
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'SEO Panel API is still processing this keyword', 'SEO Panel API is still processing this keyword. Please check back in a few minutes.');
