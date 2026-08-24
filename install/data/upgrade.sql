@@ -112,3 +112,108 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- this keyword yet" from a genuine zero-match result
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'SEO Panel API is still processing this keyword', 'SEO Panel API is still processing this keyword. Please check back in a few minutes.');
+
+-- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
+CREATE TABLE IF NOT EXISTS `ai_visibility_sites` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `last_seen_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `ai_referrals` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_url` (`website_id`,`hit_date`,`platform`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `ai_platforms` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `platform` varchar(64) NOT NULL,
+  `hostname` varchar(255) NOT NULL,
+  `display_name` varchar(64) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `hostname` (`hostname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- fixed-window rate-limit counters for the public beacon endpoint; pruned
+-- opportunistically alongside ai_referrals retention on the existing cron
+CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
+  `bucket_key` varchar(100) NOT NULL,
+  `window_start` int unsigned NOT NULL,
+  `hit_count` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_key`,`window_start`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`) VALUES
+('chatgpt','chatgpt.com','ChatGPT',1),
+('chatgpt','chat.openai.com','ChatGPT',1),
+('perplexity','perplexity.ai','Perplexity',1),
+('claude','claude.ai','Claude',1),
+('gemini','gemini.google.com','Gemini',1),
+('copilot','copilot.microsoft.com','Copilot',1),
+('you','you.com','You.com',1),
+('poe','poe.com','Poe',1),
+('grok','grok.com','Grok',1),
+('mistral','mistral.ai','Mistral',1);
+
+-- seotools has no unique key on url_section, so guard the insert manually
+INSERT INTO `seotools` (`name`,`url_section`,`user_access`,`reportgen`,`cron`,`priority`,`status`)
+SELECT 'AI Visibility','ai-visibility',1,0,0,100,1
+FROM DUAL
+WHERE NOT EXISTS (SELECT 1 FROM `seotools` WHERE `url_section`='ai-visibility');
+
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),
+('Rate limit per site token (requests/min)','AIV_RATE_LIMIT_PER_TOKEN','120','aivisibility','small',1),
+('Rate limit per source IP (requests/min)','AIV_RATE_LIMIT_PER_IP','60','aivisibility','small',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'ai-visibility', 'AI Visibility'),
+('en', 'seotools', 'AI Visibility', 'AI Visibility'),
+('en', 'seotools', 'Setup', 'Setup'),
+('en', 'seotools', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'AI Visibility', 'AI Visibility'),
+('en', 'aivisibility', 'Privacy note', 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'),
+('en', 'aivisibility', 'Install snippet', 'Install snippet'),
+('en', 'aivisibility', 'snippetinstructions', 'Paste this snippet just before the closing </body> tag on every page of your site.'),
+('en', 'aivisibility', 'Waiting for first hit', 'Waiting for first hit...'),
+('en', 'aivisibility', 'Receiving data', 'Receiving data'),
+('en', 'aivisibility', 'floornotice', 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'),
+('en', 'aivisibility', 'WordPress note', 'WordPress:'),
+('en', 'aivisibility', 'wordpressinstructions', 'Paste the snippet using a header/footer plugin (e.g. Insert Headers and Footers), or your theme''s footer.php.'),
+('en', 'aivisibility', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'Platform breakdown', 'Platform breakdown'),
+('en', 'aivisibility', 'Platform', 'Platform'),
+('en', 'aivisibility', 'Referrals', 'Referrals'),
+('en', 'aivisibility', 'Top landing pages', 'Top landing pages'),
+('en', 'aivisibility', 'Page', 'Page'),
+('en', 'aivisibility', 'Referrals over time', 'Referrals over time');
+
+-- AI Visibility "AI Overview" tab: website-level view of existing AI
+-- Overview presence/citation data (searchresults.aio_* + aio_references),
+-- no new ingest - reuses what the AI Overview Tracking feature collects
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'Measured Keywords', 'Measured Keywords'),
+('en', 'aivisibility', 'Cited Keywords', 'Cited Keywords'),
+('en', 'aivisibility', 'Domain', 'Domain'),
+('en', 'aivisibility', 'Citations', 'Citations'),
+('en', 'aivisibility', 'Competitor domains cited in your AI Overviews', 'Competitor domains cited in your AI Overviews'),
+('en', 'aivisibility', 'you', 'you');

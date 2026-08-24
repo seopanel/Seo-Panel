@@ -118,6 +118,10 @@ class SeoToolsController extends Controller{
 			    $defaultScript = "analytics.php";
 			    break;
 
+			case "ai-visibility":
+			    $defaultScript = "aivisibility.php";
+			    break;
+
 			default:
 				$seoToolInfo = $this->__getSeoToolInfo('keyword-position-checker', 'url_section');
 				if($seoToolInfo['status'] == 1){					

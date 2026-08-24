@@ -32229,3 +32229,39 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- this keyword yet" from a genuine zero-match result
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'SEO Panel API is still processing this keyword', 'SEO Panel API is still processing this keyword. Please check back in a few minutes.');
+
+-- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'ai-visibility', 'AI Visibility'),
+('en', 'seotools', 'AI Visibility', 'AI Visibility'),
+('en', 'seotools', 'Setup', 'Setup'),
+('en', 'seotools', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'AI Visibility', 'AI Visibility'),
+('en', 'aivisibility', 'Privacy note', 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'),
+('en', 'aivisibility', 'Install snippet', 'Install snippet'),
+('en', 'aivisibility', 'snippetinstructions', 'Paste this snippet just before the closing </body> tag on every page of your site.'),
+('en', 'aivisibility', 'Waiting for first hit', 'Waiting for first hit...'),
+('en', 'aivisibility', 'Receiving data', 'Receiving data'),
+('en', 'aivisibility', 'floornotice', 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'),
+('en', 'aivisibility', 'WordPress note', 'WordPress:'),
+('en', 'aivisibility', 'wordpressinstructions', 'Paste the snippet using a header/footer plugin (e.g. Insert Headers and Footers), or your theme''s footer.php.'),
+('en', 'aivisibility', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'Platform breakdown', 'Platform breakdown'),
+('en', 'aivisibility', 'Platform', 'Platform'),
+('en', 'aivisibility', 'Referrals', 'Referrals'),
+('en', 'aivisibility', 'Top landing pages', 'Top landing pages'),
+('en', 'aivisibility', 'Page', 'Page'),
+('en', 'aivisibility', 'Referrals over time', 'Referrals over time');
+
+-- AI Visibility "AI Overview" tab: website-level view of existing AI
+-- Overview presence/citation data (searchresults.aio_* + aio_references),
+-- no new ingest - reuses what the AI Overview Tracking feature collects
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'Measured Keywords', 'Measured Keywords'),
+('en', 'aivisibility', 'Cited Keywords', 'Cited Keywords'),
+('en', 'aivisibility', 'Domain', 'Domain'),
+('en', 'aivisibility', 'Citations', 'Citations'),
+('en', 'aivisibility', 'Competitor domains cited in your AI Overviews', 'Competitor domains cited in your AI Overviews'),
+('en', 'aivisibility', 'you', 'you');

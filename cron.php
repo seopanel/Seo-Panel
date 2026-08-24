@@ -146,5 +146,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aioCtrler = new AIOverviewController();
 	$aioCtrler->pruneOldReferences();
 	echo "Pruned AI Overview references older than " . (defined('SP_AIO_RETENTION_DAYS') ? SP_AIO_RETENTION_DAYS : 90) . " days\n";
+
+	// prune AI Visibility referral rows and stale rate-limit buckets
+	include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
+	$aivCtrler = new AIVisibilityController();
+	$aivCtrler->pruneOldReferrals();
+	$aivCtrler->pruneRateLimitBuckets();
+	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
 }
 ?>

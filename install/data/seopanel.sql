@@ -882,6 +882,62 @@ CREATE TABLE IF NOT EXISTS `aio_references` (
   KEY `domain_date` (`domain`, `checked_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `ai_visibility_sites` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `last_seen_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_referrals` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_url` (`website_id`,`hit_date`,`platform`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_platforms` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `platform` varchar(64) NOT NULL,
+  `hostname` varchar(255) NOT NULL,
+  `display_name` varchar(64) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `hostname` (`hostname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`) VALUES
+('chatgpt','chatgpt.com','ChatGPT',1),
+('chatgpt','chat.openai.com','ChatGPT',1),
+('perplexity','perplexity.ai','Perplexity',1),
+('claude','claude.ai','Claude',1),
+('gemini','gemini.google.com','Gemini',1),
+('copilot','copilot.microsoft.com','Copilot',1),
+('you','you.com','You.com',1),
+('poe','poe.com','Poe',1),
+('grok','grok.com','Grok',1),
+('mistral','mistral.ai','Mistral',1);
+
+CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
+  `bucket_key` varchar(100) NOT NULL,
+  `window_start` int unsigned NOT NULL,
+  `hit_count` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_key`,`window_start`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
@@ -978,7 +1034,7 @@ CREATE TABLE IF NOT EXISTS `seotools` (
   `priority` int(11) NOT NULL DEFAULT '100',
   `status` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=12 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=13 ;
 
 INSERT INTO `seotools` (`id`, `name`, `url_section`, `user_access`, `reportgen`, `cron`, `priority`, `status`) VALUES
 (1, 'Keyword Position Checker', 'keyword-position-checker', 1, 1, 1, 10, 1),
@@ -991,7 +1047,8 @@ INSERT INTO `seotools` (`id`, `name`, `url_section`, `user_access`, `reportgen`,
 (8, 'Webmaster Tools', 'webmaster-tools', 1, 1, 1, 20, 1),
 (9, 'Social Media Checker', 'sm-checker', 1, 1, 1, 100, 1),
 (10, 'Website Analytics', 'web-analytics', 1, 1, 1, 100, 1),
-(11, 'Review Manager', 'review-manager', 1, 1, 1, 100, 1);
+(11, 'Review Manager', 'review-manager', 1, 1, 1, 100, 1),
+(12, 'AI Visibility', 'ai-visibility', 1, 0, 0, 100, 1);
 
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1639,6 +1696,12 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 -- Initial setup wizard
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
+
+-- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),
+('Rate limit per site token (requests/min)','AIV_RATE_LIMIT_PER_TOKEN','120','aivisibility','small',1),
+('Rate limit per source IP (requests/min)','AIV_RATE_LIMIT_PER_IP','60','aivisibility','small',1);
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
