@@ -174,9 +174,12 @@ INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_acti
 
 -- seotools has no unique key on url_section, so guard the insert manually
 INSERT INTO `seotools` (`name`,`url_section`,`user_access`,`reportgen`,`cron`,`priority`,`status`)
-SELECT 'AI Visibility','ai-visibility',1,0,0,100,1
+SELECT 'AI Visibility','ai-visibility',1,0,0,5,1
 FROM DUAL
 WHERE NOT EXISTS (SELECT 1 FROM `seotools` WHERE `url_section`='ai-visibility');
+
+-- AI Visibility should lead the menu, ahead of Keyword Position Checker (priority 10)
+UPDATE `seotools` SET `priority`=5 WHERE `url_section`='ai-visibility';
 
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),

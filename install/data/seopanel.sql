@@ -1048,7 +1048,7 @@ INSERT INTO `seotools` (`id`, `name`, `url_section`, `user_access`, `reportgen`,
 (9, 'Social Media Checker', 'sm-checker', 1, 1, 1, 100, 1),
 (10, 'Website Analytics', 'web-analytics', 1, 1, 1, 100, 1),
 (11, 'Review Manager', 'review-manager', 1, 1, 1, 100, 1),
-(12, 'AI Visibility', 'ai-visibility', 1, 0, 0, 100, 1);
+(12, 'AI Visibility', 'ai-visibility', 1, 0, 0, 5, 1);
 
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
