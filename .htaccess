@@ -1,0 +1,7 @@
+# Serve the PWA manifest with its correct MIME type. Scoped to this single
+# file only - does not affect any other .json file the app might serve.
+<IfModule mod_mime.c>
+    <Files "manifest.json">
+        AddType application/manifest+json .json
+    </Files>
+</IfModule>
