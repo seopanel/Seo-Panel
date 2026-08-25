@@ -37,9 +37,17 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		
 		switch($_POST['sec']){
-			
+
 			case "generate":
 				$controller->executeReportGenerationScript($_POST);
+				break;
+
+			case "save_ping_settings":
+				$controller->saveSchedulePingSettings($_POST);
+				break;
+
+			case "regenerate_ping_secret":
+				$controller->regeneratePingSecret();
 				break;
 		}
 		
@@ -60,8 +68,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 			
 			case "croncommand":
 				$controller->showCronCommand();
-				break;				
-	
+				break;
+
+			case "health":
+				$controller->showSchedulerHealth();
+				break;
+
 			default:
 				$controller->showReportGenerationManager();
 				break;

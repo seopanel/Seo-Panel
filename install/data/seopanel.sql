@@ -964,6 +964,28 @@ CREATE TABLE IF NOT EXISTS `cron_job_timing` (
   KEY `url_section_started` (`url_section`,`started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
+CREATE TABLE IF NOT EXISTS `job_queue` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `url_section` varchar(100) NOT NULL,
+  `chunk_key` varchar(191) NOT NULL,
+  `payload` text,
+  `status` enum('pending','running','completed','failed') NOT NULL DEFAULT 'pending',
+  `attempts` tinyint unsigned NOT NULL DEFAULT 0,
+  `max_attempts` tinyint unsigned NOT NULL DEFAULT 4,
+  `available_at` datetime NOT NULL,
+  `claimed_at` datetime DEFAULT NULL,
+  `claimed_by_run_id` bigint unsigned DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `last_error` text,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_chunk` (`website_id`,`url_section`,`chunk_key`),
+  KEY `claim_lookup` (`website_id`,`url_section`,`status`,`available_at`),
+  KEY `run_id` (`claimed_by_run_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
@@ -1735,6 +1757,22 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'small', 1),
 ('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'small', 1),
 ('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'small', 1);
+
+-- Zero-Setup Scheduler, Phase 1: resumable job queue rollout flag. On by
+-- default for fresh installs; existing installs default to 0 via upgrade.sql
+-- until confirmed clean, then this flag (and the old *Cron() bodies it
+-- selects between) gets removed in a follow-up cleanup commit.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable resumable job queue for cron execution', 'SP_JOB_QUEUE_ENABLED', '1', 'report', 'small', 0);
+
+-- Zero-Setup Scheduler, Phase 2: secret-protected external ping trigger.
+-- Disabled and unkeyed by default even on a fresh install - an admin must
+-- visit the Scheduler Health page and generate a secret before this
+-- endpoint will do anything (it fails closed with no secret set).
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable external ping trigger for cron', 'SP_CRON_PING_ENABLED', '0', 'report', 'bool', 0),
+('Ping trigger secret key', 'SP_CRON_PING_SECRET', '', 'report', 'medium', 0),
+('Ping-triggered run budget (seconds)', 'SP_JOB_QUEUE_BUDGET_SECONDS', '20', 'report', 'small', 0);
 
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

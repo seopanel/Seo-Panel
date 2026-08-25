@@ -250,3 +250,80 @@ CREATE TABLE IF NOT EXISTS `cron_job_timing` (
   KEY `run_id` (`run_id`),
   KEY `url_section_started` (`url_section`,`started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Zero-Setup Scheduler, Phase 1 proper: resumable job queue. Chunk rows are
+-- recycled (re-armed pending -> completed -> pending) rather than inserted
+-- fresh per cron cycle, so this table stays bounded by (websites x tools)
+-- plus in-flight keyword/link chunks rather than growing per day.
+CREATE TABLE IF NOT EXISTS `job_queue` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `url_section` varchar(100) NOT NULL,
+  `chunk_key` varchar(191) NOT NULL,
+  `payload` text,
+  `status` enum('pending','running','completed','failed') NOT NULL DEFAULT 'pending',
+  `attempts` tinyint unsigned NOT NULL DEFAULT 0,
+  `max_attempts` tinyint unsigned NOT NULL DEFAULT 4,
+  `available_at` datetime NOT NULL,
+  `claimed_at` datetime DEFAULT NULL,
+  `claimed_by_run_id` bigint unsigned DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `last_error` text,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_chunk` (`website_id`,`url_section`,`chunk_key`),
+  KEY `claim_lookup` (`website_id`,`url_section`,`status`,`available_at`),
+  KEY `run_id` (`claimed_by_run_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Temporary rollout flag: old monolithic *Cron() bodies vs. new
+-- enqueue+drain bodies, selected per tool inside routeCronJob(). Defaults
+-- off for existing installs; flipped on (and eventually deleted, along with
+-- the old bodies) once real installs confirm clean job_queue behavior.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable resumable job queue for cron execution', 'SP_JOB_QUEUE_ENABLED', '0', 'report', 'small', 0);
+
+-- Zero-Setup Scheduler, Phase 2: secret-protected external ping trigger.
+-- Fails closed by default - disabled, and no secret (settings can't
+-- generate randomness at install time; the Scheduler Health page's
+-- "Generate secret" button does that via bin2hex(random_bytes(16))).
+-- display=0 on all three - managed from the health page, not the generic
+-- settings grid, same reasoning as SP_NUMBER_KEYWORDS_CRON.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable external ping trigger for cron', 'SP_CRON_PING_ENABLED', '0', 'report', 'bool', 0),
+('Ping trigger secret key', 'SP_CRON_PING_SECRET', '', 'report', 'medium', 0),
+('Ping-triggered run budget (seconds)', 'SP_JOB_QUEUE_BUDGET_SECONDS', '20', 'report', 'small', 0);
+
+-- Scheduler Health dashboard + ping trigger card i18n (category 'panel',
+-- matching the existing Cron Command page's texts)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'Scheduler Health', 'Scheduler Health'),
+('en', 'panel', 'A cron run is currently in progress', 'A cron run is currently in progress'),
+('en', 'panel', 'Last run', 'Last run'),
+('en', 'panel', 'websites processed', 'websites processed'),
+('en', 'panel', 'No cron runs recorded yet', 'No cron runs recorded yet'),
+('en', 'panel', 'Recent runs', 'Recent runs'),
+('en', 'panel', 'Websites', 'Websites'),
+('en', 'panel', 'Per-tool activity (last 7 days)', 'Per-tool activity (last 7 days)'),
+('en', 'panel', 'Tool', 'Tool'),
+('en', 'panel', 'Success', 'Success'),
+('en', 'panel', 'Failed', 'Failed'),
+('en', 'panel', 'Avg duration', 'Avg duration'),
+('en', 'panel', 'No activity recorded in the last 7 days', 'No activity recorded in the last 7 days'),
+('en', 'panel', 'Job queue backlog', 'Job queue backlog'),
+('en', 'panel', 'Count', 'Count'),
+('en', 'panel', 'Oldest pending since', 'Oldest pending since'),
+('en', 'panel', 'Queue is empty', 'Queue is empty'),
+('en', 'panel', 'Recently failed chunks', 'Recently failed chunks'),
+('en', 'panel', 'Chunk', 'Chunk'),
+('en', 'panel', 'Error', 'Error'),
+('en', 'panel', 'When', 'When'),
+('en', 'panel', 'External ping trigger', 'External ping trigger'),
+('en', 'panel', 'pingtriggerdesc', 'Point an external cron/uptime service (or your own crontab) at this URL to trigger short, budget-limited cron runs - useful on hosts where you can''t set up a real system cron job.'),
+('en', 'panel', 'Enable ping trigger', 'Enable ping trigger'),
+('en', 'panel', 'Budget (seconds)', 'Budget (seconds)'),
+('en', 'panel', 'No secret generated yet - generate one below before enabling the ping trigger.', 'No secret generated yet - generate one below before enabling the ping trigger.'),
+('en', 'panel', 'Regenerating the secret will invalidate the current ping URL. Continue?', 'Regenerating the secret will invalidate the current ping URL. Continue?'),
+('en', 'panel', 'Generate new secret', 'Generate new secret'),
+('en', 'panel', 'pingsecretnote', 'The secret identifies and authorizes the caller - anyone with this URL can trigger a cron run, so treat it like a password. The endpoint always responds with no output.');
