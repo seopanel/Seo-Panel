@@ -50,6 +50,36 @@
 	</p>
 </div>
 
+<div class="cron-card" style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:20px;margin-bottom:20px;">
+	<div class="cron-card-title" style="font-weight:600;margin-bottom:10px;">
+		<i class="fas fa-robot me-2"></i>
+		<?php echo $spTextAIV['AI Bot Crawler Tracking'] ?? 'AI Bot Crawler Tracking'?>
+	</div>
+	<p><?php echo $spTextAIV['botcollectordesc'] ?? 'AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others) never execute JavaScript, so the referral snippet above cannot see them. Download this collector script and include it on your server to track real crawler visits.'?></p>
+
+	<a href="<?php echo htmlspecialchars($botCollectorUrl)?>" class="btn btn-sm btn-secondary">
+		<i class="fas fa-download"></i> <?php echo $spTextAIV['Download collector script'] ?? 'Download collector script'?>
+	</a>
+
+	<div id="aivBotInstallStatus" style="margin-top:15px;">
+		<i class="fas fa-spinner fa-spin"></i>
+		<span id="aivBotStatusText"><?php echo $spTextAIV['Waiting for first bot visit'] ?? 'Waiting for first bot visit...'?></span>
+	</div>
+
+	<p style="margin-top:15px;">
+		<?php echo $spTextAIV['botinstallinstructions'] ?? 'Generic PHP: include this file at the very top of your site\'s bootstrap (e.g. the first line of index.php or wp-config.php).'?>
+	</p>
+	<p>
+		<strong><?php echo $spTextAIV['WordPress note'] ?? 'WordPress:'?></strong>
+		<?php echo $spTextAIV['botwordpressinstructions'] ?? 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'?>
+	</p>
+
+	<div class="alert alert-secondary" style="margin-top:15px;">
+		<i class="fas fa-shield-alt me-2"></i>
+		<?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?>
+	</div>
+</div>
+
 <script>
 document.getElementById('aivCopyBtn').addEventListener('click', function() {
 	var btn = this;
@@ -71,11 +101,17 @@ document.getElementById('aivCopyBtn').addEventListener('click', function() {
 	fetch('aivisibility.php?sec=installstatus&website_id=<?php echo intval($websiteId)?>', { credentials: 'same-origin' })
 		.then(function(res) { return res.json(); })
 		.then(function(data) {
-			var el = document.getElementById('aivStatusText');
 			var wrap = document.getElementById('aivInstallStatus');
 			if (data.status === 'receiving') {
 				wrap.innerHTML = '<i class="fas fa-check-circle text-success"></i> <span><?php echo $spTextAIV['Receiving data'] ?? 'Receiving data'?></span>';
-			} else {
+			}
+
+			var botWrap = document.getElementById('aivBotInstallStatus');
+			if (botWrap && data.bot_status === 'receiving') {
+				botWrap.innerHTML = '<i class="fas fa-check-circle text-success"></i> <span><?php echo $spTextAIV['Receiving data'] ?? 'Receiving data'?></span>';
+			}
+
+			if (data.status !== 'receiving' || data.bot_status !== 'receiving') {
 				setTimeout(pollInstallStatus, 5000);
 			}
 		})

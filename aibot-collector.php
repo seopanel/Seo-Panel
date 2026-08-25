@@ -20,58 +20,38 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+// Logged-in gated (NOT public) - this generates a file the site owner takes
+// away and hosts on their OWN external server. It is not itself served to
+// the public; aibot-collect.php is the public ingest endpoint that receives
+// hits FROM copies of this generated file once installed elsewhere.
 include_once("includes/sp-load.php");
 checkLoggedIn();
-
-// check for access to seo tool
 isUserHaveAccessToSeoTool("ai-visibility");
 
+include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
-$controller = New AIVisibilityController();
-$controller->view->menu = 'seotools';
-$controller->layout = 'ajax';
-$controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
-$controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
-$controller->spTextAIV = $controller->getLanguageTexts('aivisibility', $_SESSION['lang_code']);
-$controller->set('spTextAIV', $controller->spTextAIV);
-$controller->set('spTextKeyword', $controller->getLanguageTexts('keyword', $_SESSION['lang_code']));
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+$userId = isLoggedIn();
+$websiteController = new WebsiteController();
+$websiteList = $websiteController->__getAllWebsites($userId, true);
 
-	switch ($_POST['sec']) {
-
-		case "installstatus":
-			$controller->showInstallStatus($_POST);
-			break;
-
-		default:
-			$controller->showSetup($_POST);
-			break;
-	}
-
-} else {
-	switch ($_GET['sec']) {
-
-		case "report":
-			$controller->showReport($_GET);
-			break;
-
-		case "aioverview":
-			$controller->showAIOverviewReport($_GET);
-			break;
-
-		case "botreport":
-			$controller->showBotReport($_GET);
-			break;
-
-		case "installstatus":
-			$controller->showInstallStatus($_GET);
-			break;
-
-		default:
-			$controller->showSetup($_GET);
-			break;
-	}
+$controller = new AIVisibilityController();
+$requestedId = !empty($_GET['website_id']) ? intval($_GET['website_id']) : 0;
+$websiteId = 0;
+foreach ($websiteList as $w) {
+	if ($w['id'] == $requestedId) { $websiteId = $requestedId; break; }
+}
+if (empty($websiteId)) {
+	http_response_code(403);
+	exit;
 }
 
-?>
+// lazily create the site row (token) if it doesn't exist yet, same as showSetup()
+$controller->__getOrCreateSite($websiteId, $websiteList);
+$script = $controller->generateBotCollectorScript($websiteId);
+
+header('Content-Type: application/octet-stream');
+header('Content-Disposition: attachment; filename="ai-bot-collector.php"');
+header('Content-Length: ' . strlen($script));
+echo $script;
+exit;

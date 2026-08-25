@@ -32298,3 +32298,19 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'Regenerating the secret will invalidate the current ping URL. Continue?', 'Regenerating the secret will invalidate the current ping URL. Continue?'),
 ('en', 'panel', 'Generate new secret', 'Generate new secret'),
 ('en', 'panel', 'pingsecretnote', 'The secret identifies and authorizes the caller - anyone with this URL can trigger a cron run, so treat it like a password. The endpoint always responds with no output.');
+
+-- AI Visibility: AI Bot Crawler Tracking i18n
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Bot Crawlers', 'AI Bot Crawlers'),
+('en', 'aivisibility', 'AI Bot Crawler Tracking', 'AI Bot Crawler Tracking'),
+('en', 'aivisibility', 'botcollectordesc', 'AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others) never execute JavaScript, so the referral snippet above cannot see them. Download this collector script and include it on your server to track real crawler visits.'),
+('en', 'aivisibility', 'Download collector script', 'Download collector script'),
+('en', 'aivisibility', 'botinstallinstructions', 'Generic PHP: include this file at the very top of your site''s bootstrap (e.g. the first line of index.php or wp-config.php).'),
+('en', 'aivisibility', 'botwordpressinstructions', 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'),
+('en', 'aivisibility', 'Waiting for first bot visit', 'Waiting for first bot visit...'),
+('en', 'aivisibility', 'Verified', 'Verified'),
+('en', 'aivisibility', 'Unverified', 'Unverified'),
+('en', 'aivisibility', 'botverifiednotice', '"Verified" means the crawler''s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'),
+('en', 'aivisibility', 'Bot crawls over time', 'Bot crawls over time'),
+('en', 'aivisibility', 'Crawls', 'Crawls'),
+('en', 'aivisibility', 'Top crawled pages', 'Top crawled pages');

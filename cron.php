@@ -179,12 +179,14 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aioCtrler->pruneOldReferences();
 	echo "Pruned AI Overview references older than " . (defined('SP_AIO_RETENTION_DAYS') ? SP_AIO_RETENTION_DAYS : 90) . " days\n";
 
-	// prune AI Visibility referral rows and stale rate-limit buckets
+	// prune AI Visibility referral rows, bot hit rows, and stale rate-limit buckets
 	include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
 	$aivCtrler = new AIVisibilityController();
 	$aivCtrler->pruneOldReferrals();
+	$aivCtrler->pruneOldBotHits();
 	$aivCtrler->pruneRateLimitBuckets();
 	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
+	echo "Pruned AI bot hits older than " . (defined('AIB_BOT_RETENTION_DAYS') ? AIB_BOT_RETENTION_DAYS : 365) . " days\n";
 
 	$controller->finishRunLog('completed');
 	$controller->releaseSchedulerLock();

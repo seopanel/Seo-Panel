@@ -27,8 +27,92 @@ class AIVisibilityController extends Controller {
 		$siteInfo = $this->__getOrCreateSite($websiteId, $websiteList);
 		$this->set('siteInfo', $siteInfo);
 		$this->set('snippetUrl', SP_WEBPATH . "/aivisibility.js.php");
+		$this->set('botCollectorUrl', SP_WEBPATH . "/aibot-collector.php?website_id=" . intval($websiteId));
 
 		$this->render('aivisibility/setup');
+	}
+
+	/**
+	 * Generates the downloadable AI bot collector script for a website.
+	 * Called only from aibot-collector.php (logged-in gated - this produces
+	 * a file the site owner takes away and hosts on their OWN server, it is
+	 * not itself served to the public). Dependency-free, no remote includes
+	 * (a remote-includable snippet would be a code-execution risk for
+	 * whoever installs it) - just UA prefilter, FCrDNS, and a short-timeout
+	 * POST that fails silently so it can never break the host site.
+	 *
+	 * Classification into a named platform happens server-side at ingest
+	 * (see ingestBotHit()), not in this script, so the UA prefilter here is
+	 * deliberately broad/generic and never needs to be re-downloaded when
+	 * new bots emerge - only the "should I bother with a DNS lookup at all"
+	 * decision is static.
+	 */
+	function generateBotCollectorScript($websiteId) {
+		$siteInfo = $this->dbHelper->getRow('ai_visibility_sites', "website_id=" . intval($websiteId));
+		$token = !empty($siteInfo['token']) ? $siteInfo['token'] : '';
+		$collectUrl = SP_WEBPATH . "/aibot-collect.php";
+
+		$token = addslashes($token);
+		$collectUrl = addslashes($collectUrl);
+
+		return <<<PHP
+<?php
+/**
+ * SEO Panel - AI Bot Crawler Collector
+ *
+ * Detects AI crawler visits (GPTBot, ClaudeBot, PerplexityBot, and others)
+ * server-side, since these bots never execute JavaScript. Include this file
+ * at the very top of your site's bootstrap (e.g. the first line of
+ * index.php or wp-config.php; for WordPress, dropping it into
+ * wp-content/mu-plugins/ loads it automatically on every request).
+ *
+ * This file never breaks your site: it does nothing at all for normal
+ * traffic, and any failure (DNS, network, whatever) is silently swallowed.
+ */
+
+\$__aiv_ua = isset(\$_SERVER['HTTP_USER_AGENT']) ? \$_SERVER['HTTP_USER_AGENT'] : '';
+
+// Broad, generic prefilter - deliberately not tied to a specific vendor
+// list so this file never goes stale. Precise classification happens
+// server-side at SEO Panel, this just decides whether to bother at all.
+if (\$__aiv_ua !== '' && preg_match('/bot|crawler|spider|agent/i', \$__aiv_ua)) {
+	try {
+		\$__aiv_ip = isset(\$_SERVER['REMOTE_ADDR']) ? \$_SERVER['REMOTE_ADDR'] : '';
+		\$__aiv_verified = false;
+
+		if (\$__aiv_ip !== '') {
+			// FCrDNS: reverse-DNS the IP, then forward-confirm it resolves
+			// back to the same IP - the same method used to verify
+			// Googlebot. Done here, not at SEO Panel, because this is the
+			// only point where the real crawler IP is known with certainty.
+			\$__aiv_host = @gethostbyaddr(\$__aiv_ip);
+			if (\$__aiv_host && \$__aiv_host !== \$__aiv_ip) {
+				\$__aiv_verified = (@gethostbyname(\$__aiv_host) === \$__aiv_ip);
+			}
+		}
+
+		\$__aiv_path = isset(\$_SERVER['REQUEST_URI']) ? strtok(\$_SERVER['REQUEST_URI'], '?') : '/';
+
+		\$__aiv_payload = json_encode(array(
+			't' => '$token',
+			'ua' => \$__aiv_ua,
+			'verified' => \$__aiv_verified,
+			'u' => \$__aiv_path,
+		));
+
+		\$__aiv_ctx = stream_context_create(array('http' => array(
+			'method' => 'POST',
+			'header' => "Content-Type: application/json\\r\\n",
+			'content' => \$__aiv_payload,
+			'timeout' => 2,
+			'ignore_errors' => true,
+		)));
+		@file_get_contents('$collectUrl', false, \$__aiv_ctx);
+	} catch (Throwable \$__aiv_e) {
+		// never let a collector failure affect the host site
+	}
+}
+PHP;
 	}
 
 	# func to poll install status (AJAX) - waiting for first hit vs receiving data
@@ -44,6 +128,8 @@ class AIVisibilityController extends Controller {
 		echo json_encode([
 			'status' => !empty($siteInfo['last_seen_at']) ? 'receiving' : 'waiting',
 			'last_seen_at' => !empty($siteInfo['last_seen_at']) ? $siteInfo['last_seen_at'] : null,
+			'bot_status' => !empty($siteInfo['bot_last_seen_at']) ? 'receiving' : 'waiting',
+			'bot_last_seen_at' => !empty($siteInfo['bot_last_seen_at']) ? $siteInfo['bot_last_seen_at'] : null,
 		]);
 		exit;
 	}
@@ -199,6 +285,93 @@ class AIVisibilityController extends Controller {
 		$this->render('aivisibility/aioverview');
 	}
 
+	/**
+	 * AI Bot Crawler Tracking report: platform breakdown (verified vs
+	 * unverified), top crawled pages, hits-over-time chart. Data comes from
+	 * ai_bot_hits, populated by the downloadable collector script's POSTs
+	 * to aibot-collect.php - see generateBotCollectorScript()/ingestBotHit().
+	 */
+	function showBotReport($info=[]) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		if (empty($websiteList)) {
+			$this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
+			$this->render('dashboard/no_websites');
+			return;
+		}
+
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+		$this->set('websiteId', $websiteId);
+
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		$sql = "select platform, verified, hit_date, sum(hits) as hits from ai_bot_hits
+				where website_id=$websiteId and hit_date >= '$fromTimeSql' and hit_date <= '$toTimeSql'
+				group by platform, verified, hit_date order by hit_date";
+		$timeSeriesList = $this->db->select($sql);
+
+		// platform totals split by verified/unverified for the breakdown table
+		$platformTotals = [];
+		foreach ($timeSeriesList as $row) {
+			$key = $row['platform'];
+			if (!isset($platformTotals[$key])) $platformTotals[$key] = ['verified' => 0, 'unverified' => 0];
+			$platformTotals[$key][!empty($row['verified']) ? 'verified' : 'unverified'] += intval($row['hits']);
+		}
+		uasort($platformTotals, function($a, $b) {
+			return ($b['verified'] + $b['unverified']) - ($a['verified'] + $a['unverified']);
+		});
+		$this->set('platformTotals', $platformTotals);
+
+		$sql2 = "select url_path, sum(hits) as hits from ai_bot_hits
+				 where website_id=$websiteId and hit_date >= '$fromTimeSql' and hit_date <= '$toTimeSql'
+				 group by url_path order by hits desc limit 25";
+		$this->set('topPages', $this->db->select($sql2));
+
+		$graphContent = '';
+		if (!empty($timeSeriesList)) {
+			$platforms = array_keys($platformTotals);
+			$matrix = []; // hit_date => platform => hits (verified+unverified combined for the chart)
+			foreach ($timeSeriesList as $row) {
+				$matrix[$row['hit_date']][$row['platform']] = ($matrix[$row['hit_date']][$row['platform']] ?? 0) + intval($row['hits']);
+			}
+			$dates = array_keys($matrix);
+			sort($dates);
+
+			$header = "['" . $_SESSION['text']['common']['Date'] . "'";
+			foreach ($platforms as $platform) {
+				$header .= ", '" . addslashes($platform) . "'";
+			}
+			$header .= "]";
+
+			$dataArr = $header;
+			foreach ($dates as $date) {
+				$dataArr .= ", ['$date'";
+				foreach ($platforms as $platform) {
+					$dataArr .= ", " . intval($matrix[$date][$platform] ?? 0);
+				}
+				$dataArr .= "]";
+			}
+
+			$this->set('dataArr', $dataArr);
+			$this->set('graphTitle', $this->spTextAIV['Bot crawls over time'] ?? 'Bot crawls over time');
+			$graphContent = $this->getViewContent('report/graph');
+		} else {
+			$graphContent = showErrorMsg($_SESSION['text']['common']['No Records Found'], false, true);
+		}
+		$this->set('graphContent', $graphContent);
+
+		$this->render('aivisibility/botreport');
+	}
+
 	# func to lazily create (or fetch) the ai_visibility_sites row for a website
 	function __getOrCreateSite($websiteId, $websiteList=[]) {
 		$websiteId = intval($websiteId);
@@ -252,6 +425,13 @@ class AIVisibilityController extends Controller {
 	function pruneRateLimitBuckets() {
 		$cutoff = intval(floor(time() / 60)) - 10; // keep the last 10 one-minute windows
 		$this->db->query("DELETE FROM ai_visibility_rate_limit WHERE window_start < $cutoff");
+	}
+
+	# func to prune bot hit rows past the configured retention window - called from cron.php's tail
+	function pruneOldBotHits() {
+		$retentionDays = defined('AIB_BOT_RETENTION_DAYS') ? intval(AIB_BOT_RETENTION_DAYS) : 365;
+		$cutoff = date('Y-m-d', strtotime("-$retentionDays days"));
+		$this->db->query("DELETE FROM ai_bot_hits WHERE hit_date < '$cutoff'");
 	}
 
 	/**
@@ -345,6 +525,91 @@ class AIVisibilityController extends Controller {
 		$this->db->query($sql);
 
 		$this->db->query("UPDATE ai_visibility_sites SET last_seen_at=NOW() WHERE id=" . intval($siteInfo['id']));
+
+		exit;
+	}
+
+	/**
+	 * Public bot-hit ingest - called only from aibot-collect.php. This is a
+	 * server-to-server POST from the customer's own hosting server (sent by
+	 * the collector script), never a browser, so there is no Origin/Referer
+	 * to validate and no CORS handling applies. The 'verified' flag is
+	 * trusted as reported by the collector - FCrDNS runs there, at the only
+	 * point where the real crawler IP is known with certainty (see
+	 * generateBotCollectorScript()). Always responds fast with no body.
+	 */
+	function ingestBotHit() {
+		header('Content-Type: text/plain');
+		http_response_code(204);
+
+		$maxBytes = 4096;
+		$contentLength = isset($_SERVER['CONTENT_LENGTH']) ? intval($_SERVER['CONTENT_LENGTH']) : 0;
+		if ($contentLength > $maxBytes) {
+			exit;
+		}
+
+		$rawBody = file_get_contents('php://input', false, null, 0, $maxBytes + 1);
+		if (empty($rawBody) || strlen($rawBody) > $maxBytes) {
+			exit;
+		}
+
+		$payload = json_decode($rawBody, true);
+		if (empty($payload) || !is_array($payload)) {
+			exit;
+		}
+
+		$token = isset($payload['t']) ? trim((string)$payload['t']) : '';
+		$userAgent = isset($payload['ua']) ? (string)$payload['ua'] : '';
+		$verified = !empty($payload['verified']) ? 1 : 0;
+		$urlPath = isset($payload['u']) ? (string)$payload['u'] : '';
+
+		if ($token === '' || strlen($token) > 64 || $userAgent === '') {
+			exit;
+		}
+
+		$siteInfo = $this->dbHelper->getRow('ai_visibility_sites', "token='" . addslashes($token) . "'");
+		if (empty($siteInfo)) {
+			exit;
+		}
+
+		$tokenCap = defined('AIV_RATE_LIMIT_PER_TOKEN') ? intval(AIV_RATE_LIMIT_PER_TOKEN) : 120;
+		if (!$this->__checkRateLimit('bot-token:' . $token, $tokenCap)) {
+			exit;
+		}
+
+		// classify by matching the reported UA against known crawler
+		// patterns - unmatched UAs (the prefilter is deliberately broad,
+		// so plenty won't match anything here) are silently dropped
+		$platformList = $this->db->select("SELECT platform, bot_ua_pattern FROM ai_platforms WHERE is_active=1 AND bot_ua_pattern IS NOT NULL AND bot_ua_pattern != ''");
+		$matchedPlatform = null;
+		foreach ($platformList as $platformRow) {
+			if (stripos($userAgent, $platformRow['bot_ua_pattern']) !== false) {
+				$matchedPlatform = $platformRow['platform'];
+				break;
+			}
+		}
+		if (empty($matchedPlatform)) {
+			exit;
+		}
+
+		// re-derive the path server-side - defense in depth, every field is untrusted
+		$urlPath = strtok($urlPath, '?');
+		$urlPath = strtok($urlPath, '#');
+		if (empty($urlPath)) $urlPath = '/';
+		$urlPath = mb_substr($urlPath, 0, 2048);
+
+		$websiteId = intval($siteInfo['website_id']);
+		$hitDate = date('Y-m-d');
+		$urlHashHex = bin2hex(md5($urlPath, true));
+		$platformSql = addslashes($matchedPlatform);
+		$urlPathSql = addslashes($urlPath);
+
+		$sql = "INSERT INTO ai_bot_hits (website_id, hit_date, platform, verified, url_path, url_hash, hits, created_at, updated_at)
+				VALUES ($websiteId, '$hitDate', '$platformSql', $verified, '$urlPathSql', UNHEX('$urlHashHex'), 1, NOW(), NOW())
+				ON DUPLICATE KEY UPDATE hits = hits + 1, updated_at = NOW()";
+		$this->db->query($sql);
+
+		$this->db->query("UPDATE ai_visibility_sites SET bot_last_seen_at=NOW() WHERE id=" . intval($siteInfo['id']));
 
 		exit;
 	}

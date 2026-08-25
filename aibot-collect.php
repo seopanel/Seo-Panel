@@ -20,58 +20,26 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-include_once("includes/sp-load.php");
-checkLoggedIn();
+// PUBLIC, UNAUTHENTICATED endpoint - the AI bot collector ingest. Called
+// only by copies of the generated collector script running on customers'
+// own servers (a server-to-server POST, never a browser), so unlike
+// aivisibility-collect.php there is no Origin/Referer to validate and no
+// CORS handling needed.
+ini_set('session.use_cookies', '0');
+ini_set('session.cache_limiter', '');
 
-// check for access to seo tool
-isUserHaveAccessToSeoTool("ai-visibility");
+include_once("includes/sp-load.php");
+
+header_remove('Set-Cookie');
+header_remove('Pragma');
+
+if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+	http_response_code(204);
+	exit;
+}
 
 include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
 $controller = New AIVisibilityController();
-$controller->view->menu = 'seotools';
-$controller->layout = 'ajax';
-$controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
-$controller->set('spTextPanel', $controller->getLanguageTexts('panel', $_SESSION['lang_code']));
-$controller->spTextAIV = $controller->getLanguageTexts('aivisibility', $_SESSION['lang_code']);
-$controller->set('spTextAIV', $controller->spTextAIV);
-$controller->set('spTextKeyword', $controller->getLanguageTexts('keyword', $_SESSION['lang_code']));
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-
-	switch ($_POST['sec']) {
-
-		case "installstatus":
-			$controller->showInstallStatus($_POST);
-			break;
-
-		default:
-			$controller->showSetup($_POST);
-			break;
-	}
-
-} else {
-	switch ($_GET['sec']) {
-
-		case "report":
-			$controller->showReport($_GET);
-			break;
-
-		case "aioverview":
-			$controller->showAIOverviewReport($_GET);
-			break;
-
-		case "botreport":
-			$controller->showBotReport($_GET);
-			break;
-
-		case "installstatus":
-			$controller->showInstallStatus($_GET);
-			break;
-
-		default:
-			$controller->showSetup($_GET);
-			break;
-	}
-}
+$controller->ingestBotHit();
 
 ?>

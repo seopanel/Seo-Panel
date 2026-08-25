@@ -889,9 +889,26 @@ CREATE TABLE IF NOT EXISTS `ai_visibility_sites` (
   `domain` varchar(255) NOT NULL,
   `created_at` datetime NOT NULL,
   `last_seen_at` datetime DEFAULT NULL,
+  `bot_last_seen_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `token` (`token`),
   UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_bot_hits` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_verified_url` (`website_id`,`hit_date`,`platform`,`verified`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `ai_referrals` (
@@ -915,21 +932,31 @@ CREATE TABLE IF NOT EXISTS `ai_platforms` (
   `hostname` varchar(255) NOT NULL,
   `display_name` varchar(64) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `bot_ua_pattern` varchar(255) DEFAULT NULL,
+  `verify_suffix` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hostname` (`hostname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
 
-INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`) VALUES
-('chatgpt','chatgpt.com','ChatGPT',1),
-('chatgpt','chat.openai.com','ChatGPT',1),
-('perplexity','perplexity.ai','Perplexity',1),
-('claude','claude.ai','Claude',1),
-('gemini','gemini.google.com','Gemini',1),
-('copilot','copilot.microsoft.com','Copilot',1),
-('you','you.com','You.com',1),
-('poe','poe.com','Poe',1),
-('grok','grok.com','Grok',1),
-('mistral','mistral.ai','Mistral',1);
+-- verify_suffix (reverse-DNS verification suffix) is left NULL except where
+-- a scheme is well established (Google's) - not an assertion about other
+-- vendors' policies, admin-maintainable as they publish/change their own.
+INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('chatgpt','chatgpt.com','ChatGPT',1,'GPTBot',NULL),
+('chatgpt','chat.openai.com','ChatGPT',1,'GPTBot',NULL),
+('perplexity','perplexity.ai','Perplexity',1,'PerplexityBot',NULL),
+('claude','claude.ai','Claude',1,'ClaudeBot',NULL),
+('gemini','gemini.google.com','Gemini',1,NULL,NULL),
+('copilot','copilot.microsoft.com','Copilot',1,NULL,NULL),
+('you','you.com','You.com',1,NULL,NULL),
+('poe','poe.com','Poe',1,NULL,NULL),
+('grok','grok.com','Grok',1,NULL,NULL),
+('mistral','mistral.ai','Mistral',1,NULL,NULL),
+('google-extended','google.com','Google-Extended (AI training)',1,'Google-Extended','.googlebot.com'),
+('bytespider','bytedance.com','Bytespider',1,'Bytespider',NULL),
+('ccbot','commoncrawl.org','CCBot',1,'CCBot',NULL),
+('applebot-extended','apple.com','Applebot-Extended',1,'Applebot-Extended',NULL),
+('meta-externalagent','meta.com','Meta AI',1,'meta-externalagent',NULL);
 
 CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   `bucket_key` varchar(100) NOT NULL,
@@ -1750,6 +1777,10 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 ('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),
 ('Rate limit per site token (requests/min)','AIV_RATE_LIMIT_PER_TOKEN','120','aivisibility','small',1),
 ('Rate limit per source IP (requests/min)','AIV_RATE_LIMIT_PER_IP','60','aivisibility','small',1);
+
+-- AI Visibility: AI Bot Crawler Tracking (collector script + FCrDNS)
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI bot hit data retention (days)','AIB_BOT_RETENTION_DAYS','365','aivisibility','small',1);
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES

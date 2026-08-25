@@ -327,3 +327,61 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'Regenerating the secret will invalidate the current ping URL. Continue?', 'Regenerating the secret will invalidate the current ping URL. Continue?'),
 ('en', 'panel', 'Generate new secret', 'Generate new secret'),
 ('en', 'panel', 'pingsecretnote', 'The secret identifies and authorizes the caller - anyone with this URL can trigger a cron run, so treat it like a password. The endpoint always responds with no output.');
+
+-- AI Visibility: AI Bot Crawler Tracking. AI crawlers never execute
+-- JavaScript, so the referral snippet is structurally blind to them - this
+-- is a separate PHP collector script the site owner hosts on their own
+-- server, which does its own reverse-DNS (FCrDNS) verification at the
+-- point of truth (see plan notes) before reporting a hit.
+CREATE TABLE IF NOT EXISTS `ai_bot_hits` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_verified_url` (`website_id`,`hit_date`,`platform`,`verified`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `ai_platforms` ADD COLUMN `bot_ua_pattern` varchar(255) DEFAULT NULL;
+ALTER TABLE `ai_platforms` ADD COLUMN `verify_suffix` varchar(255) DEFAULT NULL;
+ALTER TABLE `ai_visibility_sites` ADD COLUMN `bot_last_seen_at` datetime DEFAULT NULL;
+
+-- Seed known crawler UA substrings. verify_suffix is left NULL except where
+-- a reverse-DNS verification scheme is well established (Google's) - this
+-- is not an assertion about other vendors' policies, just what's currently
+-- known; admins can adjust ai_platforms directly as vendors publish/change
+-- their own verification schemes.
+UPDATE `ai_platforms` SET bot_ua_pattern='GPTBot' WHERE platform='chatgpt';
+UPDATE `ai_platforms` SET bot_ua_pattern='ClaudeBot' WHERE platform='claude';
+UPDATE `ai_platforms` SET bot_ua_pattern='PerplexityBot' WHERE platform='perplexity';
+INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('google-extended','google.com','Google-Extended (AI training)',1,'Google-Extended','.googlebot.com'),
+('bytespider','bytedance.com','Bytespider',1,'Bytespider',NULL),
+('ccbot','commoncrawl.org','CCBot',1,'CCBot',NULL),
+('applebot-extended','apple.com','Applebot-Extended',1,'Applebot-Extended',NULL),
+('meta-externalagent','meta.com','Meta AI',1,'meta-externalagent',NULL);
+
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI bot hit data retention (days)','AIB_BOT_RETENTION_DAYS','365','aivisibility','small',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Bot Crawlers', 'AI Bot Crawlers'),
+('en', 'aivisibility', 'AI Bot Crawler Tracking', 'AI Bot Crawler Tracking'),
+('en', 'aivisibility', 'botcollectordesc', 'AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others) never execute JavaScript, so the referral snippet above cannot see them. Download this collector script and include it on your server to track real crawler visits.'),
+('en', 'aivisibility', 'Download collector script', 'Download collector script'),
+('en', 'aivisibility', 'botinstallinstructions', 'Generic PHP: include this file at the very top of your site''s bootstrap (e.g. the first line of index.php or wp-config.php).'),
+('en', 'aivisibility', 'botwordpressinstructions', 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'),
+('en', 'aivisibility', 'Waiting for first bot visit', 'Waiting for first bot visit...'),
+('en', 'aivisibility', 'Verified', 'Verified'),
+('en', 'aivisibility', 'Unverified', 'Unverified'),
+('en', 'aivisibility', 'botverifiednotice', '"Verified" means the crawler''s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'),
+('en', 'aivisibility', 'Bot crawls over time', 'Bot crawls over time'),
+('en', 'aivisibility', 'Crawls', 'Crawls'),
+('en', 'aivisibility', 'Top crawled pages', 'Top crawled pages');

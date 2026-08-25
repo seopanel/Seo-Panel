@@ -1918,6 +1918,7 @@ class CronController extends Controller {
 		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
 		$aivCtrler = new AIVisibilityController();
 		$aivCtrler->pruneOldReferrals();
+		$aivCtrler->pruneOldBotHits();
 		$aivCtrler->pruneRateLimitBuckets();
 
 		$this->finishRunLog('completed');
