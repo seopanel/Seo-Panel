@@ -113,7 +113,7 @@
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
-            		<i class="fas fa-lightbulb"></i> Recommendations
+            		<i class="fas fa-lightbulb"></i> AI Insights
             	</a>
             </li>
         </ul>
