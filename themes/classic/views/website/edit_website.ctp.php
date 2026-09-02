@@ -102,6 +102,13 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 				<div id="loading_longthin"></div>
 	        </div>
         	<div id="connection_refresh_content" style="margin: 16px 6px;display: none;" class="fw-bold float-right"></div>
+        	<div class="clearfix"></div>
+        	<div id="connection_refresh_debug_toggle" style="display:none;text-align:right;margin:4px 6px;">
+        		<a href="javascript:void(0);" class="text-muted" style="font-size:12px;text-decoration:underline;">
+        			<span id="connection_refresh_debug_toggle_label"><?php echo $spTextWeb['Show details'] ?? 'Show details'?></span>
+        		</a>
+        	</div>
+        	<pre id="connection_refresh_debug" style="display:none;background:#1e1e1e;color:#d4d4d4;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;line-height:1.5;padding:12px 14px;margin:6px;border-radius:6px;max-height:280px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"></pre>
 		</td>
 	</tr>
 </table>
@@ -122,14 +129,40 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 
 <script type="text/javascript">
 $(function() {
+
+	function spRenderSyncDebug(lines) {
+		if (!lines || !lines.length) {
+			$("#connection_refresh_debug_toggle").hide();
+			$("#connection_refresh_debug").hide().text('');
+			return;
+		}
+		var $console = $("#connection_refresh_debug");
+		$console.text(lines.join("\n")).show();
+		$console.scrollTop($console[0].scrollHeight);
+		$("#connection_refresh_debug_toggle_label").text('<?php echo $spTextWeb['Hide details'] ?? 'Hide details'?>');
+		$("#connection_refresh_debug_toggle").show();
+	}
+
+	$("#connection_refresh_debug_toggle").on('click', 'a', function() {
+		var $console = $("#connection_refresh_debug");
+		var isHidden = $console.is(':hidden');
+		$console.toggle(isHidden);
+		$console.scrollTop($console[0] ? $console[0].scrollHeight : 0);
+		$("#connection_refresh_debug_toggle_label").text(
+			isHidden ? '<?php echo $spTextWeb['Hide details'] ?? 'Hide details'?>' : '<?php echo $spTextWeb['Show details'] ?? 'Show details'?>'
+		);
+	});
+
     $("#connection_refresh").click(function() {
     	$("#connection_refresh_content").show();
+    	spRenderSyncDebug([]);
         $.ajax({
             url: '<?php echo SP_WEBPATH?>/websites.php?sec=fetchgoogleanalytics',
             type: "GET",
   			dataType: "json",
             success: function(response) {
             	$("#connection_refresh_content").show();
+            	spRenderSyncDebug(response.debug);
                 if(response.status) {
                 	var connectionList = response.data;
                 	$('#analytics_view_id').empty();
@@ -155,8 +188,23 @@ $(function() {
 			},
             error: function(jqXHR, textStatus, errorThrown) {
             	$("#connection_refresh_content").show();
-                var errMsg = "API Error: " + errorThrown; 
+                var errMsg = "API Error: " + errorThrown;
 				$("#connection_refresh_content").html('<span class="text-danger form-error"><i class="ri-error-warning-line"></i>' + errMsg + '</span>');
+
+				// Best-effort: an uncaught server error still often carries a JSON
+				// body (jQuery just refuses to route it to success() over a non-2xx
+				// status). Fall back to the raw response text so a real 500 is not
+				// a dead end.
+				var debugLines = [];
+				try {
+					var parsed = jqXHR.responseJSON || JSON.parse(jqXHR.responseText);
+					debugLines = parsed && parsed.debug ? parsed.debug : [];
+				} catch (e) {
+					if (jqXHR.responseText) {
+						debugLines = [jqXHR.responseText.substring(0, 4000)];
+					}
+				}
+				spRenderSyncDebug(debugLines);
             },
             complete: function() {
 				$('#connection_refresh_loading').hide();
