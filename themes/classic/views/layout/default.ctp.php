@@ -35,7 +35,17 @@
     <meta name="description" content="<?php echo $spDescription?>" />
     <meta name="keywords" content="<?php echo $spKeywords?>" />
     <link rel="shortcut icon" href="<?php echo !empty($custSiteInfo['site_favicon']) ? $custSiteInfo['site_favicon'] : SP_IMGPATH . "/favicon.ico"?>" />
-    
+
+    <!-- PWA: installable app manifest + icons. sw.js is deliberately a
+         no-cache passthrough (see sw.js) - this is an authenticated,
+         session-based dashboard, not an offline-content app. -->
+    <link rel="manifest" href="<?php echo SP_WEBPATH?>/manifest.json" />
+    <meta name="theme-color" content="#9a0000" />
+    <link rel="apple-touch-icon" href="<?php echo SP_IMGPATH?>/pwa-icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="SEO Panel" />
+
     <!-- Css files -->
     <link rel="stylesheet" type="text/css" href="<?php echo SP_WEBPATH?>/css/bootstrap.min.css?<?php echo $spKey?>" media="all" />
     <link rel="stylesheet" type="text/css" href="<?php echo SP_WEBPATH?>/jquery-ui/jquery-ui.min.css?<?php echo $spKey?>" />
@@ -69,7 +79,15 @@
     	<link rel="stylesheet" type="text/css" href="<?php echo SP_WEBPATH?>/custom_style.php?<?php echo $spKey?>" media="all" />
     	<script type="text/javascript" src="<?php echo SP_WEBPATH?>/custom_js.php?<?php echo $spKey?>"></script>
     <?php }?>
-    
+
+    <script type="text/javascript">
+    if ('serviceWorker' in navigator) {
+        // silently no-op on plain HTTP (non-localhost) - service workers
+        // require a secure context and the browser rejects registration there
+        navigator.serviceWorker.register('<?php echo SP_WEBPATH?>/sw.js').catch(function() {});
+    }
+    </script>
+
 </head>
 <body class="bg-light">
     <script type="text/javascript">
@@ -79,7 +97,7 @@
     
     <nav class="navbar navbar-expand-md <?php echo $siteNavFontClass?> <?php echo $siteBgClass;?>">
     	<a class="navbar-brand" href="<?php echo SP_WEBPATH?>">
-    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>">
+    		<img src="<?php echo !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";?>" width="131" height="31">
     	</a>
       	<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
       		aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -103,6 +121,19 @@
     </nav>
     	
     <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
+    <?php
+    // show initial setup wizard for logged-in users who haven't completed or dismissed it
+    if (isLoggedIn() && defined('SP_SETUP_WIZARD') && SP_SETUP_WIZARD) {
+        include_once(SP_CTRLPATH . "/setup_wizard.ctrl.php");
+        $spWizardCtrl = new SetupWizardController();
+        $spWizardState = $spWizardCtrl->getWizardState(isLoggedIn());
+        if (!empty($spWizardState['show'])) {
+            $wizardStep = intval($spWizardState['step']);
+            include_once(SP_VIEWPATH . "/layout/setup_wizard_popup.ctp.php");
+            echo '<script>$(document).ready(function(){ window.setupWizardShow(' . $wizardStep . '); });</script>';
+        }
+    }
+    ?>
     <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
     if (isLoggedIn() && isAdmin()) {

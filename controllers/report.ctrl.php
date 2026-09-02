@@ -25,6 +25,7 @@ class ReportController extends Controller {
 	var $seLIst;
 	var $showAll = false;
 	var $proxyCheckCount = 1;
+	var $sessionCats = array('common', 'login', 'button', 'label', 'keyword');
 
 	# func to get keyword report summary
 	function __getKeywordSearchReport($keywordId, $fromTime, $toTime, $apiCall = false){
@@ -339,6 +340,23 @@ class ReportController extends Controller {
 			$i++;
 		}
 
+		// AI Overview rolling-window trend for this keyword/search-engine pair
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+		$aioCtrler = new AIOverviewController();
+		$rollingWindow = defined('SP_AIO_ROLLING_WINDOW') ? SP_AIO_ROLLING_WINDOW : 7;
+		$this->set('aioWindow', $aioCtrler->getRollingWindow($keywordId, $seId, $rollingWindow));
+		$this->set('aioStaleDays', defined('SP_AIO_STALE_DAYS') ? SP_AIO_STALE_DAYS : 7);
+
+		// hint for spAPI users without AI Overview support that DFS unlocks it
+		$showAioUpsellHint = false;
+		foreach ($reportList as $repInfo) {
+			if ($repInfo['aio_checked_at'] !== null && intval($repInfo['aio_supported']) === 0) {
+				$showAioUpsellHint = true;
+				break;
+			}
+		}
+		$this->set('showAioUpsellHint', $showAioUpsellHint);
+
 		$this->set('list', array_reverse($reportList, true));
 		$this->render('report/report');
 	}
@@ -595,10 +613,11 @@ class ReportController extends Controller {
 			foreach($crawlResult as $sengineId => $matchList){
 				if($matchList['status']){
 					foreach($matchList['matched'] as $i => $matchInfo){
-						$remove = ($i == 0) ? true : false;						
-						$matchInfo['se_id'] = $sengineId;						
+						$remove = ($i == 0) ? true : false;
+						$matchInfo['se_id'] = $sengineId;
 						$matchInfo['keyword_id'] = $keywordInfo['id'];
-						$this->saveMatchedKeywordInfo($matchInfo, $remove);
+						$serpData = ($i == 0 && !empty($matchList['all'])) ? $matchList['all'] : null;
+						$this->saveMatchedKeywordInfo($matchInfo, $remove, '', $serpData);
 					}
 					echo "<p class='note notesuccess'>".$this->spTextKeyword['Successfully crawled keyword']." <b>{$keywordInfo['name']}</b> ".$this->spTextKeyword['results from']." <b>".$this->seList[$sengineId]['domain']."</b>.....</p>";
 				}else{
@@ -627,9 +646,9 @@ class ReportController extends Controller {
 	}
 	
 	# func to crawl keyword
-	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true) {
+	function crawlKeyword( $keywordInfo, $seId='', $cron=false, $removeDuplicate=true, $includeAio=false) {
 	    // check whether any api source is enabled for crawl keyword
-	    list($resDataStatus, $resData) = SettingsController::getSearchResults($keywordInfo, $this->showAll, $seId, $cron);
+	    list($resDataStatus, $resData) = SettingsController::getSearchResults($keywordInfo, $this->showAll, $seId, $cron, $includeAio);
 	    if ($resDataStatus) {
 	        $this->seFound = true;
 	        if (!empty($seId)) {
@@ -767,11 +786,12 @@ class ReportController extends Controller {
 			    	
 					$urlList = $matches[$seInfo['url_index']];
 					$crawlResult[$seInfoId]['matched'] = array();
+					$crawlResult[$seInfoId]['all'] = array();
 					$rank = 1;
 					$previousDomain = "";
 					foreach($urlList as $i => $url) {
 						$url = urldecode(strip_tags($url));
-						
+
 						// add special condition for baidu
 						if (stristr($seInfo['domain'], "baidu")) {
 							$url =  addHttpToUrl($url);
@@ -782,11 +802,11 @@ class ReportController extends Controller {
 						if ($isGoogle && stristr($url, '/url?q=')) {
 							$url = preg_replace(array('/\/url\?q=/i', '/\&amp;sa=U.*$/i'), array("", ""), $url);
 						}
-						
+
 						if(!preg_match('/^http:\/\/|^https:\/\//i', $url)) {
 						    continue;
 						}
-						
+
 						// check for to remove bing ad links in page
 						if(stristr($url, 'bat.bing.com')) {
 						    continue;
@@ -796,36 +816,39 @@ class ReportController extends Controller {
 						if ($removeDuplicate && $isGoogle) {
 						    $currentDomain = parse_url($url, PHP_URL_HOST);
 						    if ($previousDomain == $currentDomain) {
-						        continue;        
+						        continue;
 						    }
-						    
+
 						    $previousDomain = $currentDomain;
 						}
-						
-						if($this->showAll || ( 
-						      stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
+
+						// always collect full SERP snapshot
+						$crawlResult[$seInfoId]['all'][] = ['rank' => $rank, 'url' => $url];
+
+						if($this->showAll || (
+						      stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) ||
 						      stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
 						    )) {
 
 							if ($this->showAll && (
-                                    stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) || 
+                                    stristr($url, "http://" . $websiteUrl) || stristr($url, "https://" . $websiteUrl) ||
                                     stristr($url, "http://" . $websiteOtherUrl) || stristr($url, "https://" . $websiteOtherUrl)
 							    )) {
-								$matchInfo['found'] = 1; 
+								$matchInfo['found'] = 1;
 							} else {
 								$matchInfo['found'] = 0;
 							}
-							
+
 							$matchInfo['url'] = $url;
 							$matchInfo['title'] = strip_tags($matches[$seInfo['title_index']][$i]);
 							$matchInfo['description'] = strip_tags($matches[$seInfo['description_index']][$i]);
 							$matchInfo['rank'] = $rank;
 							$crawlResult[$seInfoId]['matched'][] = $matchInfo;
 						}
-						
-						$rank++;							
+
+						$rank++;
 					}
-					
+
 					$crawlStatus = 1;					
 				} else {					
 					// set crawl log info
@@ -871,7 +894,7 @@ class ReportController extends Controller {
 	}
 	
 	# func to save the report
-	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='') {
+	function saveMatchedKeywordInfo($matchInfo, $remove=false, $reportDate='', $serpResults=null) {
 		$resultDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
 		$time = strtotime($resultDate);
 		$this->checkDBConn();
@@ -879,24 +902,25 @@ class ReportController extends Controller {
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
 			and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 			$recordList = $this->db->select($sql);
-		
+
 			if(count($recordList) > 0){
 				foreach($recordList as $recordInfo){
 					$sql = "delete from searchresultdetails where searchresult_id=".$recordInfo['id'];
 					$this->db->query($sql);
 				}
-				
+
 				$sql = "delete from searchresults where keyword_id={$matchInfo['keyword_id']}
 				and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
 				$this->db->query($sql);
 			}
 		}
-		
-		$sql = "insert into searchresults(keyword_id,searchengine_id,`rank`,`time`,result_date)
-				values({$matchInfo['keyword_id']},{$matchInfo['se_id']},{$matchInfo['rank']},$time,'$resultDate')";
+
+		$serpJson = !empty($serpResults) ? "'" . addslashes(json_encode($serpResults)) . "'" : 'NULL';
+		$sql = "insert into searchresults(keyword_id,searchengine_id,`rank`,`time`,result_date,serp_results)
+				values({$matchInfo['keyword_id']},{$matchInfo['se_id']},{$matchInfo['rank']},$time,'$resultDate',$serpJson)";
 		$this->db->query($sql);
-		
-		$recordId = $this->db->getMaxId('searchresults');		
+
+		$recordId = $this->db->getMaxId('searchresults');
 		$sql = "insert into searchresultdetails(searchresult_id,url,title,description)
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
 		$this->db->query($sql);
@@ -980,14 +1004,26 @@ class ReportController extends Controller {
 		$seController = New SearchEngineController();
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
 		
-		$crawlResult = $this->crawlKeyword($keywordInfo);
-		
+		$crawlResult = $this->crawlKeyword($keywordInfo, '', false, true, true);
+
 		$resultList = array();
+		$pending = false;
+		$aio = null;
 		if(!empty($crawlResult[$keywordInfo['se_id']]['status'])){
 			$resultList = $crawlResult[$keywordInfo['se_id']]['matched'];
+			$pending = empty($resultList) && !empty($crawlResult[$keywordInfo['se_id']]['pending']);
+
+			if (!empty($crawlResult[$keywordInfo['se_id']]['aio'])) {
+				include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+				$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+				$websiteUrl = formatUrl($keywordInfo['url'], false);
+				$aio = AIOverviewController::computeCitation($crawlResult[$keywordInfo['se_id']]['aio'], $websiteUrl, $subdomainPolicy);
+			}
 		}
 		$this->set('list', $resultList);
-		
+		$this->set('pending', $pending);
+		$this->set('aio', $aio);
+
 		$this->render('report/showquickrankchecker');
 	}
 	
@@ -1156,27 +1192,39 @@ class ReportController extends Controller {
     		
     		# set keywords list
     		$list = $this->db->select($sql);
-    		
+
+    		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+    		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+    		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
+    		$this->set('showSearchVolume', $showSearchVolume);
+
     		$indexList = array();
     		foreach($list as $keywordInfo){
     			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
-    			
+
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeShort]) ? 10000 : $positionInfo[$orderCol][$toTimeShort];
-    			
+
     			$keywordInfo['position_info'] = $positionInfo;
+
+    			if ($showSearchVolume) {
+    				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
+    				$keywordInfo['search_volume'] = isset($svRow['search_volume']) ? $svRow['search_volume'] : null;
+    				$keywordInfo['sv_status']     = !empty($svRow['last_crawl_status']) ? $svRow['last_crawl_status'] : null;
+    			}
+
     			$keywordList[$keywordInfo['id']] = $keywordInfo;
     		}
-    
+
     		// sort array according the value
-    		if ($orderCol != 'keyword') { 
+    		if ($orderCol != 'keyword') {
         		if ($orderVal == 'DESC') {
         		    arsort($indexList);
         		} else {
         		    asort($indexList);
         		}
     		}
-    		
+
     		$this->set('indexList', $indexList);    
     		if ($exportVersion) {
     			$spText = $_SESSION['text'];
@@ -1476,19 +1524,21 @@ class ReportController extends Controller {
 		    $repSetInfo['user_id'] = $userId;
 		    $repSetInfo['report_interval'] = SP_SYSTEM_REPORT_INTERVAL;
 		    $repSetInfo['email_notification'] = SP_REPORT_EMAIL_NOTIFICATION;
+		    $repSetInfo['ai_insights_email_notification'] = defined('SP_AI_INSIGHTS_EMAIL_NOTIFICATION') ? SP_AI_INSIGHTS_EMAIL_NOTIFICATION : 1;
 		    $lastGeneratedDay = (SP_SYSTEM_REPORT_INTERVAL == 30) ? 1 : (date('d') - SP_SYSTEM_REPORT_INTERVAL);
 		    $repSetInfo['last_generated'] = mktime(0, 0, 0, date('m'), $lastGeneratedDay, date('Y'));
 		    $this->createUserReportSettings($repSetInfo);
 		    $repSetInfo['id'] = $this->db->getMaxId('reports_settings');
 		}
-		
+
 		return $repSetInfo;
 	}
-	
+
 	# func to insert report settings
 	function createUserReportSettings($setInfo) {
-		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,last_generated) 
-				values({$setInfo['user_id']},{$setInfo['report_interval']},{$setInfo['email_notification']},'{$setInfo['last_generated']}')";
+		$aiInsightsEmailNotification = isset($setInfo['ai_insights_email_notification']) ? intval($setInfo['ai_insights_email_notification']) : 1;
+		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,ai_insights_email_notification,last_generated)
+				values({$setInfo['user_id']},{$setInfo['report_interval']},{$setInfo['email_notification']},$aiInsightsEmailNotification,'{$setInfo['last_generated']}')";
 		$this->db->query($sql);
 	}
 	
@@ -1545,10 +1595,13 @@ class ReportController extends Controller {
 	}
 	
 	# func to save Report Schedule
-	function saveReportSchedule($info) {	    
+	function saveReportSchedule($info) {
 		$userId = isAdmin() ? $info['user_id'] : isLoggedIn();
 	    $this->updateUserReportSetting($userId, 'report_interval', $info['report_interval']);
 	    $this->updateUserReportSetting($userId, 'email_notification', $info['email_notification']);
+	    if (isset($info['ai_insights_email_notification'])) {
+	        $this->updateUserReportSetting($userId, 'ai_insights_email_notification', $info['ai_insights_email_notification']);
+	    }
 	    $this->showReportsScheduler(true, $info);
 	}
 	
@@ -1652,7 +1705,131 @@ class ReportController extends Controller {
 		$this->set('logList', $logList);
 		$this->set('spTextUser', $this->getLanguageTexts('user', $_SESSION['lang_code']));
 		$this->render('report/report_generation_logs');
-	
+
+	}
+
+	# func to show SERP results archive - latest serp snapshot for a selected keyword, tabs per search engine
+	function showSerpResultsArchive($searchInfo = []) {
+		$userId = isLoggedIn();
+
+		// website list
+		$websiteController = new WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		$websiteId = !empty($searchInfo['website_id'])
+			? intval($searchInfo['website_id'])
+			: (!empty($websiteList) ? $websiteList[0]['id'] : 0);
+		$this->set('websiteId', $websiteId);
+
+		// pass website URL for highlighting matched results
+		$websiteUrl = '';
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteUrl = $w['url']; break; }
+		}
+		$this->set('websiteUrl', rtrim($websiteUrl, '/'));
+
+		// keywords that have serp_results for the selected website
+		$kwSql = "SELECT DISTINCT k.id, k.name
+		          FROM keywords k
+		          JOIN searchresults sr ON sr.keyword_id = k.id
+		          JOIN websites w ON k.website_id = w.id
+		          WHERE sr.serp_results IS NOT NULL AND k.status = 1";
+		if (!empty($websiteId)) $kwSql .= " AND k.website_id = $websiteId";
+		if (!empty($userId) && !isAdmin()) $kwSql .= " AND w.user_id = $userId";
+		$kwSql .= " ORDER BY k.name";
+		$keywordList = $this->db->select($kwSql);
+		$this->set('keywordList', $keywordList);
+
+		// use submitted keyword only if it belongs to this website's keyword list
+		$submittedKwId = !empty($searchInfo['keyword_id']) ? intval($searchInfo['keyword_id']) : 0;
+		$validKwIds    = array_column($keywordList, 'id');
+		$keywordId     = in_array($submittedKwId, $validKwIds)
+			? $submittedKwId
+			: (!empty($keywordList) ? $keywordList[0]['id'] : 0);
+		$this->set('keywordId', $keywordId);
+
+		// latest serp snapshot for selected keyword, one row per search engine
+		$engines = [];
+		if (!empty($keywordId)) {
+			$sql = "SELECT sr.searchengine_id, sr.rank, sr.result_date, sr.serp_results,
+			               se.domain AS se_domain
+			        FROM searchresults sr
+			        JOIN searchengines se ON sr.searchengine_id = se.id
+			        INNER JOIN (
+			            SELECT searchengine_id, MAX(result_date) AS max_date
+			            FROM searchresults
+			            WHERE keyword_id = $keywordId AND serp_results IS NOT NULL
+			            GROUP BY searchengine_id
+			        ) latest ON sr.searchengine_id = latest.searchengine_id
+			                 AND sr.result_date = latest.max_date
+			        WHERE sr.keyword_id = $keywordId AND sr.serp_results IS NOT NULL
+			        ORDER BY se.domain";
+			foreach ($this->db->select($sql) as $row) {
+				$engines[] = [
+					'domain'    => $row['se_domain'],
+					'rank'      => $row['rank'],
+					'date'      => $row['result_date'],
+					'serp_data' => json_decode($row['serp_results'], true) ?: [],
+				];
+			}
+		}
+
+		$this->set('engines', $engines);
+		$this->render('report/serp_results_archive');
+	}
+
+	# func to show SERP results popup for a keyword across all search engines for a date
+	function showSerpResults($info) {
+		$keywordId = intval($info['keyword_id']);
+		$date      = addslashes($info['date']);
+
+		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain
+				FROM searchresults sr
+				JOIN searchengines se ON sr.searchengine_id = se.id
+				WHERE sr.keyword_id = $keywordId AND sr.result_date = '$date'
+				AND sr.serp_results IS NOT NULL
+				GROUP BY sr.searchengine_id
+				ORDER BY se.domain";
+		$serpList = $this->db->select($sql);
+
+		foreach ($serpList as &$item) {
+			$item['serp_data'] = json_decode($item['serp_results'], true);
+		}
+
+		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$websiteUrl = '';
+		if (!empty($keyword['website_id'])) {
+			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
+			$websiteUrl = !empty($website['url']) ? rtrim($website['url'], '/') : '';
+		}
+		$this->set('serpList', $serpList);
+		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
+		$this->set('date', $date);
+		$this->set('websiteUrl', $websiteUrl);
+		$this->render('report/serp_results_popup', '');
+	}
+
+	# func to show AI Overview cited-sources popup for a keyword - most recent check, ordered by position
+	function showAIOverviewSources($info) {
+		$keywordId = intval($info['keyword_id']);
+
+		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$websiteUrl = '';
+		if (!empty($keyword['website_id'])) {
+			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
+			$websiteUrl = !empty($website['url']) ? rtrim($website['url'], '/') : '';
+		}
+
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+		$aioCtrler = new AIOverviewController();
+		$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+		$sources = $aioCtrler->getCompetitorPanel($keywordId, $websiteUrl, $subdomainPolicy);
+
+		$this->set('sources', $sources);
+		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
+		$this->set('websiteUrl', $websiteUrl);
+		$this->render('report/aio_sources_popup', '');
 	}
 }
 ?>

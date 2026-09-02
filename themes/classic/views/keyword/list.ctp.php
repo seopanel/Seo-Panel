@@ -49,11 +49,14 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 		<td><?php echo $spText['common']['Website']?></td>
 		<td><?php echo $spText['common']['Country']?></td>
 		<td><?php echo $spText['common']['lang']?></td>
+		<?php if (!empty($showSearchVolume)): ?>
+		<td class="text-center"><?php echo $spText['keyword']['Search Volume']?></td>
+		<?php endif; ?>
 		<td><?php echo $spText['common']['Status']?></td>
 		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 7;
+	$colCount = !empty($showSearchVolume) ? 8 : 7;
 	if(count($list) > 0){
 		foreach($list as $i => $listInfo){
             $keywordLink = scriptAJAXLinkHref('keywords.php', 'content', "sec=edit&keywordId={$listInfo['id']}", "{$listInfo['name']}")
@@ -64,6 +67,17 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 				<td><?php echo $listInfo['website']?></td>
 				<td><?php echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
 				<td><?php echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>
+				<?php if (!empty($showSearchVolume)): ?>
+				<td class="text-center">
+					<?php if (!is_null($listInfo['search_volume'])): ?>
+						<strong><?php echo number_format($listInfo['search_volume'])?></strong>
+					<?php elseif (!empty($listInfo['sv_status'])): ?>
+						<span class="badge badge-secondary"><?php echo htmlspecialchars($listInfo['sv_status'])?></span>
+					<?php else: ?>
+						&mdash;
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
 				<td class="text-center"><?php echo showStatusBadge($listInfo['status']);	?></td>
 				<td>
 					<?php

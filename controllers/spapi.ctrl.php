@@ -172,7 +172,7 @@ class SPAPIController extends Controller {
      * @param bool $cron Whether called from cron
      * @return array crawlResult keyed by seInfoId
      */
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
         $crawlResult = array();
         $websiteUrl = formatUrl($keywordInfo['url'], false);
         if (empty($websiteUrl) || empty($keywordInfo['name'])) {
@@ -205,6 +205,7 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['seFound'] = true;
             $crawlResult[$seInfoId]['matched'] = [];
             $crawlResult[$seInfoId]['status'] = false;
+            $crawlResult[$seInfoId]['pending'] = false;
         }
 
         // Call SP API with all SE IDs at once
@@ -219,6 +220,19 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['status'] = true;
         }
 
+        // AI Overview is a single field on the response, tied to whichever
+        // requested search engine is Google - not per search engine like
+        // crawled_result, and independent of that SE's own crawl state
+        if ($includeAio) {
+            include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+            include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+            foreach ($seIds as $seInfoId) {
+                if (DataForSEOController::getSERPDomainCategory($seList[$seInfoId]['domain']) == 'google') {
+                    $crawlResult[$seInfoId]['aio'] = AIOverviewController::mapSpApi($apiResult['data'], date('Y-m-d'));
+                }
+            }
+        }
+
         // Map results back to local SE IDs
         $seResults = !empty($apiResult['data']['searchengine_mappings']) ? $apiResult['data']['searchengine_mappings'] : [];
         foreach ($seResults as $seResult) {
@@ -227,6 +241,10 @@ class SPAPIController extends Controller {
                 continue;
             }
             if (empty($seResult['crawled_result']) || !is_array($seResult['crawled_result'])) {
+                // no data yet - the archive has registered the keyword but hasn't
+                // crawled it, as opposed to a completed crawl with a genuine zero-match result
+                $lastCrawlStatus = !empty($seResult['last_crawl_status']) ? $seResult['last_crawl_status'] : 'pending';
+                $crawlResult[$seInfoId]['pending'] = ($lastCrawlStatus !== 'success');
                 continue;
             }
             foreach ($seResult['crawled_result'] as $itemInfo) {
@@ -300,6 +318,137 @@ class SPAPIController extends Controller {
         }
 
         return $result;
+    }
+
+    /**
+     * Post a search volume keyword request to the SP API
+     *
+     * @param array $keywordInfo Keyword info with name, lang_code, country_code
+     * @param string $source Data source: google or bing
+     * @return array Response with status and data
+     */
+    function postSearchVolumeKeyword($keywordInfo, $source = 'google') {
+        $result = [
+            'status'  => false,
+            'message' => 'Internal error occurred',
+            'data'    => [],
+        ];
+
+        $postData = json_encode([
+            'keyword'      => mb_convert_encoding($keywordInfo['name'], 'UTF-8'),
+            'source'       => $source,
+            'lang_code'    => !empty($keywordInfo['lang_code']) ? $keywordInfo['lang_code'] : '',
+            'country_code' => !empty($keywordInfo['country_code']) ? $keywordInfo['country_code'] : '',
+        ]);
+
+        ob_start();
+        $spider = new Spider();
+        $spider->_CURLOPT_POSTFIELDS = $postData;
+        $spider->_CURL_HTTPHEADER = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $this->apiKey,
+        ];
+        $spider->_CURLOPT_TIMEOUT = 60;
+        $response = $spider->getContent($this->apiUrl . '/search-volume', false, false);
+        ob_end_clean();
+
+        if (empty($response['page'])) {
+            $result['message'] = 'Could not connect to SP API server';
+            return $result;
+        }
+
+        $responseData = json_decode($response['page'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $result['message'] = 'Invalid response from SP API server';
+            return $result;
+        }
+
+        if (!empty($responseData['status']) && $responseData['status'] == 'success') {
+            $result['status']  = true;
+            $result['message'] = 'Success';
+            $result['data']    = $responseData['data'] ?? [];
+        } else {
+            $result['message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API request failed';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Save search volume result from SP API response into keyword_search_volume table
+     *
+     * @param int $keywordId Local keyword ID
+     * @param array $apiData Data from SP API response (keyword_id, keyword, mapping)
+     */
+    function saveSearchVolumeResult($keywordId, $apiData) {
+        $mapping         = !empty($apiData['mapping']) ? $apiData['mapping'] : [];
+        $source          = !empty($mapping['source']) ? $mapping['source'] : 'google';
+        $svMappingId     = !empty($mapping['mapping_id']) ? intval($mapping['mapping_id']) : null;
+        $lastCrawlStatus = !empty($mapping['last_crawl_status']) ? $mapping['last_crawl_status'] : 'pending';
+        $crawledTime     = !empty($mapping['crawled_time']) ? $mapping['crawled_time'] : null;
+        $crawledResult   = !empty($mapping['crawled_result']) ? $mapping['crawled_result'] : null;
+
+        $this->saveKeywordSearchVolumeData($keywordId, $source, $crawledResult, $lastCrawlStatus, $svMappingId, $crawledTime);
+    }
+
+    /**
+     * Upsert a row in keyword_search_volume from normalized data.
+     * Used by both the spAPI and DataForSEO code paths.
+     *
+     * @param int         $keywordId       Local keyword ID
+     * @param string      $source          'google' or 'bing'
+     * @param array|null  $svData          Normalized array: search_volume, cpc, competition, keyword_difficulty, monthly_searches
+     * @param string      $crawlStatus     'pending', 'success', 'fail'
+     * @param int|null    $svMappingId     spAPI mapping ID (null for DFS path)
+     * @param string|null $crawledTime     Timestamp string or null
+     */
+    function saveKeywordSearchVolumeData($keywordId, $source, $svData, $crawlStatus = 'pending', $svMappingId = null, $crawledTime = null) {
+        $keywordId = intval($keywordId);
+        $source    = addslashes($source);
+
+        $searchVolume      = null;
+        $cpc               = null;
+        $competition       = null;
+        $keywordDifficulty = null;
+        $monthlySearches   = null;
+
+        if (!empty($svData) && is_array($svData)) {
+            $searchVolume      = isset($svData['search_volume']) ? intval($svData['search_volume']) : null;
+            $cpc               = isset($svData['cpc']) ? (float)$svData['cpc'] : null;
+            $competition       = isset($svData['competition']) ? (float)$svData['competition'] : null;
+            $keywordDifficulty = isset($svData['keyword_difficulty']) ? (float)$svData['keyword_difficulty'] : null;
+            $monthlySearches   = !empty($svData['monthly_searches']) ? json_encode($svData['monthly_searches']) : null;
+        }
+
+        $existing = $this->dbHelper->getRow('keyword_search_volume', "keyword_id=$keywordId AND source='$source'");
+
+        $dataList = [
+            'last_crawl_status' => $crawlStatus,
+            'updated_at'        => 'NOW()',
+        ];
+
+        if (!is_null($svMappingId)) {
+            $dataList['sv_mapping_id|int'] = $svMappingId;
+        }
+        $dataList['crawled_time'] = !empty($crawledTime) ? $crawledTime : 'NOW()';
+        if (!is_null($searchVolume)) {
+            $dataList['search_volume|int']        = $searchVolume;
+            $dataList['cpc|float']                = $cpc;
+            $dataList['competition|float']        = $competition;
+            $dataList['keyword_difficulty|float'] = $keywordDifficulty;
+            $dataList['monthly_searches']         = $monthlySearches;
+            $dataList['crawled_result']           = json_encode($svData);
+            $dataList['result_date']              = date('Y-m-d');
+        }
+
+        if (!empty($existing)) {
+            $this->dbHelper->updateRow('keyword_search_volume', $dataList, "id={$existing['id']}");
+        } else {
+            $dataList['keyword_id|int'] = $keywordId;
+            $dataList['source']         = $source;
+            $dataList['created_at']     = 'NOW()';
+            $this->dbHelper->insertRow('keyword_search_volume', $dataList);
+        }
     }
 
     /**

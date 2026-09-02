@@ -688,6 +688,7 @@ class Install {
 		    '4.11.0',
 		    '5.0.0',
 		    '5.1.0',
+		    '6.0.0',
 		);
 		
 		// get current version number
@@ -695,14 +696,24 @@ class Install {
 		$versionInfo = $db->select($sql, true);
 		$currentVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '3.8.0';
 		
+		// 4.12.0 shipped its schema changes via the generic upgrade.sql catch-all and
+		// never got its own entry in $spVersionList. Its schema is identical to 5.0.0's
+		// (upgrade_v4.11.0_v5.0.0.sql duplicates the 4.12.0 db changes verbatim), so
+		// treat it as 5.0.0 when locating the current position in the upgrade chain.
+		if ($currentVersion === '4.12.0') {
+			$currentVersion = '5.0.0';
+		}
+
 		// if current version is set
 		if ($currentVersion) {
-			
+
 			$index = array_search($currentVersion, $spVersionList);
 			$lastIndex = count($spVersionList) - 1;
-		
-			// if it is not last index value
-			if ($index != $lastIndex) {
+
+			// if it is not last index value, and the version is recognized (an
+			// unrecognized version must not silently fall back to index 0, which
+			// would replay every historical upgrade file from 3.8.0 onward)
+			if ($index !== false && $index != $lastIndex) {
 				$prevIndex = $index;
 			
 				// loop through the versions

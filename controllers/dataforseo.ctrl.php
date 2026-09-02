@@ -150,7 +150,15 @@ class DataForSEOController extends Controller {
         if (!empty($keywordInfo['stop_crawl_on_match'])) {
             $searchInfo['stop_crawl_on_match'] = $keywordInfo['stop_crawl_on_match'];
         }
-        
+
+        // AI Overview only exists in Google's "advanced" responses. A caller
+        // that explicitly asks for advanced on google also gets the async
+        // overview fetch - DataForSEO refunds the surcharge when a cached
+        // (synchronous) overview is already present, so this is pay-per-hit.
+        if ($seDomianCat == "google" && $dataType == "advanced") {
+            $searchInfo['load_async_ai_overview'] = true;
+        }
+
         // for debugging purpose
         /*debugVar(["/v3/serp/$seDomianCat/$cat/$subCat/$dataType", $searchInfo]);*/
 
@@ -219,7 +227,7 @@ class DataForSEOController extends Controller {
         return $langName;
     }
     
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
         $crawlResult = array();
         $seFound = false;
         $websiteUrl = formatUrl($keywordInfo['url'], false);
@@ -273,22 +281,41 @@ class DataForSEOController extends Controller {
             // call serp api to get the results
             $seFound = true;
             $urlInfo = parse_url($seList[$seInfoId]['url']);
-            $seachEngine = $urlInfo['host']; 
-            $result = $this->doSERPAPICall($keywordInfo, $seachEngine);
-            
+            $seachEngine = $urlInfo['host'];
+            $seDomianCatForSe = DataForSEOController::getSERPDomainCategory($seachEngine);
+            $wantAio = $includeAio && ($seDomianCatForSe == "google");
+            $dataType = $wantAio ? "advanced" : "regular";
+            $result = $this->doSERPAPICall($keywordInfo, $seachEngine, "organic", "live", $dataType);
+
             // check crawl status
-            if(!empty($result['status'])) {                
+            if(!empty($result['status'])) {
                 // to update cron that report executed for akeyword on a search engine
                 if ($cron) {
                     $reportCtrler->saveCronTrackInfo($keywordInfo['id'], $seInfoId, $time);
                 }
-                
+
+                if ($wantAio) {
+                    include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+                    $crawlResult[$seInfoId]['aio'] = AIOverviewController::parseDataForSEO(
+                        $result['data']['items'] ?? [],
+                        date('Y-m-d')
+                    );
+                }
+
                 // verify results array having search results
                 if (!empty($result['data']['items'])) {
                     $crawlResult[$seInfoId]['matched'] = array();
                     
                     // loop through the results
                     foreach ($result['data']['items'] as $itemInfo) {
+                        // advanced responses interleave non-organic SERP features
+                        // (ai_overview, people_also_ask, etc.) in the same items array
+                        if (isset($itemInfo['type']) && $itemInfo['type'] !== 'organic') {
+                            continue;
+                        }
+                        if (empty($itemInfo['url'])) {
+                            continue;
+                        }
                         $url = $itemInfo['url'];
                         if (
                             $showAll || (
@@ -1034,6 +1061,13 @@ class DataForSEOController extends Controller {
             $params['se_domain'] = $seUrl;
         }
 
+        // AI Overview only exists on Google SERPs. Always request the async
+        // variant - DataForSEO refunds the surcharge when a cached (synchronous)
+        // overview is already present, so this is pay-per-hit, not pay-per-keyword.
+        if ($seDomainCat == "google") {
+            $params['load_async_ai_overview'] = true;
+        }
+
         // Post task to DataForSEO
         $apiResult = $this->__postSERPTaskToAPI($seDomainCat, $params);
         if (!$apiResult['status']) {
@@ -1171,7 +1205,11 @@ class DataForSEOController extends Controller {
             'pending' => false,
         ];
 
-        $endpoint = "/v3/serp/$seDomainCat/organic/task_get/regular/$taskId";
+        // 'advanced' includes SERP features (ai_overview among them); 'regular' omits
+        // them entirely. Only Google needs it - AI Overview is a Google-only feature,
+        // and switching bing/yahoo would be an unrelated pricing/behaviour change.
+        $taskGetType = ($seDomainCat == "google") ? "advanced" : "regular";
+        $endpoint = "/v3/serp/$seDomainCat/organic/task_get/$taskGetType/$taskId";
 
         // DataForSEO status codes that mean the task is still pending (not yet processed)
         $pendingStatusCodes = [20100, 40602];
@@ -1281,6 +1319,14 @@ class DataForSEOController extends Controller {
             $firstMatch = true;
 
             foreach ($apiResult['data']['items'] as $itemInfo) {
+                // advanced responses interleave non-organic SERP features
+                // (ai_overview, people_also_ask, etc.) in the same items array
+                if (isset($itemInfo['type']) && $itemInfo['type'] !== 'organic') {
+                    continue;
+                }
+                if (empty($itemInfo['url'])) {
+                    continue;
+                }
                 $url = $itemInfo['url'];
 
                 // Check if URL matches website
@@ -1317,6 +1363,21 @@ class DataForSEOController extends Controller {
             ];
             $reportCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
             if ($verbose) echo " no matches, stored rank 0";
+        }
+
+        // AI Overview is a Google-only SERP feature - only parse/store it for
+        // the google platform, using the advanced task_get response fetched above.
+        // A failure here must not abort the rest of the batch, so it is isolated.
+        if ($taskInfo['platform'] == 'google') {
+            try {
+                include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+                $aioCtrler = new AIOverviewController();
+                $subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+                $normalized = AIOverviewController::parseDataForSEO($apiResult['data']['items'] ?? [], $reportDate);
+                $aioCtrler->saveResult($keywordId, $seId, $reportDate, 'dataforseo', $normalized, $websiteUrl, $subdomainPolicy);
+            } catch (Exception $e) {
+                if ($verbose) echo "  - AI Overview parse/save failed for keyword {$keywordId}: {$e->getMessage()}\n";
+            }
         }
 
         // Update cron track info
@@ -1436,6 +1497,74 @@ class DataForSEOController extends Controller {
         }
 
         return $result;
+    }
+
+    /**
+     * Fetch search volume for a keyword from DataForSEO Google Ads API (live mode)
+     *
+     * @param array $keywordInfo Keyword info (name, country_code)
+     * @return array ['status' => bool, 'message' => string, 'data' => array]
+     */
+    function getSearchVolumeFromDFS($keywordInfo) {
+        $result = ['status' => false, 'message' => 'Internal error occurred', 'data' => []];
+
+        if (empty($keywordInfo['name'])) {
+            $result['message'] = 'Keyword name is required';
+            return $result;
+        }
+
+        // Google Ads does not use language_name; location is optional
+        $postData = ['keywords' => [mb_convert_encoding($keywordInfo['name'], 'UTF-8')]];
+        $locationName = $this->__getLocationName($keywordInfo['country_code'], false);
+        if (!empty($locationName)) {
+            $postData['location_name'] = $locationName;
+        }
+
+        try {
+            $apiResult = $this->restClient->post('/v3/keywords_data/google_ads/search_volume/live', [$postData]);
+        } catch (RestClientException $e) {
+            $result['message'] = "HTTP {$e->getHttpCode()}: {$e->getMessage()}";
+            return $result;
+        }
+
+        if (empty($apiResult) || $apiResult['status_code'] != 20000) {
+            $result['message'] = !empty($apiResult['status_message']) ? $apiResult['status_message'] : 'DataForSEO API error';
+            return $result;
+        }
+
+        list($svData, $status) = self::__parseSearchVolumeResults($apiResult);
+        if ($status && !empty($svData)) {
+            $result['status'] = true;
+            $result['message'] = 'Search volume fetched successfully';
+            $result['data']    = $svData;
+        } else {
+            $result['message'] = 'No search volume data returned';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse search volume results from DataForSEO Google Ads API response
+     *
+     * @param array $result Raw API response
+     * @return array [$matchInfo, $status]
+     */
+    public static function __parseSearchVolumeResults($result) {
+        $matchInfo = [];
+        $status = false;
+
+        if (!empty($result['tasks'][0]['result'][0])) {
+            $item = $result['tasks'][0]['result'][0];
+            $matchInfo['search_volume']      = $item['search_volume'] ?? null;
+            $matchInfo['monthly_searches']   = $item['monthly_searches'] ?? null;
+            $matchInfo['competition']        = $item['competition'] ?? null;
+            $matchInfo['keyword_difficulty'] = $item['competition_index'] ?? null;
+            $matchInfo['cpc']                = isset($item['low_top_of_page_bid']) ? round($item['low_top_of_page_bid'], 2) : null;
+            $status = true;
+        }
+
+        return [$matchInfo, $status];
     }
 }
 ?>

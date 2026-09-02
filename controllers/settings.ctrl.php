@@ -295,7 +295,8 @@ class SettingsController extends Controller{
 			$this->set('adminName', $adminName);
 			$content = $this->getViewContent('email/test_email');
 			
-			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content)) {
+			$debugMail = !empty($info['debug_mail']) ? intval($info['debug_mail']) : false;
+			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content, '', $debugMail)) {
 				showErrorMsg('An internal error occured while sending mail!');
 			} else {
 				showSuccessMsg("Email send successfully to " . $info['test_email']);
@@ -323,8 +324,9 @@ class SettingsController extends Controller{
 	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) return false;
 	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) return false;
 	    switch ($feature) {
-	        case 'serp': return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
-	        default:     return true;
+	        case 'serp':          return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
+	        case 'search_volume': return defined('SP_ENABLE_SPAPI_SEARCH_VOLUME') && SP_ENABLE_SPAPI_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 
@@ -332,14 +334,15 @@ class SettingsController extends Controller{
 	    if (!defined('SP_ENABLE_DFS') || !SP_ENABLE_DFS) return false;
 	    if ((SP_DFS_API_LOGIN == "") || (SP_DFS_API_PASSWORD == "")) return false;
 	    switch ($feature) {
-	        case 'serp':     return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
-	        case 'backsatu': return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
-	        case 'review':   return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
-	        default:         return true;
+	        case 'serp':          return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
+	        case 'backsatu':      return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'review':        return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
+	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 
-	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
 	    $status = false;
 	    $results =  [];
 
@@ -348,7 +351,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
-	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 
@@ -357,7 +360,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/spapi.ctrl.php");
 	        $spapiCtrler = new SPAPIController();
 	        $status = true;
-	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 

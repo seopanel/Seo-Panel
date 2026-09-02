@@ -86,13 +86,13 @@ class SeoPluginsController extends Controller{
 		}
 		
 		// if no action specified just initialize plugin
+		$data = $_REQUEST;
 		if ($info['action'] == 'get_plugin_object') {
 			$pluginControler->initPlugin($data);
 			return $pluginControler;
 		} else {
 			$this->pluginCtrler = $pluginControler;
 			$action = empty($info['action']) ? "index" : $info['action'];
-			$data = $_REQUEST;
 			$pluginControler->initPlugin($data);
 			$pluginControler->$action($data);
 		}

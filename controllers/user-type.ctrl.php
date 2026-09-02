@@ -594,7 +594,7 @@ class UserTypeController extends Controller {
 			if (!empty($specColInfo['custom_validation'])) {
 				$errMsg[$specCol] = formatErrorMsg($specColInfo['custom_validation']->$specColInfo['validation']($settingsInfo[$specCol]));
 			} else if (!empty($specColInfo['validation'])) {
-				$errMsg[$specCol] = formatErrorMsg($this->validate->$specColInfo['validation']($settingsInfo[$specCol]));
+				$errMsg[$specCol] = formatErrorMsg($this->validate->{$specColInfo['validation']}($settingsInfo[$specCol]));
 			}	
 			
 			// if error occured

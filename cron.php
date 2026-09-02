@@ -37,9 +37,17 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		
 		switch($_POST['sec']){
-			
+
 			case "generate":
 				$controller->executeReportGenerationScript($_POST);
+				break;
+
+			case "save_ping_settings":
+				$controller->saveSchedulePingSettings($_POST);
+				break;
+
+			case "regenerate_ping_secret":
+				$controller->regeneratePingSecret();
 				break;
 		}
 		
@@ -60,8 +68,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 			
 			case "croncommand":
 				$controller->showCronCommand();
-				break;				
-	
+				break;
+
+			case "health":
+				$controller->showSchedulerHealth();
+				break;
+
 			default:
 				$controller->showReportGenerationManager();
 				break;
@@ -84,7 +96,27 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
     include_once(SP_CTRLPATH."/information.ctrl.php");
 	$controller = New CronController();
 	$controller->timeStamp = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-	
+
+	// Non-blocking: if another cron.php invocation already holds the lock,
+	// exit immediately with no output and no error - this is the normal
+	// case (e.g. a run still in progress from a previous, longer-than-usual
+	// invocation), not a failure. The lock releases automatically if this
+	// process dies for any reason (killed, fatal error, die()).
+	if (!$controller->acquireSchedulerLock()) {
+		exit;
+	}
+
+	// Fallback cleanup for any exit path that skips the normal end of this
+	// branch (a fatal error, or a die() inside a tool's cron method, e.g.
+	// keywordPositionCheckerCron()'s SP_NUMBER_KEYWORDS_CRON cap). Marks
+	// the run 'incomplete' only if it never reached the normal completion
+	// call below (finishRunLog() is idempotent - see its own docblock).
+	register_shutdown_function(function() use ($controller) {
+		$controller->finishRunLog('incomplete');
+		$controller->releaseSchedulerLock();
+	});
+	$controller->startRunLog('cli');
+
 	$includeList = array();
 	$userList = array();
 	
@@ -140,5 +172,27 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 		$dfsCtrler->processPendingDFSTasks(true);
 		echo "=== DataForSEO tasks processing completed ===\n";
 	}
+
+	// prune AI Overview reference detail rows past the configured retention window
+	include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+	$aioCtrler = new AIOverviewController();
+	$aioCtrler->pruneOldReferences();
+	echo "Pruned AI Overview references older than " . (defined('SP_AIO_RETENTION_DAYS') ? SP_AIO_RETENTION_DAYS : 90) . " days\n";
+
+	// prune AI Visibility referral rows, bot hit rows, and stale rate-limit buckets
+	include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
+	$aivCtrler = new AIVisibilityController();
+	$aivCtrler->pruneOldReferrals();
+	$aivCtrler->pruneOldBotHits();
+	$aivCtrler->pruneRateLimitBuckets();
+	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
+	echo "Pruned AI bot hits older than " . (defined('AIB_BOT_RETENTION_DAYS') ? AIB_BOT_RETENTION_DAYS : 365) . " days\n";
+
+	// regenerate AI Insights for every active website (at most once/day - see refreshAllAIInsights())
+	$controller->refreshAllAIInsights();
+	echo "Refreshed AI Insights for active websites (once per day)\n";
+
+	$controller->finishRunLog('completed');
+	$controller->releaseSchedulerLock();
 }
 ?>
