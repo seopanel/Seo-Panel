@@ -32320,4 +32320,28 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
 ('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
 ('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
-('en', 'report', 'AI Insights email notification', 'AI Insights email notification');
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification'),
+('en', 'settings', 'SP_AI_INSIGHTS_EMAIL_NOTIFICATION', 'Enable AI Insights email notification');
+
+-- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
+-- Settings page) was missing its 'settings'-category label too, unrelated
+-- to AI Insights.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_SETUP_WIZARD', 'Initial Setup Wizard');
+
+-- Same gap for the 4 AI Overview tracking settings on the Report Settings page.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_AIO_RETENTION_DAYS', 'AI Overview reference retention (days)'),
+('en', 'settings', 'SP_AIO_ROLLING_WINDOW', 'AI Overview rolling window (observations)'),
+('en', 'settings', 'SP_AIO_STALE_DAYS', 'AI Overview data considered stale after (days)'),
+('en', 'settings', 'SP_AIO_SUBDOMAIN_MATCH', 'AI Overview subdomain match policy (registrable or exact)');
+
+-- Same gap for the AI Visibility retention/rate-limit settings. (The
+-- DataForSEO/SP API "Enable for Search Volume" labels this same sweep found
+-- were already present earlier in this file, just never imported into the
+-- affected dev DB - no fix needed here for those two.)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'AIV_REFERRAL_RETENTION_DAYS', 'AI referral data retention (days)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_TOKEN', 'Rate limit per site token (requests/min)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_IP', 'Rate limit per source IP (requests/min)'),
+('en', 'settings', 'AIB_BOT_RETENTION_DAYS', 'AI bot hit data retention (days)');

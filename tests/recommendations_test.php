@@ -235,7 +235,7 @@ $ctrler->db->query("DELETE FROM reports_settings WHERE user_id=$lazyUserId");
 $repSetInfo = $reportCtrler->getUserReportSettings($lazyUserId);
 assertEquals(intval(SP_AI_INSIGHTS_EMAIL_NOTIFICATION), intval($repSetInfo['ai_insights_email_notification']), 'a freshly lazy-created reports_settings row seeds ai_insights_email_notification from the system setting');
 $persisted = $ctrler->db->select("SELECT ai_insights_email_notification FROM reports_settings WHERE user_id=$lazyUserId", true);
-assertEquals('1', $persisted['ai_insights_email_notification'], 'the seeded value was actually persisted to the row, not just held in memory');
+assertEquals(strval(intval(SP_AI_INSIGHTS_EMAIL_NOTIFICATION)), $persisted['ai_insights_email_notification'], 'the seeded value was actually persisted to the row, not just held in memory');
 $ctrler->db->query("DELETE FROM reports_settings WHERE user_id=$lazyUserId");
 
 echo "\n" . bold("=== CronController::refreshAllAIInsights(): once-per-day gate + iteration ===") . "\n";

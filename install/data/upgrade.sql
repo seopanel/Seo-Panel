@@ -21,11 +21,17 @@ CREATE TABLE IF NOT EXISTS `sp_recommendations` (
   KEY `website_user` (`website_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
--- Setup wizard columns and setting
+-- Setup wizard columns and setting. Hidden (display=0) for this version -
+-- not ready to expose on the System Settings page yet.
 ALTER TABLE `users` ADD COLUMN `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0;
 ALTER TABLE `users` ADD COLUMN `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0;
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 1);
+('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 0);
+
+-- 'settings'-category label for the above, kept even while hidden so it's
+-- ready whenever this is switched back to display=1 in a future version.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_SETUP_WIZARD', 'Initial Setup Wizard');
 
 -- Search volume results table (populated via SP API /v1/search-volume)
 CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
@@ -53,6 +59,13 @@ CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Enable for Search Volume', 'SP_ENABLE_DFS_SEARCH_VOLUME', '1', 'dataforseo', 'bool', 1),
 ('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1);
+
+-- 'settings'-category labels for the above, for existing installs upgrading
+-- via this file alone (textlang.sql already carries these but isn't
+-- necessarily re-imported on every upgrade).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_SEARCH_VOLUME', 'Enable for Search Volume'),
+('en', 'settings', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', 'Enable for Search Volume');
 
 -- AI Overview tracking: columns on searchresults (provider + AIO measurement)
 ALTER TABLE `searchresults` ADD COLUMN `provider` VARCHAR(20) DEFAULT NULL COMMENT 'dataforseo, spapi; NULL for direct-crawl/legacy rows';
@@ -88,6 +101,15 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'small', 1),
 ('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'small', 1),
 ('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'small', 1);
+
+-- 'settings'-category labels for the above - were missing, which made all 4
+-- render with a blank label on the admin's Report Settings page (same class
+-- of bug fixed for SP_AI_INSIGHTS_EMAIL_NOTIFICATION and SP_SETUP_WIZARD).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_AIO_RETENTION_DAYS', 'AI Overview reference retention (days)'),
+('en', 'settings', 'SP_AIO_ROLLING_WINDOW', 'AI Overview rolling window (observations)'),
+('en', 'settings', 'SP_AIO_STALE_DAYS', 'AI Overview data considered stale after (days)'),
+('en', 'settings', 'SP_AIO_SUBDOMAIN_MATCH', 'AI Overview subdomain match policy (registrable or exact)');
 
 -- AI Overview tracking UI labels
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
@@ -187,6 +209,9 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 ('Rate limit per source IP (requests/min)','AIV_RATE_LIMIT_PER_IP','60','aivisibility','small',1);
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'AIV_REFERRAL_RETENTION_DAYS', 'AI referral data retention (days)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_TOKEN', 'Rate limit per site token (requests/min)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_IP', 'Rate limit per source IP (requests/min)'),
 ('en', 'seotools', 'ai-visibility', 'AI Visibility'),
 ('en', 'seotools', 'AI Visibility', 'AI Visibility'),
 ('en', 'seotools', 'Setup', 'Setup'),
@@ -372,6 +397,9 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 ('AI bot hit data retention (days)','AIB_BOT_RETENTION_DAYS','365','aivisibility','small',1);
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'AIB_BOT_RETENTION_DAYS', 'AI bot hit data retention (days)');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'AI Bot Crawlers', 'AI Bot Crawlers'),
 ('en', 'aivisibility', 'AI Bot Crawler Tracking', 'AI Bot Crawler Tracking'),
 ('en', 'aivisibility', 'botcollectordesc', 'AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others) never execute JavaScript, so the referral snippet above cannot see them. Download this collector script and include it on your server to track real crawler visits.'),
@@ -399,4 +427,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
 ('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
 ('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
-('en', 'report', 'AI Insights email notification', 'AI Insights email notification');
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification'),
+-- 'settings' category, keyed by the literal set_name - this is the key the
+-- admin's auto-generated Report Settings page (showreportsettings.ctp.php)
+-- looks up via $spTextSettings[$listInfo['set_name']], distinct from the
+-- 'report' category text above used by the per-user reportscheduler page.
+('en', 'settings', 'SP_AI_INSIGHTS_EMAIL_NOTIFICATION', 'Enable AI Insights email notification');
