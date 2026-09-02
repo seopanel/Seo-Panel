@@ -107,6 +107,9 @@
 .rec-table tr:hover td { background: #fafbff; }
 .rec-title { font-weight: 600; color: #333; }
 .rec-desc { color: #777; font-size: 12px; margin-top: 4px; line-height: 1.5; }
+.rec-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.rec-stat { font-size: 12px; color: #555; }
+.rec-stat b { color: #333; }
 .rec-empty {
     background: #fff;
     border: 1px solid #e0e0e0;
@@ -165,7 +168,6 @@
         <?php foreach ($typeMeta as $type => $meta) {
             if (empty($grouped[$type])) continue;
             $count = count($grouped[$type]);
-            $showWmCols = ($type === 'warning' && $grouped[$type][0]['category'] === 'webmaster_tools');
             ?>
         <div class="rec-card">
             <div class="rec-card-header <?php echo $meta['class'] ?>">
@@ -177,33 +179,32 @@
                 <thead>
                     <tr>
                         <th style="width:45%">Recommendation</th>
-                        <?php if ($showWmCols) { ?>
-                        <th class="rec-num">Impressions<br><span style="font-weight:400;text-transform:none;">30 days</span></th>
-                        <th class="rec-num">Avg Position<br><span style="font-weight:400;text-transform:none;">30 days</span></th>
-                        <th class="rec-num">Clicks<br><span style="font-weight:400;text-transform:none;">30 days</span></th>
-                        <th class="rec-num">Avg CTR</th>
-                        <?php } else { ?>
                         <th>Details</th>
-                        <?php } ?>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($grouped[$type] as $rec) {
+                        // Each row decides for itself whether its `meta` JSON matches a
+                        // known shape worth rendering as stat chips - a per-row check,
+                        // not a per-group one, since multiple categories can share a type.
                         $meta_data = !empty($rec['meta']) ? json_decode($rec['meta'], true) : array();
+                        $isWmRow = ($rec['category'] === 'webmaster_tools' && !empty($meta_data));
                         ?>
                     <tr>
                         <td>
                             <div class="rec-title"><?php echo htmlspecialchars($rec['title']) ?></div>
-                            <?php if ($showWmCols) { ?><div class="rec-desc"><?php echo htmlspecialchars($rec['description']) ?></div><?php } ?>
                         </td>
-                        <?php if ($showWmCols && !empty($meta_data)) { ?>
-                        <td class="rec-num"><?php echo number_format($meta_data['impressions'] ?? 0) ?></td>
-                        <td class="rec-num"><?php echo $meta_data['average_position'] ?? '—' ?></td>
-                        <td class="rec-num"><?php echo number_format($meta_data['clicks'] ?? 0) ?></td>
-                        <td class="rec-num"><?php echo ($meta_data['ctr'] ?? 0) ?>%</td>
-                        <?php } else { ?>
-                        <td class="rec-desc"><?php echo htmlspecialchars($rec['description']) ?></td>
-                        <?php } ?>
+                        <td class="rec-desc">
+                            <?php if ($isWmRow) { ?>
+                            <div class="rec-stats">
+                                <span class="rec-stat">Impressions (30d): <b><?php echo number_format($meta_data['impressions'] ?? 0) ?></b></span>
+                                <span class="rec-stat">Avg Position: <b><?php echo $meta_data['average_position'] ?? '—' ?></b></span>
+                                <span class="rec-stat">Clicks (30d): <b><?php echo number_format($meta_data['clicks'] ?? 0) ?></b></span>
+                                <span class="rec-stat">Avg CTR: <b><?php echo ($meta_data['ctr'] ?? 0) ?>%</b></span>
+                            </div>
+                            <?php } ?>
+                            <?php echo htmlspecialchars($rec['description']) ?>
+                        </td>
                     </tr>
                     <?php } ?>
                 </tbody>

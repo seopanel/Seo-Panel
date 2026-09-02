@@ -1921,8 +1921,49 @@ class CronController extends Controller {
 		$aivCtrler->pruneOldBotHits();
 		$aivCtrler->pruneRateLimitBuckets();
 
+		$this->refreshAllAIInsights();
+
 		$this->finishRunLog('completed');
 		$this->releaseSchedulerLock();
+	}
+
+	/*
+	 * Regenerate AI Insights (RecommendationsController) for every active
+	 * website, at most once per calendar day regardless of how often this
+	 * cron pass itself runs (CLI daily, or ping-triggered more often). Runs
+	 * after executeCron() in both callers so insights reflect the freshest
+	 * rank/auditor/AI Overview/AI bot data from this same run. Generation is
+	 * pure SQL against already-collected data (no crawling, no external
+	 * API calls), so unlike the tool cron jobs it does not need job_queue
+	 * chunking - a single website's failure is isolated with try/catch so
+	 * it can't take down the rest of the loop.
+	 */
+	function refreshAllAIInsights() {
+
+		include_once(SP_CTRLPATH . "/information.ctrl.php");
+		$infoCtrler = new InformationController();
+		if (!empty($infoCtrler->__getTodayInformation('ai_insights_refresh'))) {
+			return; // already refreshed today
+		}
+
+		include_once(SP_CTRLPATH . "/recommendations.ctrl.php");
+		include_once(SP_CTRLPATH . "/user.ctrl.php");
+		$recCtrler = new RecommendationsController();
+		$userCtrler = new UserController();
+
+		$websiteList = $this->db->select("SELECT id, user_id FROM websites WHERE status=1");
+		foreach ($websiteList as $websiteInfo) {
+			if (!$userCtrler->isUserExpired($websiteInfo['user_id'])) {
+				continue;
+			}
+			try {
+				$recCtrler->refreshRecommendationsForWebsite($websiteInfo['id'], $websiteInfo['user_id']);
+			} catch (Throwable $e) {
+				continue; // one website's insight generation failing must not affect the rest
+			}
+		}
+
+		$infoCtrler->updateTodayInformation('done', 'ai_insights_refresh');
 	}
 
 	// func to show debug messages
