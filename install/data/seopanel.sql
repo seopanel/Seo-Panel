@@ -1800,10 +1800,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('AI Overview reference retention (days)', 'SP_AIO_RETENTION_DAYS', '90', 'report', 'small', 1),
-('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'small', 1),
-('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'small', 1),
-('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'small', 1);
+('AI Overview reference retention (days)', 'SP_AIO_RETENTION_DAYS', '90', 'report', 'medium', 1),
+('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'medium', 1),
+('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'medium', 1),
+('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'medium', 1);
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_AIO_RETENTION_DAYS', 'AI Overview reference retention (days)'),
