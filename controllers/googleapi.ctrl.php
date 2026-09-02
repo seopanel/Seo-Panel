@@ -245,48 +245,43 @@ class GoogleAPIController extends Controller{
 	    }
 	    $debug[] = "getAuthClient OK";
 
-	    // Create a Google_Service_Analytics object
-	    $analytics = new Google_Service_Analytics($client);
+	    // GA4 Admin API: list accounts + properties in ONE call (UA analytics/v3 was decommissioned 2024-07)
+	    $accessToken = $this->__getAccessToken($client);
+	    $apiUrl = "https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200";
+	    $debug[] = "  Calling API: $apiUrl";
+	    $ret = $this->plainAPICall($apiUrl, $accessToken);
 
-	    // Retrieve the list of accounts
-	    $accounts = $analytics->management_accounts->listManagementAccounts();
-	    $accountItems = $accounts->getItems();
-	    $debug[] = "Total GA accounts found: " . count($accountItems);
+	    if (!empty($ret['error'])) {
+	        $debug[] = "  API error: HTTP " . $ret['error'] . " - " . ($ret['errmsg'] ?? 'no message');
+	        return [FALSE, $websites, $ret['errmsg'] ?? 'API Error', $debug];
+	    }
 
-	    // Loop through the accounts
-	    foreach ($accountItems as $account) {
-	        // Get the account ID and name
-	        $accountId = $account->getId();
-	        $accountName = $account->getName();
-	        $debug[] = "Account: $accountName (ID: $accountId)";
+	    if (!empty($ret['page']['accountSummaries'])) {
+	        $debug[] = "Total GA accounts found: " . count($ret['page']['accountSummaries']);
+	        foreach ($ret['page']['accountSummaries'] as $acc) {
+	            $accountId = str_replace("accounts/", "", $acc['account']);
+	            $accountName = $acc['displayName'];
+	            $debug[] = "Account: $accountName (ID: $accountId)";
 
-	        // get analytics admin properties
-	        $accessToken = $this->__getAccessToken($client);
-	        $apiUrl = "https://analyticsadmin.googleapis.com/v1alpha/properties?filter=parent:accounts/$accountId";
-	        $debug[] = "  Calling API: $apiUrl";
-	        $ret = $this->plainAPICall($apiUrl, $accessToken);
-
-	        if (!empty($ret['error'])) {
-	            $debug[] = "  API error for account $accountId: HTTP " . $ret['error'] . " - " . ($ret['errmsg'] ?? 'no message');
-	            continue;
-	        }
-
-	        if (!empty($ret['page']['properties'])) {
-	            $debug[] = "  Properties found: " . count($ret['page']['properties']);
-	            foreach ($ret['page']['properties'] as $property) {
-	                $propertyId = str_replace("properties/", "", $property['name']);
-	                $propertyName = $property['displayName'];
-	                $debug[] = "    Property: $propertyName (ID: $propertyId)";
-	                $websites[] = array(
-	                    'account_name' => $accountName,
-	                    'account_id' => $accountId,
-	                    'property_name' => $propertyName,
-	                    'property_id' => $propertyId,
-	                );
+	            if (!empty($acc['propertySummaries'])) {
+	                $debug[] = "  Properties found: " . count($acc['propertySummaries']);
+	                foreach ($acc['propertySummaries'] as $prop) {
+	                    $propertyId = str_replace("properties/", "", $prop['property']);
+	                    $propertyName = $prop['displayName'];
+	                    $debug[] = "    Property: $propertyName (ID: $propertyId)";
+	                    $websites[] = array(
+	                        'account_name' => $accountName,
+	                        'account_id' => $accountId,
+	                        'property_name' => $propertyName,
+	                        'property_id' => $propertyId,
+	                    );
+	                }
+	            } else {
+	                $debug[] = "  No properties found for account $accountId";
 	            }
-	        } else {
-	            $debug[] = "  No properties found for account $accountId";
 	        }
+	    } else {
+	        $debug[] = "No GA accounts found";
 	    }
 
 	    $debug[] = "-- getanalyticWebsitesPropertyIds END, total websites: " . count($websites) . " --";
