@@ -385,3 +385,18 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Bot crawls over time', 'Bot crawls over time'),
 ('en', 'aivisibility', 'Crawls', 'Crawls'),
 ('en', 'aivisibility', 'Top crawled pages', 'Top crawled pages');
+
+-- AI Insights email digest: opt-out email when a website has genuinely new
+-- AI Insights (not the same unresolved issue re-appearing with a different
+-- count - see RecommendationsController::__recommendationIdentity()).
+-- Reuses the existing per-user reports_settings row/UI rather than a new table.
+ALTER TABLE `reports_settings` ADD COLUMN `ai_insights_email_notification` tinyint(1) NOT NULL DEFAULT 1;
+
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Insights email notification','SP_AI_INSIGHTS_EMAIL_NOTIFICATION','1','report','bool',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
+('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
+('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification');

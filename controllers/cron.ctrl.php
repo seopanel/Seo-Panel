@@ -1947,19 +1947,48 @@ class CronController extends Controller {
 		}
 
 		include_once(SP_CTRLPATH . "/recommendations.ctrl.php");
+		include_once(SP_CTRLPATH . "/report.ctrl.php");
 		include_once(SP_CTRLPATH . "/user.ctrl.php");
 		$recCtrler = new RecommendationsController();
+		$reportCtrler = new ReportController();
 		$userCtrler = new UserController();
 
-		$websiteList = $this->db->select("SELECT id, user_id FROM websites WHERE status=1");
+		$newByUser = array();
+
+		$websiteList = $this->db->select("SELECT id, name, user_id FROM websites WHERE status=1");
 		foreach ($websiteList as $websiteInfo) {
 			if (!$userCtrler->isUserExpired($websiteInfo['user_id'])) {
 				continue;
 			}
 			try {
-				$recCtrler->refreshRecommendationsForWebsite($websiteInfo['id'], $websiteInfo['user_id']);
+				$newRows = $recCtrler->refreshRecommendationsForWebsite($websiteInfo['id'], $websiteInfo['user_id']);
 			} catch (Throwable $e) {
 				continue; // one website's insight generation failing must not affect the rest
+			}
+			if (!empty($newRows)) {
+				$newByUser[$websiteInfo['user_id']][$websiteInfo['id']] = array(
+					'name' => $websiteInfo['name'],
+					'rows' => $newRows,
+				);
+			}
+		}
+
+		// One aggregated digest per user, covering every website of theirs
+		// with genuinely new insights today - gated the same two-layer way
+		// (system-wide x per-user) as the existing report email notification.
+		foreach ($newByUser as $userId => $byWebsite) {
+			$repSetInfo = $reportCtrler->getUserReportSettings($userId);
+			if (empty(SP_AI_INSIGHTS_EMAIL_NOTIFICATION) || empty($repSetInfo['ai_insights_email_notification'])) {
+				continue;
+			}
+			$userInfo = $userCtrler->__getUserInfo($userId);
+			if (empty($userInfo['email'])) {
+				continue;
+			}
+			try {
+				$recCtrler->sendAIInsightsDigestEmail($userInfo, $byWebsite);
+			} catch (Throwable $e) {
+				continue; // one user's email failing must not affect the rest
 			}
 		}
 

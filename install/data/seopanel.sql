@@ -816,13 +816,14 @@ CREATE TABLE IF NOT EXISTS `reports_settings` (
   `user_id` int(11) NOT NULL,
   `report_interval` int(11) NOT NULL DEFAULT '1',
   `email_notification` tinyint(1) NOT NULL DEFAULT '0',
+  `ai_insights_email_notification` tinyint(1) NOT NULL DEFAULT '1',
   `last_generated` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `reports_settings` (`id`, `user_id`, `report_interval`, `email_notification`, `last_generated`) VALUES
-(1, 1, 1, 1, 1481760000);
+INSERT INTO `reports_settings` (`id`, `user_id`, `report_interval`, `email_notification`, `ai_insights_email_notification`, `last_generated`) VALUES
+(1, 1, 1, 1, 1, 1481760000);
 
 CREATE TABLE IF NOT EXISTS `review_links` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -1805,6 +1806,17 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('Ping trigger secret key', 'SP_CRON_PING_SECRET', '', 'report', 'medium', 0),
 ('Ping-triggered run budget (seconds)', 'SP_JOB_QUEUE_BUDGET_SECONDS', '20', 'report', 'small', 0);
 
+-- AI Insights email digest: opt-out email when a website has genuinely new
+-- AI Insights (not the same unresolved issue re-appearing with a different
+-- count). Reuses the existing per-user reports_settings row/UI.
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Insights email notification','SP_AI_INSIGHTS_EMAIL_NOTIFICATION','1','report','bool',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
+('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
+('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

@@ -59,8 +59,20 @@ class RecommendationsController extends Controller {
      * the AJAX-facing refreshRecommendations() above, or from a cron context
      * (CronController::refreshAllAIInsights()) that already knows the
      * website's owning user_id.
+     *
+     * Returns the rows that are genuinely new since the last refresh (by
+     * stable identity, not by row id - every refresh deletes and re-inserts
+     * everything). The AJAX caller above ignores this; the cron caller uses
+     * it to decide what's worth emailing, so a persisting issue whose count
+     * merely changed (e.g. 42 -> 45 broken links) does NOT get re-flagged
+     * as new every day.
      */
     function refreshRecommendationsForWebsite($websiteId, $userId) {
+
+        $previousKeys = array();
+        foreach ($this->__getStoredRecommendations($websiteId, $userId) as $rec) {
+            $previousKeys[$this->__recommendationIdentity($rec)] = true;
+        }
 
         // Clear old recommendations for this website / user
         $this->db->query("DELETE FROM sp_recommendations WHERE website_id=$websiteId AND user_id=$userId");
@@ -72,6 +84,59 @@ class RecommendationsController extends Controller {
         $this->__generateAIBotSilentRecommendation($websiteId, $userId);
         $this->__generateRankDropRecommendations($websiteId, $userId);
         $this->__generateSiteAuditorRecommendations($websiteId, $userId);
+
+        $newlyAdded = array();
+        foreach ($this->__getStoredRecommendations($websiteId, $userId) as $rec) {
+            if (empty($previousKeys[$this->__recommendationIdentity($rec)])) {
+                $newlyAdded[] = $rec;
+            }
+        }
+        return $newlyAdded;
+    }
+
+    /*
+     * Stable identity for a recommendation row, independent of any dynamic
+     * count/value baked into its title - keyed on the underlying thing the
+     * rule is about (a keyword, or a fixed rule name for site-wide checks),
+     * not the row's wording. Falls back to title only for a row whose meta
+     * doesn't carry either (shouldn't happen for any current rule).
+     */
+    private function __recommendationIdentity($rec) {
+        $meta = !empty($rec['meta']) ? json_decode($rec['meta'], true) : array();
+        $key  = !empty($meta['keyword']) ? $meta['keyword'] : (!empty($meta['rule']) ? $meta['rule'] : $rec['title']);
+        return $rec['category'] . '|' . $key;
+    }
+
+    /*
+     * Send one aggregated "what's new" email for a user, covering every
+     * website of theirs that has genuinely new insights today. Mirrors
+     * ReportController::sentEmailNotificationForReportGen()'s shape.
+     * $newInsightsByWebsite: [websiteId => ['name' => ..., 'rows' => [...]]].
+     * Uses $userInfo['lang_code'] directly (the recipient's own language) -
+     * unlike the report email, this must not read $_SESSION['lang_code'],
+     * since this runs from a session-less cron context.
+     */
+    function sendAIInsightsDigestEmail($userInfo, $newInsightsByWebsite) {
+        if (empty($newInsightsByWebsite)) return false;
+
+        $aiTexts = $this->getLanguageTexts('aiinsights', $userInfo['lang_code']);
+        $this->set('aiTexts', $aiTexts);
+        $this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
+        $this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
+
+        $name = trim($userInfo['first_name'] . ' ' . $userInfo['last_name']);
+        $this->set('name', $name);
+        $this->set('newInsightsByWebsite', $newInsightsByWebsite);
+
+        $subject = !empty($aiTexts['ai_insights_email_subject']) ? $aiTexts['ai_insights_email_subject'] : 'New AI Insights for your website';
+        $content = $this->getViewContent('email/aiinsightsdigest');
+
+        $userController = new UserController();
+        $adminInfo = $userController->__getAdminInfo();
+        $adminName = $adminInfo['first_name'] . "-" . $adminInfo['last_name'];
+        $this->set('adminName', $adminName);
+
+        return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
     }
 
     /*
@@ -256,11 +321,13 @@ class RecommendationsController extends Controller {
             "pages to be eligible for citation in AI-generated answers, remove those directives."
         );
 
+        $meta = addslashes(json_encode(array('rule' => 'ai_bot_blocked')));
+
         $this->db->query(
             "INSERT INTO sp_recommendations
                 (website_id, user_id, type, category, title, description, meta, refreshed_at)
              VALUES
-                ($websiteId, $userId, 'error', 'ai_visibility', '$title', '$desc', NULL, '$now')"
+                ($websiteId, $userId, 'error', 'ai_visibility', '$title', '$desc', '$meta', '$now')"
         );
     }
 
@@ -285,11 +352,13 @@ class RecommendationsController extends Controller {
             ? addslashes("The last AI crawler visit (GPTBot, ClaudeBot, PerplexityBot, etc.) recorded for this site was on {$site['bot_last_seen_at']}. This may mean AI platforms are indexing your content less often.")
             : "No AI crawler visit has been recorded for this site yet since the bot collector script was installed.";
 
+        $meta = addslashes(json_encode(array('rule' => 'ai_bot_silent')));
+
         $this->db->query(
             "INSERT INTO sp_recommendations
                 (website_id, user_id, type, category, title, description, meta, refreshed_at)
              VALUES
-                ($websiteId, $userId, 'todo', 'ai_visibility', '$title', '$desc', NULL, '$now')"
+                ($websiteId, $userId, 'todo', 'ai_visibility', '$title', '$desc', '$meta', '$now')"
         );
     }
 
@@ -419,18 +488,21 @@ class RecommendationsController extends Controller {
             array(
                 'condition' => 'brocken=1',
                 'type'      => 'warning',
+                'rule'      => 'broken_links',
                 'title'     => function($n) { return $n == 1 ? "1 broken link found" : "{$n} broken links found"; },
                 'desc'      => function($n) { return "Site Auditor found {$n} broken " . ($n == 1 ? 'link' : 'links') . " on this website's most recently crawled pages."; },
             ),
             array(
                 'condition' => 'https_secure=0',
                 'type'      => 'warning',
+                'rule'      => 'https_secure',
                 'title'     => function($n) { return $n == 1 ? "1 page is not served over HTTPS" : "{$n} pages are not served over HTTPS"; },
                 'desc'      => function($n) { return $n == 1 ? "Site Auditor found 1 page that is not served over HTTPS." : "Site Auditor found {$n} pages that are not served over HTTPS."; },
             ),
             array(
                 'condition' => 'has_og_tags=0',
                 'type'      => 'todo',
+                'rule'      => 'og_tags',
                 'title'     => function($n) { return $n == 1 ? "1 page is missing Open Graph tags" : "{$n} pages are missing Open Graph tags"; },
                 'desc'      => function($n) { return $n == 1 ? "Site Auditor found 1 page missing Open Graph (og:) meta tags, which affects how it appears when shared on social media." : "Site Auditor found {$n} pages missing Open Graph (og:) meta tags, which affects how they appear when shared on social media."; },
             ),
@@ -443,12 +515,13 @@ class RecommendationsController extends Controller {
 
             $title = addslashes($check['title']($count));
             $desc  = addslashes($check['desc']($count));
+            $meta  = addslashes(json_encode(array('rule' => $check['rule'])));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
                     (website_id, user_id, type, category, title, description, meta, refreshed_at)
                  VALUES
-                    ($websiteId, $userId, '{$check['type']}', 'site_auditor', '$title', '$desc', NULL, '$now')"
+                    ($websiteId, $userId, '{$check['type']}', 'site_auditor', '$title', '$desc', '$meta', '$now')"
             );
         }
     }

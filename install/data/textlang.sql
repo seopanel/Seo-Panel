@@ -32314,3 +32314,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Bot crawls over time', 'Bot crawls over time'),
 ('en', 'aivisibility', 'Crawls', 'Crawls'),
 ('en', 'aivisibility', 'Top crawled pages', 'Top crawled pages');
+
+-- AI Insights email digest
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
+('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
+('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification');
