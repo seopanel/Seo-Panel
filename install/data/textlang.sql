@@ -32345,3 +32345,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'AIV_RATE_LIMIT_PER_TOKEN', 'Rate limit per site token (requests/min)'),
 ('en', 'settings', 'AIV_RATE_LIMIT_PER_IP', 'Rate limit per source IP (requests/min)'),
 ('en', 'settings', 'AIB_BOT_RETENTION_DAYS', 'AI bot hit data retention (days)');
+
+-- Backlink Checker modernization: DataForSEO backlink summary alternative to Moz
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_BACKLINK', 'Enable DataForSEO for Backlink Checker'),
+('en', 'backlink', 'Broken Backlinks', 'Broken Backlinks'),
+('en', 'backlink', 'backlinkdfsnotice', 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.');

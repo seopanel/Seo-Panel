@@ -336,6 +336,7 @@ class SettingsController extends Controller{
 	    switch ($feature) {
 	        case 'serp':          return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
 	        case 'backsatu':      return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'backlink':      return defined('SP_ENABLE_DFS_BACKLINK') && SP_ENABLE_DFS_BACKLINK;
 	        case 'review':        return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
 	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
 	        default:              return true;

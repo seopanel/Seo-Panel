@@ -433,3 +433,19 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- looks up via $spTextSettings[$listInfo['set_name']], distinct from the
 -- 'report' category text above used by the per-user reportscheduler page.
 ('en', 'settings', 'SP_AI_INSIGHTS_EMAIL_NOTIFICATION', 'Enable AI Insights email notification');
+
+-- Backlink Checker modernization: DataForSEO backlink summary as an
+-- alternative to the existing Moz-based path (unchanged, still the default -
+-- this is a NEW, separate, default-off flag, deliberately not reusing
+-- SP_ENABLE_DFS_BACK_SATU, since that flag already being on for Saturation
+-- Checker on an existing install must not silently start a different,
+-- billed API call for Backlink Checker too).
+ALTER TABLE `backlinkresults` ADD COLUMN `broken_backlinks` int(11) DEFAULT NULL COMMENT 'DataForSEO-only; NULL means this row was measured via Moz';
+
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable DataForSEO for Backlink Checker','SP_ENABLE_DFS_BACKLINK','0','dataforseo','bool',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_BACKLINK', 'Enable DataForSEO for Backlink Checker'),
+('en', 'backlink', 'Broken Backlinks', 'Broken Backlinks'),
+('en', 'backlink', 'backlinkdfsnotice', 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.');

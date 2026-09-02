@@ -407,6 +407,79 @@ class DataForSEOController extends Controller {
         return  $crawlResult;
     }
 
+    /**
+     * Aggregate backlink counts for a website via DataForSEO's Backlinks
+     * Summary API (POST /v3/backlinks/summary/live) - a synchronous "live"
+     * call, no task_post/task_get polling needed. Returns
+     * ['backlinks' => int, 'referring_domains' => int, 'broken_backlinks' => int]
+     * on success, or false on any error/empty result (mirrors
+     * __getSERPResultCount()'s fail-soft shape so callers can fall back).
+     */
+    function __getBacklinkSummary($url) {
+        $target = parse_url($url, PHP_URL_HOST);
+        if (empty($target)) {
+            return false;
+        }
+
+        $payload = array(
+            "target" => $target,
+            "include_subdomains" => true,
+        );
+
+        try {
+            $result = $this->restClient->post("/v3/backlinks/summary/live", [$payload]);
+        } catch (RestClientException $e) {
+            $msg = "HTTP code: {$e->getHttpCode()}\n";
+            $msg .= "Error code: {$e->getCode()}\n";
+            $msg .= "Message: {$e->getMessage()}\n";
+            $this->__logBacklinkSummaryCrawl($target, false, $msg);
+            return false;
+        }
+
+        $parsed = DataForSEOController::parseBacklinkSummaryResponse($result);
+        $this->__logBacklinkSummaryCrawl($target, $parsed !== false, $parsed !== false ? "Success" : "Unknown error or empty result");
+
+        return $parsed;
+    }
+
+    /**
+     * Pure parser for a decoded /v3/backlinks/summary/live response - no
+     * network I/O, so it's directly unit-testable against a fixture. Mirrors
+     * AIOverviewController::parseDataForSEO()'s separation of "make the
+     * call" from "parse the result".
+     */
+    public static function parseBacklinkSummaryResponse($result) {
+        if (empty($result['status_code']) || $result['status_code'] != 20000 || empty($result['tasks'][0])) {
+            return false;
+        }
+
+        $taskInfo = $result['tasks'][0];
+        if (empty($taskInfo['status_code']) || $taskInfo['status_code'] != 20000 || empty($taskInfo['result'][0])) {
+            return false;
+        }
+
+        $data = $taskInfo['result'][0];
+
+        return array(
+            'backlinks'         => isset($data['backlinks']) ? intval($data['backlinks']) : 0,
+            'referring_domains' => isset($data['referring_domains']) ? intval($data['referring_domains']) : 0,
+            'broken_backlinks'  => isset($data['broken_backlinks']) ? intval($data['broken_backlinks']) : 0,
+        );
+    }
+
+    private function __logBacklinkSummaryCrawl($target, $status, $message) {
+        $crawlLogCtrl = new CrawlLogController();
+        $crawlInfo = [];
+        $crawlInfo['crawl_type'] = 'backlink';
+        $crawlInfo['crawl_status'] = $status ? 1 : 0;
+        $crawlInfo['ref_id'] = $target;
+        $crawlInfo['subject'] = 'dataforseo';
+        $crawlInfo['crawl_referer'] = $this->apiUrl;
+        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['crawl_link'] = "";
+        $crawlLogCtrl->createCrawlLog($crawlInfo);
+    }
+
     // ==================== DFS Tasks Table Methods ====================
 
     var $dfsTasksTable = 'dfs_tasks';

@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS `backlinkresults` (
   `external_pages_to_root_domain` int(11) NOT NULL DEFAULT '0',
   `result_time` int(11) NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
+  `broken_backlinks` int(11) DEFAULT NULL COMMENT 'DataForSEO-only; NULL means this row was measured via Moz',
   PRIMARY KEY (`id`),
   KEY `result_date` (`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
@@ -1643,11 +1644,15 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
 ('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1),
 ('Enable for SERP Checker', 'SP_ENABLE_SPAPI_SERP', '1', 'seopanel_api', 'bool', 1),
-('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1);
+('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1),
+('Enable DataForSEO for Backlink Checker', 'SP_ENABLE_DFS_BACKLINK', '0', 'dataforseo', 'bool', 1);
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_SEARCH_VOLUME', 'Enable for Search Volume'),
-('en', 'settings', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', 'Enable for Search Volume');
+('en', 'settings', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', 'Enable for Search Volume'),
+('en', 'settings', 'SP_ENABLE_DFS_BACKLINK', 'Enable DataForSEO for Backlink Checker'),
+('en', 'backlink', 'Broken Backlinks', 'Broken Backlinks'),
+('en', 'backlink', 'backlinkdfsnotice', 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.');
 
 --
 -- Seo Panel 4.9.0 changes

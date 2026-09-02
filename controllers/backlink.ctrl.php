@@ -155,6 +155,12 @@ class BacklinkController extends Controller{
 			$values[] = !empty($matchInfo[$col]) ? intval($matchInfo[$col]) : 0;
 		}
 
+		// broken_backlinks is DataForSEO-only - NULL means "not measured by
+		// this row's provider" (the Moz path never sets it), same convention
+		// as the aio_* columns on searchresults.
+		$columns[] = 'broken_backlinks';
+		$values[] = array_key_exists('broken_backlinks', $matchInfo) ? intval($matchInfo['broken_backlinks']) : 'NULL';
+
 		$sql = "insert into backlinkresults(website_id," . implode(',', $columns) . ",result_date)
 		values({$matchInfo['id']}," . implode(',', $values) . ", '$resultDate')";
 		$this->db->query($sql);
@@ -238,6 +244,15 @@ class BacklinkController extends Controller{
 		    'google' => $this->backUrlList['google'] . $websiteUrl,		    
 		    'msn' => $this->backUrlList['msn'] . $websiteUrl,
 		));
+
+		$hasBrokenBacklinks = false;
+		foreach ($reportList as $repInfo) {
+			if ($repInfo['broken_backlinks'] !== null) {
+				$hasBrokenBacklinks = true;
+				break;
+			}
+		}
+		$this->set('hasBrokenBacklinks', $hasBrokenBacklinks);
 
 		$this->set('list', array_reverse($reportList, true));
 		$this->render('backlink/backlinkreport');

@@ -714,9 +714,26 @@ class CronController extends Controller {
 		$mozCtrler = new MozController();
 		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
 
-		// Extract backlink data from Moz API
+		// Extract backlink data from Moz API (default / fallback source)
 		$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
 		$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+
+		// DataForSEO backlink summary, when enabled, overrides the backlink-specific
+		// metrics above with real link-graph data. The Moz call above still runs
+		// unconditionally since Rank Checker depends on its domain/page authority
+		// data separately - this only replaces the backlink-count fields.
+		include_once(SP_CTRLPATH."/settings.ctrl.php");
+		if (SettingsController::isDFSEnabled('backlink')) {
+			include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+			$dfsCtrler = new DataForSEOController();
+			$dfsSummary = $dfsCtrler->__getBacklinkSummary($websiteUrl);
+			if (!empty($dfsSummary)) {
+				$websiteInfo['external_pages_to_page'] = $dfsSummary['backlinks'];
+				$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
+				$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
+			}
+		}
+
 		$backlinkCtrler->saveRankResults($websiteInfo, true);
 		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 
@@ -1267,6 +1284,19 @@ class CronController extends Controller {
 
 			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
 			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+
+			include_once(SP_CTRLPATH."/settings.ctrl.php");
+			if (SettingsController::isDFSEnabled('backlink')) {
+				include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+				$dfsCtrler = new DataForSEOController();
+				$dfsSummary = $dfsCtrler->__getBacklinkSummary($websiteUrl);
+				if (!empty($dfsSummary)) {
+					$websiteInfo['external_pages_to_page'] = $dfsSummary['backlinks'];
+					$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
+					$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
+				}
+			}
+
 			$backlinkCtrler->saveRankResults($websiteInfo, true);
 			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 
