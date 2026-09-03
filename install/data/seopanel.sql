@@ -1773,7 +1773,7 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 
 -- Initial setup wizard
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('Initial Setup Wizard', 'SP_SETUP_WIZARD', '1', 'system', 'bool', 0);
+('Initial Setup Wizard', 'SP_SETUP_WIZARD', '0', 'system', 'bool', 0);
 
 -- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
