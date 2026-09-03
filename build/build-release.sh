@@ -18,14 +18,17 @@
 #
 # What it does, in order:
 #   1. Preflight checks (clean working tree, version format, version match)
-#   2. Sync themes/classic/views -> themes/simple/views and themes/business/views
+#   2. Sync themes/classic/views -> themes/simple/views (only these two themes
+#      are git-tracked; business/odbox are gitignored, separate commercial
+#      products, never part of this release)
 #   3. Append the version to install/install.class.php's $spVersionList
 #   4. Report (not auto-merge) anything in upgrade.sql that looks unreflected
 #      in seopanel.sql, for manual review
 #   5. git archive (respects .gitattributes export-ignore) into version.X.Y.Z/seopanel/
-#   6. Re-clone SeoDiary + QuickWebProxy fresh into plugins/ (they're separate
-#      repos, not vendored - this overwrites whatever's checked into this
-#      repo's plugins/ for local dev convenience)
+#   6. Clone SeoDiary + QuickWebProxy fresh into plugins/ (they're separate
+#      repos and, like every other plugin except MetaTagGenerator/TestPlugin,
+#      gitignored here - git archive never includes them at all, so this step
+#      adds them rather than overwriting anything the archive produced)
 #   7. Zip the result as seopanel.v.X.Y.Z.zip, matching every past release's
 #      top-level folder name and layout
 
@@ -89,15 +92,14 @@ mkdir -p "$RELEASE_DIR"
 
 # ---------------------------------------------------------------------------
 # 2. Theme sync: classic is the source of truth for views (standing project
-#    rule - see CLAUDE.md / this repo's session history), simple AND business
-#    both need syncing (the original wiki step only mentions simple, but
-#    business is equally stale - verified by diffing a recent classic-only
-#    change against both).
+#    rule). Only `simple` here - `themes/business` (and `themes/odbox*`) are
+#    gitignored, separate commercial products, not part of the open-source
+#    release at all, so git archive could never include them regardless of
+#    what this script does to a local checkout's filesystem copy.
 # ---------------------------------------------------------------------------
 
-echo "[2/7] Syncing classic views -> simple, business"
+echo "[2/7] Syncing classic views -> simple"
 cp -r themes/classic/views/. themes/simple/views/
-cp -r themes/classic/views/. themes/business/views/
 
 # ---------------------------------------------------------------------------
 # 3. Register the new version in the upgrade-path walker
@@ -153,12 +155,16 @@ mkdir -p "$SEOPANEL_DIR"
 rm "$ARCHIVE_ZIP"
 
 # ---------------------------------------------------------------------------
-# 6. Plugin injection: SeoDiary / QuickWebProxy are separate repos, re-cloned
-#    fresh here - this overwrites whatever's vendored in this repo's plugins/
-#    for local dev convenience with each plugin's own latest release.
+# 6. Plugin injection: SeoDiary / QuickWebProxy are separate repos and (like
+#    every plugin except MetaTagGenerator/TestPlugin) gitignored in this repo,
+#    so git archive's output never contained them at all - this step adds
+#    them fresh rather than overwriting anything. Every other locally-present
+#    plugin (ArticleSubmitter, CaptchaBypass, etc.) is intentionally left out
+#    of the release - confirmed with the user, not just inferred from the
+#    wiki's silence on them.
 # ---------------------------------------------------------------------------
 
-echo "[6/7] Re-cloning SeoDiary + QuickWebProxy plugins fresh"
+echo "[6/7] Cloning SeoDiary + QuickWebProxy plugins fresh"
 for PLUGIN in SeoDiary QuickWebProxy; do
     rm -rf "$SEOPANEL_DIR/plugins/$PLUGIN"
     git clone --quiet "https://github.com/seopanel/$PLUGIN.git" "$SEOPANEL_DIR/plugins/$PLUGIN"
