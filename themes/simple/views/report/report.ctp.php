@@ -52,19 +52,53 @@
 	}
 ?>
 
+<?php if (!empty($showAioUpsellHint)): ?>
+	<div class="alert alert-info py-2 mb-2" style="font-size:0.85rem;">
+		<i class="fas fa-info-circle"></i>
+		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? 'AI Overview is not available on your current data source.' ?>
+		<?php echo $spTextKeyword['Configure DataForSEO credentials to enable this feature immediately'] ?? 'Configure DataForSEO credentials to enable this feature immediately.' ?>
+	</div>
+<?php endif; ?>
+
+<?php if (!empty($aioWindow) && $aioWindow['measured'] > 0): ?>
+	<div class="mb-2" style="font-size:0.85rem;">
+		<strong><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview' ?>:</strong>
+		<?php echo $spTextKeyword['present in'] ?? 'present in' ?> <?php echo $aioWindow['present']?>/<?php echo $aioWindow['measured']?>
+		<?php echo $spTextKeyword['of last observations'] ?? 'of last observations' ?>
+		<span style="letter-spacing:2px;">
+			<?php foreach ($aioWindow['observations'] as $obs): ?>
+				<i class="fas <?php echo $obs['present'] ? 'fa-square' : 'fa-square-o'?>"
+				   style="color:<?php echo $obs['present'] ? '#2e7d32' : '#bdbdbd'?>;"
+				   title="<?php echo htmlspecialchars($obs['date'] . ' - ' . ($obs['present'] ? 'present' : 'absent') . ' (' . $obs['provider'] . ')')?>"></i>
+			<?php endforeach; ?>
+		</span>
+	</div>
+<?php endif; ?>
+
 <div id='subcontent'>
 <table width="100%" class="list">
 	<tr class="listHead">
 		<td width="10%"><?php echo $spText['common']['Date']?></td>
 		<td><?php echo $seInfo['domain']?> <?php echo $spText['common']['Results']?></td>
 		<td><?php echo $spText['common']['Rank']?></td>
+		<td><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview' ?></td>
+		<td><?php echo $spTextKeyword['Cited'] ?? 'Cited' ?></td>
+		<td><?php echo $spTextKeyword['Sources'] ?? 'Sources' ?></td>
 	</tr>
 	<?php
-	$colCount = 3; 
+	$colCount = 6;
+	$today = date('Y-m-d');
 	if(count($list) > 0) {
 		foreach($list as $listInfo) {
             $scriptLink = "sec=show-info&keyId={$listInfo['keyword_id']}&time={$listInfo['time']}&seId=$seId";
             $dateLink = scriptAJAXLinkHref('reports.php', 'subcontent', $scriptLink, date('Y-m-d', $listInfo['time']) );
+
+			$aioMeasured = !empty($listInfo['aio_checked_at']);
+			$aioSupported = $aioMeasured && intval($listInfo['aio_supported']) === 1;
+			$aioPresent = $aioSupported && !empty($listInfo['aio_present']);
+			$aioStale = $aioSupported && !empty($listInfo['aio_data_date'])
+				&& (strtotime($today) - strtotime($listInfo['aio_data_date'])) > ($aioStaleDays * 86400);
+			$aioProviderLabel = $listInfo['provider'] === 'dataforseo' ? 'DataForSEO' : ($listInfo['provider'] === 'spapi' ? 'SEO Panel API' : $listInfo['provider']);
 			?>
 			<tr class="<?php echo $class?>">
 				<td><?php echo $dateLink; ?></td>
@@ -74,6 +108,44 @@
 					<label><?php echo $listInfo['url']?></label>
 				</td>
 				<td class="fw-bold"><?php echo $listInfo['rank'].'</b> '. $listInfo['rank_diff']?></td>
+				<td style="font-size:0.85rem;">
+					<?php if (!$aioMeasured): ?>
+						<span class="text-muted">&mdash;</span>
+					<?php elseif (!$aioSupported): ?>
+						<span class="text-muted" title="<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? 'AI Overview is not available on your current data source'?>">
+							<?php echo $spTextKeyword['Not available'] ?? 'Not available' ?>
+						</span>
+					<?php else: ?>
+						<span class="<?php echo $aioPresent ? 'text-success' : 'text-muted'?>">
+							<?php echo $aioPresent ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent') ?>
+						</span>
+						<br>
+						<small class="text-muted">
+							<?php echo htmlspecialchars($aioProviderLabel)?>, <?php echo htmlspecialchars($listInfo['aio_data_date'])?>
+							<?php if ($aioStale): ?>
+								<span class="text-warning" title="<?php echo $spTextKeyword['Data older than the configured freshness threshold'] ?? 'Data older than the configured freshness threshold'?>">
+									(<?php echo $spTextKeyword['stale'] ?? 'stale' ?>)
+								</span>
+							<?php endif; ?>
+						</small>
+					<?php endif; ?>
+				</td>
+				<td style="font-size:0.85rem;">
+					<?php if (!$aioSupported): ?>
+						<span class="text-muted">&mdash;</span>
+					<?php elseif (!empty($listInfo['aio_cited'])): ?>
+						<span class="text-success"><?php echo $spTextKeyword['Yes'] ?? 'Yes'?><?php echo !empty($listInfo['aio_cited_position']) ? ' (#' . intval($listInfo['aio_cited_position']) . ')' : ''?></span>
+					<?php else: ?>
+						<span class="text-muted"><?php echo $spTextKeyword['No'] ?? 'No'?></span>
+					<?php endif; ?>
+				</td>
+				<td style="font-size:0.85rem;">
+					<?php if ($aioSupported && !empty($listInfo['aio_reference_count'])): ?>
+						<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiosources&keyword_id={$listInfo['keyword_id']}", intval($listInfo['aio_reference_count']))?>
+					<?php else: ?>
+						<span class="text-muted">0</span>
+					<?php endif; ?>
+				</td>
 			</tr>
 			<?php
 		}

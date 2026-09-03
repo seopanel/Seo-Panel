@@ -43,7 +43,8 @@ foreach($menuList as $i => $menuInfo){
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content')"><?php echo $spTextTools['Keywords Manager']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content', 'sec=new')"><?php echo $spTextKeyword['New Keyword']?></a></li>
 		         	<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content', 'sec=import')"><?php echo $spTextKeyword['Import Keywords']?></a></li>
-			    
+		         	<li><a href="javascript:void(0);" onclick="scriptDoLoad('reports.php', 'content', 'sec=serparchive')"><?php echo $spTextTools['SERP Results Archive'] ?? 'SERP Results Archive'?></a></li>
+
     			    <?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>
     					<?php if(SP_DEMO){?>
     		         		<li><a href="javascript:void(0);" onclick="alertDemoMsg();"><?php echo $spTextTools['Generate Keyword Reports']?></a></li>
@@ -291,6 +292,18 @@ foreach($menuList as $i => $menuInfo){
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
+			</ul>
+			<?php
+			break;
+
+		case "ai-visibility":
+			?>
+			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php', 'content')"><?php echo $spTextTools['Setup'] ?? 'Setup'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
 			</ul>
 			<?php
 			break;
