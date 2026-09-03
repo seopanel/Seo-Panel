@@ -1,0 +1,13 @@
+# Paths excluded from `git archive` output (and therefore from GitHub's own
+# "Download ZIP" / release tarball generation, and from build/build-release.sh,
+# which builds on git archive) - dev-only content that ships in this repo for
+# contributors but has no place in a customer-facing SEO Panel download.
+#
+# See build/build-release.sh and
+# https://github.com/seopanel/Seo-Panel/wiki/Seo-Panel-Release---steps
+
+tests/            export-ignore
+CLAUDE.md         export-ignore
+data/test.php     export-ignore
+build/            export-ignore
+.gitattributes    export-ignore
