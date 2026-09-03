@@ -421,6 +421,17 @@ class DataForSEOController extends Controller {
             return false;
         }
 
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $this->__logBacklinkSummaryCrawl($target, true, "Sample data returned (SP_USE_SAMPLE_API_DATA enabled)");
+            return array(
+                'backlinks'         => rand(100, 50000),
+                'referring_domains' => rand(10, 5000),
+                'broken_backlinks'  => rand(0, 50),
+            );
+        }
+
         $payload = array(
             "target" => $target,
             "include_subdomains" => true,
@@ -1198,6 +1209,18 @@ class DataForSEOController extends Controller {
             'task_id' => '',
         ];
 
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness) - a fake
+        // task_id is fine here since nothing in this codebase ever polls
+        // for it (processPendingDFSTasks() reads from the real DataForSEO
+        // API, which this sample task_id was never submitted to).
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $connResult['status'] = true;
+            $connResult['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $connResult['task_id'] = 'sample-' . uniqid();
+            return $connResult;
+        }
+
         $endpoint = "/v3/serp/$seDomainCat/organic/task_post";
 
         try {
@@ -1583,6 +1606,21 @@ class DataForSEOController extends Controller {
 
         if (empty($keywordInfo['name'])) {
             $result['message'] = 'Keyword name is required';
+            return $result;
+        }
+
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $result['data'] = array(
+                'search_volume'      => rand(10, 100000),
+                'monthly_searches'   => [],
+                'competition'        => (rand(0, 100) / 100),
+                'keyword_difficulty' => rand(0, 100),
+                'cpc'                => round(rand(10, 500) / 100, 2),
+            );
             return $result;
         }
 

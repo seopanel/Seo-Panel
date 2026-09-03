@@ -280,6 +280,21 @@ class SPAPIController extends Controller {
             'data' => [],
         ];
 
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness) - reports
+        // no matches for every requested search engine, which the caller
+        // already handles gracefully as a normal "rank 0, not found" result.
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $result['data'] = array(
+                'searchengine_mappings' => array_map(function($seId) {
+                    return array('searchengine_id' => intval($seId), 'crawled_result' => array());
+                }, $seIds),
+            );
+            return $result;
+        }
+
         $postData = json_encode([
             'keyword' => mb_convert_encoding($keywordInfo['name'], "UTF-8"),
             'searchengine_ids' => array_map('intval', $seIds),
@@ -333,6 +348,29 @@ class SPAPIController extends Controller {
             'message' => 'Internal error occurred',
             'data'    => [],
         ];
+
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $result['data'] = array(
+                'mapping' => array(
+                    'source' => $source,
+                    'mapping_id' => null,
+                    'last_crawl_status' => 'success',
+                    'crawled_time' => date('Y-m-d H:i:s'),
+                    'crawled_result' => array(
+                        'search_volume'      => rand(10, 100000),
+                        'cpc'                => round(rand(10, 500) / 100, 2),
+                        'competition'        => (rand(0, 100) / 100),
+                        'keyword_difficulty' => rand(0, 100),
+                        'monthly_searches'   => [],
+                    ),
+                ),
+            );
+            return $result;
+        }
 
         $postData = json_encode([
             'keyword'      => mb_convert_encoding($keywordInfo['name'], 'UTF-8'),
