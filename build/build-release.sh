@@ -147,7 +147,7 @@ fi
 #    dev-only files/.git*" dance)
 # ---------------------------------------------------------------------------
 
-echo "[5/7] Archiving via git archive (export-ignore excludes tests/, CLAUDE.md, data/test.php, build/)"
+echo "[5/7] Archiving via git archive (export-ignore excludes CLAUDE.md, data/test.php, build/)"
 ARCHIVE_ZIP="$RELEASE_DIR/.archive.zip"
 git archive --format=zip --prefix=seopanel/ -o "$ARCHIVE_ZIP" HEAD
 mkdir -p "$SEOPANEL_DIR"
