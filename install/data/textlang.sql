@@ -5448,6 +5448,7 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (5019, 'en', 'settings', 'Check for Updates', 'Check for Updates', '2018-01-22 19:59:29'),
 (5020, 'en', 'settings', 'Your Seo Panel installation is up to date', 'Your Seo Panel installation is up to date.', '2018-01-22 19:59:29'),
 (5021, 'en', 'settings', 'versionnotuptodatemsg', 'Your Seo Panel installation is not up to date. <br>Please download new version', '2018-01-22 19:59:29'),
+(39653, 'en', 'settings', 'Upgrade Now', 'Upgrade Now', '2026-09-05 00:00:00'),
 (5022, 'en', 'seotools', 'site-auditor', 'Site Auditor', '2011-06-14 07:46:30'),
 (5023, 'en', 'seotools', 'Auditor Projects', 'Auditor Projects', '2011-06-15 01:20:18'),
 (5024, 'en', 'seotools', 'Auditor Settings', 'Auditor Settings', '2011-06-15 01:21:50'),

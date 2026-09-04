@@ -58,8 +58,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "resetSpApiToken":
 			$controller->resetSpApiToken();
 			break;
+
+		case "onlineupgradeproceed":
+			if (!SP_DEMO) {
+				$controller->proceedOnlineUpgrade();
+			}
+			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 		
@@ -86,7 +92,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "checkversion":
 			$controller->checkVersion();
 			break;
-		
+
+		case "onlineupgradecheck":
+			$controller->checkOnlineUpgrade();
+			break;
+
 		case "test_email":
 			$controller->showTestEmailSettings();
 			break;

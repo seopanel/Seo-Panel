@@ -15,3 +15,4 @@
 		</td>
 	</tr>
 </table>
+<?php include(SP_VIEWPATH."/settings/online_upgrade_popup.ctp.php"); ?>

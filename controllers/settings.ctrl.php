@@ -217,10 +217,100 @@ class SettingsController extends Controller{
 	    // if message needs to be returned
 	    if ($return) {
 	        return [$oldVersion, $message];
-	    } else {
-	        echo $oldVersion ? showErrorMsg($message, false) : showSuccessMsg($message, false);
 	    }
-	    
+
+	    echo $oldVersion ? showErrorMsg($message, false) : showSuccessMsg($message, false);
+	    if ($oldVersion) {
+	        echo '<div class="text-center" style="margin-top:10px;"><a class="btn btn-primary" href="javascript:void(0);" onclick="window.onlineUpgradeStart()">'.$this->spTextSettings['Upgrade Now'].'</a></div>';
+	    }
+	}
+
+	# checks whether the server-side prerequisites for an online (in-app)
+	# upgrade are met - a newer version must exist, and the app needs write
+	# access plus the curl/ZipArchive extensions to download and apply it
+	function __onlineUpgradePreflight() {
+	    $failed = [];
+
+	    if (!class_exists('ZipArchive')) {
+	        $failed[] = 'ZipArchive extension';
+	    }
+	    if (!function_exists('curl_init')) {
+	        $failed[] = 'curl extension';
+	    }
+
+	    $writablePaths = [
+	        'application root' => SP_ABSPATH,
+	        'controllers' => SP_CTRLPATH,
+	        'libs' => SP_LIBPATH,
+	        'classic theme' => SP_THEMEPATH.'/classic',
+	        'install' => SP_ABSPATH.'/install',
+	        'tmp' => SP_TMPPATH,
+	    ];
+	    foreach ($writablePaths as $label => $path) {
+	        if (!is_writable($path)) {
+	            $failed[] = $label.' ('.$path.')';
+	        }
+	    }
+
+	    return [empty($failed), $failed];
+	}
+
+	# check whether an online upgrade can be offered - GET, sec=onlineupgradecheck
+	function checkOnlineUpgrade() {
+	    header('Content-Type: application/json');
+
+	    list($oldVersion, $message) = $this->checkVersion(true);
+	    if (!$oldVersion) {
+	        echo json_encode(['status' => 'success', 'data' => ['outdated' => false]]);
+	        return;
+	    }
+
+	    list($preflightOk, $failed) = $this->__onlineUpgradePreflight();
+	    if (!$preflightOk) {
+	        echo json_encode([
+	            'status' => 'error',
+	            'message' => 'Your server is missing requirements for automatic upgrade: '.implode(', ', $failed).'. Please upgrade manually instead.',
+	            'data' => ['fallback_url' => SP_DOWNLOAD_LINK],
+	        ]);
+	        return;
+	    }
+
+	    echo json_encode(['status' => 'success', 'data' => ['outdated' => true, 'preflight' => true]]);
+	}
+
+	# download and apply the latest release's files - POST, sec=onlineupgradeproceed.
+	# Never touches the database - success just hands the admin off to the
+	# existing install/upgrade.php wizard to finish the schema migration
+	# themselves with one more manual click.
+	function proceedOnlineUpgrade() {
+	    header('Content-Type: application/json');
+
+	    list($oldVersion, $message) = $this->checkVersion(true);
+	    if (!$oldVersion) {
+	        echo json_encode(['status' => 'error', 'message' => 'Your Seo Panel installation is already up to date.']);
+	        return;
+	    }
+
+	    list($preflightOk, $failed) = $this->__onlineUpgradePreflight();
+	    if (!$preflightOk) {
+	        echo json_encode([
+	            'status' => 'error',
+	            'message' => 'Your server is missing requirements for automatic upgrade: '.implode(', ', $failed).'. Please upgrade manually instead.',
+	            'data' => ['fallback_url' => SP_DOWNLOAD_LINK],
+	        ]);
+	        return;
+	    }
+
+	    include_once(SP_LIBPATH.'/onlineupgrade.class.php');
+	    $upgrader = new OnlineUpgrade();
+	    list($ok, $err) = $upgrader->run();
+
+	    if (!$ok) {
+	        echo json_encode(['status' => 'error', 'message' => $err, 'data' => ['fallback_url' => SP_DOWNLOAD_LINK]]);
+	        return;
+	    }
+
+	    echo json_encode(['status' => 'success', 'data' => ['redirect' => 'install/upgrade.php']]);
 	}
 
 	// show google api settings notification

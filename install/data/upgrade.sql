@@ -449,3 +449,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_DFS_BACKLINK', 'Enable DataForSEO for Backlink Checker'),
 ('en', 'backlink', 'Broken Backlinks', 'Broken Backlinks'),
 ('en', 'backlink', 'backlinkdfsnotice', 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.');
+
+-- Online (in-app) upgrade: Settings > Version's "Upgrade Now" button
+-- downloads and applies the latest release's files automatically, then
+-- hands off to this existing upgrade wizard for the database migration
+-- step - see libs/onlineupgrade.class.php.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'Upgrade Now', 'Upgrade Now');
