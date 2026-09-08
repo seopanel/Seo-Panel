@@ -52,6 +52,11 @@ class AIVisibilityController extends Controller {
 		$accessLogStatus = !empty($accessInfo['access_log_path']) ? $this->__validateAccessLogPath($accessInfo['access_log_path']) : null;
 		$this->set('accessLogStatus', $accessLogStatus);
 
+		// zero-touch WordPress install: only offered when the admin has
+		// configured a writable docroot AND WordPress is actually detected there
+		$this->set('wpDetected', !empty($docrootStatus['writable']) && $this->__detectWordPress($docrootStatus['real']));
+		$this->set('wpCollectorInstalled', !empty($docrootStatus['real']) && $this->__isWpCollectorInstalled($docrootStatus['real']));
+
 		$websiteInfo = null;
 		foreach ($websiteList as $w) {
 			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
@@ -144,6 +149,16 @@ class AIVisibilityController extends Controller {
 					'updated_at' => 'NOW()',
 				]);
 			}
+
+			// append-only compliance record - never updated/deleted, unlike
+			// the current-state row above (see exportRobotsAuditLog())
+			$this->dbHelper->insertRow('ai_visibility_robots_audit_log', [
+				'website_id|int' => $websiteId,
+				'platform' => $platform,
+				'is_blocked|int' => $nextBlocked,
+				'changed_by|int' => $userId,
+				'changed_at' => 'NOW()',
+			]);
 
 			$docrootStatus = $this->__validateDocrootPath($this->__getSiteAccessConfig($websiteId)['docroot_path'] ?? null);
 			if (!empty($docrootStatus['writable'])) {
@@ -481,6 +496,57 @@ if (\$__aiv_ua !== '' && preg_match('/bot|crawler|spider|agent/i', \$__aiv_ua)) 
 PHP;
 	}
 
+	/**
+	 * Zero-touch install: writes the same content generateBotCollectorScript()
+	 * produces directly into the co-located site's wp-content/mu-plugins/ -
+	 * WordPress auto-loads every PHP file there on every request, no
+	 * activation step needed. Removes the last manual "download this file
+	 * and paste it into your site" step for the one CMS this can be
+	 * detected and automated for. Owner-level (same ownership check as
+	 * toggleRobotsRule()) - only offered when an admin has already
+	 * authorized a writable docroot for this website.
+	 */
+	function installWordPressCollector($info) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+
+		$accessInfo = $this->__getSiteAccessConfig($websiteId);
+		$docrootStatus = !empty($accessInfo['docroot_path']) ? $this->__validateDocrootPath($accessInfo['docroot_path']) : null;
+
+		if (empty($docrootStatus['writable']) || !$this->__detectWordPress($docrootStatus['real'])) {
+			$this->set('wpInstallError', $this->spTextAIV['wpinstallfailed'] ?? 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+			$this->showSetup(['website_id' => $websiteId]);
+			return;
+		}
+
+		$muPluginsDir = $docrootStatus['real'] . '/wp-content/mu-plugins';
+		if (!is_dir($muPluginsDir) && !@mkdir($muPluginsDir, 0755, true)) {
+			$this->set('wpInstallError', $this->spTextAIV['wpinstallfailed'] ?? 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+			$this->showSetup(['website_id' => $websiteId]);
+			return;
+		}
+
+		$content = $this->generateBotCollectorScript($websiteId);
+		$targetPath = $muPluginsDir . '/seo-panel-ai-bot-collector.php';
+		if (@file_put_contents($targetPath, $content, LOCK_EX) === false) {
+			$this->set('wpInstallError', $this->spTextAIV['wpinstallfailed'] ?? 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+		}
+
+		$this->showSetup(['website_id' => $websiteId]);
+	}
+
+	// func to detect WordPress at a validated, resolved docroot path
+	function __detectWordPress($docrootReal) {
+		return !empty($docrootReal) && is_file($docrootReal . '/wp-config.php');
+	}
+
+	// func to check whether the zero-touch mu-plugin install has already been done
+	function __isWpCollectorInstalled($docrootReal) {
+		return !empty($docrootReal) && is_file($docrootReal . '/wp-content/mu-plugins/seo-panel-ai-bot-collector.php');
+	}
+
 	# func to poll install status (AJAX) - waiting for first hit vs receiving data
 	function showInstallStatus($info=[]) {
 		$userId = isLoggedIn();
@@ -786,6 +852,36 @@ PHP;
 		unset($row);
 
 		$this->__streamCsv("ai-bot-hits-$websiteId-$fromTime-to-$toTime.csv", ['Date', 'Platform', 'Verified', 'Crawls'], $rowList, ['hit_date', 'platform', 'verified', 'hits']);
+	}
+
+	/**
+	 * Owner-level: exports this website's full robots.txt AI-crawler-rule
+	 * change history as CSV - a timestamped, who-did-what record suitable
+	 * as proof of AI-training-opt-out policy enforcement for legal/
+	 * compliance review. Reads from the append-only
+	 * ai_visibility_robots_audit_log, never the current-state
+	 * ai_visibility_robots_rules table (which only holds the latest value
+	 * per platform, not history).
+	 */
+	function exportRobotsAuditLog($info) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+
+		$sql = "SELECT a.changed_at, a.platform, a.is_blocked, u.userName
+				FROM ai_visibility_robots_audit_log a
+				LEFT JOIN users u ON u.id = a.changed_by
+				WHERE a.website_id=" . intval($websiteId) . "
+				ORDER BY a.changed_at DESC";
+		$rowList = $this->db->select($sql);
+		foreach ($rowList as &$row) {
+			$row['is_blocked'] = !empty($row['is_blocked']) ? 'Blocked' : 'Allowed';
+			$row['userName'] = !empty($row['userName']) ? $row['userName'] : 'unknown';
+		}
+		unset($row);
+
+		$this->__streamCsv("ai-robots-audit-log-$websiteId.csv", ['Changed At', 'Platform', 'Set To', 'Changed By'], $rowList, ['changed_at', 'platform', 'is_blocked', 'userName']);
 	}
 
 	/**

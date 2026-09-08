@@ -1017,6 +1017,22 @@ CREATE TABLE IF NOT EXISTS `ai_visibility_robots_rules` (
   KEY `website_id` (`website_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Append-only history of every robots.txt AI-crawler-rule change - never
+-- updated or deleted, unlike ai_visibility_robots_rules above which only
+-- holds current state. Exported as a compliance/audit-trail report (see
+-- AIVisibilityController::exportRobotsAuditLog()) - proof of when a given
+-- AI crawler was allowed/blocked and by whom, for legal/compliance use.
+CREATE TABLE IF NOT EXISTS `ai_visibility_robots_audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `is_blocked` tinyint(1) NOT NULL,
+  `changed_by` int unsigned DEFAULT NULL,
+  `changed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `cron_run_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `trigger_source` varchar(20) NOT NULL DEFAULT 'cli',

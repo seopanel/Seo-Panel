@@ -68,6 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->regenerateLlmsTxt($_POST);
 			break;
 
+		case "install-wp-collector":
+			$controller->installWordPressCollector($_POST);
+			break;
+
 		default:
 			$controller->showSetup($_POST);
 			break;
@@ -94,6 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 		case "export-botreport":
 			$controller->exportBotReportCsv($_GET);
+			break;
+
+		case "export-robots-audit":
+			$controller->exportRobotsAuditLog($_GET);
 			break;
 
 		case "installstatus":

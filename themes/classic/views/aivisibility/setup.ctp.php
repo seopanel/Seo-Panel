@@ -61,6 +61,26 @@
 		<i class="fas fa-download"></i> <?php echo $spTextAIV['Download collector script'] ?? 'Download collector script'?>
 	</a>
 
+	<?php if (!empty($wpInstallError)) { ?>
+		<div class="alert alert-danger" style="margin-top:15px;"><?php echo htmlspecialchars($wpInstallError)?></div>
+	<?php } ?>
+
+	<?php if (!empty($wpCollectorInstalled)) { ?>
+		<span class="text-success" style="margin-left:10px;"><i class="fas fa-check-circle"></i> <?php echo $spTextAIV['Installed automatically'] ?? 'Installed automatically'?></span>
+	<?php } elseif (!empty($wpDetected)) { ?>
+		<div class="alert alert-info" style="margin-top:15px;">
+			<?php echo $spTextAIV['wpdetectednotice'] ?? 'WordPress detected at your configured Document Root. Skip the manual download/paste step - install the collector directly as a must-use plugin.'?>
+			<form id="wp_install_form" onsubmit="return false;">
+				<input type="hidden" name="sec" value="install-wp-collector">
+				<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
+			</form>
+			<br><br>
+			<a href="javascript:void(0);" onclick="scriptDoLoadPost('aivisibility.php', 'wp_install_form', 'content')" class="btn btn-sm btn-secondary">
+				<?php echo $spTextAIV['Install Automatically'] ?? 'Install Automatically'?>
+			</a>
+		</div>
+	<?php } ?>
+
 	<div id="aivBotInstallStatus" style="margin-top:15px;">
 		<i class="fas fa-spinner fa-spin"></i>
 		<span id="aivBotStatusText"><?php echo $spTextAIV['Waiting for first bot visit'] ?? 'Waiting for first bot visit...'?></span>
@@ -170,6 +190,14 @@
 			</tr>
 		<?php } ?>
 	</table>
+
+	<div class="alert alert-secondary" style="margin-top:10px;">
+		<i class="fas fa-shield-alt me-2"></i>
+		<?php echo $spTextAIV['auditlognotice'] ?? 'A timestamped record of every AI crawler rule change made through SEO Panel for this website - exportable as proof of policy enforcement for legal/compliance review.'?>
+		<a href="aivisibility.php?sec=export-robots-audit&website_id=<?php echo intval($websiteId)?>" class="btn btn-sm btn-secondary" style="margin-left:10px;">
+			<i class="fas fa-file-csv"></i> <?php echo $spTextAIV['Export Audit Trail'] ?? 'Export Audit Trail'?>
+		</a>
+	</div>
 
 	<hr>
 
