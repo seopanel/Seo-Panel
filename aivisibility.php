@@ -44,6 +44,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showInstallStatus($_POST);
 			break;
 
+		case "save-platform":
+			$controller->savePlatform($_POST);
+			break;
+
+		case "toggle-platform":
+			$controller->togglePlatformField($_POST);
+			break;
+
+		case "delete-platform":
+			$controller->deletePlatform($_POST);
+			break;
+
 		default:
 			$controller->showSetup($_POST);
 			break;
@@ -56,6 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showReport($_GET);
 			break;
 
+		case "export-report":
+			$controller->exportReportCsv($_GET);
+			break;
+
 		case "aioverview":
 			$controller->showAIOverviewReport($_GET);
 			break;
@@ -64,8 +80,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showBotReport($_GET);
 			break;
 
+		case "export-botreport":
+			$controller->exportBotReportCsv($_GET);
+			break;
+
 		case "installstatus":
 			$controller->showInstallStatus($_GET);
+			break;
+
+		case "platforms":
+			$controller->listPlatforms($_GET);
 			break;
 
 		default:

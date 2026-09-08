@@ -35,10 +35,13 @@ header_remove('Pragma');
 header('Content-Type: application/javascript; charset=utf-8');
 header('Cache-Control: public, max-age=3600');
 
-// active platform hostnames, kept as data (not constants) so the list
-// updates for every already-installed snippet within the cache window
+// active, referral-source platform hostnames, kept as data (not constants)
+// so the list updates for every already-installed snippet within the cache
+// window. is_referral_source excludes bot-only vendor domains (e.g.
+// google.com for Google-Extended) that would otherwise misclassify
+// ordinary traffic (organic Google Search clicks) as an AI referral.
 $platformCtrler = new Controller();
-$platformList = $platformCtrler->db->select("select hostname from ai_platforms where is_active=1");
+$platformList = $platformCtrler->db->select("select hostname from ai_platforms where is_active=1 and is_referral_source=1");
 $hostnames = array_map(function($row) { return $row['hostname']; }, $platformList);
 
 ?>

@@ -456,3 +456,32 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- step - see libs/onlineupgrade.class.php.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'Upgrade Now', 'Upgrade Now');
+
+-- AI Visibility fix: ai_platforms conflated two concerns in one hostname
+-- column - real click referrers (chatgpt.com, perplexity.ai) and bot-only
+-- vendor domains (google.com for Google-Extended, apple.com, meta.com,
+-- bytedance.com, commoncrawl.org). aivisibility.js.php queried is_active
+-- alone for the browser-side referral snippet, so an ordinary organic
+-- Google Search click (referrer host google.com/www.google.com) was being
+-- misclassified as an AI referral from "Google-Extended". is_active still
+-- gates both ingest paths; is_referral_source additionally scopes the
+-- referral snippet to hostnames that are actually click sources.
+ALTER TABLE `ai_platforms` ADD COLUMN `is_referral_source` tinyint(1) NOT NULL DEFAULT 1 AFTER `is_active`;
+UPDATE `ai_platforms` SET `is_referral_source`=0 WHERE `platform` IN ('google-extended','bytespider','ccbot','applebot-extended','meta-externalagent');
+
+-- AI Visibility: admin-editable platform catalog (add/toggle/edit hostnames
+-- without a code deploy) and CSV export on the AI Referral / AI Bot
+-- Crawler reports.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Manage AI Platforms', 'Manage AI Platforms'),
+('en', 'aivisibility', 'AI Platforms', 'AI Platforms'),
+('en', 'aivisibility', 'Platform code', 'Platform code'),
+('en', 'aivisibility', 'Hostname', 'Hostname'),
+('en', 'aivisibility', 'Display name', 'Display name'),
+('en', 'aivisibility', 'Bot UA pattern', 'Bot UA pattern'),
+('en', 'aivisibility', 'Verify suffix', 'Verify suffix'),
+('en', 'aivisibility', 'Referral source', 'Referral source'),
+('en', 'aivisibility', 'referralsourcenotice', 'Only enable this for hostnames real visitors click through from. Vendor domains used solely for bot user-agent matching (e.g. google.com for Google-Extended) must stay off, or ordinary traffic from that domain will be miscounted as an AI referral.'),
+('en', 'aivisibility', 'Add Platform', 'Add Platform'),
+('en', 'aivisibility', 'Export CSV', 'Export CSV'),
+('en', 'aivisibility', 'platformexistsnotice', 'A platform with this hostname already exists.');

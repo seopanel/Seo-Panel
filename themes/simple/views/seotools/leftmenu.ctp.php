@@ -304,6 +304,9 @@ foreach($menuList as $i => $menuInfo){
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
+				<?php if (isAdmin()) { ?>
+					<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=platforms', 'content')"><?php echo $spTextAIV['Manage AI Platforms'] ?? 'Manage AI Platforms'?></a></li>
+				<?php } ?>
 			</ul>
 			<?php
 			break;

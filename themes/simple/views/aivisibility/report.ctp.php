@@ -24,6 +24,9 @@
 		</td>
 		<td style="text-align:center;">
 			<a href="javascript:void(0);" onclick="<?php echo $submitAction?>" class="btn btn-secondary"><?php echo $spText['button']['Show Records']?></a>
+			<a href="aivisibility.php?sec=export-report&website_id=<?php echo intval($websiteId)?>&from_time=<?php echo urlencode($fromTime)?>&to_time=<?php echo urlencode($toTime)?>" class="btn btn-secondary">
+				<i class="fas fa-file-csv"></i> <?php echo $spTextAIV['Export CSV'] ?? 'Export CSV'?>
+			</a>
 		</td>
 	</tr>
 </table>

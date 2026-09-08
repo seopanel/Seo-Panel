@@ -934,6 +934,7 @@ CREATE TABLE IF NOT EXISTS `ai_platforms` (
   `hostname` varchar(255) NOT NULL,
   `display_name` varchar(64) NOT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `is_referral_source` tinyint(1) NOT NULL DEFAULT 1,
   `bot_ua_pattern` varchar(255) DEFAULT NULL,
   `verify_suffix` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -943,22 +944,32 @@ CREATE TABLE IF NOT EXISTS `ai_platforms` (
 -- verify_suffix (reverse-DNS verification suffix) is left NULL except where
 -- a scheme is well established (Google's) - not an assertion about other
 -- vendors' policies, admin-maintainable as they publish/change their own.
-INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`bot_ua_pattern`,`verify_suffix`) VALUES
-('chatgpt','chatgpt.com','ChatGPT',1,'GPTBot',NULL),
-('chatgpt','chat.openai.com','ChatGPT',1,'GPTBot',NULL),
-('perplexity','perplexity.ai','Perplexity',1,'PerplexityBot',NULL),
-('claude','claude.ai','Claude',1,'ClaudeBot',NULL),
-('gemini','gemini.google.com','Gemini',1,NULL,NULL),
-('copilot','copilot.microsoft.com','Copilot',1,NULL,NULL),
-('you','you.com','You.com',1,NULL,NULL),
-('poe','poe.com','Poe',1,NULL,NULL),
-('grok','grok.com','Grok',1,NULL,NULL),
-('mistral','mistral.ai','Mistral',1,NULL,NULL),
-('google-extended','google.com','Google-Extended (AI training)',1,'Google-Extended','.googlebot.com'),
-('bytespider','bytedance.com','Bytespider',1,'Bytespider',NULL),
-('ccbot','commoncrawl.org','CCBot',1,'CCBot',NULL),
-('applebot-extended','apple.com','Applebot-Extended',1,'Applebot-Extended',NULL),
-('meta-externalagent','meta.com','Meta AI',1,'meta-externalagent',NULL);
+--
+-- is_referral_source distinguishes hostnames real visitors click through
+-- from (surfaced by aivisibility.js.php for the browser-side referral
+-- snippet) from bot-only entries whose hostname is a vendor's corporate
+-- domain, not a place traffic ever comes from - e.g. 'google.com' here
+-- means Google-Extended (AI-training crawler opt-out), not Google Search;
+-- treating it as a referral source would misclassify ordinary organic
+-- Google Search clicks (referrer host google.com/www.google.com) as AI
+-- referrals. is_active alone still gates both ingest paths (referral
+-- token lookup and bot UA classification).
+INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is_referral_source`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('chatgpt','chatgpt.com','ChatGPT',1,1,'GPTBot',NULL),
+('chatgpt','chat.openai.com','ChatGPT',1,1,'GPTBot',NULL),
+('perplexity','perplexity.ai','Perplexity',1,1,'PerplexityBot',NULL),
+('claude','claude.ai','Claude',1,1,'ClaudeBot',NULL),
+('gemini','gemini.google.com','Gemini',1,1,NULL,NULL),
+('copilot','copilot.microsoft.com','Copilot',1,1,NULL,NULL),
+('you','you.com','You.com',1,1,NULL,NULL),
+('poe','poe.com','Poe',1,1,NULL,NULL),
+('grok','grok.com','Grok',1,1,NULL,NULL),
+('mistral','mistral.ai','Mistral',1,1,NULL,NULL),
+('google-extended','google.com','Google-Extended (AI training)',1,0,'Google-Extended','.googlebot.com'),
+('bytespider','bytedance.com','Bytespider',1,0,'Bytespider',NULL),
+('ccbot','commoncrawl.org','CCBot',1,0,'CCBot',NULL),
+('applebot-extended','apple.com','Applebot-Extended',1,0,'Applebot-Extended',NULL),
+('meta-externalagent','meta.com','Meta AI',1,0,'meta-externalagent',NULL);
 
 CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   `bucket_key` varchar(100) NOT NULL,

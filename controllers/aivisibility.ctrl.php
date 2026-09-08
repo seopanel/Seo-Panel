@@ -85,9 +85,23 @@ if (\$__aiv_ua !== '' && preg_match('/bot|crawler|spider|agent/i', \$__aiv_ua)) 
 			// back to the same IP - the same method used to verify
 			// Googlebot. Done here, not at SEO Panel, because this is the
 			// only point where the real crawler IP is known with certainty.
-			\$__aiv_host = @gethostbyaddr(\$__aiv_ip);
-			if (\$__aiv_host && \$__aiv_host !== \$__aiv_ip) {
-				\$__aiv_verified = (@gethostbyname(\$__aiv_host) === \$__aiv_ip);
+			//
+			// gethostbyaddr()/gethostbyname() have no timeout parameter of
+			// their own and go through the OS resolver, so a slow/dead
+			// nameserver could otherwise stall every request whose UA loosely
+			// matches the prefilter above. default_socket_timeout is the
+			// closest lever userland PHP has for this - not honored by every
+			// resolver backend, but a real bound on most - so this caps it
+			// best-effort and always restores the host's own setting after.
+			\$__aiv_prevTimeout = ini_get('default_socket_timeout');
+			ini_set('default_socket_timeout', 2);
+			try {
+				\$__aiv_host = @gethostbyaddr(\$__aiv_ip);
+				if (\$__aiv_host && \$__aiv_host !== \$__aiv_ip) {
+					\$__aiv_verified = (@gethostbyname(\$__aiv_host) === \$__aiv_ip);
+				}
+			} finally {
+				ini_set('default_socket_timeout', \$__aiv_prevTimeout);
 			}
 		}
 
@@ -210,6 +224,29 @@ PHP;
 		$this->set('graphContent', $graphContent);
 
 		$this->render('aivisibility/report');
+	}
+
+	# func to export the AI Referral report (daily hits by platform, same range as showReport()) as CSV
+	function exportReportCsv($info=[]) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+		if (empty($websiteId)) {
+			exit;
+		}
+
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		$sql = "select hit_date, platform, sum(hits) as hits from ai_referrals
+				where website_id=$websiteId and hit_date >= '$fromTimeSql' and hit_date <= '$toTimeSql'
+				group by hit_date, platform order by hit_date, platform";
+		$rowList = $this->db->select($sql);
+
+		$this->__streamCsv("ai-referrals-$websiteId-$fromTime-to-$toTime.csv", ['Date', 'Platform', 'Referrals'], $rowList, ['hit_date', 'platform', 'hits']);
 	}
 
 	/**
@@ -372,6 +409,115 @@ PHP;
 		$this->render('aivisibility/botreport');
 	}
 
+	# func to export the AI Bot Crawler report (daily hits by platform+verified, same range as showBotReport()) as CSV
+	function exportBotReportCsv($info=[]) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+		if (empty($websiteId)) {
+			exit;
+		}
+
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		$sql = "select hit_date, platform, verified, sum(hits) as hits from ai_bot_hits
+				where website_id=$websiteId and hit_date >= '$fromTimeSql' and hit_date <= '$toTimeSql'
+				group by hit_date, platform, verified order by hit_date, platform";
+		$rowList = $this->db->select($sql);
+		foreach ($rowList as &$row) {
+			$row['verified'] = !empty($row['verified']) ? 'Yes' : 'No';
+		}
+		unset($row);
+
+		$this->__streamCsv("ai-bot-hits-$websiteId-$fromTime-to-$toTime.csv", ['Date', 'Platform', 'Verified', 'Crawls'], $rowList, ['hit_date', 'platform', 'verified', 'hits']);
+	}
+
+	/**
+	 * Admin: AI platform catalog manager - add/edit/delete/toggle the
+	 * ai_platforms rows that drive both the referral snippet (client-side,
+	 * is_referral_source) and bot UA classification (server-side, always
+	 * gated on is_active) - see aivisibility.js.php and ingestBotHit().
+	 * Lets new answer engines/crawlers be added without a code deploy.
+	 * Every entry point here calls checkAdminLoggedIn() itself (redirects
+	 * non-admins) since aivisibility.php as a whole is not admin-only.
+	 */
+	function listPlatforms($info=[]) {
+		checkAdminLoggedIn();
+		$this->set('platformList', $this->db->select("select * from ai_platforms order by platform, hostname"));
+		$this->render('aivisibility/platforms');
+	}
+
+	function savePlatform($info) {
+		checkAdminLoggedIn();
+		$id = intval($info['id'] ?? 0);
+
+		$errMsg = [];
+		$errMsg['platform'] = formatErrorMsg($this->validate->checkBlank($info['platform']));
+		$errMsg['hostname'] = formatErrorMsg($this->validate->checkBlank($info['hostname']));
+		$errMsg['display_name'] = formatErrorMsg($this->validate->checkBlank($info['display_name']));
+
+		if (!$this->validate->flagErr) {
+			$hostname = strtolower(trim($info['hostname']));
+			$dupCond = "hostname='" . addslashes($hostname) . "'" . ($id ? " and id!=$id" : "");
+			$dup = $this->dbHelper->getRow('ai_platforms', $dupCond);
+			if (!empty($dup)) {
+				$this->validate->flagErr = TRUE;
+				$errMsg['hostname'] = formatErrorMsg($this->spTextAIV['platformexistsnotice'] ?? 'A platform with this hostname already exists.');
+			}
+		}
+
+		if (!$this->validate->flagErr) {
+			$dataList = [
+				'platform' => strtolower(trim($info['platform'])),
+				'hostname' => strtolower(trim($info['hostname'])),
+				'display_name' => trim($info['display_name']),
+				'is_active|int' => !empty($info['is_active']) ? 1 : 0,
+				'is_referral_source|int' => !empty($info['is_referral_source']) ? 1 : 0,
+				'bot_ua_pattern' => !empty($info['bot_ua_pattern']) ? trim($info['bot_ua_pattern']) : 'NULL',
+				'verify_suffix' => !empty($info['verify_suffix']) ? trim($info['verify_suffix']) : 'NULL',
+			];
+
+			if ($id) {
+				$this->dbHelper->updateRow('ai_platforms', $dataList, "id=$id");
+			} else {
+				$this->dbHelper->insertRow('ai_platforms', $dataList);
+			}
+		} else {
+			$this->set('formErrMsg', $errMsg);
+			$this->set('formPost', $info);
+		}
+
+		$this->listPlatforms();
+	}
+
+	function togglePlatformField($info) {
+		checkAdminLoggedIn();
+		$id = intval($info['id'] ?? 0);
+		$field = in_array($info['field'] ?? '', ['is_active', 'is_referral_source']) ? $info['field'] : null;
+
+		if ($id && $field) {
+			$current = $this->dbHelper->getRow('ai_platforms', "id=$id");
+			if (!empty($current)) {
+				$this->dbHelper->updateRow('ai_platforms', [$field . '|int' => empty($current[$field]) ? 1 : 0], "id=$id");
+			}
+		}
+
+		$this->listPlatforms();
+	}
+
+	function deletePlatform($info) {
+		checkAdminLoggedIn();
+		$id = intval($info['id'] ?? 0);
+		if ($id) {
+			$this->db->query("delete from ai_platforms where id=$id");
+		}
+		$this->listPlatforms();
+	}
+
 	# func to lazily create (or fetch) the ai_visibility_sites row for a website
 	function __getOrCreateSite($websiteId, $websiteList=[]) {
 		$websiteId = intval($websiteId);
@@ -403,6 +549,24 @@ PHP;
 		]);
 
 		return $this->dbHelper->getRow('ai_visibility_sites', "website_id=$websiteId");
+	}
+
+	# func to stream a query result set as a downloaded CSV and exit - $cols maps the header row to row keys, in order
+	function __streamCsv($fileName, $header, $rowList, $cols) {
+		header('Content-Type: text/csv; charset=utf-8');
+		header('Content-Disposition: attachment; filename="' . preg_replace('/[^A-Za-z0-9._-]/', '_', $fileName) . '"');
+
+		$out = fopen('php://output', 'w');
+		fputcsv($out, $header);
+		foreach ($rowList as $row) {
+			$line = [];
+			foreach ($cols as $col) {
+				$line[] = $row[$col] ?? '';
+			}
+			fputcsv($out, $line);
+		}
+		fclose($out);
+		exit;
 	}
 
 	# func to resolve/validate the requested website_id against the user's own website list
@@ -502,7 +666,12 @@ PHP;
 			}
 		}
 
-		$platformInfo = $this->dbHelper->getRow('ai_platforms', "hostname='" . addslashes($platform) . "' and is_active=1");
+		// is_referral_source, not just is_active - every field in this payload
+		// is untrusted, so the server enforces the same "is this hostname
+		// actually a click source" rule the snippet applies client-side,
+		// rather than trusting the caller not to pass a bot-only vendor
+		// domain (e.g. google.com) directly.
+		$platformInfo = $this->dbHelper->getRow('ai_platforms', "hostname='" . addslashes($platform) . "' and is_active=1 and is_referral_source=1");
 		if (empty($platformInfo)) {
 			exit;
 		}
@@ -518,6 +687,10 @@ PHP;
 		$urlHashHex = bin2hex(md5($urlPath, true));
 		$platformCode = addslashes($platformInfo['platform']);
 		$urlPathSql = addslashes($urlPath);
+
+		// checked before the aggregate-on-write insert below, so "first
+		// hit" reflects state prior to this request
+		$this->__alertOnFirstPlatformHit($websiteId, $platformInfo['platform'], 'ai_referrals', $platformInfo['display_name']);
 
 		$sql = "INSERT INTO ai_referrals (website_id, hit_date, platform, url_path, url_hash, hits, created_at, updated_at)
 				VALUES ($websiteId, '$hitDate', '$platformCode', '$urlPathSql', UNHEX('$urlHashHex'), 1, NOW(), NOW())
@@ -580,11 +753,13 @@ PHP;
 		// classify by matching the reported UA against known crawler
 		// patterns - unmatched UAs (the prefilter is deliberately broad,
 		// so plenty won't match anything here) are silently dropped
-		$platformList = $this->db->select("SELECT platform, bot_ua_pattern FROM ai_platforms WHERE is_active=1 AND bot_ua_pattern IS NOT NULL AND bot_ua_pattern != ''");
+		$platformList = $this->db->select("SELECT platform, display_name, bot_ua_pattern FROM ai_platforms WHERE is_active=1 AND bot_ua_pattern IS NOT NULL AND bot_ua_pattern != ''");
 		$matchedPlatform = null;
+		$matchedDisplayName = null;
 		foreach ($platformList as $platformRow) {
 			if (stripos($userAgent, $platformRow['bot_ua_pattern']) !== false) {
 				$matchedPlatform = $platformRow['platform'];
+				$matchedDisplayName = $platformRow['display_name'];
 				break;
 			}
 		}
@@ -603,6 +778,10 @@ PHP;
 		$urlHashHex = bin2hex(md5($urlPath, true));
 		$platformSql = addslashes($matchedPlatform);
 		$urlPathSql = addslashes($urlPath);
+
+		// checked before the aggregate-on-write insert below, so "first
+		// hit" reflects state prior to this request
+		$this->__alertOnFirstPlatformHit($websiteId, $matchedPlatform, 'ai_bot_hits', $matchedDisplayName);
 
 		$sql = "INSERT INTO ai_bot_hits (website_id, hit_date, platform, verified, url_path, url_hash, hits, created_at, updated_at)
 				VALUES ($websiteId, '$hitDate', '$platformSql', $verified, '$urlPathSql', UNHEX('$urlHashHex'), 1, NOW(), NOW())
@@ -625,6 +804,37 @@ PHP;
 
 		$row = $this->dbHelper->getRow('ai_visibility_rate_limit', "bucket_key='$bucketKey' and window_start=$windowStart");
 		return !empty($row) && intval($row['hit_count']) <= $capPerMinute;
+	}
+
+	/**
+	 * Alerts the website owner the first time a website is ever seen
+	 * receiving a hit from a given platform, in either ai_referrals
+	 * (click referrals) or ai_bot_hits (crawler visits). Must be called
+	 * BEFORE the aggregate-on-write INSERT ... ON DUPLICATE KEY UPDATE for
+	 * that hit, since the existence check below is what distinguishes
+	 * "first ever" from "one more of many" - once the row exists this
+	 * always no-ops. createAlert() itself dedupes same subject+message
+	 * per user per day, so this is safe to call on every ingest.
+	 */
+	function __alertOnFirstPlatformHit($websiteId, $platform, $table, $displayName) {
+		$exists = $this->dbHelper->getRow($table, "website_id=" . intval($websiteId) . " and platform='" . addslashes($platform) . "'");
+		if (!empty($exists)) {
+			return;
+		}
+
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		if (empty($websiteInfo['user_id'])) {
+			return;
+		}
+
+		include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+		$alertCtrl = new AlertController();
+		$alertCtrl->createAlert([
+			'alert_subject' => 'New AI Visibility Platform Detected',
+			'alert_message' => ($websiteInfo['url'] ?? 'Your website') . " just received its first tracked " . ($table == 'ai_bot_hits' ? 'crawl' : 'referral') . " from " . $displayName . ".",
+			'alert_category' => 'reports',
+			'alert_url' => SP_WEBPATH . "/aivisibility.php?website_id=" . intval($websiteId) . "&sec=" . ($table == 'ai_bot_hits' ? 'botreport' : 'report'),
+		], $websiteInfo['user_id']);
 	}
 
 }
