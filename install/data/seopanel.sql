@@ -1093,6 +1093,31 @@ CREATE TABLE IF NOT EXISTS `searchresults` (
   KEY `result_date` (`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+-- Search volume results table (populated via SP API /v1/search-volume).
+-- Was previously added only in upgrade.sql (existing installs), never here
+-- - a fresh install was silently missing this table entirely, breaking the
+-- Search Volume Checker cron/report for every fresh 7.0.0 install.
+CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` bigint unsigned NOT NULL,
+  `source` varchar(20) NOT NULL DEFAULT 'google',
+  `sv_mapping_id` int DEFAULT NULL,
+  `search_volume` int DEFAULT NULL,
+  `cpc` decimal(10,2) DEFAULT NULL,
+  `competition` float DEFAULT NULL,
+  `keyword_difficulty` float DEFAULT NULL,
+  `monthly_searches` text DEFAULT NULL,
+  `crawled_result` text DEFAULT NULL,
+  `last_crawl_status` varchar(20) DEFAULT 'pending',
+  `crawled_time` datetime DEFAULT NULL,
+  `result_date` date DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_keyword_source` (`keyword_id`, `source`),
+  KEY `idx_keyword_id` (`keyword_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `seoplugins` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `label` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
