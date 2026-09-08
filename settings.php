@@ -160,6 +160,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    break;
 
+		case "checkOllamaAPI":
+		    if (empty($_GET['base_url'])) {
+		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+		    } else {
+		        include_once(SP_CTRLPATH."/localai.ctrl.php");
+		        $localAiCtrler = new LocalAIController();
+		        $connResult = $localAiCtrler->__checkOllamaConnection($_GET['base_url']);
+
+		        if ($connResult['status']) {
+		            print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
+		        } else {
+		            print "<span class='error'>{$connResult['message']}</span>";
+		        }
+		    }
+
+		    break;
+
 		case "checkSpApiCon":
 			if (empty($_GET['api_key'])) {
 			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);

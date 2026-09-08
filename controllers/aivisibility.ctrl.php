@@ -14,6 +14,11 @@ class AIVisibilityController extends Controller {
 	const ROBOTS_BLOCK_BEGIN = '# BEGIN SEO PANEL AI RULES';
 	const ROBOTS_BLOCK_END = '# END SEO PANEL AI RULES';
 
+	// Managed-block markers for .htaccess writes (see __writeHtaccessRules()) -
+	// same containment guarantee as the robots.txt markers above.
+	const HTACCESS_BLOCK_BEGIN = '# BEGIN SEO PANEL AI HEADERS';
+	const HTACCESS_BLOCK_END = '# END SEO PANEL AI HEADERS';
+
 	// Marker comment prefixed onto every llms.txt SEO Panel generates -
 	// distinguishes "safe to regenerate" from a hand-authored file that
 	// happens to already exist (see regenerateLlmsTxt()).
@@ -56,6 +61,12 @@ class AIVisibilityController extends Controller {
 		// configured a writable docroot AND WordPress is actually detected there
 		$this->set('wpDetected', !empty($docrootStatus['writable']) && $this->__detectWordPress($docrootStatus['real']));
 		$this->set('wpCollectorInstalled', !empty($docrootStatus['real']) && $this->__isWpCollectorInstalled($docrootStatus['real']));
+
+		// AI-bot response headers (v1: X-Robots-Tag via managed .htaccess block)
+		$this->set('htaccessExtensions', !empty($accessInfo['htaccess_extensions']) ? explode(',', $accessInfo['htaccess_extensions']) : []);
+		$this->set('htaccessEnabled', !empty($accessInfo['htaccess_ai_headers_enabled']));
+		$this->set('htaccessLastWrittenAt', $accessInfo['htaccess_last_written_at'] ?? null);
+		$this->set('htaccessLastError', $accessInfo['htaccess_last_error'] ?? null);
 
 		$websiteInfo = null;
 		foreach ($websiteList as $w) {
@@ -294,12 +305,19 @@ class AIVisibilityController extends Controller {
 		return !empty($result['page']) ? $result['page'] : null;
 	}
 
-	// func to strip any previously-written SEO-Panel-managed block from
-	// robots.txt content, leaving everything else - shared by the write
-	// path (__writeRobotsTxt()) and used to keep the two in sync
-	function __stripManagedRobotsBlock($content) {
-		$pattern = '/\n?' . preg_quote(self::ROBOTS_BLOCK_BEGIN, '/') . '.*?' . preg_quote(self::ROBOTS_BLOCK_END, '/') . '\n?/s';
+	// func to strip a previously-written SEO-Panel-managed block (delimited
+	// by $begin/$end) from file content, leaving everything else untouched -
+	// shared by every managed-block writer (__writeRobotsTxt(),
+	// __writeHtaccessRules()) so the strip regex is defined exactly once
+	function __stripManagedBlock($content, $begin, $end) {
+		$pattern = '/\n?' . preg_quote($begin, '/') . '.*?' . preg_quote($end, '/') . '\n?/s';
 		return preg_replace($pattern, "\n", (string)$content);
+	}
+
+	// func to strip the robots.txt managed block specifically - thin
+	// wrapper over __stripManagedBlock() for existing call sites
+	function __stripManagedRobotsBlock($content) {
+		return $this->__stripManagedBlock($content, self::ROBOTS_BLOCK_BEGIN, self::ROBOTS_BLOCK_END);
 	}
 
 	/**
@@ -361,6 +379,175 @@ class AIVisibilityController extends Controller {
 		fclose($fh);
 
 		return ['ok' => true, 'error' => null];
+	}
+
+	// func to save which file extensions get the AI-bot X-Robots-Tag header,
+	// then apply it - owner-level (the admin already authorized the docroot
+	// by configuring it; the owner just picks which extensions get the header)
+	function saveHtaccessConfig($info) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+
+		$extensions = !empty($info['htaccess_extensions']) && is_array($info['htaccess_extensions'])
+			? array_intersect($info['htaccess_extensions'], ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif'])
+			: [];
+		$enabled = !empty($info['htaccess_ai_headers_enabled']) && !empty($extensions);
+
+		$this->dbHelper->updateRow('ai_visibility_site_access', [
+			'htaccess_ai_headers_enabled|int' => $enabled ? 1 : 0,
+			'htaccess_extensions' => implode(',', $extensions),
+			'updated_at' => 'NOW()',
+		], "website_id=" . intval($websiteId));
+
+		$writeResult = $this->__writeHtaccessRules($websiteId, $userId);
+		if (empty($writeResult['ok'])) {
+			$this->set('htaccessWriteError', $writeResult['error']);
+		}
+
+		$this->showSetup(['website_id' => $websiteId]);
+	}
+
+	/**
+	 * Rewrites this website's .htaccess to add (or remove) an X-Robots-Tag
+	 * header for admin/owner-selected file extensions, inside a clearly
+	 * delimited managed block - same containment guarantee as
+	 * __writeRobotsTxt(), but with a real safety net on top since a
+	 * malformed .htaccess can 500 an ENTIRE live site, unlike robots.txt
+	 * (inert if wrong): a baseline self-test before touching anything (so a
+	 * site that's already down is never blamed on this write), and a
+	 * post-write self-test with automatic rollback if the new rules broke
+	 * it. No apachectl configtest/shell-out anywhere in this codebase - a
+	 * live HTTP fetch is both the safest and the earliest possible signal,
+	 * since Apache doesn't re-parse .htaccess until the next real request
+	 * anyway. Every write/rollback is durably logged (see
+	 * ai_visibility_htaccess_audit_log) given the stakes.
+	 */
+	function __writeHtaccessRules($websiteId, $changedBy) {
+		$accessInfo = $this->__getSiteAccessConfig($websiteId);
+		$docrootStatus = !empty($accessInfo['docroot_path']) ? $this->__validateDocrootPath($accessInfo['docroot_path']) : null;
+		if (empty($docrootStatus['writable'])) {
+			return ['ok' => false, 'error' => 'Document root is not currently writable'];
+		}
+
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		if (empty($websiteInfo['url'])) {
+			return ['ok' => false, 'error' => 'No website URL to verify against'];
+		}
+
+		$extensions = !empty($accessInfo['htaccess_extensions']) ? explode(',', $accessInfo['htaccess_extensions']) : [];
+		$enabled = !empty($accessInfo['htaccess_ai_headers_enabled']);
+
+		// baseline self-test BEFORE touching anything - if the site is
+		// already unreachable we can't tell "we broke it" from "already
+		// broken", and writing+rolling-back would just add churn on top of
+		// a pre-existing outage
+		$baseline = $this->__selfTestWebsite($websiteInfo['url']);
+		if (empty($baseline['ok'])) {
+			return ['ok' => false, 'error' => $this->spTextAIV['htaccessalreadydown'] ?? 'Your site is not currently reachable, so SEO Panel cannot safely verify a change. No changes were made.'];
+		}
+
+		$htaccessPath = $docrootStatus['real'] . '/.htaccess';
+		$backupPath = $htaccessPath . '.seopanel-backup';
+
+		$fh = @fopen($htaccessPath, 'c+');
+		if ($fh === false) {
+			return ['ok' => false, 'error' => 'Could not open .htaccess for writing'];
+		}
+		if (!flock($fh, LOCK_EX)) {
+			fclose($fh);
+			return ['ok' => false, 'error' => 'Could not lock .htaccess'];
+		}
+
+		$original = stream_get_contents($fh);
+		// belt-and-suspenders: survives the PHP process dying mid-request
+		// (e.g. hitting max_execution_time between write and verify below),
+		// after which the in-memory $original would otherwise be unrecoverable
+		@file_put_contents($backupPath, $original, LOCK_EX);
+
+		$stripped = rtrim($this->__stripManagedBlock($original, self::HTACCESS_BLOCK_BEGIN, self::HTACCESS_BLOCK_END));
+
+		$newContent = $stripped;
+		if ($enabled && !empty($extensions)) {
+			$extPattern = implode('|', array_map(function($e) { return preg_quote($e, '/'); }, $extensions));
+			$block = self::HTACCESS_BLOCK_BEGIN . "\n"
+				. "<FilesMatch \"\\.($extPattern)$\">\n"
+				. "\tHeader set X-Robots-Tag \"noai\"\n"
+				. "</FilesMatch>\n"
+				. self::HTACCESS_BLOCK_END;
+			$newContent = ($stripped !== '' ? $stripped . "\n\n" : '') . $block . "\n";
+		}
+
+		ftruncate($fh, 0);
+		rewind($fh);
+		fwrite($fh, $newContent);
+		fflush($fh);
+
+		// post-write self-test - the new rules are live on disk now, lock
+		// still held so no concurrent request can interleave
+		$postWrite = $this->__selfTestWebsite($websiteInfo['url']);
+
+		if (empty($postWrite['ok'])) {
+			ftruncate($fh, 0);
+			rewind($fh);
+			fwrite($fh, $original);
+			fflush($fh);
+			flock($fh, LOCK_UN);
+			fclose($fh);
+
+			$this->dbHelper->insertRow('ai_visibility_htaccess_audit_log', [
+				'website_id|int' => $websiteId,
+				'action' => 'rollback',
+				'extensions' => implode(',', $extensions),
+				'self_test_http_code|int' => $postWrite['http_code'],
+				'self_test_ok|int' => 0,
+				'changed_by|int' => $changedBy,
+				'changed_at' => 'NOW()',
+			]);
+			$this->dbHelper->updateRow('ai_visibility_site_access', [
+				'htaccess_last_error' => $this->spTextAIV['htaccessrollback'] ?? 'The new rules made your site unreachable and were automatically reverted. No changes were kept.',
+			], "website_id=" . intval($websiteId));
+
+			return ['ok' => false, 'error' => $this->spTextAIV['htaccessrollback'] ?? 'The new rules made your site unreachable and were automatically reverted. No changes were kept.'];
+		}
+
+		flock($fh, LOCK_UN);
+		fclose($fh);
+		@unlink($backupPath);
+
+		$this->dbHelper->insertRow('ai_visibility_htaccess_audit_log', [
+			'website_id|int' => $websiteId,
+			'action' => 'write',
+			'extensions' => implode(',', $extensions),
+			'self_test_http_code|int' => $postWrite['http_code'],
+			'self_test_ok|int' => 1,
+			'changed_by|int' => $changedBy,
+			'changed_at' => 'NOW()',
+		]);
+		$this->dbHelper->updateRow('ai_visibility_site_access', [
+			'htaccess_last_written_at' => 'NOW()',
+			'htaccess_last_error' => 'NULL',
+		], "website_id=" . intval($websiteId));
+
+		return ['ok' => true, 'error' => null];
+	}
+
+	// func to fetch a website's own homepage as a liveness check (cache-
+	// busted, since a CDN/reverse-proxy could otherwise mask the real
+	// origin state) - used by __writeHtaccessRules() both before (baseline)
+	// and after (verify) a write. Short timeout: this blocks the request
+	// that triggered it, twice, so it must stay well under PHP's
+	// max_execution_time.
+	function __selfTestWebsite($websiteUrl) {
+		$cacheBustedUrl = $websiteUrl . (strpos($websiteUrl, '?') === false ? '?' : '&') . 'spcheck=' . time();
+		$spider = new Spider();
+		$spider->_CURLOPT_TIMEOUT = 8;
+		$spider->_CURL_HTTPHEADER = ['Cache-Control: no-cache'];
+		$result = $spider->getContent($cacheBustedUrl, false, false);
+		$httpCode = intval($result['http_code'] ?? 0);
+		$ok = empty($result['error']) && $httpCode > 0 && $httpCode < 500;
+		return ['ok' => $ok, 'http_code' => $httpCode];
 	}
 
 	/**

@@ -568,3 +568,82 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'wpdetectednotice', 'WordPress detected at your configured Document Root. Skip the manual download/paste step - install the collector directly as a must-use plugin.'),
 ('en', 'aivisibility', 'Installed automatically', 'Installed automatically'),
 ('en', 'aivisibility', 'wpinstallfailed', 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+
+-- AI-bot response headers via a managed .htaccess block (v1: X-Robots-Tag
+-- only, not a full alternate-HTML pipeline) - reuses the same admin-
+-- authorized docroot as robots.txt/llms.txt. A malformed .htaccess can 500
+-- an entire live site (unlike robots.txt, which is inert if wrong), so
+-- __writeHtaccessRules() self-tests via a live HTTP fetch before and after
+-- writing and auto-rolls back on failure - see the audit log below for why
+-- that isn't optional here.
+ALTER TABLE `ai_visibility_site_access`
+  ADD COLUMN `htaccess_ai_headers_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  ADD COLUMN `htaccess_extensions` varchar(255) DEFAULT NULL,
+  ADD COLUMN `htaccess_last_written_at` datetime DEFAULT NULL,
+  ADD COLUMN `htaccess_last_error` varchar(500) DEFAULT NULL;
+
+CREATE TABLE IF NOT EXISTS `ai_visibility_htaccess_audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `action` enum('write','rollback') NOT NULL,
+  `extensions` varchar(255) DEFAULT NULL,
+  `self_test_http_code` int DEFAULT NULL,
+  `self_test_ok` tinyint(1) NOT NULL DEFAULT 0,
+  `changed_by` int unsigned DEFAULT NULL,
+  `changed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI-Bot Response Headers', 'AI-Bot Response Headers'),
+('en', 'aivisibility', 'htaccessnotice', 'Adds an X-Robots-Tag header for the selected file types, inside a clearly marked block in this site''s .htaccess - everything else in the file is left untouched. Every save is verified live against your site before it is kept; if the new rules make your site unreachable, they are automatically reverted.'),
+('en', 'aivisibility', 'Save & Apply', 'Save & Apply'),
+('en', 'aivisibility', 'htaccessrollback', 'The new rules made your site unreachable and were automatically reverted. No changes were kept.'),
+('en', 'aivisibility', 'htaccessalreadydown', 'Your site is not currently reachable, so SEO Panel cannot safely verify a change. No changes were made.'),
+('en', 'aivisibility', 'Last applied', 'Last applied'),
+('en', 'aivisibility', 'Last error', 'Last error');
+
+-- Local AI: optional on-server LLM (e.g. Ollama) for AI Insights summaries
+-- and meta-description suggestions - content never sent to a third party,
+-- unlike a cloud AI feature. See LocalAIController, SettingsController::isLocalAIEnabled().
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable Local AI', 'SP_ENABLE_LOCAL_AI', '0', 'local_ai', 'bool', 1),
+('Ollama Base URL', 'SP_LOCAL_AI_URL', 'http://localhost:11434', 'local_ai', 'large', 1),
+('Ollama Model', 'SP_LOCAL_AI_MODEL', 'llama3.2:3b', 'local_ai', 'large', 1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),
+('en', 'settings', 'SP_LOCAL_AI_URL', 'Ollama Base URL'),
+('en', 'settings', 'SP_LOCAL_AI_MODEL', 'Ollama Model'),
+('en', 'panel', 'Local AI Settings', 'Local AI Settings'),
+('en', 'recommendations', 'Generate AI summary', 'Generate AI summary'),
+('en', 'recommendations', 'ai-summary-unavailable', 'Local AI summary is not available right now.'),
+('en', 'siteauditor', 'Suggest with AI', 'Suggest with AI');
+
+-- MCP (Model Context Protocol) server tokens - see MCPController and
+-- install/data/seopanel.sql's ai_visibility_site_access-adjacent comment
+-- for the full rationale (per-user scoping, unlike api/api.php's global key).
+CREATE TABLE IF NOT EXISTS `mcp_tokens` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `label` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `last_used_at` datetime DEFAULT NULL,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'MCP Access', 'MCP Access'),
+('en', 'myaccount', 'MCP Access Tokens', 'MCP Access Tokens'),
+('en', 'myaccount', 'mcpaccessnotice', 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'),
+('en', 'myaccount', 'Generate new token', 'Generate new token'),
+('en', 'myaccount', 'Token Label', 'Token Label'),
+('en', 'myaccount', 'mcptokenonceNotice', 'Copy this token now - it will not be shown again.'),
+('en', 'myaccount', 'Revoke', 'Revoke'),
+('en', 'myaccount', 'Last used', 'Last used'),
+('en', 'myaccount', 'Never', 'Never');

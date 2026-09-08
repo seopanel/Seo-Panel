@@ -90,7 +90,11 @@ class SettingsController extends Controller{
 				case "dataforseo":
 				    $this->set('headLabel', $spTextPanel['DataForSEO Settings']);
 				    break;
-					
+
+				case "local_ai":
+				    $this->set('headLabel', $spTextPanel['Local AI Settings']);
+				    break;
+
 				case "mail":
 				    $this->set('headLabel', $spTextPanel['Mail Settings']);
 				    break;
@@ -431,6 +435,16 @@ class SettingsController extends Controller{
 	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
 	        default:              return true;
 	    }
+	}
+
+	// func to check whether Local AI (Ollama) is enabled+configured - cheap
+	// constant check only, no live reachability probe (that only happens
+	// via the explicit "Test connection" button and inside real calls -
+	// see LocalAIController)
+	public static function isLocalAIEnabled() {
+	    if (!defined('SP_ENABLE_LOCAL_AI') || !SP_ENABLE_LOCAL_AI) return false;
+	    if (!defined('SP_LOCAL_AI_URL') || empty(SP_LOCAL_AI_URL)) return false;
+	    return true;
 	}
 
 	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {

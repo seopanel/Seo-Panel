@@ -183,6 +183,7 @@ foreach($menuList as $i => $menuInfo){
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=moz', 'content')"><?php echo $spTextPanel['MOZ Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=google', 'content')"><?php echo $spTextPanel['Google Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=dataforseo', 'content')"><?php echo $spTextPanel['DataForSEO Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=local_ai', 'content')"><?php echo $spTextPanel['Local AI Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=mail', 'content')"><?php echo $spTextPanel['Mail Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=test_email', 'content')"><?php echo $spTextPanel['Test Email Settings']?></a></li>
 			</ul>
@@ -197,6 +198,7 @@ foreach($menuList as $i => $menuInfo){
 				<?php if (!SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('connections.php', 'content')"><?php echo $spTextPanel['Connections']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('alerts.php', 'content')"><?php echo $spTextPanel['Alerts']?></a></li>
+					<li><a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextPanel['MCP Access']?></a></li>
 				<?php }?>
 			</ul>
 			<?php

@@ -457,6 +457,12 @@ function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 
+function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
+	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
+	scriptArgs += "&base_url=" + encodeURIComponent(baseUrl);
+	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}
+
 function openTab(tabName, dialog = false) {
 	dialogId = dialog ? "#dialogContent " : "";
 	$(dialogId + '.tabcontent').hide();	

@@ -30,6 +30,9 @@ if (!empty($_SERVER['REQUEST_METHOD'])) {
         case 'refresh':
             $controller->refreshRecommendations($_REQUEST);
             break;
+        case 'generate-ai-summary':
+            $controller->generateAISummaryAction($_REQUEST);
+            break;
         default:
             $controller->showRecommendationsDashboard($_REQUEST);
             break;

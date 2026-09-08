@@ -72,6 +72,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->installWordPressCollector($_POST);
 			break;
 
+		case "save-htaccess-config":
+			$controller->saveHtaccessConfig($_POST);
+			break;
+
 		default:
 			$controller->showSetup($_POST);
 			break;

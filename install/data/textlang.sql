@@ -32383,3 +32383,23 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'wpdetectednotice', 'WordPress detected at your configured Document Root. Skip the manual download/paste step - install the collector directly as a must-use plugin.'),
 ('en', 'aivisibility', 'Installed automatically', 'Installed automatically'),
 ('en', 'aivisibility', 'wpinstallfailed', 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI-Bot Response Headers', 'AI-Bot Response Headers'),
+('en', 'aivisibility', 'htaccessnotice', 'Adds an X-Robots-Tag header for the selected file types, inside a clearly marked block in this site''s .htaccess - everything else in the file is left untouched. Every save is verified live against your site before it is kept; if the new rules make your site unreachable, they are automatically reverted.'),
+('en', 'aivisibility', 'Save & Apply', 'Save & Apply'),
+('en', 'aivisibility', 'htaccessrollback', 'The new rules made your site unreachable and were automatically reverted. No changes were kept.'),
+('en', 'aivisibility', 'htaccessalreadydown', 'Your site is not currently reachable, so SEO Panel cannot safely verify a change. No changes were made.'),
+('en', 'aivisibility', 'Last applied', 'Last applied'),
+('en', 'aivisibility', 'Last error', 'Last error');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'MCP Access', 'MCP Access'),
+('en', 'myaccount', 'MCP Access Tokens', 'MCP Access Tokens'),
+('en', 'myaccount', 'mcpaccessnotice', 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'),
+('en', 'myaccount', 'Generate new token', 'Generate new token'),
+('en', 'myaccount', 'Token Label', 'Token Label'),
+('en', 'myaccount', 'mcptokenonceNotice', 'Copy this token now - it will not be shown again.'),
+('en', 'myaccount', 'Revoke', 'Revoke'),
+('en', 'myaccount', 'Last used', 'Last used'),
+('en', 'myaccount', 'Never', 'Never');

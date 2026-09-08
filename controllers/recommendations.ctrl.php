@@ -33,7 +33,35 @@ class RecommendationsController extends Controller {
             $this->set('recommendations', array());
         }
 
+        include_once(SP_CTRLPATH . "/settings.ctrl.php");
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+        $this->set('spTextRec', $this->getLanguageTexts('recommendations', $_SESSION['lang_code']));
+
         $this->render('dashboard/recommendations_main');
+    }
+
+    /*
+     * AJAX action: on-demand Local AI summary of this website's current
+     * findings - never auto-fired on page load (unnecessary local compute).
+     * Ownership is implicit since generateInsightsSummary() reads from
+     * __getStoredRecommendations($websiteId, $userId), which already scopes
+     * by this session's own user_id.
+     */
+    function generateAISummaryAction($info) {
+        $userId = isLoggedIn();
+        $websiteId = !empty($info['website_id']) ? intval($info['website_id']) : 0;
+
+        header('Content-Type: application/json');
+        if (empty($websiteId)) {
+            echo json_encode(['ok' => false, 'error' => 'Missing website_id']);
+            exit;
+        }
+
+        include_once(SP_CTRLPATH . "/settings.ctrl.php");
+        include_once(SP_CTRLPATH . "/localai.ctrl.php");
+        $localAiCtrler = new LocalAIController();
+        echo json_encode($localAiCtrler->generateInsightsSummary($websiteId, $userId));
+        exit;
     }
 
     /*
@@ -140,9 +168,14 @@ class RecommendationsController extends Controller {
     }
 
     /*
-     * Return recommendations stored in DB for a website.
+     * Return recommendations stored in DB for a website. Not private -
+     * called directly by LocalAIController::generateInsightsSummary() to
+     * build its summary from these same deterministic findings, rather
+     * than duplicating this query (double-underscore convention already
+     * used across controllers for cross-controller calls, e.g.
+     * AIVisibilityController::__getOrCreateSite()).
      */
-    private function __getStoredRecommendations($websiteId, $userId) {
+    function __getStoredRecommendations($websiteId, $userId) {
         $sql = "SELECT * FROM sp_recommendations
                 WHERE website_id=$websiteId AND user_id=$userId
                 ORDER BY FIELD(type,'error','warning','todo'), id ASC";

@@ -165,6 +165,34 @@
             </div>
         </div>
 
+        <?php if (!empty($localAiAvailable)) { ?>
+        <div class="rec-card" style="padding:18px 22px;">
+            <button type="button" class="rec-btn" id="aiSummaryBtn" onclick="aivGenerateAISummary(<?php echo intval($websiteId)?>)">
+                <i class="fas fa-robot"></i> <?php echo $spTextRec['Generate AI summary'] ?? 'Generate AI summary'?>
+            </button>
+            <p id="aiSummaryText" style="display:none;margin-top:12px;color:#444;line-height:1.6;"></p>
+        </div>
+        <script>
+        function aivGenerateAISummary(websiteId) {
+            var btn = document.getElementById('aiSummaryBtn');
+            var el = document.getElementById('aiSummaryText');
+            btn.disabled = true;
+            fetch('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=generate-ai-summary&website_id=' + websiteId, { credentials: 'same-origin' })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    btn.disabled = false;
+                    el.textContent = data.ok ? data.summary : (data.error || '<?php echo addslashes($spTextRec['ai-summary-unavailable'] ?? 'Local AI summary is not available right now.')?>');
+                    el.style.display = 'block';
+                })
+                .catch(function() {
+                    btn.disabled = false;
+                    el.textContent = '<?php echo addslashes($spTextRec['ai-summary-unavailable'] ?? 'Local AI summary is not available right now.')?>';
+                    el.style.display = 'block';
+                });
+        }
+        </script>
+        <?php } ?>
+
         <?php foreach ($typeMeta as $type => $meta) {
             if (empty($grouped[$type])) continue;
             $count = count($grouped[$type]);

@@ -237,6 +237,49 @@
 	<?php } } ?>
 </div>
 
+<div class="cron-card" style="background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:20px;margin-bottom:20px;">
+	<div class="cron-card-title" style="font-weight:600;margin-bottom:10px;">
+		<i class="fas fa-file-shield me-2"></i>
+		<?php echo $spTextAIV['AI-Bot Response Headers'] ?? 'AI-Bot Response Headers'?>
+	</div>
+	<div class="alert alert-info">
+		<?php echo $spTextAIV['htaccessnotice'] ?? 'Adds an X-Robots-Tag header for the selected file types, inside a clearly marked block in this site\'s .htaccess - everything else in the file is left untouched. Every save is verified live against your site before it is kept; if the new rules make your site unreachable, they are automatically reverted.'?>
+	</div>
+
+	<?php if (!empty($htaccessWriteError)) { ?>
+		<div class="alert alert-danger"><?php echo htmlspecialchars($htaccessWriteError)?></div>
+	<?php } ?>
+
+	<?php if (empty($docrootStatus['writable'])) { ?>
+		<p class="text-muted"><?php echo $spTextAIV['Path not writable - view only'] ?? 'Path not writable - view only'?></p>
+	<?php } else { ?>
+		<form id="htaccess_form" onsubmit="return false;">
+			<input type="hidden" name="sec" value="save-htaccess-config">
+			<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
+			<label style="display:block;margin-bottom:8px;">
+				<input type="checkbox" name="htaccess_ai_headers_enabled" value="1" <?php echo !empty($htaccessEnabled) ? 'checked' : ''?>>
+				<?php echo $spText['common']['Active'] ?? 'Active'?>
+			</label>
+			<?php foreach (['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'gif'] as $ext) { ?>
+				<label style="display:inline-block;margin-right:15px;">
+					<input type="checkbox" name="htaccess_extensions[]" value="<?php echo $ext?>" <?php echo in_array($ext, $htaccessExtensions ?? []) ? 'checked' : ''?>>
+					.<?php echo $ext?>
+				</label>
+			<?php } ?>
+		</form>
+		<a href="javascript:void(0);" onclick="scriptDoLoadPost('aivisibility.php', 'htaccess_form', 'content')" class="btn btn-sm btn-secondary" style="margin-top:10px;">
+			<?php echo $spTextAIV['Save & Apply'] ?? 'Save & Apply'?>
+		</a>
+	<?php } ?>
+
+	<?php if (!empty($htaccessLastWrittenAt)) { ?>
+		<p class="text-muted" style="margin-top:10px;"><?php echo $spTextAIV['Last applied'] ?? 'Last applied'?>: <?php echo htmlspecialchars($htaccessLastWrittenAt)?></p>
+	<?php } ?>
+	<?php if (!empty($htaccessLastError)) { ?>
+		<p class="text-danger"><?php echo $spTextAIV['Last error'] ?? 'Last error'?>: <?php echo htmlspecialchars($htaccessLastError)?></p>
+	<?php } ?>
+</div>
+
 <script>
 document.getElementById('aivCopyBtn').addEventListener('click', function() {
 	var btn = this;

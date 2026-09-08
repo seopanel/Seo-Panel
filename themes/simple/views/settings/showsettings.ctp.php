@@ -247,6 +247,11 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 									<a href="javascript:void(0);" onclick="checkDataForSEOAPIConnection('settings.php?sec=checkDataForSEOAPI', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
 								</div>
 								<div id="show_conn_res" class="mt-2"></div>
+							<?php } else if ($listInfo['set_name'] == 'SP_LOCAL_AI_URL') {?>
+								<div class="mt-2">
+									<a href="javascript:void(0);" onclick="checkOllamaConnection('settings.php?sec=checkOllamaAPI', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
+								</div>
+								<div id="show_conn_res" class="mt-2"></div>
 							<?php } else if ($listInfo['set_name'] == 'SP_SPAPI_KEY') {?>
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkSpApiConnection('settings.php?sec=checkSpApiCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>

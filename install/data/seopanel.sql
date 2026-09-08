@@ -995,10 +995,50 @@ CREATE TABLE IF NOT EXISTS `ai_visibility_site_access` (
   `log_offset` bigint unsigned NOT NULL DEFAULT 0,
   `log_inode` bigint unsigned DEFAULT NULL,
   `log_last_run_at` datetime DEFAULT NULL,
+  `htaccess_ai_headers_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `htaccess_extensions` varchar(255) DEFAULT NULL,
+  `htaccess_last_written_at` datetime DEFAULT NULL,
+  `htaccess_last_error` varchar(500) DEFAULT NULL,
   `created_at` datetime NOT NULL,
   `updated_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Durable trail of every .htaccess AI-crawler-header write/rollback - not
+-- just nice-to-have here, unlike the robots.txt audit log, given a
+-- malformed .htaccess can 500 an entire live site (see
+-- AIVisibilityController::__writeHtaccessRules()).
+CREATE TABLE IF NOT EXISTS `ai_visibility_htaccess_audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `action` enum('write','rollback') NOT NULL,
+  `extensions` varchar(255) DEFAULT NULL,
+  `self_test_http_code` int DEFAULT NULL,
+  `self_test_ok` tinyint(1) NOT NULL DEFAULT 0,
+  `changed_by` int unsigned DEFAULT NULL,
+  `changed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- MCP (Model Context Protocol) server tokens - lets a website owner point
+-- their own Claude Desktop/agent at their own SEO Panel data, fully self-
+-- hosted. Per-user (NOT global like api/api.php's SP_API_KEY/API_SECRET,
+-- which has no per-user scoping at all - see MCPController). A user
+-- generates/revokes their own tokens from mcp-access.php; every MCP tool
+-- call resolves user_id from the token, never trusts a client-supplied one.
+CREATE TABLE IF NOT EXISTS `mcp_tokens` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `label` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `last_used_at` datetime DEFAULT NULL,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Per-website-per-platform desired robots.txt state - absence of a row
@@ -1883,6 +1923,23 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('Access log bytes read per cron run','AIB_LOG_BYTES_PER_CRON_RUN','5242880','aivisibility','small',1),
 ('Access log unique IPs verified per cron run','AIB_LOG_MAX_IPS_PER_CRON_RUN','500','aivisibility','small',1);
+
+-- Local AI: optional on-server LLM (e.g. Ollama) for AI Insights summaries
+-- and meta-description suggestions - content never sent to a third party,
+-- unlike a cloud AI feature. See LocalAIController, SettingsController::isLocalAIEnabled().
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable Local AI', 'SP_ENABLE_LOCAL_AI', '0', 'local_ai', 'bool', 1),
+('Ollama Base URL', 'SP_LOCAL_AI_URL', 'http://localhost:11434', 'local_ai', 'large', 1),
+('Ollama Model', 'SP_LOCAL_AI_MODEL', 'llama3.2:3b', 'local_ai', 'large', 1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),
+('en', 'settings', 'SP_LOCAL_AI_URL', 'Ollama Base URL'),
+('en', 'settings', 'SP_LOCAL_AI_MODEL', 'Ollama Model'),
+('en', 'panel', 'Local AI Settings', 'Local AI Settings'),
+('en', 'recommendations', 'Generate AI summary', 'Generate AI summary'),
+('en', 'recommendations', 'ai-summary-unavailable', 'Local AI summary is not available right now.'),
+('en', 'siteauditor', 'Suggest with AI', 'Suggest with AI');
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES

@@ -921,6 +921,9 @@ class SiteAuditorController extends Controller{
 	        $this->set('reportInfo', $reportInfo);
 	        $this->set('linkList', $auditorComp->getAllLinksPage($reportId));
 	        $this->set('post', $info);
+	        include_once(SP_CTRLPATH . "/settings.ctrl.php");
+	        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+	        $this->set('spTextSiteAuditor', $this->getLanguageTexts('siteauditor', $_SESSION['lang_code']));
 	        $this->render('siteauditor/pagedetails');
 	    }    
 	}

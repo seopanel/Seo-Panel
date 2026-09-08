@@ -145,7 +145,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         case "checkscore":
 			$controller->checkPageScore($_GET);
 			break;
-			
+
+		case "suggest-meta-description":
+			include_once(SP_CTRLPATH."/localai.ctrl.php");
+			$localAiCtrler = new LocalAIController();
+			header('Content-Type: application/json');
+			echo json_encode($localAiCtrler->suggestMetaDescription(intval($_GET['report_id'] ?? 0), isLoggedIn()));
+			exit;
+
+
 		case "deletepage":
 			$controller->__deleteReportPage($_GET['report_id']);
 			$controller->loadReportsPage($_GET);
