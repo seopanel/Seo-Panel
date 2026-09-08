@@ -1931,15 +1931,10 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 ('Enable Local AI', 'SP_ENABLE_LOCAL_AI', '0', 'local_ai', 'bool', 1),
 ('Ollama Base URL', 'SP_LOCAL_AI_URL', 'http://localhost:11434', 'local_ai', 'large', 1),
 ('Ollama Model', 'SP_LOCAL_AI_MODEL', 'llama3.2:3b', 'local_ai', 'large', 1);
-
-INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),
-('en', 'settings', 'SP_LOCAL_AI_URL', 'Ollama Base URL'),
-('en', 'settings', 'SP_LOCAL_AI_MODEL', 'Ollama Model'),
-('en', 'panel', 'Local AI Settings', 'Local AI Settings'),
-('en', 'recommendations', 'Generate AI summary', 'Generate AI summary'),
-('en', 'recommendations', 'ai-summary-unavailable', 'Local AI summary is not available right now.'),
-('en', 'siteauditor', 'Suggest with AI', 'Suggest with AI');
+-- text labels for these seeded in textlang.sql (the `texts` table itself
+-- isn't created until that separate file runs - a direct INSERT INTO texts
+-- here breaks every fresh install partway through, since textlang.sql runs
+-- as its own later install step, not inline with this file)
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES

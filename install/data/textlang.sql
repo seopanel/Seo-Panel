@@ -32403,3 +32403,12 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'myaccount', 'Revoke', 'Revoke'),
 ('en', 'myaccount', 'Last used', 'Last used'),
 ('en', 'myaccount', 'Never', 'Never');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),
+('en', 'settings', 'SP_LOCAL_AI_URL', 'Ollama Base URL'),
+('en', 'settings', 'SP_LOCAL_AI_MODEL', 'Ollama Model'),
+('en', 'panel', 'Local AI Settings', 'Local AI Settings'),
+('en', 'recommendations', 'Generate AI summary', 'Generate AI summary'),
+('en', 'recommendations', 'ai-summary-unavailable', 'Local AI summary is not available right now.'),
+('en', 'siteauditor', 'Suggest with AI', 'Suggest with AI');
