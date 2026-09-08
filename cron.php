@@ -188,6 +188,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
 	echo "Pruned AI bot hits older than " . (defined('AIB_BOT_RETENTION_DAYS') ? AIB_BOT_RETENTION_DAYS : 365) . " days\n";
 
+	// on-premise AI bot detection from co-located websites' own access logs
+	// (opt-in, admin-configured - see ai_visibility_site_access). No-ops
+	// immediately if no website has an access_log_path configured.
+	$aivCtrler->processAccessLogsForBotHits();
+	echo "Processed AI Visibility access logs for bot detection\n";
+
 	// regenerate AI Insights for every active website (at most once/day - see refreshAllAIInsights())
 	$controller->refreshAllAIInsights();
 	echo "Refreshed AI Insights for active websites (once per day)\n";

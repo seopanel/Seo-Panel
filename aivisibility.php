@@ -56,6 +56,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->deletePlatform($_POST);
 			break;
 
+		case "save-site-access":
+			$controller->saveSiteAccessConfig($_POST);
+			break;
+
+		case "toggle-robots-rule":
+			$controller->toggleRobotsRule($_POST);
+			break;
+
+		case "regenerate-llms":
+			$controller->regenerateLlmsTxt($_POST);
+			break;
+
 		default:
 			$controller->showSetup($_POST);
 			break;

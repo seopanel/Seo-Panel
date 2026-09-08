@@ -978,6 +978,45 @@ CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   PRIMARY KEY (`bucket_key`,`window_start`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
+-- Admin-configured local server access for a website (docroot for
+-- robots.txt/llms.txt management, access log path for log-based AI bot
+-- detection) - see AIVisibilityController::__validateDocrootPath()/
+-- __validateAccessLogPath(). Only an admin can set these (real filesystem
+-- read/write with the web server's OS permissions); a website's own owner
+-- can then self-serve the day-to-day robots.txt toggles/llms.txt
+-- regeneration once an admin has authorized the path. No cached
+-- "is writable" flag - always re-derived live (TOCTOU: permissions/symlinks
+-- can change after save).
+CREATE TABLE IF NOT EXISTS `ai_visibility_site_access` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `docroot_path` varchar(500) DEFAULT NULL,
+  `access_log_path` varchar(500) DEFAULT NULL,
+  `log_offset` bigint unsigned NOT NULL DEFAULT 0,
+  `log_inode` bigint unsigned DEFAULT NULL,
+  `log_last_run_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Per-website-per-platform desired robots.txt state - absence of a row
+-- means "allowed" (not additionally blocked by SEO Panel). Written into the
+-- website's own robots.txt only inside a clearly delimited managed block
+-- (see AIVisibilityController::__writeRobotsTxt()) - everything else in the
+-- file is preserved untouched.
+CREATE TABLE IF NOT EXISTS `ai_visibility_robots_rules` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `is_blocked` tinyint(1) NOT NULL DEFAULT 1,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_platform` (`website_id`,`platform`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `cron_run_log` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `trigger_source` varchar(20) NOT NULL DEFAULT 'cli',
@@ -1820,6 +1859,14 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 -- AI Visibility: AI Bot Crawler Tracking (collector script + FCrDNS)
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('AI bot hit data retention (days)','AIB_BOT_RETENTION_DAYS','365','aivisibility','small',1);
+
+-- AI Visibility: access-log-based AI bot detection (co-located sites only,
+-- see ai_visibility_site_access) - two independent per-cron-run budgets,
+-- since log I/O (bytes) and DNS verification (unique IPs) are different
+-- bottlenecks.
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Access log bytes read per cron run','AIB_LOG_BYTES_PER_CRON_RUN','5242880','aivisibility','small',1),
+('Access log unique IPs verified per cron run','AIB_LOG_MAX_IPS_PER_CRON_RUN','500','aivisibility','small',1);
 
 -- AI Overview tracking settings
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
