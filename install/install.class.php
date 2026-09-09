@@ -21,7 +21,11 @@
  ***************************************************************************/
 
 class Install {
-	
+
+	// set by getUpgradeDBFiles() when the current version couldn't be
+	// determined/recognized cleanly, surfaced on the Upgrade Complete page
+	var $upgradeVersionNote = null;
+
 	# func to check requirements
 	function checkRequirements($error=false) {		
 		
@@ -36,7 +40,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query') || function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -260,16 +264,29 @@ class Install {
 	
 	# func to write to config file
 	function writeConfigFile($info) {
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_SAMPLE, "r");
 		$cfgData = fread($handle, filesize(SP_INSTALL_CONFIG_SAMPLE));
 		fclose($handle);
-		
-		
+
+
 		$search = array('[SP_WEBPATH]', '[DB_NAME]', '[DB_USER]', '[DB_PASSWORD]', '[DB_HOST]', '[DB_ENGINE]');
-		$replace = array($info['web_path'], $info['db_name'], $info['db_user'], $info['db_pass'], $info['db_host'], $info['db_engine'] );
+		// every placeholder sits inside a single-quoted define('X', '...')
+		// string in sp-config-sample.php - addslashes() here is NOT
+		// optional: without it, a single quote in any of these values
+		// (all client-supplied POST data) breaks out of the PHP string
+		// literal and injects arbitrary code into config/sp-config.php,
+		// which is include()'d on every single request.
+		$replace = array(
+			addslashes($info['web_path']),
+			addslashes($info['db_name']),
+			addslashes($info['db_user']),
+			addslashes($info['db_pass']),
+			addslashes($info['db_host']),
+			addslashes($info['db_engine']),
+		);
 		$cfgData = str_replace($search, $replace, $cfgData);
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_FILE, "w");
 		fwrite($handle, $cfgData);
 		fclose($handle);
@@ -315,10 +332,26 @@ class Install {
 	
 	# func to proceed installation
 	function proceedInstallation($info) {
-		
+
+		// checkRequirements() only performs this exact check on the GET
+		// landing page, never on this POST path - meaning if an admin
+		// ever skips the documented post-install "chmod config to 644"
+		// step (config/sp-config.php stays writable), anyone who can
+		// still reach sec=proceedinstall could re-run the entire fresh
+		// install against a live site: re-import the schema AND rewrite
+		// the DB connection itself with attacker-supplied credentials.
+		// This checks the file's CONTENTS (not its permissions), so it
+		// closes the hole regardless of whether the chmod step was done.
+		if (file_exists(SP_INSTALL_CONFIG_FILE)) {
+			include_once(SP_INSTALL_CONFIG_FILE);
+			if (defined('SP_INSTALLED')) {
+				die("<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>");
+			}
+		}
+
 		// if mysqli function exists
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
-		
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
+
 		# checking db settings
 		$errMsg = $db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		if($db->error ){
@@ -370,7 +403,7 @@ class Install {
 			$spider->getContent($installUpdateUrl, false, false);
 		}
 		
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 		$db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		
 		// update email for admin
@@ -616,6 +649,46 @@ class Install {
 		return '';
 	}
 
+	/**
+	 * Requires an already-authenticated admin session before allowing any
+	 * interaction with the upgrade wizard on a live site. upgrade.php
+	 * previously had no real auth check at all - its only "guards" were
+	 * $info['php_support']/etc, which are read straight from
+	 * client-supplied POST fields, not verified server-side - so anyone
+	 * who could reach the URL could trigger a real database migration.
+	 *
+	 * Deliberately does NOT bootstrap the full app (includes/sp-load.php)
+	 * to check this, since that assumes a schema already matching the
+	 * CURRENT version - exactly what an upgrade cannot assume. Instead
+	 * reads $_SESSION['userInfo'] directly, the same session key/shape
+	 * isAdmin()/checkAdminLoggedIn() check (see libs/session.class.php,
+	 * includes/sp-common.php) - a real login via the main app's
+	 * login.php, in the same browser, is the only way to populate it.
+	 * Caller must have already called session_start() and
+	 * showDefaultHeader().
+	 */
+	function requireAdminSession() {
+		$userInfo = isset($_SESSION['userInfo']) ? $_SESSION['userInfo'] : array();
+		$isAdmin = !empty($userInfo['userId']) && !empty($userInfo['userType']) && $userInfo['userType'] === 'admin';
+		if ($isAdmin) {
+			return;
+		}
+
+		if (!headers_sent()) {
+			http_response_code(403);
+		}
+		?>
+		<div class="content-section">
+			<div class="alert alert-warning">
+				<strong>Admin login required.</strong>
+				<p>Please <a href="../login.php">log in to SEO Panel as an admin</a> first, then reload this page to continue.</p>
+			</div>
+		</div>
+		<?php
+		$this->showDefaultFooter();
+		exit;
+	}
+
 
 	# func to check upgrade requirements
 	function checkUpgradeRequirements($error=false, $errorMsg='') {
@@ -631,7 +704,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query')|| function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -683,7 +756,7 @@ class Install {
 		$dbSupport = "Database config variables not defined";
 		include_once(SP_INSTALL_CONFIG_FILE);
 		if(defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASSWORD') && defined('DB_ENGINE')){
-			$db = function_exists('mysqli_query') ? New DBI() : New DB();
+			$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 			
 			$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 			if($db->error ){
@@ -800,7 +873,17 @@ class Install {
 		$sql = "Select set_val from settings where set_name='SP_VERSION_NUMBER'";
 		$versionInfo = $db->select($sql, true);
 		$currentVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '3.8.0';
-		
+
+		// surfaced on the Upgrade Complete page below - a missing/garbled
+		// version previously took one of two very different silent paths
+		// (full historical replay from 3.8.0, or skip the whole
+		// version-chain and only run the generic catch-all) with no
+		// indication to the admin of which one happened or why
+		$this->upgradeVersionNote = null;
+		if (empty($versionInfo['set_val'])) {
+			$this->upgradeVersionNote = 'No existing version number was found, so every historical database update (from v3.8.0 onward) was replayed to be safe.';
+		}
+
 		// 4.12.0 shipped its schema changes via the generic upgrade.sql catch-all and
 		// never got its own entry in $spVersionList. Its schema is identical to 5.0.0's
 		// (upgrade_v4.11.0_v5.0.0.sql duplicates the 4.12.0 db changes verbatim), so
@@ -820,13 +903,15 @@ class Install {
 			// would replay every historical upgrade file from 3.8.0 onward)
 			if ($index !== false && $index != $lastIndex) {
 				$prevIndex = $index;
-			
+
 				// loop through the versions
 				for ($i = $index + 1; $i <= $lastIndex; $i++) {
 					$upgradeFileList[] = SP_INSTALL_DIR . "/data/upgrade_v$spVersionList[$prevIndex]_v$spVersionList[$i].sql";
 					$prevIndex = $i;
 				}
-				
+
+			} elseif ($index === false) {
+				$this->upgradeVersionNote = "Current version number ($currentVersion) was not recognized, so only the latest general database update was applied (no historical version-by-version updates).";
 			}
 			
 		}
@@ -844,7 +929,7 @@ class Install {
 		}		
 		
 		include_once(SP_INSTALL_CONFIG_FILE);
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 		
 		// check database connection
 		$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
@@ -890,6 +975,12 @@ class Install {
 				<h3>Upgraded to Seo Panel v<?php echo SP_INSTALLED;?></h3>
 				<p>Your SEO Panel has been upgraded successfully.</p>
 			</div>
+
+			<?php if (!empty($this->upgradeVersionNote)) { ?>
+				<div class="alert alert-info">
+					<strong>Note:</strong> <?php echo htmlspecialchars($this->upgradeVersionNote); ?>
+				</div>
+			<?php } ?>
 
 			<div class="alert alert-warning">
 				<strong>Important Security Step:</strong>
