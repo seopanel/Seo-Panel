@@ -1525,6 +1525,7 @@ class ReportController extends Controller {
 		    $repSetInfo['report_interval'] = SP_SYSTEM_REPORT_INTERVAL;
 		    $repSetInfo['email_notification'] = SP_REPORT_EMAIL_NOTIFICATION;
 		    $repSetInfo['ai_insights_email_notification'] = defined('SP_AI_INSIGHTS_EMAIL_NOTIFICATION') ? SP_AI_INSIGHTS_EMAIL_NOTIFICATION : 1;
+		    $repSetInfo['ai_visibility_email_notification'] = defined('SP_AI_VISIBILITY_EMAIL_NOTIFICATION') ? SP_AI_VISIBILITY_EMAIL_NOTIFICATION : 1;
 		    $lastGeneratedDay = (SP_SYSTEM_REPORT_INTERVAL == 30) ? 1 : (date('d') - SP_SYSTEM_REPORT_INTERVAL);
 		    $repSetInfo['last_generated'] = mktime(0, 0, 0, date('m'), $lastGeneratedDay, date('Y'));
 		    $this->createUserReportSettings($repSetInfo);
@@ -1537,8 +1538,9 @@ class ReportController extends Controller {
 	# func to insert report settings
 	function createUserReportSettings($setInfo) {
 		$aiInsightsEmailNotification = isset($setInfo['ai_insights_email_notification']) ? intval($setInfo['ai_insights_email_notification']) : 1;
-		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,ai_insights_email_notification,last_generated)
-				values({$setInfo['user_id']},{$setInfo['report_interval']},{$setInfo['email_notification']},$aiInsightsEmailNotification,'{$setInfo['last_generated']}')";
+		$aiVisibilityEmailNotification = isset($setInfo['ai_visibility_email_notification']) ? intval($setInfo['ai_visibility_email_notification']) : 1;
+		$sql = "Insert into reports_settings(user_id,report_interval,email_notification,ai_insights_email_notification,ai_visibility_email_notification,last_generated)
+				values({$setInfo['user_id']},{$setInfo['report_interval']},{$setInfo['email_notification']},$aiInsightsEmailNotification,$aiVisibilityEmailNotification,'{$setInfo['last_generated']}')";
 		$this->db->query($sql);
 	}
 	
@@ -1601,6 +1603,9 @@ class ReportController extends Controller {
 	    $this->updateUserReportSetting($userId, 'email_notification', $info['email_notification']);
 	    if (isset($info['ai_insights_email_notification'])) {
 	        $this->updateUserReportSetting($userId, 'ai_insights_email_notification', $info['ai_insights_email_notification']);
+	    }
+	    if (isset($info['ai_visibility_email_notification'])) {
+	        $this->updateUserReportSetting($userId, 'ai_visibility_email_notification', $info['ai_visibility_email_notification']);
 	    }
 	    $this->showReportsScheduler(true, $info);
 	}

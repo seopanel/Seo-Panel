@@ -32324,6 +32324,20 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'AI Insights email notification', 'AI Insights email notification'),
 ('en', 'settings', 'SP_AI_INSIGHTS_EMAIL_NOTIFICATION', 'Enable AI Insights email notification');
 
+-- AI Visibility weekly digest email
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'ai_visibility_email_subject', 'Your AI Visibility summary this week'),
+('en', 'aivisibility', 'ai_visibility_email_body_intro', 'Here''s how your website(s) performed with AI platforms this past week:'),
+('en', 'aivisibility', 'ai_visibility_email_body_outro', 'View the full dashboard: [LOGIN_LINK]'),
+('en', 'aivisibility', 'AI Referrals', 'AI Referrals'),
+('en', 'aivisibility', 'AI Bot Crawls', 'AI Bot Crawls'),
+('en', 'aivisibility', 'AI Overview Citations', 'AI Overview Citations'),
+('en', 'aivisibility', 'Top AI Platforms', 'Top AI Platforms'),
+('en', 'aivisibility', 'reflects the latest measured state, not this date range', 'reflects the latest measured state, not this date range'),
+('en', 'aivisibility', 'AI Visibility settings', 'AI Visibility settings'),
+('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
+('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
+
 -- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
 -- Settings page) was missing its 'settings'-category label too, unrelated
 -- to AI Insights.

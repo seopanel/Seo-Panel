@@ -76,6 +76,20 @@ if (!empty($success)) {
     		</td>
     	</tr>
 	<?php }?>
+	<?php if (defined('SP_AI_VISIBILITY_EMAIL_NOTIFICATION') && SP_AI_VISIBILITY_EMAIL_NOTIFICATION) {?>
+    	<tr class="white_row">
+    		<td class="td_left_col"><?php echo $spTextReport['AI Visibility email notification'] ?? 'AI Visibility email notification'?>:</td>
+    		<td class="td_right_col">
+    			<?php
+    			$aiVisibilitySelected = $repSetInfo['ai_visibility_email_notification'] ? 'selected' : '';
+    			?>
+    			<select name="ai_visibility_email_notification" class="custom-select">
+    				<option value="0"><?php echo $spText['common']['No']?></option>
+    				<option value="1" <?php echo $aiVisibilitySelected?>><?php echo $spText['common']['Yes']?></option>
+    			</select>
+    		</td>
+    	</tr>
+	<?php }?>
 	<tr class="blue_row">
 		<td class="tab_left_bot_noborder"></td>
 		<td class="tab_right_bot"></td>

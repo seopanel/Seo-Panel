@@ -121,17 +121,41 @@ class AIVisibilityController extends Controller {
 		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
 		$this->set('websiteId', $websiteId);
 
-		$fromDate = date('Y-m-d', strtotime('-30 days'));
+		// date range: matches the AI Referral/AI Bot Crawler reports'
+		// from_time/to_time pattern - AI Overview citation rate below is
+		// deliberately NOT range-filtered (it's each keyword's LATEST
+		// measured state, not a time series, same as aioverview.ctp.php's
+		// own report has no date range either)
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
 
-		$referralTotal = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromDate'", true)['total']);
-		$botTotal = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromDate'", true)['total']);
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		$referralTotal = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql'", true)['total']);
+		$botTotal = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql'", true)['total']);
 		$this->set('referralTotal', $referralTotal);
 		$this->set('botTotal', $botTotal);
 
 		// merge referral + bot totals per platform for one combined table,
 		// rather than making the user cross-reference two separate reports
-		$referralByPlatform = $this->db->select("SELECT platform, SUM(hits) AS hits FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromDate' GROUP BY platform");
-		$botByPlatform = $this->db->select("SELECT platform, SUM(hits) AS hits FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromDate' GROUP BY platform");
+		$this->set('combinedPlatforms', $this->__getCombinedPlatformTotals($websiteId, $fromTimeSql, $toTimeSql));
+
+		$this->set('aioSummary', $this->__getAioSummaryForWebsite($websiteId));
+
+		$this->render('aivisibility/overview');
+	}
+
+	// func to merge ai_referrals + ai_bot_hits totals per platform for one
+	// date range - shared by showOverview()'s on-screen table and
+	// exportOverviewCsv(), so the export always matches what's on screen.
+	// $fromTimeSql/$toTimeSql must already be addslashes()-escaped.
+	function __getCombinedPlatformTotals($websiteId, $fromTimeSql, $toTimeSql) {
+		$websiteId = intval($websiteId);
+		$referralByPlatform = $this->db->select("SELECT platform, SUM(hits) AS hits FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql' GROUP BY platform");
+		$botByPlatform = $this->db->select("SELECT platform, SUM(hits) AS hits FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql' GROUP BY platform");
 
 		$platformDisplayNames = array_column($this->db->select("SELECT platform, MIN(display_name) AS display_name FROM ai_platforms GROUP BY platform"), 'display_name', 'platform');
 
@@ -143,6 +167,7 @@ class AIVisibilityController extends Controller {
 			$combined[$row['platform']]['bot_hits'] = intval($row['hits']);
 		}
 		foreach ($combined as $platform => &$row) {
+			$row['platform'] = $platform;
 			$row['display_name'] = $platformDisplayNames[$platform] ?? $platform;
 			$row['referrals'] = $row['referrals'] ?? 0;
 			$row['bot_hits'] = $row['bot_hits'] ?? 0;
@@ -150,11 +175,24 @@ class AIVisibilityController extends Controller {
 		}
 		unset($row);
 		uasort($combined, function($a, $b) { return $b['total'] - $a['total']; });
-		$this->set('combinedPlatforms', $combined);
+		return $combined;
+	}
 
-		$this->set('aioSummary', $this->__getAioSummaryForWebsite($websiteId));
+	# func to export the Overview dashboard's combined per-platform table (same range as showOverview()) as CSV
+	function exportOverviewCsv($info=[]) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
+		if (empty($websiteId)) {
+			exit;
+		}
 
-		$this->render('aivisibility/overview');
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+
+		$combined = $this->__getCombinedPlatformTotals($websiteId, addslashes($fromTime), addslashes($toTime));
+		$this->__streamCsv("ai-visibility-overview-$websiteId-$fromTime-to-$toTime.csv", ['Platform', 'Referrals', 'Bot Crawls', 'Total'], $combined, ['display_name', 'referrals', 'bot_hits', 'total']);
 	}
 
 	/**
@@ -282,33 +320,49 @@ class AIVisibilityController extends Controller {
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
 
+		$result = $this->__regenerateLlmsTxtForWebsite($websiteId, !empty($info['confirm_overwrite']));
+		if (!empty($result['confirm_needed'])) {
+			$this->set('llmsConfirmNeeded', true);
+		} elseif (!empty($result['error'])) {
+			$this->set('llmsWriteError', $result['error']);
+		}
+
+		$this->showSetup(['website_id' => $websiteId]);
+	}
+
+	/**
+	 * Core llms.txt regeneration logic, shared by the web form
+	 * (regenerateLlmsTxt() above) and the MCP regenerate_llms_txt tool.
+	 * Does NOT check website ownership - every caller must do that first.
+	 * Strictly safer than the .htaccess writer for MCP exposure: worst
+	 * case on failure is a wrong STATIC file (never served with special
+	 * meaning by any web server), not a 500'd site - so no self-test/
+	 * rollback safety net is needed here the way __writeHtaccessRules() has.
+	 */
+	function __regenerateLlmsTxtForWebsite($websiteId, $confirmOverwrite) {
+		$websiteId = intval($websiteId);
 		$accessInfo = $this->__getSiteAccessConfig($websiteId);
 		$docrootStatus = !empty($accessInfo['docroot_path']) ? $this->__validateDocrootPath($accessInfo['docroot_path']) : null;
 
 		if (empty($docrootStatus['writable'])) {
-			$this->set('llmsWriteError', 'No writable document root configured for this website.');
-			$this->showSetup(['website_id' => $websiteId]);
-			return;
+			return ['ok' => false, 'confirm_needed' => false, 'error' => 'No writable document root configured for this website.'];
 		}
 
 		$llmsPath = $docrootStatus['real'] . '/llms.txt';
-		$confirmOverwrite = !empty($info['confirm_overwrite']);
 
 		if (file_exists($llmsPath) && !$confirmOverwrite) {
 			$existingContent = @file_get_contents($llmsPath);
 			if ($existingContent === false || strpos($existingContent, self::LLMS_TXT_MARKER) === false) {
-				$this->set('llmsConfirmNeeded', true);
-				$this->showSetup(['website_id' => $websiteId]);
-				return;
+				return ['ok' => false, 'confirm_needed' => true, 'error' => null];
 			}
 		}
 
 		$content = $this->__buildLlmsTxtContent($websiteId);
 		if (@file_put_contents($llmsPath, $content, LOCK_EX) === false) {
-			$this->set('llmsWriteError', 'Could not write llms.txt - check filesystem permissions.');
+			return ['ok' => false, 'confirm_needed' => false, 'error' => 'Could not write llms.txt - check filesystem permissions.'];
 		}
 
-		$this->showSetup(['website_id' => $websiteId]);
+		return ['ok' => true, 'confirm_needed' => false, 'error' => null];
 	}
 
 	# func to fetch this website's ai_visibility_site_access row, if any
@@ -1857,6 +1911,112 @@ PHP;
 			'alert_category' => 'reports',
 			'alert_url' => SP_WEBPATH . "/aivisibility.php?website_id=" . intval($websiteId) . "&sec=" . ($table == 'ai_bot_hits' ? 'botreport' : 'report'),
 		], $websiteInfo['user_id']);
+	}
+
+	/**
+	 * Weekly AI Visibility digest email: opt-out, sent at most once per 7
+	 * days per user (reports_settings.ai_visibility_last_digest_sent) -
+	 * deliberately independent of the main report scheduler's
+	 * user-configurable interval, mirroring CronController::
+	 * refreshAllAIInsights()'s email digest pattern rather than that one.
+	 * Skipped entirely for a user whose websites had zero AI referral/bot-
+	 * crawl traffic and no AI Overview presence all week (no point
+	 * emailing all-zeros) - but the attempt is still recorded so a quiet
+	 * week doesn't get recomputed on every subsequent cron run. Called
+	 * unconditionally from cron.php; one user's email failing must not
+	 * affect the rest.
+	 */
+	function sendWeeklyDigests() {
+		if (!defined('SP_AI_VISIBILITY_EMAIL_NOTIFICATION') || !SP_AI_VISIBILITY_EMAIL_NOTIFICATION) {
+			return;
+		}
+
+		include_once(SP_CTRLPATH . "/report.ctrl.php");
+		include_once(SP_CTRLPATH . "/user.ctrl.php");
+		$reportCtrler = new ReportController();
+		$userCtrler = new UserController();
+
+		$websiteList = $this->db->select("SELECT id, name, user_id FROM websites WHERE status=1");
+		$websitesByUser = [];
+		foreach ($websiteList as $w) {
+			$websitesByUser[$w['user_id']][] = $w;
+		}
+
+		foreach ($websitesByUser as $userId => $userWebsites) {
+			$repSetInfo = $reportCtrler->getUserReportSettings($userId);
+			if (empty($repSetInfo['ai_visibility_email_notification'])) {
+				continue;
+			}
+
+			$lastSent = $repSetInfo['ai_visibility_last_digest_sent'] ?? null;
+			if (!empty($lastSent) && strtotime($lastSent) > strtotime('-7 days')) {
+				continue; // already sent (or attempted) within the last 7 days
+			}
+
+			$summaryByWebsite = [];
+			$hasAnyTraffic = false;
+			foreach ($userWebsites as $w) {
+				$summary = $this->__getWeeklyDigestSummaryForWebsite($w['id']);
+				if ($summary['referrals'] > 0 || $summary['bot_hits'] > 0 || !empty($summary['aio']['present'])) {
+					$hasAnyTraffic = true;
+				}
+				$summaryByWebsite[$w['id']] = array_merge(['name' => $w['name']], $summary);
+			}
+
+			$reportCtrler->updateUserReportSetting($userId, 'ai_visibility_last_digest_sent', date('Y-m-d'));
+
+			if (!$hasAnyTraffic) {
+				continue;
+			}
+
+			$userInfo = $userCtrler->__getUserInfo($userId);
+			if (empty($userInfo['email'])) {
+				continue;
+			}
+
+			try {
+				$this->sendWeeklyDigestEmail($userInfo, $summaryByWebsite);
+			} catch (Throwable $e) {
+				continue;
+			}
+		}
+	}
+
+	// func to compute one website's last-7-days AI Visibility digest
+	// numbers - same underlying data/helpers as the Overview dashboard,
+	// just a 7-day window instead of 30
+	function __getWeeklyDigestSummaryForWebsite($websiteId) {
+		$websiteId = intval($websiteId);
+		$fromDate = date('Y-m-d', strtotime('-7 days'));
+
+		$referrals = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromDate'", true)['total']);
+		$botHits = intval($this->db->select("SELECT COALESCE(SUM(hits),0) AS total FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromDate'", true)['total']);
+		$aio = $this->__getAioSummaryForWebsite($websiteId);
+
+		return ['referrals' => $referrals, 'bot_hits' => $botHits, 'aio' => $aio];
+	}
+
+	function sendWeeklyDigestEmail($userInfo, $summaryByWebsite) {
+		include_once(SP_CTRLPATH . "/user.ctrl.php");
+
+		$aivTexts = $this->getLanguageTexts('aivisibility', $userInfo['lang_code']);
+		$this->set('aivTexts', $aivTexts);
+		$this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
+		$this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
+
+		$name = trim($userInfo['first_name'] . ' ' . $userInfo['last_name']);
+		$this->set('name', $name);
+		$this->set('summaryByWebsite', $summaryByWebsite);
+
+		$subject = !empty($aivTexts['ai_visibility_email_subject']) ? $aivTexts['ai_visibility_email_subject'] : 'Your AI Visibility summary this week';
+		$content = $this->getViewContent('email/aivisibilitydigest');
+
+		$userController = new UserController();
+		$adminInfo = $userController->__getAdminInfo();
+		$adminName = $adminInfo['first_name'] . "-" . $adminInfo['last_name'];
+		$this->set('adminName', $adminName);
+
+		return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
 	}
 
 }

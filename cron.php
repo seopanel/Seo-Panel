@@ -198,6 +198,10 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aivCtrler->checkTrafficAnomalies();
 	echo "Checked AI Visibility traffic for week-over-week anomalies (once per day)\n";
 
+	// weekly AI Visibility digest email (opt-out, at most once per 7 days per user)
+	$aivCtrler->sendWeeklyDigests();
+	echo "Sent AI Visibility weekly digest emails (at most once per 7 days per user)\n";
+
 	// regenerate AI Insights for every active website (at most once/day - see refreshAllAIInsights())
 	$controller->refreshAllAIInsights();
 	echo "Refreshed AI Insights for active websites (once per day)\n";

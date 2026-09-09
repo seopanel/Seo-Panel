@@ -749,3 +749,53 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'nositeauditordatanotice', 'Run Site Auditor for this website first - no crawled page data to summarize yet.'),
 ('en', 'aivisibility', 'Generating...', 'Generating...'),
 ('en', 'aivisibility', 'Edit Platform', 'Edit Platform');
+
+-- Round 3: weekly AI Visibility digest email, Overview dashboard CSV
+-- export/date range, tab accessibility, showOverview() test coverage,
+-- MCP regenerate_llms_txt tool, newer crawler tokens.
+
+-- weekly AI Visibility digest email - opt-out, sent at most once per 7
+-- days per user (ai_visibility_last_digest_sent), independent of the main
+-- report scheduler's configurable interval. Mirrors the existing AI
+-- Insights email digest's reports_settings/settings pattern exactly.
+ALTER TABLE `reports_settings` ADD COLUMN `ai_visibility_email_notification` tinyint(1) NOT NULL DEFAULT 1 AFTER `ai_insights_email_notification`;
+ALTER TABLE `reports_settings` ADD COLUMN `ai_visibility_last_digest_sent` date DEFAULT NULL AFTER `ai_visibility_email_notification`;
+
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Visibility email notification','SP_AI_VISIBILITY_EMAIL_NOTIFICATION','1','report','bool',1);
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'ai_visibility_email_subject', 'Your AI Visibility summary this week'),
+('en', 'aivisibility', 'ai_visibility_email_body_intro', 'Here''s how your website(s) performed with AI platforms this past week:'),
+('en', 'aivisibility', 'ai_visibility_email_body_outro', 'View the full dashboard: [LOGIN_LINK]'),
+('en', 'aivisibility', 'AI Referrals', 'AI Referrals'),
+('en', 'aivisibility', 'AI Bot Crawls', 'AI Bot Crawls'),
+('en', 'aivisibility', 'AI Overview Citations', 'AI Overview Citations'),
+('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
+('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
+
+-- Overview dashboard: date range + CSV export, matching the AI Referral/
+-- AI Bot Crawler reports (no schema change, just new text for the form).
+-- "Top AI Platforms"/the AIO caption replace the old, now-orphaned
+-- "Top AI Platforms (30 days)" key - a hardcoded "(30 days)" no longer
+-- makes sense once the range is user-selectable.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Export Overview CSV', 'Export Overview CSV'),
+('en', 'aivisibility', 'Top AI Platforms', 'Top AI Platforms'),
+('en', 'aivisibility', 'reflects the latest measured state, not this date range', 'reflects the latest measured state, not this date range');
+
+-- Setup/Advanced tabs: ARIA tablist/tab/tabpanel roles + arrow-key
+-- navigation (previously two unlabeled buttons with no aria-selected -
+-- a screen-reader user had no indication which tab was active).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Visibility settings', 'AI Visibility settings');
+
+-- Newer crawler tokens: Anthropic publishes 2 more tokens under the
+-- Claude brand beyond ClaudeBot (training crawl, seeded earlier) -
+-- Claude-User (on-demand fetch when a live user asks Claude to browse a
+-- page) and Claude-SearchBot (search-index crawling) - same split
+-- pattern already applied to ChatGPT/OpenAI. Same 'claude' platform
+-- grouping + display_name so the existing toggle still covers all three.
+INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is_referral_source`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('claude','claude-user.anthropic.com','Claude',1,0,'Claude-User',NULL),
+('claude','claude-searchbot.anthropic.com','Claude',1,0,'Claude-SearchBot',NULL);

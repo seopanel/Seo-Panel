@@ -24,17 +24,17 @@
 </div>
 
 <?php $advancedNeedsAttention = !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
-<div class="aiv-tabs" id="aivTabs">
-	<button type="button" class="aiv-tab-btn" data-tab="setup">
-		<i class="fas fa-rocket"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+<div class="aiv-tabs" id="aivTabs" role="tablist" aria-label="<?php echo $spTextAIV['AI Visibility settings'] ?? 'AI Visibility settings'?>">
+	<button type="button" class="aiv-tab-btn" id="aivTabBtnSetup" data-tab="setup" role="tab" aria-selected="false" aria-controls="aivPanelSetup" tabindex="-1">
+		<i class="fas fa-rocket" aria-hidden="true"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
 	</button>
-	<button type="button" class="aiv-tab-btn" data-tab="advanced">
-		<i class="fas fa-sliders-h"></i> <?php echo $spTextAIV['Advanced'] ?? 'Advanced'?>
-		<?php if ($advancedNeedsAttention) { ?><span class="aiv-tab-btn-badge"></span><?php } ?>
+	<button type="button" class="aiv-tab-btn" id="aivTabBtnAdvanced" data-tab="advanced" role="tab" aria-selected="false" aria-controls="aivPanelAdvanced" tabindex="-1">
+		<i class="fas fa-sliders-h" aria-hidden="true"></i> <?php echo $spTextAIV['Advanced'] ?? 'Advanced'?>
+		<?php if ($advancedNeedsAttention) { ?><span class="aiv-tab-btn-badge" aria-hidden="true"></span><?php } ?>
 	</button>
 </div>
 
-<div class="aiv-tab-panel" data-tab="setup" hidden>
+<div class="aiv-tab-panel" id="aivPanelSetup" data-tab="setup" role="tabpanel" aria-labelledby="aivTabBtnSetup" tabindex="0" hidden>
 
 <div class="aiv-card">
 	<div class="aiv-card-header">
@@ -135,7 +135,7 @@
 
 </div>
 
-<div class="aiv-tab-panel" data-tab="advanced" hidden>
+<div class="aiv-tab-panel" id="aivPanelAdvanced" data-tab="advanced" role="tabpanel" aria-labelledby="aivTabBtnAdvanced" tabindex="0" hidden>
 
 <div class="aiv-note">
 	<i class="fas fa-info-circle"></i>
@@ -375,7 +375,12 @@
 	var panels = document.querySelectorAll('.aiv-tab-panel');
 
 	function activateTab(name) {
-		tabs.forEach(function(btn) { btn.classList.toggle('active', btn.dataset.tab === name); });
+		tabs.forEach(function(btn) {
+			var isActive = btn.dataset.tab === name;
+			btn.classList.toggle('active', isActive);
+			btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+			btn.tabIndex = isActive ? 0 : -1;
+		});
 		panels.forEach(function(panel) { panel.hidden = (panel.dataset.tab !== name); });
 	}
 
@@ -387,8 +392,20 @@
 		try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
 	};
 
-	tabs.forEach(function(btn) {
+	tabs.forEach(function(btn, index) {
 		btn.addEventListener('click', function() { window.aivActivateTab(btn.dataset.tab); });
+		// standard WAI-ARIA tabs keyboard pattern: Left/Right (Up/Down too,
+		// since this is a small set) move focus and activate the next tab
+		btn.addEventListener('keydown', function(e) {
+			var delta = 0;
+			if (e.key === 'ArrowRight' || e.key === 'ArrowDown') delta = 1;
+			else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') delta = -1;
+			else return;
+			e.preventDefault();
+			var nextTab = tabs[(index + delta + tabs.length) % tabs.length];
+			window.aivActivateTab(nextTab.dataset.tab);
+			nextTab.focus();
+		});
 	});
 
 	// a write error/pending confirmation living in the Advanced tab always

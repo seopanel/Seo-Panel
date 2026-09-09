@@ -818,6 +818,8 @@ CREATE TABLE IF NOT EXISTS `reports_settings` (
   `report_interval` int(11) NOT NULL DEFAULT '1',
   `email_notification` tinyint(1) NOT NULL DEFAULT '0',
   `ai_insights_email_notification` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_visibility_email_notification` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_visibility_last_digest_sent` date DEFAULT NULL,
   `last_generated` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
@@ -990,7 +992,13 @@ INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is
 ('chatgpt','oai-searchbot.openai.com','ChatGPT',1,0,'OAI-SearchBot',NULL),
 ('chatgpt','chatgpt-user.openai.com','ChatGPT',1,0,'ChatGPT-User',NULL),
 ('amazon','amazon.com','Amazonbot',1,0,'Amazonbot',NULL),
-('duckassist','duckduckgo.com','DuckAssistBot',1,0,'DuckAssistBot',NULL);
+('duckassist','duckduckgo.com','DuckAssistBot',1,0,'DuckAssistBot',NULL),
+-- Anthropic ships the same 3-token split under the Claude brand -
+-- Claude-User (on-demand fetch when a live user asks Claude to browse a
+-- page) and Claude-SearchBot (search-index crawling), alongside ClaudeBot
+-- (training crawl, seeded above). Same 'claude' grouping + display_name.
+('claude','claude-user.anthropic.com','Claude',1,0,'Claude-User',NULL),
+('claude','claude-searchbot.anthropic.com','Claude',1,0,'Claude-SearchBot',NULL);
 
 CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   `bucket_key` varchar(100) NOT NULL,
@@ -1986,6 +1994,15 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 -- count). Reuses the existing per-user reports_settings row/UI.
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('Enable AI Insights email notification','SP_AI_INSIGHTS_EMAIL_NOTIFICATION','1','report','bool',1);
+
+-- AI Visibility weekly digest: opt-out email summarizing the week's AI
+-- referral/bot-crawl totals and AI Overview citation rate per website -
+-- same numbers the Overview dashboard shows. Sent at most once per 7 days
+-- per user (ai_visibility_last_digest_sent), independent of the main
+-- report scheduler's configurable interval, and skipped entirely for a
+-- user with zero AI traffic that week (no point emailing all-zeros).
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Visibility email notification','SP_AI_VISIBILITY_EMAIL_NOTIFICATION','1','report','bool',1);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

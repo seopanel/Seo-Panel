@@ -120,6 +120,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showOverview($_GET);
 			break;
 
+		case "export-overview":
+			$controller->exportOverviewCsv($_GET);
+			break;
+
 		case "suggest-llms-description":
 			$userId = isLoggedIn();
 			$websiteId = intval($_GET['website_id'] ?? 0);
