@@ -936,10 +936,19 @@ CREATE TABLE IF NOT EXISTS `ai_platforms` (
   `is_active` tinyint(1) NOT NULL DEFAULT 1,
   `is_referral_source` tinyint(1) NOT NULL DEFAULT 1,
   `bot_ua_pattern` varchar(255) DEFAULT NULL,
+  `robots_user_agent_token` varchar(100) DEFAULT NULL,
   `verify_suffix` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `hostname` (`hostname`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+-- robots_user_agent_token is the EXACT literal token a crawler's own
+-- robots.txt spec documents for its User-agent line (e.g. "Google-Extended"),
+-- kept deliberately separate from bot_ua_pattern (a case-insensitive
+-- substring used to classify a raw User-Agent HTTP header for hit-tracking,
+-- e.g. "googleother"). The two are often the same string, but nothing
+-- guarantees that for every future platform - NULL falls back to
+-- bot_ua_pattern in __writeRobotsTxt() for full backward compatibility.
 
 -- verify_suffix (reverse-DNS verification suffix) is left NULL except where
 -- a scheme is well established (Google's) - not an assertion about other
@@ -1034,6 +1043,7 @@ CREATE TABLE IF NOT EXISTS `mcp_tokens` (
   `token` varchar(64) NOT NULL,
   `label` varchar(100) DEFAULT NULL,
   `created_at` datetime NOT NULL,
+  `expires_at` datetime DEFAULT NULL,
   `last_used_at` datetime DEFAULT NULL,
   `revoked` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),

@@ -41,7 +41,7 @@ $userId = isLoggedIn();
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	switch ($_POST['sec']) {
 		case "create":
-			$controller->createToken($userId, $_POST['label'] ?? '');
+			$controller->createToken($userId, $_POST['label'] ?? '', $_POST['expires_in'] ?? null);
 			break;
 
 		case "revoke":

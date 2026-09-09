@@ -356,10 +356,17 @@ class AIVisibilityController extends Controller {
 		if (!empty($ruleRows)) {
 			$platformCsv = "'" . implode("','", array_map(function($r) { return addslashes($r['platform']); }, $ruleRows)) . "'";
 			// DISTINCT: a platform (e.g. chatgpt) can have multiple ai_platforms
-			// rows (chatgpt.com, chat.openai.com) sharing one bot_ua_pattern
-			$platformInfoRows = $this->db->select("SELECT DISTINCT bot_ua_pattern FROM ai_platforms WHERE platform IN ($platformCsv) AND bot_ua_pattern IS NOT NULL AND bot_ua_pattern != ''");
+			// rows (chatgpt.com, chat.openai.com) sharing one robots token.
+			// COALESCE(NULLIF(robots_user_agent_token,''), bot_ua_pattern):
+			// robots_user_agent_token is the crawler's own documented
+			// robots.txt User-agent token when it differs from
+			// bot_ua_pattern (a substring match used elsewhere for
+			// classifying raw User-Agent headers) - falls back to
+			// bot_ua_pattern when not explicitly set, unchanged behavior
+			// for every platform that hasn't set an override.
+			$platformInfoRows = $this->db->select("SELECT DISTINCT COALESCE(NULLIF(robots_user_agent_token,''), bot_ua_pattern) AS robots_token FROM ai_platforms WHERE platform IN ($platformCsv) AND bot_ua_pattern IS NOT NULL AND bot_ua_pattern != ''");
 			foreach ($platformInfoRows as $row) {
-				$blockedPatterns[] = $row['bot_ua_pattern'];
+				$blockedPatterns[] = $row['robots_token'];
 			}
 		}
 
@@ -1113,6 +1120,7 @@ PHP;
 				'is_active|int' => !empty($info['is_active']) ? 1 : 0,
 				'is_referral_source|int' => !empty($info['is_referral_source']) ? 1 : 0,
 				'bot_ua_pattern' => !empty($info['bot_ua_pattern']) ? trim($info['bot_ua_pattern']) : 'NULL',
+				'robots_user_agent_token' => !empty($info['robots_user_agent_token']) ? trim($info['robots_user_agent_token']) : 'NULL',
 				'verify_suffix' => !empty($info['verify_suffix']) ? trim($info['verify_suffix']) : 'NULL',
 			];
 

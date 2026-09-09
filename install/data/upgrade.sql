@@ -647,3 +647,36 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'myaccount', 'Revoke', 'Revoke'),
 ('en', 'myaccount', 'Last used', 'Last used'),
 ('en', 'myaccount', 'Never', 'Never');
+
+-- MCP token expiry - a leaked/forgotten token previously stayed valid
+-- forever (revoke was the only way to invalidate one). Optional at
+-- creation time (NULL = never expires, unchanged default behavior).
+ALTER TABLE `mcp_tokens` ADD COLUMN `expires_at` datetime DEFAULT NULL AFTER `created_at`;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'myaccount', 'Expires', 'Expires'),
+('en', 'myaccount', 'Never expires', 'Never expires'),
+('en', 'myaccount', 'Expired', 'Expired'),
+('en', 'myaccount', '30 days', '30 days'),
+('en', 'myaccount', '90 days', '90 days'),
+('en', 'myaccount', '1 year', '1 year');
+
+-- AI Visibility Setup page: server-side config (docroot access, robots.txt/
+-- llms.txt rules, .htaccess AI-bot headers) collapsed into a progressive-
+-- disclosure "Advanced" section rather than always-expanded, to lighten
+-- the page for the common case of a user who only needs the install snippet.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Advanced: Server-Side Configuration', 'Advanced: Server-Side Configuration'),
+('en', 'aivisibility', 'advancedsectionnotice', 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.');
+
+-- robots_user_agent_token: the literal token written into robots.txt's
+-- User-agent line previously always reused bot_ua_pattern verbatim - a
+-- case-insensitive substring pattern meant for classifying raw User-Agent
+-- HTTP headers, not guaranteed to be the exact token a crawler's own
+-- robots.txt documentation specifies. NULL (the default, unaffected for
+-- every existing row) falls back to bot_ua_pattern in __writeRobotsTxt().
+ALTER TABLE `ai_platforms` ADD COLUMN `robots_user_agent_token` varchar(100) DEFAULT NULL AFTER `bot_ua_pattern`;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Robots.txt User-agent token', 'Robots.txt User-agent token'),
+('en', 'aivisibility', 'robotsuseragenttokenhint', 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.');

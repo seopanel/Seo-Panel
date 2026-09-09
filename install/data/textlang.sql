@@ -32394,6 +32394,12 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Last error', 'Last error');
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Advanced: Server-Side Configuration', 'Advanced: Server-Side Configuration'),
+('en', 'aivisibility', 'advancedsectionnotice', 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.'),
+('en', 'aivisibility', 'Robots.txt User-agent token', 'Robots.txt User-agent token'),
+('en', 'aivisibility', 'robotsuseragenttokenhint', 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'MCP Access', 'MCP Access'),
 ('en', 'myaccount', 'MCP Access Tokens', 'MCP Access Tokens'),
 ('en', 'myaccount', 'mcpaccessnotice', 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'),
@@ -32403,6 +32409,14 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'myaccount', 'Revoke', 'Revoke'),
 ('en', 'myaccount', 'Last used', 'Last used'),
 ('en', 'myaccount', 'Never', 'Never');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'myaccount', 'Expires', 'Expires'),
+('en', 'myaccount', 'Never expires', 'Never expires'),
+('en', 'myaccount', 'Expired', 'Expired'),
+('en', 'myaccount', '30 days', '30 days'),
+('en', 'myaccount', '90 days', '90 days'),
+('en', 'myaccount', '1 year', '1 year');
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),

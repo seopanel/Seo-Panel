@@ -110,6 +110,18 @@
 	</div>
 </div>
 
+<?php $advancedOpen = !empty($accessInfo['docroot_path']) || !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
+<details class="aiv-advanced" <?php echo $advancedOpen ? 'open' : ''?>>
+	<summary class="aiv-advanced-summary">
+		<span class="aiv-advanced-summary-icon"><i class="fas fa-sliders-h"></i></span>
+		<span>
+			<span class="aiv-advanced-summary-title"><?php echo $spTextAIV['Advanced: Server-Side Configuration'] ?? 'Advanced: Server-Side Configuration'?></span>
+			<span class="aiv-advanced-summary-subtitle"><?php echo $spTextAIV['advancedsectionnotice'] ?? 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.'?></span>
+		</span>
+		<i class="fas fa-chevron-down aiv-advanced-chevron"></i>
+	</summary>
+	<div class="aiv-advanced-body">
+
 <?php if (isAdmin()) { ?>
 <div class="aiv-card">
 	<div class="aiv-card-header">
@@ -310,6 +322,9 @@
 		<p style="font-size:12px;color:#c0392b;"><?php echo $spTextAIV['Last error'] ?? 'Last error'?>: <?php echo htmlspecialchars($htaccessLastError)?></p>
 	<?php } ?>
 </div>
+
+	</div>
+</details>
 
 <script>
 document.getElementById('aivCopyBtn').addEventListener('click', function() {

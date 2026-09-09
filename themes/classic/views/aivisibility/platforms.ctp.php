@@ -20,6 +20,7 @@
 			<th><?php echo $spTextAIV['Hostname'] ?? 'Hostname'?></th>
 			<th><?php echo $spTextAIV['Display name'] ?? 'Display name'?></th>
 			<th><?php echo $spTextAIV['Bot UA pattern'] ?? 'Bot UA pattern'?></th>
+			<th><?php echo $spTextAIV['Robots.txt User-agent token'] ?? 'Robots.txt User-agent token'?></th>
 			<th><?php echo $spTextAIV['Verify suffix'] ?? 'Verify suffix'?></th>
 			<th style="white-space:nowrap;"><?php echo $spText['common']['Active'] ?? 'Active'?></th>
 			<th style="white-space:nowrap;"><?php echo $spTextAIV['Referral source'] ?? 'Referral source'?></th>
@@ -32,6 +33,7 @@
 					<td><?php echo htmlspecialchars($platformInfo['hostname'])?></td>
 					<td><?php echo htmlspecialchars($platformInfo['display_name'])?></td>
 					<td><?php echo htmlspecialchars($platformInfo['bot_ua_pattern'] ?? '')?></td>
+					<td><?php echo htmlspecialchars($platformInfo['robots_user_agent_token'] ?? '')?></td>
 					<td><?php echo htmlspecialchars($platformInfo['verify_suffix'] ?? '')?></td>
 					<td>
 						<form id="toggle_active_<?php echo $platformInfo['id']?>" onsubmit="return false;">
@@ -69,7 +71,7 @@
 				</tr>
 			<?php } ?>
 		<?php } else { ?>
-			<?php echo showNoRecordsList(8); ?>
+			<?php echo showNoRecordsList(9); ?>
 		<?php } ?>
 	</table>
 	</div>
@@ -103,6 +105,11 @@
 		<div class="aiv-field">
 			<label class="aiv-field-label"><?php echo $spTextAIV['Bot UA pattern'] ?? 'Bot UA pattern'?></label>
 			<input type="text" name="bot_ua_pattern" value="<?php echo htmlspecialchars($formPost['bot_ua_pattern'] ?? '')?>">
+		</div>
+		<div class="aiv-field">
+			<label class="aiv-field-label"><?php echo $spTextAIV['Robots.txt User-agent token'] ?? 'Robots.txt User-agent token'?></label>
+			<input type="text" name="robots_user_agent_token" value="<?php echo htmlspecialchars($formPost['robots_user_agent_token'] ?? '')?>">
+			<div class="aiv-field-hint"><?php echo $spTextAIV['robotsuseragenttokenhint'] ?? 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.'?></div>
 		</div>
 		<div class="aiv-field">
 			<label class="aiv-field-label"><?php echo $spTextAIV['Verify suffix'] ?? 'Verify suffix'?></label>

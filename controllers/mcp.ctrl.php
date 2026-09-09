@@ -19,17 +19,29 @@ class MCPController extends Controller {
 	// ---- token management (mcp-access.php) ----
 
 	function listTokens($userId) {
-		$rows = $this->db->select("SELECT id, label, created_at, last_used_at, revoked FROM mcp_tokens WHERE user_id=" . intval($userId) . " ORDER BY created_at DESC");
+		$rows = $this->db->select("SELECT id, label, created_at, expires_at, last_used_at, revoked FROM mcp_tokens WHERE user_id=" . intval($userId) . " ORDER BY created_at DESC");
 		$this->set('tokenList', $rows);
 		$this->render('myaccount/mcp_tokens');
 	}
 
-	function createToken($userId, $label) {
+	// func to translate the mcp_tokens.ctp.php form's expiry dropdown value
+	// into a DATETIME string (or null for "never expires")
+	function __resolveExpiryOption($expiresIn) {
+		switch ($expiresIn) {
+			case '30d':  return date('Y-m-d H:i:s', strtotime('+30 days'));
+			case '90d':  return date('Y-m-d H:i:s', strtotime('+90 days'));
+			case '1y':   return date('Y-m-d H:i:s', strtotime('+1 year'));
+			default:     return null; // 'never' or anything unrecognized
+		}
+	}
+
+	function createToken($userId, $label, $expiresIn = null) {
 		$token = bin2hex(random_bytes(32));
 		$this->dbHelper->insertRow('mcp_tokens', [
 			'user_id|int' => $userId,
 			'token' => $token,
 			'label' => !empty($label) ? trim($label) : 'Untitled',
+			'expires_at' => $this->__resolveExpiryOption($expiresIn) ?? 'NULL',
 			'created_at' => 'NOW()',
 		]);
 		$this->set('newToken', $token);
@@ -49,7 +61,7 @@ class MCPController extends Controller {
 	// trust boundary for every MCP request. Updates last_used_at on hit.
 	function __resolveToken($rawToken) {
 		if (empty($rawToken)) return null;
-		$row = $this->dbHelper->getRow('mcp_tokens', "token='" . addslashes($rawToken) . "' and revoked=0");
+		$row = $this->dbHelper->getRow('mcp_tokens', "token='" . addslashes($rawToken) . "' and revoked=0 and (expires_at is null or expires_at > NOW())");
 		if (empty($row)) return null;
 		$this->dbHelper->updateRow('mcp_tokens', ['last_used_at' => 'NOW()'], "id=" . intval($row['id']));
 		return $row;

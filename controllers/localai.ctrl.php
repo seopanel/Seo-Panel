@@ -13,6 +13,7 @@ class LocalAIController extends Controller {
 
 	const OLLAMA_TAGS_PATH = '/api/tags';
 	const OLLAMA_GENERATE_PATH = '/api/generate';
+	const RATE_LIMIT_PER_MINUTE = 10;
 
 	// func to test whether the configured (or a raw, not-yet-saved)
 	// Ollama base URL is reachable - mirrors DataForSEOController::
@@ -48,12 +49,28 @@ class LocalAIController extends Controller {
 		return $result;
 	}
 
+	// func to check+increment this user's Local AI call bucket, reusing
+	// AIVisibilityController's existing rate-limit table/logic (same idiom
+	// as MCPController::__checkMcpRateLimit()) rather than inventing a new
+	// one - nothing previously stopped a user repeatedly clicking "Generate
+	// AI summary"/"Suggest with AI" and hammering their own local Ollama instance
+	function __checkLocalAiRateLimit($userId) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		return $aivCtrler->__checkRateLimit('localai:' . $userId, self::RATE_LIMIT_PER_MINUTE);
+	}
+
 	// func to send one prompt to the configured Ollama model - never
 	// throws, every failure path returns ['ok'=>false,'error'=>...] so
-	// callers can degrade cleanly
-	function __callOllama($prompt, $systemPrompt = '', $timeout = 25) {
+	// callers can degrade cleanly. $userId is required for rate limiting -
+	// omit only for a context with no logged-in user to scope the bucket to.
+	function __callOllama($prompt, $systemPrompt = '', $timeout = 25, $userId = null) {
 		if (!SettingsController::isLocalAIEnabled()) {
 			return ['ok' => false, 'text' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		if (!empty($userId) && !$this->__checkLocalAiRateLimit($userId)) {
+			return ['ok' => false, 'text' => '', 'error' => 'Too many Local AI requests - please wait a moment and try again.'];
 		}
 
 		$model = defined('SP_LOCAL_AI_MODEL') ? SP_LOCAL_AI_MODEL : '';
@@ -128,7 +145,7 @@ class LocalAIController extends Controller {
 			. 'finding, statistic, or recommendation that is not explicitly present in the list. Keep it to one short paragraph.';
 		$prompt = "Findings:\n$findingsText\n\nWrite a one-paragraph plain-language summary of exactly these findings.";
 
-		$result = $this->__callOllama($prompt, $systemPrompt);
+		$result = $this->__callOllama($prompt, $systemPrompt, 25, $userId);
 		return ['ok' => $result['ok'], 'summary' => $result['text'], 'error' => $result['error']];
 	}
 
@@ -170,7 +187,7 @@ class LocalAIController extends Controller {
 			. 'Keywords: ' . ($reportInfo['page_keywords'] ?? '') . "\n\n"
 			. 'Suggest a meta description for this page.';
 
-		$result = $this->__callOllama($prompt, $systemPrompt, 15);
+		$result = $this->__callOllama($prompt, $systemPrompt, 15, $userId);
 		$suggestion = !empty($result['text']) ? mb_substr($result['text'], 0, 160) : '';
 		return ['ok' => $result['ok'], 'suggestion' => $suggestion, 'error' => $result['error']];
 	}

@@ -213,4 +213,47 @@
 .aiv-badge-soft.success { background: #e7f8ee; color: #1f9d55; }
 .aiv-badge-soft.danger { background: #fdeeee; color: #c0392b; }
 .aiv-badge-soft.neutral { background: #eceef5; color: #666a80; }
+
+/* progressive disclosure for the less-often-needed server-side config cards */
+.aiv-advanced { margin-bottom: 24px; }
+.aiv-advanced-summary {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	list-style: none;
+	cursor: pointer;
+	background: #fff;
+	border: 1px solid rgba(0,0,0,0.06);
+	border-radius: 14px;
+	padding: 18px 22px;
+	box-shadow: 0 2px 14px rgba(20,20,43,0.06);
+	user-select: none;
+}
+.aiv-advanced-summary::-webkit-details-marker { display: none; }
+.aiv-advanced[open] .aiv-advanced-summary { border-radius: 14px 14px 0 0; box-shadow: none; border-bottom: 1px solid rgba(0,0,0,0.06); }
+.aiv-advanced-summary-icon {
+	flex: 0 0 auto;
+	width: 40px;
+	height: 40px;
+	border-radius: 11px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	box-shadow: 0 3px 8px rgba(102,126,234,0.35);
+}
+.aiv-advanced-summary-title { display: block; font-size: 16px; font-weight: 700; color: #24243a; line-height: 1.3; }
+.aiv-advanced-summary-subtitle { display: block; font-size: 13px; color: #8a8ea3; margin-top: 2px; font-weight: 400; }
+.aiv-advanced-chevron { margin-left: auto; color: #8a8ea3; transition: transform 0.15s ease; flex: 0 0 auto; }
+.aiv-advanced[open] .aiv-advanced-chevron { transform: rotate(180deg); }
+.aiv-advanced-body {
+	background: #fafbff;
+	border: 1px solid rgba(0,0,0,0.06);
+	border-top: none;
+	border-radius: 0 0 14px 14px;
+	padding: 22px 22px 4px;
+}
+.aiv-advanced-body .aiv-card { box-shadow: none; }
 </style>
