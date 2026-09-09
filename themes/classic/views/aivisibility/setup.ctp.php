@@ -23,6 +23,19 @@
 	<span><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span>
 </div>
 
+<?php $advancedNeedsAttention = !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
+<div class="aiv-tabs" id="aivTabs">
+	<button type="button" class="aiv-tab-btn" data-tab="setup">
+		<i class="fas fa-rocket"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+	</button>
+	<button type="button" class="aiv-tab-btn" data-tab="advanced">
+		<i class="fas fa-sliders-h"></i> <?php echo $spTextAIV['Advanced'] ?? 'Advanced'?>
+		<?php if ($advancedNeedsAttention) { ?><span class="aiv-tab-btn-badge"></span><?php } ?>
+	</button>
+</div>
+
+<div class="aiv-tab-panel" data-tab="setup" hidden>
+
 <div class="aiv-card">
 	<div class="aiv-card-header">
 		<div class="aiv-card-icon"><i class="fas fa-code"></i></div>
@@ -110,17 +123,14 @@
 	</div>
 </div>
 
-<?php $advancedOpen = !empty($accessInfo['docroot_path']) || !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
-<details class="aiv-advanced" <?php echo $advancedOpen ? 'open' : ''?>>
-	<summary class="aiv-advanced-summary">
-		<span class="aiv-advanced-summary-icon"><i class="fas fa-sliders-h"></i></span>
-		<span>
-			<span class="aiv-advanced-summary-title"><?php echo $spTextAIV['Advanced: Server-Side Configuration'] ?? 'Advanced: Server-Side Configuration'?></span>
-			<span class="aiv-advanced-summary-subtitle"><?php echo $spTextAIV['advancedsectionnotice'] ?? 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.'?></span>
-		</span>
-		<i class="fas fa-chevron-down aiv-advanced-chevron"></i>
-	</summary>
-	<div class="aiv-advanced-body">
+</div>
+
+<div class="aiv-tab-panel" data-tab="advanced" hidden>
+
+<div class="aiv-note">
+	<i class="fas fa-info-circle"></i>
+	<span><?php echo $spTextAIV['advancedsectionnotice'] ?? 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.'?></span>
+</div>
 
 <?php if (isAdmin()) { ?>
 <div class="aiv-card">
@@ -323,10 +333,40 @@
 	<?php } ?>
 </div>
 
-	</div>
-</details>
+</div>
 
 <script>
+(function() {
+	// Every action on this page (toggling a rule, saving a form) reloads
+	// this whole view via scriptDoLoadPost(), which re-renders from
+	// scratch - so the active tab is persisted in localStorage and
+	// restored here, rather than always snapping back to "Setup".
+	var STORAGE_KEY = 'aivSetupActiveTab';
+	var tabs = document.querySelectorAll('#aivTabs .aiv-tab-btn');
+	var panels = document.querySelectorAll('.aiv-tab-panel');
+
+	function activateTab(name) {
+		tabs.forEach(function(btn) { btn.classList.toggle('active', btn.dataset.tab === name); });
+		panels.forEach(function(panel) { panel.hidden = (panel.dataset.tab !== name); });
+	}
+
+	tabs.forEach(function(btn) {
+		btn.addEventListener('click', function() {
+			activateTab(btn.dataset.tab);
+			try { localStorage.setItem(STORAGE_KEY, btn.dataset.tab); } catch (e) {}
+		});
+	});
+
+	// a write error/pending confirmation living in the Advanced tab always
+	// wins, even over a remembered "Setup" preference - otherwise a user
+	// could save a form, get bounced to Setup, and never see why it failed
+	var initialTab = <?php echo $advancedNeedsAttention ? "'advanced'" : 'null'?>;
+	if (!initialTab) {
+		try { initialTab = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+	}
+	activateTab(initialTab === 'advanced' ? 'advanced' : 'setup');
+})();
+
 document.getElementById('aivCopyBtn').addEventListener('click', function() {
 	var btn = this;
 	var textarea = document.createElement('textarea');

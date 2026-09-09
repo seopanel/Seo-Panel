@@ -680,3 +680,11 @@ ALTER TABLE `ai_platforms` ADD COLUMN `robots_user_agent_token` varchar(100) DEF
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Robots.txt User-agent token', 'Robots.txt User-agent token'),
 ('en', 'aivisibility', 'robotsuseragenttokenhint', 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.');
+
+-- AI Visibility Setup page: replaced the collapsible "Advanced" <details>
+-- section with two tabs (Setup / Advanced) - client-side only, active tab
+-- persisted in localStorage since every action on this page reloads the
+-- whole view via AJAX.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Setup', 'Setup'),
+('en', 'aivisibility', 'Advanced', 'Advanced');
