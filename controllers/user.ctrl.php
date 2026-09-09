@@ -355,7 +355,8 @@ class UserController extends Controller{
 						if(!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)){
 							$error = showErrorMsg(
 								'An internal error occured while sending confirmation mail! Please <a href="'.SP_CONTACT_LINK.'">contact</a> seo panel team.',
-								false
+								false,
+								true
 							);
 						}						
 					}
