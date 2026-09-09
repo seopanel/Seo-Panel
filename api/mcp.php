@@ -55,7 +55,25 @@ if (!$controller->__checkMcpRateLimit($tokenRow['id'])) {
 	exit;
 }
 
-$rawBody = file_get_contents('php://input');
+// same defensive body-size cap ingestBeacon()/ingestBotHit() already use
+// for every other public ingest point in this feature - a JSON-RPC tool
+// call never legitimately needs more than a few KB (method name + a
+// handful of scalar params), and this was the one endpoint without a cap
+$maxBodyBytes = 8192;
+$contentLength = isset($_SERVER['CONTENT_LENGTH']) ? intval($_SERVER['CONTENT_LENGTH']) : 0;
+if ($contentLength > $maxBodyBytes) {
+	http_response_code(413);
+	echo json_encode(['jsonrpc' => '2.0', 'id' => null, 'error' => ['code' => -32600, 'message' => 'Request body too large']]);
+	exit;
+}
+
+$rawBody = file_get_contents('php://input', false, null, 0, $maxBodyBytes + 1);
+if (strlen($rawBody) > $maxBodyBytes) {
+	http_response_code(413);
+	echo json_encode(['jsonrpc' => '2.0', 'id' => null, 'error' => ['code' => -32600, 'message' => 'Request body too large']]);
+	exit;
+}
+
 $request = json_decode($rawBody, true);
 if (empty($request) || !is_array($request)) {
 	http_response_code(400);
