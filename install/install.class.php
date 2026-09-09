@@ -340,22 +340,20 @@ class Install {
 			return;
 		}
 
-		# importing data to db
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_FILE);
+		# importing data to db - streams a live progress bar to the
+		# browser rather than leaving the request looking hung, since
+		# these files (particularly the language/text data) can take a
+		# noticeable while on a large/slow database
+		$errMsg = $this->importWithProgress($db, array(
+			array('path' => SP_INSTALL_DB_FILE, 'label' => 'Importing core database structure'),
+			array('path' => SP_INSTALL_DB_LANG_FILE, 'label' => 'Importing language & text data'),
+		));
 		if($db->error ){
 			$errMsg = "Error occured while importing data: ". $errMsg;
 			$this->startInstallation($info, $errMsg);
 			return;
 		}
-		
-		# importing text file
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_LANG_FILE);
-		if($db->error ){
-			$errMsg = "Error occured while importing data: ". $errMsg;
-			$this->startInstallation($info, $errMsg);
-			return;
-		}
-		
+
 		# write to config file
 		$this->writeConfigFile($info);
 		
@@ -511,8 +509,114 @@ class Install {
 		</script>
 		<?php
 	}
-	
-	
+
+	/**
+	 * Imports one or more SQL files while streaming a live progress bar
+	 * to the browser, instead of leaving the request looking hung for
+	 * however long a large database file takes. Used by both
+	 * proceedInstallation() (fresh install) and proceedUpgrade()
+	 * (existing installs can replay many version-increment files).
+	 *
+	 * Deliberately NOT a separate AJAX/polling endpoint: this installer
+	 * is one synchronous request per step already, has to run unmodified
+	 * on the widest range of shared hosting, and flush()-ing progress
+	 * into the same response is the simplest thing that works within
+	 * that existing architecture - no new endpoint, no server-side state
+	 * to track between requests, nothing that can be blocked by
+	 * disable_functions on a locked-down host the way exec()/proc_open()
+	 * based approaches could be.
+	 *
+	 * $files is an array of ['path' => ..., 'label' => ...]. Returns ''
+	 * on success, or an error message on the same convention
+	 * importDatabaseFile() itself uses ($db->error will also be set).
+	 */
+	function importWithProgress($db, $files, $block = true, $stepsHtml = null, $heading = 'Installing Seo Panel') {
+		if ($stepsHtml === null) {
+			$stepsHtml = '<div class="step completed"><span class="step-number"></span> Requirements</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step active"><span class="step-number">2</span> Database</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step"><span class="step-number">3</span> Complete</div>';
+		}
+
+		// ask any upstream proxy (nginx) not to buffer this response, and
+		// flush out any output buffering layer PHP itself may have
+		// started (the output_buffering ini setting) - otherwise our
+		// flush() calls below queue up and all arrive at once at the end
+		if (!headers_sent()) {
+			@header('X-Accel-Buffering: no');
+		}
+		while (ob_get_level() > 0) {
+			@ob_end_flush();
+		}
+
+		$fileLineCounts = array();
+		$totalLines = 0;
+		foreach ($files as $key => $file) {
+			$fileLineCounts[$key] = @count(@file($file['path']));
+			$totalLines += $fileLineCounts[$key];
+		}
+		?>
+		<div id="installProgressWrap">
+			<div class="steps"><?php echo $stepsHtml; ?></div>
+			<h1 class="BlockHeader"><?php echo htmlspecialchars($heading); ?></h1>
+			<div class="content-section">
+				<div class="install-progress-track">
+					<div id="installProgressFill" class="install-progress-fill" style="width:0%;"></div>
+				</div>
+				<p id="installProgressText" class="install-progress-text">Preparing&hellip;</p>
+			</div>
+		</div>
+		<!-- padding to push this past small output buffers some hosts/proxies use before they start forwarding chunks
+		<?php echo str_repeat(' ', 4096); ?>
+		-->
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		$linesDoneBefore = 0;
+		foreach ($files as $key => $file) {
+			$label = $file['label'];
+			$baseline = $linesDoneBefore;
+
+			$onProgress = function($linesDone, $fileTotalLines) use ($label, $totalLines, $baseline) {
+				$overallDone = $baseline + $linesDone;
+				$percent = $totalLines > 0 ? min(100, (int) round(($overallDone / $totalLines) * 100)) : 100;
+				?>
+				<script>
+				(function(){
+					var fill = document.getElementById('installProgressFill');
+					var text = document.getElementById('installProgressText');
+					if (fill) { fill.style.width = '<?php echo $percent; ?>%'; }
+					if (text) { text.textContent = '<?php echo addslashes($label); ?>… (<?php echo $percent; ?>%)'; }
+				})();
+				</script>
+				<?php
+				flush();
+				if (ob_get_level() > 0) { @ob_flush(); }
+			};
+
+			$errMsg = $db->importDatabaseFile($file['path'], $block, $onProgress);
+			if ($block && $db->error) {
+				?>
+				<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+				<?php
+				flush();
+				return $errMsg;
+			}
+
+			$linesDoneBefore += $fileLineCounts[$key];
+		}
+		?>
+		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		return '';
+	}
+
+
 	# func to check upgrade requirements
 	function checkUpgradeRequirements($error=false, $errorMsg='') {
 
@@ -749,14 +853,25 @@ class Install {
 			return;
 		}
 		
-		// loop through upgrade files and import data to db
+		// loop through upgrade files and import data to db - streamed with
+		// a live progress bar the same way proceedInstallation() is,
+		// since someone upgrading from a much older version can end up
+		// replaying many version-increment files here
 		$upgradeFileList = $this->getUpgradeDBFiles($db);
-		foreach ($upgradeFileList as $dbFile) {
-			$errMsg = $db->importDatabaseFile($dbFile, false);
+		$upgradeFiles = array();
+		foreach ($upgradeFileList as $index => $dbFile) {
+			$upgradeFiles[] = array('path' => $dbFile, 'label' => 'Applying database migration ' . ($index + 1) . ' of ' . count($upgradeFileList));
 		}
+		$upgradeFiles[] = array('path' => SP_UPGRADE_DB_LANG_FILE, 'label' => 'Updating language & text data');
 
-		// importing text file
-		$errMsg = $db->importDatabaseFile(SP_UPGRADE_DB_LANG_FILE, false);
+		// $block=false: matches this path's existing behavior exactly -
+		// a replayed migration can legitimately fail (e.g. a column that
+		// already exists from a prior partial run) and must not abort
+		// the rest of the chain
+		$upgradeStepsHtml = '<div class="step completed"><span class="step-number"></span> Check</div>'
+			. '<div class="step-divider"></div>'
+			. '<div class="step active"><span class="step-number">2</span> Complete</div>';
+		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
 		
 		# create API Key if not exists

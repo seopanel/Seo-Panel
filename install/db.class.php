@@ -83,34 +83,42 @@ class DB{
 		return $error;
 	}
 	
-	function importDatabaseFile($filename, $block=true){
-		
+	// $onProgress, if given, is called periodically as callable($linesDone, $totalLines) -
+	// see DBI::importDatabaseFile() in dbi.class.php for the full explanation; kept
+	// identical here since this legacy mysql_* backend takes the same code path.
+	function importDatabaseFile($filename, $block=true, $onProgress=null){
+
 		# temporary variable, used to store current query
 		$tmpline = '';
-		
+
 		# read in entire file
 		$lines = file($filename);
-		
+		$totalLines = count($lines);
+
 		# loop through each line
-		foreach ($lines as $line){
-			
+		foreach ($lines as $lineIndex => $line){
+
 			# skip it if it's a comment
 			if (substr($line, 0, 2) == '--' || $line == '')
 				continue;
-		 
+
 			# add this line to the current segment
 			$tmpline .= $line;
-			
+
 			# if it has a semicolon at the end, it's the end of the query
 			if (substr(trim($line), -1, 1) == ';'){
-				
+
 				if(!empty($tmpline)){
 					$errMsg = $this->query($tmpline);
 					if($block && $this->error) return $errMsg;
 				}
 				$tmpline = '';
 			}
-		}		
+
+			if ($onProgress !== null && ($lineIndex % 25 === 0 || $lineIndex === $totalLines - 1)) {
+				call_user_func($onProgress, $lineIndex + 1, $totalLines);
+			}
+		}
 	}
 }
 ?>
