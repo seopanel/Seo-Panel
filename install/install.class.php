@@ -395,7 +395,15 @@ class Install {
 		
 		if(gethostbynamel('seopanel.org')){
 		    include_once(SP_INSTALL_DIR.'/../libs/spider.class.php');
-		    include_once(SP_INSTALL_CONFIG_FILE);
+		    // NOT include_once: SP_INSTALL_CONFIG_FILE was already
+		    // include_once()'d above (the already-installed guard) back
+		    // when config/sp-config.php was still blank, so PHP would
+		    // silently skip re-reading it here and leave SP_WEBPATH and
+		    // friends undefined - fataling sp-config-extra.php below,
+		    // which assumes they're already defined. writeConfigFile()
+		    // has since rewritten the file with real values, so this
+		    // needs a genuine re-read, not a no-op.
+		    include(SP_INSTALL_CONFIG_FILE);
 		    include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
 			$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
 			$installUpdateUrl .= "&version=".SP_INSTALLED;
