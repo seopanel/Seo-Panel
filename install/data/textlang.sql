@@ -32399,7 +32399,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Robots.txt User-agent token', 'Robots.txt User-agent token'),
 ('en', 'aivisibility', 'robotsuseragenttokenhint', 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.'),
 ('en', 'aivisibility', 'Setup', 'Setup'),
-('en', 'aivisibility', 'Advanced', 'Advanced');
+('en', 'aivisibility', 'Advanced', 'Advanced'),
+('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
+('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings');
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'MCP Access', 'MCP Access'),

@@ -123,6 +123,16 @@
 	</div>
 </div>
 
+<div class="aiv-note">
+	<i class="fas fa-sliders-h"></i>
+	<span>
+		<?php echo $spTextAIV['advancedlinknotice'] ?? 'Need document root access, custom crawler rules, or AI-bot response headers?'?>
+		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" style="font-weight:600;">
+			<?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i>
+		</a>
+	</span>
+</div>
+
 </div>
 
 <div class="aiv-tab-panel" data-tab="advanced" hidden>
@@ -350,11 +360,16 @@
 		panels.forEach(function(panel) { panel.hidden = (panel.dataset.tab !== name); });
 	}
 
+	// exposed so the "Go to Advanced settings" link inside the Setup tab
+	// (for users who'd otherwise never notice the Advanced tab exists)
+	// can switch tabs the same way clicking the tab button itself does
+	window.aivActivateTab = function(name) {
+		activateTab(name);
+		try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
+	};
+
 	tabs.forEach(function(btn) {
-		btn.addEventListener('click', function() {
-			activateTab(btn.dataset.tab);
-			try { localStorage.setItem(STORAGE_KEY, btn.dataset.tab); } catch (e) {}
-		});
+		btn.addEventListener('click', function() { window.aivActivateTab(btn.dataset.tab); });
 	});
 
 	// a write error/pending confirmation living in the Advanced tab always

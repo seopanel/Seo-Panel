@@ -688,3 +688,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Setup', 'Setup'),
 ('en', 'aivisibility', 'Advanced', 'Advanced');
+
+-- Setup tab: a link to the Advanced tab, for users who'd otherwise never
+-- notice it exists (docroot access, crawler rules, .htaccess AI headers).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
+('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings');
