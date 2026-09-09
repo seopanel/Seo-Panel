@@ -32401,7 +32401,23 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Setup', 'Setup'),
 ('en', 'aivisibility', 'Advanced', 'Advanced'),
 ('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
-('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings');
+('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings'),
+('en', 'aivisibility', 'Overview', 'Overview'),
+('en', 'aivisibility', 'AI Referrals (30 days)', 'AI Referrals (30 days)'),
+('en', 'aivisibility', 'AI Bot Crawls (30 days)', 'AI Bot Crawls (30 days)'),
+('en', 'aivisibility', 'AI Overview Citation Rate', 'AI Overview Citation Rate'),
+('en', 'aivisibility', 'overviewaiocaption', 'of keywords where Google AI Overview cited this site, among keywords where an AI Overview appeared'),
+('en', 'aivisibility', 'Top AI Platforms (30 days)', 'Top AI Platforms (30 days)'),
+('en', 'aivisibility', 'Bot Crawls', 'Bot Crawls'),
+('en', 'aivisibility', 'Total', 'Total'),
+('en', 'aivisibility', 'View full report', 'View full report'),
+('en', 'aivisibility', 'No AI Overview data measured yet for this website.', 'No AI Overview data measured yet for this website.'),
+('en', 'aivisibility', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.'),
+('en', 'aivisibility', 'Suggest description with Local AI', 'Suggest description with Local AI'),
+('en', 'aivisibility', 'llmsdescriptionhint', 'Paste this into your website''s Description field (Website Manager) so it appears in llms.txt.'),
+('en', 'aivisibility', 'nositeauditordatanotice', 'Run Site Auditor for this website first - no crawled page data to summarize yet.'),
+('en', 'aivisibility', 'Generating...', 'Generating...'),
+('en', 'aivisibility', 'Edit Platform', 'Edit Platform');
 
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'MCP Access', 'MCP Access'),

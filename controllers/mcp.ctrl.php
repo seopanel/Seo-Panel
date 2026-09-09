@@ -134,6 +134,16 @@ class MCPController extends Controller {
 				'description' => 'Get AI referral and AI bot crawl totals (last 30 days) for one of your websites.',
 				'inputSchema' => ['type' => 'object', 'properties' => ['website_id' => ['type' => 'integer']], 'required' => ['website_id']],
 			],
+			[
+				'name' => 'get_ai_overview_summary',
+				'description' => 'Get Google AI Overview presence/citation counts across this website\'s tracked keywords.',
+				'inputSchema' => ['type' => 'object', 'properties' => ['website_id' => ['type' => 'integer']], 'required' => ['website_id']],
+			],
+			[
+				'name' => 'toggle_robots_rule',
+				'description' => 'Block or allow one AI platform in this website\'s robots.txt (toggles the current state). Requires an admin-configured, writable document root.',
+				'inputSchema' => ['type' => 'object', 'properties' => ['website_id' => ['type' => 'integer'], 'platform' => ['type' => 'string', 'description' => 'Platform code, e.g. chatgpt, claude, perplexity']], 'required' => ['website_id', 'platform']],
+			],
 		];
 	}
 
@@ -150,6 +160,12 @@ class MCPController extends Controller {
 				break;
 			case 'get_ai_visibility_summary':
 				$data = $this->toolGetAiVisibilitySummary($userId, intval($args['website_id'] ?? 0));
+				break;
+			case 'get_ai_overview_summary':
+				$data = $this->toolGetAiOverviewSummary($userId, intval($args['website_id'] ?? 0));
+				break;
+			case 'toggle_robots_rule':
+				$data = $this->toolToggleRobotsRule($userId, intval($args['website_id'] ?? 0), trim($args['platform'] ?? ''));
 				break;
 			default:
 				return ['error' => ['code' => -32602, 'message' => 'Unknown tool: ' . $name]];
@@ -210,6 +226,40 @@ class MCPController extends Controller {
 			'period' => 'last_30_days',
 			'ai_referrals_by_platform' => $referrals,
 			'ai_bot_crawls_by_platform' => $botHits,
+		];
+	}
+
+	function toolGetAiOverviewSummary($userId, $websiteId) {
+		if (!$this->__assertOwnsWebsite($userId, $websiteId)) {
+			return ['__error' => 'Not authorized for this website_id'];
+		}
+
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		return (new AIVisibilityController())->__getAioSummaryForWebsite($websiteId);
+	}
+
+	// the one write-capable tool in this catalog - still ownership-checked
+	// FIRST like every read tool above, then delegates the actual write to
+	// AIVisibilityController::__toggleRobotsRuleForWebsite(), the same core
+	// logic the web Setup page's toggle switch uses (see toggleRobotsRule())
+	function toolToggleRobotsRule($userId, $websiteId, $platform) {
+		if (!$this->__assertOwnsWebsite($userId, $websiteId)) {
+			return ['__error' => 'Not authorized for this website_id'];
+		}
+		if ($platform === '') {
+			return ['__error' => 'platform is required'];
+		}
+
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$result = (new AIVisibilityController())->__toggleRobotsRuleForWebsite($websiteId, $platform, $userId);
+		if (empty($result['ok'])) {
+			return ['__error' => $result['error'] ?? 'Could not toggle robots rule'];
+		}
+
+		return [
+			'platform' => $platform,
+			'is_blocked' => (bool) $result['is_blocked'],
+			'robots_write_error' => $result['error'],
 		];
 	}
 }

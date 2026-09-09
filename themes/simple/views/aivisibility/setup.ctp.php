@@ -288,6 +288,25 @@
 			<?php echo $spTextAIV['View live llms.txt'] ?? 'View live llms.txt'?>
 		</a>
 	<?php } } ?>
+
+	<?php if (!empty($localAiAvailable) && empty($websiteInfo['description'])) { ?>
+		<div class="aiv-note" style="margin-top:14px;">
+			<i class="fas fa-magic"></i>
+			<span>
+				<?php echo $spTextAIV['llmsdescriptionhint'] ?? 'Paste this into your website\'s Description field (Website Manager) so it appears in llms.txt.'?>
+				<br><br>
+				<a href="javascript:void(0);" id="aivLlmsSuggestBtn" onclick="aivSuggestLlmsDescription()" class="aiv-btn aiv-btn-outline">
+					<i class="fas fa-magic"></i> <?php echo $spTextAIV['Suggest description with Local AI'] ?? 'Suggest description with Local AI'?>
+				</a>
+				<div id="aivLlmsSuggestResult" hidden style="margin-top:12px;">
+					<div class="aiv-code-box">
+						<code id="aivLlmsSuggestText"></code>
+						<button type="button" id="aivLlmsCopyBtn" class="aiv-btn aiv-btn-outline aiv-code-copy"><i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'?></button>
+					</div>
+				</div>
+			</span>
+		</div>
+	<?php } ?>
 </div>
 
 <div class="aiv-card">
@@ -382,10 +401,10 @@
 	activateTab(initialTab === 'advanced' ? 'advanced' : 'setup');
 })();
 
-document.getElementById('aivCopyBtn').addEventListener('click', function() {
-	var btn = this;
+function aivCopyToClipboard(text, btn) {
+	var originalHtml = btn.innerHTML;
 	var textarea = document.createElement('textarea');
-	textarea.value = document.getElementById('aivSnippet').textContent;
+	textarea.value = text;
 	textarea.style.position = 'fixed';
 	textarea.style.opacity = '0';
 	document.body.appendChild(textarea);
@@ -393,10 +412,40 @@ document.getElementById('aivCopyBtn').addEventListener('click', function() {
 	document.execCommand('copy');
 	document.body.removeChild(textarea);
 	btn.innerHTML = '<i class="fas fa-check"></i> <?php echo $spText['common']['Copied'] ?? 'Copied'?>!';
-	setTimeout(function() {
-		btn.innerHTML = '<i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'?>';
-	}, 2000);
+	setTimeout(function() { btn.innerHTML = originalHtml; }, 2000);
+}
+
+document.getElementById('aivCopyBtn').addEventListener('click', function() {
+	aivCopyToClipboard(document.getElementById('aivSnippet').textContent, this);
 });
+
+var aivLlmsCopyBtn = document.getElementById('aivLlmsCopyBtn');
+if (aivLlmsCopyBtn) {
+	aivLlmsCopyBtn.addEventListener('click', function() {
+		aivCopyToClipboard(document.getElementById('aivLlmsSuggestText').textContent, this);
+	});
+}
+
+function aivSuggestLlmsDescription() {
+	var btn = document.getElementById('aivLlmsSuggestBtn');
+	var original = btn.innerHTML;
+	btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Generating...'] ?? 'Generating...'?>';
+	fetch('aivisibility.php?sec=suggest-llms-description&website_id=<?php echo intval($websiteId)?>', { credentials: 'same-origin' })
+		.then(function(res) { return res.json(); })
+		.then(function(data) {
+			btn.innerHTML = original;
+			if (data.ok && data.suggestion) {
+				document.getElementById('aivLlmsSuggestText').textContent = data.suggestion;
+				document.getElementById('aivLlmsSuggestResult').hidden = false;
+			} else {
+				alert(data.error || 'Could not generate a suggestion.');
+			}
+		})
+		.catch(function() {
+			btn.innerHTML = original;
+			alert('Could not generate a suggestion.');
+		});
+}
 
 (function pollInstallStatus() {
 	fetch('aivisibility.php?sec=installstatus&website_id=<?php echo intval($websiteId)?>', { credentials: 'same-origin' })

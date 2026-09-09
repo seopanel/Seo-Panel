@@ -299,6 +299,7 @@ foreach($menuList as $i => $menuInfo){
 		case "ai-visibility":
 			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=overview', 'content')"><?php echo $spTextAIV['Overview'] ?? 'Overview'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php', 'content')"><?php echo $spTextTools['Setup'] ?? 'Setup'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a></li>

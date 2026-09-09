@@ -694,3 +694,58 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
 ('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings');
+
+-- New crawler/agent tokens: OpenAI ships 3 distinct tokens under the
+-- ChatGPT brand (GPTBot already seeded; OAI-SearchBot for SearchGPT
+-- indexing, ChatGPT-User for on-demand live-user browsing fetches) -
+-- same 'chatgpt' platform grouping + display_name so the Setup page's
+-- single toggle still covers all three. Amazonbot and DuckAssistBot are
+-- newly-common AI crawlers with no prior row at all. INSERT IGNORE relies
+-- on the UNIQUE hostname key to stay idempotent across repeated upgrades.
+INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is_referral_source`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('chatgpt','oai-searchbot.openai.com','ChatGPT',1,0,'OAI-SearchBot',NULL),
+('chatgpt','chatgpt-user.openai.com','ChatGPT',1,0,'ChatGPT-User',NULL),
+('amazon','amazon.com','Amazonbot',1,0,'Amazonbot',NULL),
+('duckassist','duckduckgo.com','DuckAssistBot',1,0,'DuckAssistBot',NULL);
+
+-- Admin platform manager: per-row Edit action needed a way to distinguish
+-- "editing row N" from "adding a new row" in the reused add/edit form -
+-- no schema change, purely a view/JS addition (see platforms.ctp.php).
+
+-- AI Visibility: unified "Overview" dashboard combining referral totals,
+-- bot crawl totals, and AI Overview citation rate in one screen - no new
+-- storage, purely new queries over ai_referrals/ai_bot_hits/searchresults.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Overview', 'Overview'),
+('en', 'aivisibility', 'AI Referrals (30 days)', 'AI Referrals (30 days)'),
+('en', 'aivisibility', 'AI Bot Crawls (30 days)', 'AI Bot Crawls (30 days)'),
+('en', 'aivisibility', 'AI Overview Citation Rate', 'AI Overview Citation Rate'),
+('en', 'aivisibility', 'overviewaiocaption', 'of keywords where Google AI Overview cited this site, among keywords where an AI Overview appeared'),
+('en', 'aivisibility', 'Top AI Platforms (30 days)', 'Top AI Platforms (30 days)'),
+('en', 'aivisibility', 'Bot Crawls', 'Bot Crawls'),
+('en', 'aivisibility', 'Total', 'Total'),
+('en', 'aivisibility', 'View full report', 'View full report'),
+('en', 'aivisibility', 'No AI Overview data measured yet for this website.', 'No AI Overview data measured yet for this website.'),
+('en', 'aivisibility', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.');
+
+-- AI Visibility: week-over-week traffic anomaly alerts (referral + bot
+-- crawl totals per website) - reuses the existing AlertController/
+-- ai_referrals/ai_bot_hits data, no new tables. Gated to run at most
+-- once/day via information_list, same idiom as refreshAllAIInsights().
+-- No new text strings: alert_subject/alert_message are built directly
+-- (mirrors __alertOnFirstPlatformHit()'s existing style, not a
+-- $spTextAIV-driven UI string).
+
+-- MCP server: 2 new tools (get_ai_overview_summary, toggle_robots_rule) -
+-- no schema change, both reuse existing tables/ownership checks.
+
+-- Local AI: new suggestLlmsTxtDescription() use case (drafts an llms.txt
+-- site description from already-crawled Site Auditor page data, same
+-- restate-only-what's-there pattern as suggestMetaDescription()) - no
+-- schema change.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Suggest description with Local AI', 'Suggest description with Local AI'),
+('en', 'aivisibility', 'llmsdescriptionhint', 'Paste this into your website''s Description field (Website Manager) so it appears in llms.txt.'),
+('en', 'aivisibility', 'nositeauditordatanotice', 'Run Site Auditor for this website first - no crawled page data to summarize yet.'),
+('en', 'aivisibility', 'Generating...', 'Generating...'),
+('en', 'aivisibility', 'Edit Platform', 'Edit Platform');

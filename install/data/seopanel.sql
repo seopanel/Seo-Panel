@@ -978,7 +978,19 @@ INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is
 ('bytespider','bytedance.com','Bytespider',1,0,'Bytespider',NULL),
 ('ccbot','commoncrawl.org','CCBot',1,0,'CCBot',NULL),
 ('applebot-extended','apple.com','Applebot-Extended',1,0,'Applebot-Extended',NULL),
-('meta-externalagent','meta.com','Meta AI',1,0,'meta-externalagent',NULL);
+('meta-externalagent','meta.com','Meta AI',1,0,'meta-externalagent',NULL),
+-- OpenAI ships 3 distinct crawler/agent tokens under the ChatGPT brand -
+-- GPTBot (training crawl, seeded above), OAI-SearchBot (SearchGPT indexing)
+-- and ChatGPT-User (on-demand fetch when a live user asks ChatGPT to browse
+-- a page). Same 'chatgpt' platform grouping (so toggling the platform
+-- blocks/allows all three together) and same display_name (MIN() in the
+-- Setup page's platform-list query assumes it's identical across a
+-- platform's rows) - only bot_ua_pattern differs, since each is a
+-- distinct real User-agent token robots.txt/access logs actually see.
+('chatgpt','oai-searchbot.openai.com','ChatGPT',1,0,'OAI-SearchBot',NULL),
+('chatgpt','chatgpt-user.openai.com','ChatGPT',1,0,'ChatGPT-User',NULL),
+('amazon','amazon.com','Amazonbot',1,0,'Amazonbot',NULL),
+('duckassist','duckduckgo.com','DuckAssistBot',1,0,'DuckAssistBot',NULL);
 
 CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
   `bucket_key` varchar(100) NOT NULL,

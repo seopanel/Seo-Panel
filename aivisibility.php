@@ -116,6 +116,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->listPlatforms($_GET);
 			break;
 
+		case "overview":
+			$controller->showOverview($_GET);
+			break;
+
+		case "suggest-llms-description":
+			$userId = isLoggedIn();
+			$websiteId = intval($_GET['website_id'] ?? 0);
+			header('Content-Type: application/json');
+			include_once(SP_CTRLPATH . "/localai.ctrl.php");
+			$localAiCtrler = new LocalAIController();
+			echo json_encode($localAiCtrler->suggestLlmsTxtDescription($websiteId, $userId));
+			exit;
+
 		default:
 			$controller->showSetup($_GET);
 			break;

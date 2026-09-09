@@ -194,6 +194,10 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aivCtrler->processAccessLogsForBotHits();
 	echo "Processed AI Visibility access logs for bot detection\n";
 
+	// week-over-week AI referral/bot-crawl traffic anomaly alerts (at most once/day)
+	$aivCtrler->checkTrafficAnomalies();
+	echo "Checked AI Visibility traffic for week-over-week anomalies (once per day)\n";
+
 	// regenerate AI Insights for every active website (at most once/day - see refreshAllAIInsights())
 	$controller->refreshAllAIInsights();
 	echo "Refreshed AI Insights for active websites (once per day)\n";

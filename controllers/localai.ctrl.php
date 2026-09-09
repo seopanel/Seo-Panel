@@ -191,5 +191,56 @@ class LocalAIController extends Controller {
 		$suggestion = !empty($result['text']) ? mb_substr($result['text'], 0, 160) : '';
 		return ['ok' => $result['ok'], 'suggestion' => $suggestion, 'error' => $result['error']];
 	}
+
+	/**
+	 * Drafts a one-paragraph website description (<=300 chars) for llms.txt
+	 * from Site Auditor's already-crawled page titles/descriptions -
+	 * AIVisibilityController::__buildLlmsTxtContent() reads
+	 * websites.description verbatim, so this only ever suggests text for
+	 * the user to copy in manually, same restate-only-what's-there pattern
+	 * as suggestMetaDescription(). Verifies website ownership BEFORE
+	 * touching any crawled page content.
+	 */
+	function suggestLlmsTxtDescription($websiteId, $userId) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'suggestion' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'suggestion' => '', 'error' => 'Not authorized'];
+		}
+
+		$projectInfo = $this->dbHelper->getRow('auditorprojects', "website_id=$websiteId");
+		$pages = !empty($projectInfo['id'])
+			? $this->db->select("SELECT page_title, page_description FROM auditorreports WHERE project_id=" . intval($projectInfo['id']) . " ORDER BY pagerank DESC LIMIT 15")
+			: [];
+
+		$lines = [];
+		foreach ($pages as $page) {
+			if (empty($page['page_title']) && empty($page['page_description'])) continue;
+			$desc = !empty($page['page_description']) ? ': ' . trim(preg_replace('/\s+/', ' ', $page['page_description'])) : '';
+			$lines[] = '- ' . ($page['page_title'] ?? '') . $desc;
+		}
+		if (empty($lines)) {
+			return ['ok' => false, 'suggestion' => '', 'error' => 'Run Site Auditor for this website first - no crawled page data to summarize yet.'];
+		}
+
+		$systemPrompt = 'You write a concise one-paragraph website description for an llms.txt file (a summary AI agents read to understand what a site is about). '
+			. 'You must ONLY restate what is present in the page list given to you - never invent facts, products, or claims not present there. '
+			. 'Respond with ONLY the description text, no quotes, no preamble, at most 300 characters.';
+		$prompt = 'Website name: ' . ($websiteInfo['name'] ?? '') . "\n"
+			. 'Crawled pages:' . "\n" . implode("\n", $lines) . "\n\n"
+			. 'Write a one-paragraph description of this website.';
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		$suggestion = !empty($result['text']) ? mb_substr($result['text'], 0, 300) : '';
+		return ['ok' => $result['ok'], 'suggestion' => $suggestion, 'error' => $result['error']];
+	}
 }
 ?>
