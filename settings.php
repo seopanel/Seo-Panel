@@ -223,6 +223,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->skipSpApiUpgrade();
 			break;
 
+		case "version_upgrade_skip":
+			$controller->skipVersionUpgradePopup();
+			break;
+
 		default:
 		    $category = empty($_GET['category']) ? 'system' : $_GET['category'];
 			$controller->showSystemSettings($category);

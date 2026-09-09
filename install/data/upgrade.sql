@@ -33,6 +33,11 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_SETUP_WIZARD', 'Initial Setup Wizard');
 
+-- Daily login version-upgrade notice popup: skip-for-today column, same
+-- convention as spapi_upgrade_skip_date - see
+-- SettingsController::showVersionUpgradePopup().
+ALTER TABLE `users` ADD COLUMN `version_upgrade_skip_date` date DEFAULT NULL;
+
 -- Search volume results table (populated via SP API /v1/search-volume)
 CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,

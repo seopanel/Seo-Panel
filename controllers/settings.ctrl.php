@@ -676,5 +676,47 @@ class SettingsController extends Controller{
 	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
 	    }
 	}
+
+	// check whether the daily login "new version available" notice popup
+	// should be shown - notice-only, the popup's own CTA just navigates to
+	// Settings > Version, it never triggers an upgrade itself
+	function showVersionUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // check if user has skipped today
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId), "version_upgrade_skip_date");
+	    if (!empty($userInfo['version_upgrade_skip_date']) && $userInfo['version_upgrade_skip_date'] === date('Y-m-d')) {
+	        return false;
+	    }
+
+	    // get today's cached check result; if missing (e.g. cleared on login), run a fresh check now.
+	    // Deliberately a separate cache key from alerts.ctrl.php's 'install_check': that one only
+	    // refreshes on cron days (1st/7th/14th of the month) and stores raw message HTML, not a
+	    // clean status a popup can branch on, so it doesn't fit a "once per day on login" check.
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $versionCheckInfo = $informationCtrler->__getTodayInformation('version_check_popup');
+	    if (empty($versionCheckInfo)) {
+	        list($oldVersion) = $this->checkVersion(true);
+	        $informationCtrler->updateTodayInformation($oldVersion ? 'outdated' : 'uptodate', 'version_check_popup');
+	        $versionCheckInfo = ['page' => $oldVersion ? 'outdated' : 'uptodate'];
+	    }
+
+	    return !empty($versionCheckInfo['page']) && $versionCheckInfo['page'] === 'outdated';
+	}
+
+	// skip the version-upgrade notice popup for today
+	function skipVersionUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET version_upgrade_skip_date='" . date('Y-m-d') . "' WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
+	}
 }
 ?>
