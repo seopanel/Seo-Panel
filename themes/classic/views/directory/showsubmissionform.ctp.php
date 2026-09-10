@@ -16,14 +16,14 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <span class="font-weight-bold"><?php echo $spTextTools['directory-submission']?></span>
         <div>
-            <?php if(!empty($dirInfo['pagerank'])){ ?>
-                <span class="badge badge-secondary mr-1">PR <?php echo $dirInfo['pagerank']?></span>
-            <?php } ?>
             <?php if(!empty($dirInfo['domain_authority'])){ ?>
                 <span class="badge badge-info mr-1">DA <?php echo $dirInfo['domain_authority']?></span>
             <?php } ?>
             <?php if(!empty($dirInfo['page_authority'])){ ?>
-                <span class="badge badge-primary">PA <?php echo $dirInfo['page_authority']?></span>
+                <span class="badge badge-primary mr-1">PA <?php echo $dirInfo['page_authority']?></span>
+            <?php } ?>
+            <?php if(!empty($dirInfo['pagerank'])){ ?>
+                <span class="badge badge-secondary" title="Google discontinued PageRank in 2016 - shown for legacy data only">PR <?php echo $dirInfo['pagerank']?> <small>(legacy)</small></span>
             <?php } ?>
         </div>
     </div>

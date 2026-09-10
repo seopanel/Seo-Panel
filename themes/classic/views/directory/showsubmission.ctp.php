@@ -8,7 +8,7 @@
                     <?php echo $this->render('website/websiteselectbox', 'ajax'); ?>
                 </div>
                 <div class="col-md-2">
-                    <label class="font-weight-bold"><?php echo $spText['common']['Pagerank']?>:</label>
+                    <label class="font-weight-bold" title="Google discontinued PageRank in 2016 - kept only for filtering legacy directory data"><?php echo $spText['common']['Pagerank']?> <small class="text-muted">(legacy)</small>:</label>
                     <select name="pagerank" class="custom-select">
                         <option value="">-- <?php echo $spText['common']['Select']?> --</option>
                         <?php for ($i=0; $i<=10; $i++) { ?>

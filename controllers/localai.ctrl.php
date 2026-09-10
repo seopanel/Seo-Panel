@@ -313,5 +313,71 @@ class LocalAIController extends Controller {
 			'error' => null,
 		];
 	}
+
+	/*
+	 * Drafts a business directory listing title/description for the
+	 * Directory Submission tool. Directory listings traditionally use
+	 * several hand-reworded title/description variants (see
+	 * DirectoryController::$noTitles) so the same wording isn't submitted
+	 * verbatim to dozens of directories - this drafts a genuinely
+	 * different phrasing on demand instead of relying on manual
+	 * synonym-swapping. Pass $avoid (an existing title+description
+	 * elsewhere on the form) to steer the model toward a distinct angle;
+	 * omitted for the first/primary listing slot.
+	 */
+	function suggestDirectoryListing($websiteId, $userId, $avoid = '') {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Not authorized'];
+		}
+
+		$context = 'Business/website name: ' . ($websiteInfo['name'] ?? '') . "\n" . 'URL: ' . ($websiteInfo['url'] ?? '');
+		if (!empty($websiteInfo['description'])) {
+			$context .= "\nExisting site description: " . stripslashes($websiteInfo['description']);
+		}
+
+		$systemPrompt = 'You write short business directory listing titles and descriptions. '
+			. 'Respond with EXACTLY two lines in this format and nothing else:'
+			. "\nTITLE: <title, at most 60 characters>"
+			. "\nDESCRIPTION: <description, at most 200 characters>";
+
+		$avoid = trim((string) $avoid);
+		if (!empty($avoid)) {
+			$prompt = "$context\n\nWrite a directory listing title and description for the SAME business, "
+				. "genuinely different in wording and angle from this existing one (not just synonym-swapped):\n$avoid";
+		} else {
+			$prompt = "$context\n\nWrite a business directory listing title and description for this website.";
+		}
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => $result['error']];
+		}
+
+		$title = '';
+		$description = '';
+		if (preg_match('/TITLE:\s*(.+)/i', $result['text'], $m)) $title = trim($m[1]);
+		if (preg_match('/DESCRIPTION:\s*(.+)/i', $result['text'], $m)) $description = trim($m[1]);
+
+		if (empty($title) && empty($description)) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Could not parse a suggestion from the AI response'];
+		}
+
+		return [
+			'ok' => true,
+			'title' => mb_substr($title, 0, 60),
+			'description' => mb_substr($description, 0, 200),
+			'error' => null,
+		];
+	}
 }
 ?>

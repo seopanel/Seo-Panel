@@ -84,6 +84,11 @@
                     <textarea name="description" id="webdescription" class="form-control" rows="3"><?php echo stripslashes($websiteInfo['description'])?></textarea>
                     <?php echo $errMsg['description']?>
                     <small class="text-muted"><?php echo $spTextDir['desnote']?></small>
+                    <?php if (!empty($localAiAvailable)) { ?>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="dirSuggestListing('')">
+                            <i class="fa fa-magic"></i> Suggest with AI
+                        </button>
+                    <?php } ?>
                 </div>
             </div>
         </div>
@@ -93,6 +98,9 @@
             <a class="btn btn-outline-secondary btn-sm" data-toggle="collapse" href="#extraTitles" role="button">
                 <?php echo $spTextDir['optionalnote']?> &#9660;
             </a>
+            <?php if (!empty($localAiAvailable)) { ?>
+                <small class="text-muted d-block mt-1">Each extra slot can be drafted with AI - useful for keeping listings genuinely distinct across directories instead of just reworded by hand.</small>
+            <?php } ?>
             <div class="collapse mt-3" id="extraTitles">
                 <?php for($i=2; $i<=$noTitles; $i++) { ?>
                 <div class="row">
@@ -106,6 +114,11 @@
                         <div class="form-group">
                             <label class="font-weight-bold"><?php echo $spTextDir['Submit Description']?><?php echo $i?>:</label>
                             <textarea name="description<?php echo $i?>" class="form-control" rows="3"><?php echo stripslashes($websiteInfo['description'.$i])?></textarea>
+                            <?php if (!empty($localAiAvailable)) { ?>
+                                <button type="button" class="btn btn-outline-secondary btn-sm mt-1" onclick="dirSuggestListing('<?php echo $i?>')">
+                                    <i class="fa fa-magic"></i> Suggest with AI
+                                </button>
+                            <?php } ?>
                         </div>
                     </div>
                 </div>
@@ -115,6 +128,37 @@
         <?php } ?>
     </div>
 </div>
+
+<?php if (!empty($localAiAvailable)) { ?>
+<script type="text/javascript">
+function dirSuggestListing(slot) {
+    var titleField = document.querySelector('[name="title' + slot + '"]');
+    var descField = document.querySelector('[name="description' + slot + '"]');
+    if (!titleField || !descField) return;
+
+    var mainTitle = document.getElementById('webtitle').value;
+    var mainDesc = document.getElementById('webdescription').value;
+    var avoid = (mainTitle || mainDesc) ? (mainTitle + ' - ' + mainDesc) : '';
+
+    $.ajax({
+        url: 'directories.php',
+        data: { sec: 'suggestlisting', website_id: <?php echo intval($websiteInfo['website_id'])?>, avoid: avoid },
+        dataType: 'json',
+        success: function(data) {
+            if (data && data.ok) {
+                titleField.value = data.title;
+                descField.value = data.description;
+            } else {
+                alert((data && data.error) ? data.error : 'Could not generate a suggestion.');
+            }
+        },
+        error: function() {
+            alert('Could not generate a suggestion.');
+        }
+    });
+}
+</script>
+<?php } ?>
 
 <div class="d-flex justify-content-end mb-4">
     <a onclick="scriptDoLoad('directories.php', 'content')" href="javascript:void(0);" class="btn btn-warning mr-2">
