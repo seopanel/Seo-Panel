@@ -379,5 +379,53 @@ class LocalAIController extends Controller {
 			'error' => null,
 		];
 	}
+
+	/*
+	 * Plain-language summary of a website's domain/page authority + spam
+	 * score trend over a date range, for the Rank Checker's "Rank
+	 * Reports" screen - same restate-only-the-facts discipline as
+	 * generateInsightsSummary(): the system prompt explicitly forbids
+	 * inventing a cause the numbers themselves don't show.
+	 */
+	function summarizeAuthorityTrend($websiteId, $userId, $fromTime, $toTime) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$fromTime = addslashes($fromTime);
+		$toTime = addslashes($toTime);
+		$rows = $this->db->select("SELECT result_date, spam_score, domain_authority, page_authority FROM rankresults WHERE website_id=$websiteId AND result_date >= '$fromTime' AND result_date <= '$toTime' ORDER BY result_date");
+
+		if (count($rows) < 2) {
+			return ['ok' => true, 'summary' => 'Not enough history in this date range yet to summarize a trend - check back after a few more Generate Rank Reports runs.', 'error' => null];
+		}
+
+		$lines = [];
+		foreach ($rows as $row) {
+			$lines[] = $row['result_date'] . ': Spam Score ' . round(floatval($row['spam_score']), 2) . '%, Domain Authority ' . round(floatval($row['domain_authority']), 2) . ', Page Authority ' . round(floatval($row['page_authority']), 2);
+		}
+
+		$systemPrompt = 'You summarize a website authority metric trend in plain language for a non-technical SEO client. '
+			. 'ONLY restate what the numbers show (direction, magnitude, any notable jump) - never invent a cause the data itself does not show. '
+			. 'Keep it to 2-3 sentences.';
+		$prompt = 'Website: ' . ($websiteInfo['name'] ?? '') . "\n\nDomain Authority/Page Authority (higher is better) and Spam Score (lower is better) history:\n" . implode("\n", $lines);
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'summary' => '', 'error' => $result['error']];
+		}
+
+		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
+	}
 }
 ?>

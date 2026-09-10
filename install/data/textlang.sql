@@ -214,7 +214,7 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (140, 'en', 'sitemap', 'Sitemap Type', 'Sitemap Type', '2010-09-11 08:49:10'),
 (141, 'en', 'sitemap', 'Download sitemap file from', 'Download sitemap file from', '2010-09-11 09:26:47'),
 (142, 'en', 'common', 'Found', 'Found', '2019-08-06 06:09:56'),
-(143, 'en', 'rank', 'enterurlproceed', 'Enter URL\'s <b>One per line</b>. Click on <b>Proceed</b> to check Google and Alexa rank.', '2010-09-14 08:26:31'),
+(143, 'en', 'rank', 'enterurlproceed', 'Enter URL\'s <b>One per line</b>. Click on <b>Proceed</b> to check Domain Authority, Page Authority and Spam Score.', '2010-09-14 08:26:31'),
 (144, 'en', 'common', 'Url', 'Url', '2019-08-06 06:09:56'),
 (145, 'en', 'common', 'Google Pagerank', 'Google Pagerank', '2019-08-06 06:09:56'),
 (146, 'en', 'common', 'Alexa Rank', 'Alexa Rank', '2019-08-06 06:09:56'),
