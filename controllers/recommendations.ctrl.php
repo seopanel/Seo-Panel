@@ -37,12 +37,38 @@ class RecommendationsController extends Controller {
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
         $this->set('spTextRec', $this->getLanguageTexts('recommendations', $_SESSION['lang_code']));
 
-        // "Add to SEO Diary" per-finding action - only offered when that
-        // plugin is actually installed+active; the plugin's own row id is
-        // needed to build the seo-plugins.php?pid=... deep link
+        // "Add to SEO Diary" per-finding action - only offered when the
+        // plugin is installed+active AND the CURRENT user's account type
+        // actually has access to it. isPluginActive() alone isn't enough -
+        // seo-plugins.php's own manageSeoPlugins() separately enforces a
+        // per-usertype plugin access setting for any non-admin, and would
+        // reject the very link this renders with "Access denied" if that
+        // second check is skipped here (this is exactly the bug a user
+        // hit testing this feature - the button rendered for their
+        // non-admin account, but clicking it 403'd). Mirrors
+        // showSeoPlugins()'s own access-list logic exactly
+        // (controllers/seoplugins.ctrl.php): getPluginAccessSettings()
+        // always returns a 'value' key per plugin, defaulting to 0 when
+        // no explicit user_specs row exists - so access is DENY-BY-DEFAULT
+        // for a non-admin until an admin explicitly grants this plugin to
+        // their user type via the User Type manager.
         include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
         $seoDiaryInfo = (new SeoPluginsController())->isPluginActive("SeoDiary");
-        $this->set('seoDiaryPluginId', !empty($seoDiaryInfo['id']) ? $seoDiaryInfo['id'] : 0);
+        $seoDiaryPluginId = 0;
+        if (!empty($seoDiaryInfo['id'])) {
+            if (isAdmin()) {
+                $seoDiaryPluginId = $seoDiaryInfo['id'];
+            } else {
+                include_once(SP_CTRLPATH . "/user-type.ctrl.php");
+                $userSessInfo = Session::readSession('userInfo');
+                $pluginAccessList = (new UserTypeController())->getPluginAccessSettings($userSessInfo['userTypeId']);
+                $hasAccess = !isset($pluginAccessList[$seoDiaryInfo['id']]['value']) || !empty($pluginAccessList[$seoDiaryInfo['id']]['value']);
+                if ($hasAccess) {
+                    $seoDiaryPluginId = $seoDiaryInfo['id'];
+                }
+            }
+        }
+        $this->set('seoDiaryPluginId', $seoDiaryPluginId);
 
         $this->render('dashboard/recommendations_main');
     }
