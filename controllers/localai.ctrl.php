@@ -427,5 +427,55 @@ class LocalAIController extends Controller {
 
 		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
 	}
+
+	/*
+	 * Plain-language summary of a website's backlink/referring-domain (+
+	 * broken backlinks, where measured by DataForSEO) trend over a date
+	 * range, for the Backlink Checker's "Backlinks Reports" screen - same
+	 * restate-only-the-facts discipline as summarizeAuthorityTrend()/
+	 * generateInsightsSummary().
+	 */
+	function summarizeBacklinkTrend($websiteId, $userId, $fromTime, $toTime) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$fromTime = addslashes($fromTime);
+		$toTime = addslashes($toTime);
+		$rows = $this->db->select("SELECT result_date, external_pages_to_page, external_pages_to_root_domain, broken_backlinks FROM backlinkresults WHERE website_id=$websiteId AND result_date >= '$fromTime' AND result_date <= '$toTime' ORDER BY result_date");
+
+		if (count($rows) < 2) {
+			return ['ok' => true, 'summary' => 'Not enough history in this date range yet to summarize a trend - check back after a few more Generate Backlinks Reports runs.', 'error' => null];
+		}
+
+		$lines = [];
+		foreach ($rows as $row) {
+			$line = $row['result_date'] . ': ' . intval($row['external_pages_to_page']) . ' backlinks to this page, ' . intval($row['external_pages_to_root_domain']) . ' referring domains to the root domain';
+			if ($row['broken_backlinks'] !== null) $line .= ', ' . intval($row['broken_backlinks']) . ' broken backlinks';
+			$lines[] = $line;
+		}
+
+		$systemPrompt = 'You summarize a website backlink trend in plain language for a non-technical SEO client. '
+			. 'ONLY restate what the numbers show (direction, magnitude, any notable jump) - never invent a cause the data itself does not show. '
+			. 'Keep it to 2-3 sentences.';
+		$prompt = 'Website: ' . ($websiteInfo['name'] ?? '') . "\n\nBacklink/referring-domain history:\n" . implode("\n", $lines);
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'summary' => '', 'error' => $result['error']];
+		}
+
+		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
+	}
 }
 ?>
