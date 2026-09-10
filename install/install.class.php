@@ -330,6 +330,60 @@ class Install {
 		return $webPath;
 	}
 	
+	/**
+	 * Register + activate any of the shipped plugins whose directory is
+	 * present under plugins/ (mirrors
+	 * SeoPluginsController::__updateAllSeoPlugins()'s register-new-plugin
+	 * logic, but works directly against the raw DBI $db connection - the
+	 * full Controller/SeoPluginsController stack isn't safely
+	 * instantiable yet at this point in the installer, and several
+	 * plugin-related constants (SP_PLUGINPATH, SP_PLUGININFOFILE,
+	 * SP_PLUGINDBFILE) only get defined conditionally via
+	 * SP_INSTALL_CONFIG_FILE_EXTRA a few lines up, inside a
+	 * gethostbynamel() network-reachability check - not something this
+	 * should depend on).
+	 */
+	function activateShippedPlugins($db) {
+		$shippedPlugins = array('ArticleSubmitter', 'QuickWebProxy', 'SeoDiary', 'MetaTagGenerator');
+		$pluginBasePath = SP_INSTALL_DIR . '/../plugins';
+
+		foreach ($shippedPlugins as $pluginName) {
+			$pluginDir = $pluginBasePath . '/' . $pluginName;
+			$infoFile = $pluginDir . '/plugin.xml';
+			if (!is_dir($pluginDir) || !file_exists($infoFile)) {
+				continue;
+			}
+
+			$existing = $db->select("select id from seoplugins where name='" . addslashes($pluginName) . "'", true);
+			if (empty($existing['id'])) {
+				include_once(SP_INSTALL_DIR . '/../libs/xmlparser.class.php');
+				$pluginInfo = array();
+				$xml = new XML_Parser;
+				$parsed = $xml->parse($infoFile);
+				if (!empty($parsed[0]['child'])) {
+					foreach ($parsed[0]['child'] as $child) {
+						$pluginInfo[strtolower($child['name'])] = $child['content'];
+					}
+				}
+				$label = !empty($pluginInfo['label']) ? $pluginInfo['label'] : $pluginName;
+				$version = !empty($pluginInfo['version']) ? $pluginInfo['version'] : '1.0.0';
+				$author = !empty($pluginInfo['author']) ? $pluginInfo['author'] : 'Seo Panel';
+				$website = !empty($pluginInfo['website']) ? $pluginInfo['website'] : '';
+				$description = !empty($pluginInfo['description']) ? $pluginInfo['description'] : '';
+
+				$db->query("insert into seoplugins(label,name,author,description,version,website,status,installed)
+						values('" . addslashes($label) . "','" . addslashes($pluginName) . "','" . addslashes($author) . "','" . addslashes($description) . "','" . addslashes($version) . "','" . addslashes($website) . "',1,1)");
+
+				$pluginDbFile = $pluginDir . '/database.sql';
+				if (file_exists($pluginDbFile)) {
+					$db->importDatabaseFile($pluginDbFile, false);
+				}
+			} else {
+				$db->query("update seoplugins set status=1, installed=1 where id=" . intval($existing['id']));
+			}
+		}
+	}
+
 	# func to proceed installation
 	function proceedInstallation($info) {
 
@@ -417,7 +471,17 @@ class Install {
 		// update email for admin
 		$sql = "update users set email='".addslashes($info['email'])."' where id=1";
 		$db->query($sql);
-		
+
+		// auto-install + activate the plugins shipped with this release
+		// (ArticleSubmitter, QuickWebProxy, SeoDiary, MetaTagGenerator -
+		// see CLAUDE.md's "Active Plugins" list) so a fresh install has
+		// them ready to use immediately, matching how
+		// build/build-release.sh bundles SeoDiary/QuickWebProxy into
+		// plugins/ for every release zip. A plugin whose directory isn't
+		// present (e.g. installing straight from a raw git checkout
+		// without the release build step) is silently skipped.
+		$this->activateShippedPlugins($db);
+
 		// select languages list
 		$sql = "select * from languages where translated=1";
 		$langList = $db->select($sql);

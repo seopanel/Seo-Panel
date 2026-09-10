@@ -208,6 +208,9 @@
                     <tr>
                         <th style="width:45%">Recommendation</th>
                         <th>Details</th>
+                        <?php if (!empty($seoDiaryPluginId)) { ?>
+                        <th style="width:1%; white-space:nowrap;"></th>
+                        <?php } ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -233,6 +236,25 @@
                             <?php } ?>
                             <?php echo htmlspecialchars($rec['description']) ?>
                         </td>
+                        <?php if (!empty($seoDiaryPluginId)) {
+                            // Opt-in only - never auto-created. A plain full-page link
+                            // (not an AJAX scriptDoLoad) so it works regardless of
+                            // whatever admin-panel.php section this dashboard happens to
+                            // be embedded in. newDiary() reads title/description straight
+                            // off $_REQUEST into the New Diary form's prefilled fields -
+                            // the user still picks a project/category/due date and
+                            // confirms before anything is actually created.
+                            $addToDiaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
+                                . "&action=newDiary"
+                                . "&title=" . urlencode($rec['title'])
+                                . "&description=" . urlencode($rec['description']);
+                            ?>
+                        <td>
+                            <a href="<?php echo htmlspecialchars($addToDiaryUrl) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
+                                <i class="fas fa-book"></i>
+                            </a>
+                        </td>
+                        <?php } ?>
                     </tr>
                     <?php } ?>
                 </tbody>

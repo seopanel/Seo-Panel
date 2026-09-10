@@ -37,6 +37,13 @@ class RecommendationsController extends Controller {
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
         $this->set('spTextRec', $this->getLanguageTexts('recommendations', $_SESSION['lang_code']));
 
+        // "Add to SEO Diary" per-finding action - only offered when that
+        // plugin is actually installed+active; the plugin's own row id is
+        // needed to build the seo-plugins.php?pid=... deep link
+        include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
+        $seoDiaryInfo = (new SeoPluginsController())->isPluginActive("SeoDiary");
+        $this->set('seoDiaryPluginId', !empty($seoDiaryInfo['id']) ? $seoDiaryInfo['id'] : 0);
+
         $this->render('dashboard/recommendations_main');
     }
 
