@@ -242,5 +242,76 @@ class LocalAIController extends Controller {
 		$suggestion = !empty($result['text']) ? mb_substr($result['text'], 0, 300) : '';
 		return ['ok' => $result['ok'], 'suggestion' => $suggestion, 'error' => $result['error']];
 	}
+
+	/**
+	 * Suggests a meta <title> (<=60 chars) and meta description (<=160
+	 * chars) for a website's whole-site meta tags (MetaTagGenerator
+	 * plugin), from the website's own name/url plus - when Site Auditor
+	 * has already crawled it - its top pages' titles/descriptions as
+	 * extra context. Unlike generateInsightsSummary()/
+	 * suggestLlmsTxtDescription() above, this one's whole point is to
+	 * draft new marketing copy rather than only restate existing facts -
+	 * the user still reviews and can edit/discard it before it's ever
+	 * used, same as every other Local AI suggestion in this app. Verifies
+	 * website ownership before touching any crawled page content.
+	 */
+	function suggestMetaTags($websiteId, $userId) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Not authorized'];
+		}
+
+		$context = 'Website name: ' . ($websiteInfo['name'] ?? '') . "\n" . 'Website URL: ' . ($websiteInfo['url'] ?? '');
+
+		$projectInfo = $this->dbHelper->getRow('auditorprojects', "website_id=$websiteId");
+		if (!empty($projectInfo['id'])) {
+			$pages = $this->db->select("SELECT page_title, page_description FROM auditorreports WHERE project_id=" . intval($projectInfo['id']) . " ORDER BY pagerank DESC LIMIT 10");
+			$lines = [];
+			foreach ($pages as $page) {
+				if (empty($page['page_title']) && empty($page['page_description'])) continue;
+				$desc = !empty($page['page_description']) ? ': ' . trim(preg_replace('/\s+/', ' ', $page['page_description'])) : '';
+				$lines[] = '- ' . ($page['page_title'] ?? '') . $desc;
+			}
+			if (!empty($lines)) {
+				$context .= "\n\nCrawled pages:\n" . implode("\n", $lines);
+			}
+		}
+
+		$systemPrompt = 'You write concise, compelling SEO title tags and meta descriptions for websites. '
+			. 'Respond with EXACTLY two lines in this format and nothing else:'
+			. "\nTITLE: <title, at most 60 characters>"
+			. "\nDESCRIPTION: <description, at most 160 characters>";
+		$prompt = "$context\n\nSuggest an SEO title tag and meta description for this website's homepage.";
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => $result['error']];
+		}
+
+		$title = '';
+		$description = '';
+		if (preg_match('/TITLE:\s*(.+)/i', $result['text'], $m)) $title = trim($m[1]);
+		if (preg_match('/DESCRIPTION:\s*(.+)/i', $result['text'], $m)) $description = trim($m[1]);
+
+		if (empty($title) && empty($description)) {
+			return ['ok' => false, 'title' => '', 'description' => '', 'error' => 'Could not parse a suggestion from the AI response'];
+		}
+
+		return [
+			'ok' => true,
+			'title' => mb_substr($title, 0, 60),
+			'description' => mb_substr($description, 0, 160),
+			'error' => null,
+		];
+	}
 }
 ?>

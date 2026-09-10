@@ -19,21 +19,47 @@ class MetaTagGenerator extends SeoPluginsController{
 			print( "<script>".pluginGETMethod()."</script>");
 			return;
 		}
-		
+
 		$langController = New LanguageController();
 		$this->set('langList', $langController->__getAllLanguages());
 		$this->set('langNull', true);
-		
+
 		if(empty($error)){
 			$websiteController = New WebsiteController();
 			$websiteInfo = $websiteController->__getWebsiteInfo($info['website_id']);
 			$websiteInfo['website_id'] = $info['website_id'];
+			// default the canonical url to the website's own url - the
+			// common case (this page IS the canonical version of itself) -
+			// the user can still override or blank it out
+			if (empty($websiteInfo['canonical_url'])) {
+				$websiteInfo['canonical_url'] = $websiteInfo['url'];
+			}
 		}else{
 			$websiteInfo = $info;
 		}
 		$this->set('websiteInfo', $websiteInfo);
-		
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->pluginRender('showsiteinfo');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) suggestion for this
+	 * website's title/meta description - see
+	 * LocalAIController::suggestMetaTags(). Never auto-fired; returns
+	 * JSON for the "Suggest with AI" button in showsiteinfo.ctp.php to
+	 * populate the Title/Description fields with (the user still reviews
+	 * and can edit before generating/using the actual tags). Ownership is
+	 * enforced by suggestMetaTags() itself, not re-checked here.
+	 */
+	function suggestMetaTags($info) {
+		$userId = isLoggedIn();
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->suggestMetaTags($info['website_id'], $userId);
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	function createmetatag($info) {
@@ -57,7 +83,16 @@ class MetaTagGenerator extends SeoPluginsController{
 		// further down, a literal </textarea> break-out) executed. Only
 		// the user-data portions are escaped, never the surrounding
 		// literal tag markup itself.
+		// Viewport first, immediately after <head> - matches how browsers/
+		// SEO tools expect to find it, and it has no user-supplied content
+		// to escape at all: a fixed, essentially-universal value, opt-out
+		// (checked by default) rather than opt-in, since a page missing it
+		// is the unusual case today, not the normal one.
+		if (!isset($info['viewport']) || !empty($info['viewport'])) {
+			$this->highLight('<meta name="viewport" content="width=device-width, initial-scale=1">');
+		}
 		$this->highLight('<title>'.htmlspecialchars($info['title']).'</title>');
+		if (!empty($info['canonical_url'])) $this->highLight('<link rel="canonical" href="'.htmlspecialchars($info['canonical_url']).'">');
 		$this->highLight('<meta name="description" content="'.htmlspecialchars($info['description']).'">');
 		$this->highLight('<meta name="keywords" content="'.htmlspecialchars($info['keywords']).'">');
 		if(!empty($info['owner_name'])) $this->highLight('<meta name="author" content="'.htmlspecialchars($info['owner_name']).'">');
