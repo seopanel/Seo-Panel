@@ -53,12 +53,28 @@ class SaturationCheckerController extends Controller{
 		$this->render('saturationchecker/findsearchenginesaturation');
 	}
 	
+	/*
+	 * FIXED reflected XSS: this is reachable directly via
+	 * saturationchecker.php?sec=saturation&engine=...&url=... (GET, no
+	 * confirmation step) - $websiteUrl used to be built from the
+	 * caller-supplied url (urldecode()'d, so even a %27-encoded quote
+	 * reaches this as a literal ') and concatenated straight into an
+	 * href='...' attribute with zero escaping, so a url containing a
+	 * single quote broke out of the attribute (e.g. ' onmouseover='...).
+	 * $saturationCount is escaped too even though every current path
+	 * (demo/sample-data/DataForSEO/regex-matched-digits) is already
+	 * numeric - defensive, not because a real payload was found there.
+	 */
 	function printSearchEngineSaturation($saturationInfo){
 		$this->url = $saturationInfo['url'];
 		$saturationCount = $this->__getSaturationRank($saturationInfo['engine']);
 		$websiteUrl = urldecode($this->url);
-		$saturationUrl = $this->saturationUrlList[$saturationInfo['engine']] . $websiteUrl;
-		echo "<a href='$saturationUrl' target='_blank'>$saturationCount</a>";
+		$saturationUrl = ($this->saturationUrlList[$saturationInfo['engine']] ?? '') . $websiteUrl;
+		// ENT_QUOTES explicitly - this PHP version's htmlspecialchars()
+		// default (ENT_COMPAT) escapes only double quotes, but the href
+		// attribute below is single-quote-delimited, so a single quote
+		// specifically must be escaped too or the fix above is a no-op
+		echo "<a href='".htmlspecialchars($saturationUrl, ENT_QUOTES)."' target='_blank'>".htmlspecialchars($saturationCount, ENT_QUOTES)."</a>";
 	}
 	
 	function __getSaturationRank ($engine, $cron = false) {
@@ -216,26 +232,36 @@ class SaturationCheckerController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a caller-supplied website_id must belong to one of the caller's
+		// own (already-scoped) websites for a non-admin - otherwise fall
+		// back to their own first website, same as when none is given at
+		// all. Previously this was never checked, so any non-admin could
+		// view ANY other user's saturation history just by passing an
+		// arbitrary website_id.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
-		$sql = "select s.* ,w.name from saturationresults s,websites w where s.website_id=w.id 
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
+		$sql = "select s.* ,w.name from saturationresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-		
+
 		$i = 0;
 		$colList = $this->colList;
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * -1;
@@ -247,23 +273,46 @@ class SaturationCheckerController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
-		
+
 		$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
 		$websiteUrl = urldecode($websiteInfo['url']);
 		$this->set('directLinkList', array(
-		    'google' => $this->saturationUrlList['google'] . $websiteUrl,		    
+		    'google' => $this->saturationUrlList['google'] . $websiteUrl,
 		    'msn' => $this->saturationUrlList['msn'] . $websiteUrl,
 		));
 
 		$this->set('list', array_reverse($reportList, true));
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('saturationchecker/saturationreport');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) plain-language summary of
+	 * this website's Google/Bing indexed-page-count trend over the
+	 * selected date range - see LocalAIController::
+	 * summarizeSaturationTrend(). Never auto-fired; returns JSON for the
+	 * "Summarize with AI" button in saturationreport.ctp.php. Ownership
+	 * is enforced by summarizeSaturationTrend() itself, not re-checked
+	 * here.
+	 */
+	function summarizeTrend($info) {
+		$userId = isLoggedIn();
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->summarizeSaturationTrend($info['website_id'], $userId, $fromTime, $toTime);
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	# func to get reports of saturation of a website
@@ -323,19 +372,30 @@ class SaturationCheckerController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same ownership check as showReports() above - a non-admin's
+		// caller-supplied website_id must be one of their own websites
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
-		$sql = "select s.* ,w.name from saturationresults s,websites w where s.website_id=w.id 
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
+		$sql = "select s.* ,w.name from saturationresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-	
+
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {
-	
-			$dataArr = "['Date', '" . implode("', '", array_values($colList)) . "']";
+
+			// human-readable graph legend - $colList's own values are the
+			// internal 'google'/'msn' identifiers (msn = the saturationresults
+			// column name, unchanged since 2009 when it was Bing's old
+			// brand name), which used to leak into the chart legend verbatim
+			$graphLabels = array('google' => 'Google', 'msn' => 'Bing');
+			$dataArr = "['Date', '" . implode("', '", array_values($graphLabels)) . "']";
 	
 			// loop through data list
 			foreach ($reportList as $dataInfo) {

@@ -477,5 +477,53 @@ class LocalAIController extends Controller {
 
 		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
 	}
+
+	/*
+	 * Plain-language summary of a website's Google/Bing indexed-page-count
+	 * ("search engine saturation") trend over a date range, for the
+	 * Saturation Checker's "Search Engine Saturation Reports" screen -
+	 * same restate-only-the-facts discipline as summarizeAuthorityTrend()/
+	 * summarizeBacklinkTrend()/generateInsightsSummary().
+	 */
+	function summarizeSaturationTrend($websiteId, $userId, $fromTime, $toTime) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$fromTime = addslashes($fromTime);
+		$toTime = addslashes($toTime);
+		$rows = $this->db->select("SELECT result_date, google, msn FROM saturationresults WHERE website_id=$websiteId AND result_date >= '$fromTime' AND result_date <= '$toTime' ORDER BY result_date");
+
+		if (count($rows) < 2) {
+			return ['ok' => true, 'summary' => 'Not enough history in this date range yet to summarize a trend - check back after a few more Generate Reports runs.', 'error' => null];
+		}
+
+		$lines = [];
+		foreach ($rows as $row) {
+			$lines[] = $row['result_date'] . ': ' . intval($row['google']) . ' pages indexed by Google, ' . intval($row['msn']) . ' pages indexed by Bing';
+		}
+
+		$systemPrompt = 'You summarize a website\'s search engine indexation ("saturation") trend in plain language for a non-technical SEO client. '
+			. 'ONLY restate what the numbers show (direction, magnitude, any notable jump) - never invent a cause the data itself does not show. '
+			. 'Keep it to 2-3 sentences.';
+		$prompt = 'Website: ' . ($websiteInfo['name'] ?? '') . "\n\nIndexed-page-count history:\n" . implode("\n", $lines);
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'summary' => '', 'error' => $result['error']];
+		}
+
+		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
+	}
 }
 ?>
