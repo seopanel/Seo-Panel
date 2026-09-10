@@ -152,6 +152,19 @@
         }
     }
     ?>
+    <?php
+    // show the daily "new version available" notice popup for admin users -
+    // once per day on login, notice-only (its CTA just navigates to
+    // Settings > Version, it never triggers an upgrade from here)
+    if (isLoggedIn() && isAdmin()) {
+        include_once(SP_CTRLPATH."/settings.ctrl.php");
+        $versionUpgradeCtrl = new SettingsController();
+        if ($versionUpgradeCtrl->showVersionUpgradePopup()) {
+            include_once(SP_VIEWPATH."/settings/version_upgrade_popup.ctp.php");
+            echo '<script>$(document).ready(function(){ window.versionUpgradeShowPopup(); });</script>';
+        }
+    }
+    ?>
 
     <div class="container-fluid" style="margin-bottom: 50px;">  	
     	<div class="row">
