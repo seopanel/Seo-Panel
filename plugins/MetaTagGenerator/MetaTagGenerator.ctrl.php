@@ -175,9 +175,72 @@ class MetaTagGenerator extends SeoPluginsController{
 	}
 	
 	function highLight($str, $padd=true){
-		
+
 		if($padd) $this->metaTags .= "&nbsp;&nbsp;";
 		$this->metaTags .= stripslashes($str);
 		$this->metaTags .= "\n";
+	}
+
+	/*
+	 * func to show the website selector for the SERP/social preview tool
+	 */
+	function preview() {
+		$this->set('sectionHead', 'SERP & Social Preview');
+		$userId = isLoggedIn();
+
+		$websiteController = New WebsiteController();
+		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
+		$this->set('websiteNull', true);
+		$this->set('onChange', pluginPOSTMethod('preview_search_form', 'subcontent', 'action=showPreview'));
+
+		$this->pluginRender('preview');
+	}
+
+	/*
+	 * func to show the live SERP/social preview for one website - starts
+	 * from the website's own persisted title/description/url (the same
+	 * fields the main Generate Meta Tags tool works from); the preview
+	 * itself updates client-side as the fields are edited, no extra
+	 * round-trip needed
+	 */
+	function showPreview($info) {
+		if(empty($info['website_id'])) {
+			print( "<script>".pluginGETMethod('action=preview')."</script>");
+			return;
+		}
+
+		$websiteController = new WebsiteController();
+		$websiteInfo = $websiteController->__getWebsiteInfo($info['website_id']);
+		$websiteInfo['website_id'] = $info['website_id'];
+		$this->set('websiteInfo', $websiteInfo);
+
+		$this->pluginRender('showpreview');
+	}
+
+	/*
+	 * func to show a quick per-website audit of which core meta fields
+	 * (title/description/keywords) are present and within recommended
+	 * SEO length ranges - only these three are checked because they're
+	 * the only ones actually persisted on the websites table itself;
+	 * everything else this tool generates (canonical url, viewport,
+	 * Open Graph/Twitter fields) is deliberately ephemeral, entered fresh
+	 * each time, so there's nothing stored to audit for those.
+	 */
+	function audit() {
+		$this->set('sectionHead', 'Meta Tags Audit');
+		$userId = isLoggedIn();
+
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		$this->pluginRender('audit');
+	}
+
+	/*
+	 * func to show the plugin's Features & Support page
+	 */
+	function aboutus() {
+		$this->pluginRender('aboutus');
 	}
 }
