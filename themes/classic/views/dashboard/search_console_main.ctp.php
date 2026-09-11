@@ -118,6 +118,49 @@ if (!empty($noWebsites)) {
 		</div>
 	</div>
 
+	<!-- AI Traffic & Search Insights -->
+	<?php if (!empty($localAiAvailable)) { ?>
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><i class="fas fa-robot"></i> AI Traffic &amp; Search Insights</h4>
+				</div>
+				<div class="card-body">
+					<p class="text-muted mb-2">Combines this Search Console data with Google Analytics data for the same period into one plain-language summary.</p>
+					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="searchConsoleSummarizeTrafficSearch()">
+						<i class="fa fa-magic"></i> Summarize with AI
+					</button>
+					<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript">
+	function searchConsoleSummarizeTrafficSearch() {
+		var box = document.getElementById('trafficSearchSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/search_console_dashboard.php',
+			data: {
+				sec: 'summarizetrafficsearch',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+	<?php } ?>
+
 	<!-- Pie Charts Row -->
 	<div class="row mb-4">
 		<div class="col-md-4">

@@ -49,6 +49,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -224,6 +232,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -302,6 +318,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -992,6 +1016,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Get Site Auditor project for selected website
@@ -1128,6 +1160,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -1285,6 +1325,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1338,6 +1386,9 @@ class DashboardController extends Controller {
         $this->set('waSourceDistribution', $waSourceDistribution);
         $this->set('prevWAStats', $prevWAStats);
         $this->set('waComparison', $waComparison);
+
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
 
         $this->render('dashboard/analytics_main');
     }
@@ -1462,6 +1513,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1516,7 +1575,29 @@ class DashboardController extends Controller {
         $this->set('prevSCStats', $prevSCStats);
         $this->set('scComparison', $scComparison);
 
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
         $this->render('dashboard/search_console_main');
+    }
+
+    /*
+     * AJAX action: on-demand Local AI (Ollama) summary combining Google
+     * Analytics and Search Console data for the same website+date range -
+     * see LocalAIController::summarizeTrafficSearchTrend(). Reachable from
+     * both the Website Analytics and Search Console dashboard tabs (both
+     * point at the same action) since it draws on both tools' data.
+     * Never auto-fired; ownership is enforced by
+     * summarizeTrafficSearchTrend() itself, not re-checked here.
+     */
+    function summarizeTrafficSearchTrend($info) {
+        $userId = isLoggedIn();
+        $fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+        $toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+        include_once(SP_CTRLPATH . '/localai.ctrl.php');
+        $result = (new LocalAIController())->summarizeTrafficSearchTrend($info['website_id'], $userId, $fromTime, $toTime);
+        header('Content-Type: application/json');
+        print json_encode($result);
     }
 
     // Get search console statistics
@@ -1634,6 +1715,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)

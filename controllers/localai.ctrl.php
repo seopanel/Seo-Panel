@@ -525,5 +525,73 @@ class LocalAIController extends Controller {
 
 		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
 	}
+
+	/*
+	 * Cross-tool summary combining Google Analytics (website_analytics -
+	 * users/sessions/bounce rate) and Search Console (website_search_analytics
+	 * - clicks/impressions/position) for the same website+date range, for
+	 * the Website Analytics and Search Console dashboard tabs. Same
+	 * restate-only-the-facts discipline as the other trend summaries: the
+	 * two datasets are genuinely independent measurements (GA's own
+	 * traffic tracking vs Search Console's server-side search data), so a
+	 * correlation between them (e.g. organic sessions and Search Console
+	 * clicks moving together) is a real, factual co-occurrence worth
+	 * surfacing - the prompt allows noting that, but never inventing a
+	 * cause neither dataset actually shows.
+	 */
+	function summarizeTrafficSearchTrend($websiteId, $userId, $fromTime, $toTime) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$websiteId = intval($websiteId);
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$websiteInfo = null;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $websiteId) { $websiteInfo = $w; break; }
+		}
+		if (empty($websiteInfo)) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$fromTime = addslashes($fromTime);
+		$toTime = addslashes($toTime);
+
+		$gaRows = $this->db->select("SELECT report_date, SUM(users) AS users, SUM(sessions) AS sessions, AVG(bounceRate) AS bounce_rate FROM website_analytics WHERE website_id=$websiteId AND report_date >= '$fromTime' AND report_date <= '$toTime' GROUP BY report_date ORDER BY report_date");
+		$scRows = $this->db->select("SELECT report_date, SUM(clicks) AS clicks, SUM(impressions) AS impressions, AVG(average_position) AS avg_position FROM website_search_analytics WHERE website_id=$websiteId AND report_date >= '$fromTime' AND report_date <= '$toTime' GROUP BY report_date ORDER BY report_date");
+
+		if (count($gaRows) < 2 && count($scRows) < 2) {
+			return ['ok' => true, 'summary' => 'Not enough history in this date range yet to summarize a trend - check back once more Analytics/Search Console data has been collected.', 'error' => null];
+		}
+
+		$lines = [];
+		if (!empty($gaRows)) {
+			$first = reset($gaRows);
+			$last = end($gaRows);
+			$lines[] = "Google Analytics: sessions went from {$first['sessions']} on {$first['report_date']} to {$last['sessions']} on {$last['report_date']}, users from {$first['users']} to {$last['users']}, bounce rate from " . round($first['bounce_rate'], 1) . "% to " . round($last['bounce_rate'], 1) . "%.";
+		} else {
+			$lines[] = "Google Analytics: no data in this date range.";
+		}
+		if (!empty($scRows)) {
+			$first = reset($scRows);
+			$last = end($scRows);
+			$lines[] = "Search Console: clicks went from {$first['clicks']} on {$first['report_date']} to {$last['clicks']} on {$last['report_date']}, impressions from {$first['impressions']} to {$last['impressions']}, average position from " . round($first['avg_position'], 1) . " to " . round($last['avg_position'], 1) . ".";
+		} else {
+			$lines[] = "Search Console: no data in this date range.";
+		}
+
+		$systemPrompt = 'You summarize a website\'s traffic and search visibility trend in plain language for a non-technical SEO client, '
+			. 'using BOTH a Google Analytics figure and a Search Console figure supplied to you. '
+			. 'ONLY restate what the numbers show (direction, magnitude) - you may note when the two datasets moved together (a factual co-occurrence), '
+			. 'but never invent a cause neither dataset actually shows. Keep it to 2-3 sentences.';
+		$prompt = 'Website: ' . ($websiteInfo['name'] ?? '') . "\n\n" . implode("\n", $lines);
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'summary' => '', 'error' => $result['error']];
+		}
+
+		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
+	}
 }
 ?>
