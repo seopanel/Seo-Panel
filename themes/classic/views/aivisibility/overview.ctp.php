@@ -36,10 +36,26 @@
 
 <?php $hasAnyData = $referralTotal > 0 || $botTotal > 0 || !empty($aioSummary['present']); ?>
 
-<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;margin-bottom:24px;">
+<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:20px;margin-bottom:24px;">
 	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
 		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($referralTotal)?></div>
-		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Referrals'] ?? 'AI Referrals'?></div>
+		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Referral Clicks'] ?? 'AI Referral Clicks'?></div>
+		<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['visits arriving from an AI platform link'] ?? 'visits arriving from an AI platform link'?></div>
+	</div>
+	<?php
+	// "Impressions" for AI sources: how many keyword checks in the
+	// selected range found this site's content appearing in Google's AI
+	// Overview at all - present vs. clicked-through (referralTotal above)
+	// is the same clicks-vs-impressions distinction Search Console makes
+	// for ordinary search results, just for AI Overview specifically.
+	// aioSummary itself is NOT date-range-filtered (each keyword's latest
+	// measured state, same as the citation-rate card below), so this
+	// reflects the current snapshot, not a sum over the period.
+	?>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
+		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($aioSummary['present'] ?? 0)?></div>
+		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Overview Impressions'] ?? 'AI Overview Impressions'?></div>
+		<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['keywords where this site appeared in an AI Overview, of'] ?? 'keywords where this site appeared in an AI Overview, of'?> <?php echo intval($aioSummary['measured'] ?? 0)?> <?php echo $spTextAIV['measured'] ?? 'measured'?></div>
 	</div>
 	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
 		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($botTotal)?></div>
