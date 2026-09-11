@@ -47,88 +47,11 @@ class RankController extends Controller{
 		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($list);
-		
-		/*mozRankList = $this->__getMozRank($list);*/
 		$this->set('mozRankList', $mozRankList);
 
 		$this->set('list', $list);
 		$this->render('rank/findquickrank');
 	}
-
-	// function to get moz rank
-	function __getMozRank ($urlList = array(), $accessID = "", $secretKey = "", $returnLog = false) {
-		$mozRankList = array();
-		
-		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return $mozRankList;
-		
-		if (empty($urlList)) return $mozRankList;
-		
-		// Get your access id and secret key here: https://moz.com/products/api/keys
-		$accessID = !empty($accessID) ? $accessID : SP_MOZ_API_ACCESS_ID;
-		$secretKey = !empty($secretKey) ? $secretKey : SP_MOZ_API_SECRET;
-		
-		// if empty no need to crawl
-		if (empty($accessID) || empty($secretKey)) return $mozRankList;
-		
-		// Set your expires times for several minutes into the future.
-		// An expires time excessively far in the future will not be honored by the Mozscape API.
-		$expires = time() + 300;
-		
-		// Put each parameter on a new line.
-		$stringToSign = $accessID."\n".$expires;
-		
-		// Get the "raw" or binary output of the hmac hash.
-		$binarySignature = hash_hmac('sha1', $stringToSign, $secretKey, true);
-		
-		// Base64-encode it and then url-encode that.
-		$urlSafeSignature = urlencode(base64_encode($binarySignature));
-		
-		// Add up all the bit flags you want returned.
-		// Learn more here: https://moz.com/help/guides/moz-api/mozscape/api-reference/url-metrics
-		$cols = "16384";
-		
-		// Put it all together and you get your request URL.
-		$requestUrl = SP_MOZ_API_LINK . "/url-metrics/?Cols=".$cols."&AccessID=".$accessID."&Expires=".$expires."&Signature=".$urlSafeSignature;
-		
-		// Put your URLS into an array and json_encode them.
-		$encodedDomains = json_encode($urlList);
-		
-		$spider = new Spider();
-		$spider->_CURLOPT_POSTFIELDS = $encodedDomains;
-		$ret = $spider->getContent($requestUrl);
-		
-		// parse rank from the page
-		if (!empty($ret['page'])) {
-			$rankList = json_decode($ret['page']);
-			
-			// if no errors occured
-			if (empty($rankList->error_message)) {
-			
-				// loop through rank list
-				foreach ($rankList as $rankInfo) {
-					$mozRankList[] = round($rankInfo->umrp, 2);
-				}
-				
-			} else {
-				$crawlInfo['crawl_status'] = 0;
-				$crawlInfo['log_message'] = $rankList->error_message;
-			}
-			
-		} else {
-			$crawlInfo['crawl_status'] = 0;
-			$crawlInfo['log_message'] = $ret['errmsg'];
-		}
-	
-		// update crawl log
-		$crawlLogCtrl = new CrawlLogController();
-		$crawlInfo['crawl_type'] = 'rank';
-		$crawlInfo['ref_id'] = $encodedDomains;
-		$crawlInfo['subject'] = "moz";
-		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-	
-		return $returnLog ? array($mozRankList, $crawlInfo) : $mozRankList;
-	}
-	
 
 	# func to show genearte reports interface
 	function showGenerateReports($searchInfo=[]) {		
@@ -161,8 +84,6 @@ class RankController extends Controller{
 		}
 		
 		// get moz ranks
-		/*$mozRankList = $this->__getMozRank($urlList);*/
-		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($urlList);
 				
