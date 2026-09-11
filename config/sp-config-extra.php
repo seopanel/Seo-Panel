@@ -105,6 +105,14 @@ define('SP_SPONSOR_PAGE', SP_MAIN_SITE . '/sponsors.php');
 # The seo panel version page
 define('SP_VERSION_PAGE', SP_MAIN_SITE . '/getversion.php');
 
+# NOTE: SP_ONLINE_UPGRADE_URL (the release zip used by Settings > Version's
+# "Upgrade Now") is intentionally NOT define()'d here. It's referenced
+# inline as defined('SP_ONLINE_UPGRADE_URL') ? SP_ONLINE_UPGRADE_URL :
+# 'https://www.seopanel.org/spdownload/' in SettingsController, the same
+# pattern SP_SPAPI_URL uses, so it can be overridden via a `settings` table
+# row (e.g. to point at a local fixture server for testing) without editing
+# this file.
+
 # seo panel theme site url
 define('SP_THEMESITE', SP_MAIN_SITE . '/themes/');
 

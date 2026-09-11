@@ -20,7 +20,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 include_once 'install.class.php';
-include_once 'db.class.php';
 include_once 'dbi.class.php';
 
 session_start();
@@ -38,6 +37,7 @@ define("SP_UPGRADE_DB_LANG_FILE", SP_INSTALL_DIR."/data/textlang.sql");
 define("SP_INSTALL_CONFIG_FILE", SP_INSTALL_DIR."/../".SP_CONFIG_FILE);
 
 $install->showDefaultHeader();
+$install->requireAdminSession();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 	

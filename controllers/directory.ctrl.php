@@ -27,10 +27,20 @@ class DirectoryController extends Controller{
 	var $checkPR = 0;
 	
 	function showSubmissionPage( ) {
-		
+
 		$userId = isLoggedIn();
 		$this->session->setSession('dirsub_pr', '');
-		
+
+		// default new sessions to excluding reciprocal-link directories -
+		// reciprocal linking is a link scheme Google's own guidelines have
+		// long treated as a spam signal, so "opt out of it" is the safer
+		// default; a user who has already made an explicit choice this
+		// session (via the "no_reciprocal" checkbox/sec=checkreciprocal)
+		// keeps that choice untouched
+		if (!isset($_SESSION['no_reciprocal'])) {
+			$this->session->setSession('no_reciprocal', 1);
+		}
+
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
 		
@@ -66,12 +76,34 @@ class DirectoryController extends Controller{
 			$websiteInfo = $submitInfo;
 		}
 		
-		$this->set('websiteInfo', $websiteInfo);		
+		$this->set('websiteInfo', $websiteInfo);
 		$this->session->setSession('no_captcha', empty($submitInfo['no_captcha']) ? 0 : 1);
 		$this->session->setSession('dirsub_pr', $submitInfo['pagerank']);
 		$this->session->setSession('dirsub_lang', $submitInfo['lang_code']);
-		$this->set('noTitles', $this->noTitles);		
+		$this->set('noTitles', $this->noTitles);
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('directory/showsitesubmission');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) draft of a directory
+	 * listing title/description for this website - see
+	 * LocalAIController::suggestDirectoryListing(). Never auto-fired;
+	 * returns JSON for the "Suggest with AI" buttons in
+	 * showsitesubmission.ctp.php (one per title/description slot) to
+	 * populate that slot with (the user still reviews and can edit before
+	 * actually submitting anywhere). Ownership is enforced by
+	 * suggestDirectoryListing() itself, not re-checked here.
+	 */
+	function suggestListing($info) {
+		$userId = isLoggedIn();
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->suggestDirectoryListing($info['website_id'], $userId, $info['avoid'] ?? '');
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	function saveSubmissiondata( $submitInfo ) {

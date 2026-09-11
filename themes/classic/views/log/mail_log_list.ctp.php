@@ -80,14 +80,14 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content', '&sec=mail')";
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td><?php echo $logLink?></td>
-				<td><?php echo stripslashes($listInfo['subject'])?></td>
-				<td><?php echo $listInfo['to_address']?></td>
-				<td><?php echo $listInfo['cc_address']?></td>
-				<td><?php echo $listInfo['from_address']?></td>
+				<td><?php echo htmlspecialchars(stripslashes($listInfo['subject']))?></td>
+				<td><?php echo htmlspecialchars($listInfo['to_address'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['cc_address'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['from_address'])?></td>
 				<td class="text-center">
 					<?php echo showStatusBadge($listInfo['status'], "successfail");?>
 				</td>
-				<td><?php echo $listInfo['mail_category']?></td>
+				<td><?php echo htmlspecialchars($listInfo['mail_category'])?></td>
 				<td><?php echo $listInfo['log_time']?></td>
 			</tr>
 			<?php

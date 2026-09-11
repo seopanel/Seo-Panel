@@ -214,7 +214,7 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (140, 'en', 'sitemap', 'Sitemap Type', 'Sitemap Type', '2010-09-11 08:49:10'),
 (141, 'en', 'sitemap', 'Download sitemap file from', 'Download sitemap file from', '2010-09-11 09:26:47'),
 (142, 'en', 'common', 'Found', 'Found', '2019-08-06 06:09:56'),
-(143, 'en', 'rank', 'enterurlproceed', 'Enter URL\'s <b>One per line</b>. Click on <b>Proceed</b> to check Google and Alexa rank.', '2010-09-14 08:26:31'),
+(143, 'en', 'rank', 'enterurlproceed', 'Enter URL\'s <b>One per line</b>. Click on <b>Proceed</b> to check Domain Authority, Page Authority and Spam Score.', '2010-09-14 08:26:31'),
 (144, 'en', 'common', 'Url', 'Url', '2019-08-06 06:09:56'),
 (145, 'en', 'common', 'Google Pagerank', 'Google Pagerank', '2019-08-06 06:09:56'),
 (146, 'en', 'common', 'Alexa Rank', 'Alexa Rank', '2019-08-06 06:09:56'),
@@ -5448,6 +5448,7 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (5019, 'en', 'settings', 'Check for Updates', 'Check for Updates', '2018-01-22 19:59:29'),
 (5020, 'en', 'settings', 'Your Seo Panel installation is up to date', 'Your Seo Panel installation is up to date.', '2018-01-22 19:59:29'),
 (5021, 'en', 'settings', 'versionnotuptodatemsg', 'Your Seo Panel installation is not up to date. <br>Please download new version', '2018-01-22 19:59:29'),
+(39653, 'en', 'settings', 'Upgrade Now', 'Upgrade Now', '2026-09-05 00:00:00'),
 (5022, 'en', 'seotools', 'site-auditor', 'Site Auditor', '2011-06-14 07:46:30'),
 (5023, 'en', 'seotools', 'Auditor Projects', 'Auditor Projects', '2011-06-15 01:20:18'),
 (5024, 'en', 'seotools', 'Auditor Settings', 'Auditor Settings', '2011-06-15 01:21:50'),
@@ -32184,3 +32185,278 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('mk', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Оваа веб-страница користи колачиња за да го подобри вашето искуство и да го анализира сообраќајот. Можете да прифатите или одбиете употреба на неесенцијални колачиња во согласност со регулативата GDPR/RGPD.'),
 ('sq', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Ky faqe interneti përdor skedarë cookie për të përmirësuar përvojën tuaj dhe për të analizuar trafikun. Mund të pranoni ose refuzoni përdorimin e skedarëve cookie jo thelbësorë në përputhje me rregulloren GDPR/RGPD.'),
 ('hy', 'common', 'SP_GDPR_COOKIE_BANNER_TEXT', 'Այս կայքը օգտագործում է թխուկներ՝ ձեր փորձը բարելավելու և երթևեկությունը վերլուծելու համար: Կարող եք ընդունել կամ մերժել ոչ էական թխուկների օգտագործումը՝ GDPR/RGPD կանոնակարգին համապատասխան:');
+
+--
+-- Seo Panel 6.1.0 changes
+--
+
+-- SERP Results Archive menu item and view labels
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'SERP Results Archive', 'SERP Results Archive'),
+('en', 'seotools', 'View SERP', 'View SERP');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'common', 'Go', 'Go');
+
+-- Search Volume column label (keyword manager and keyword position summary)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'Search Volume', 'Search Volume');
+
+-- Search volume feature toggle labels (DataForSEO and SP API settings pages)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_SEARCH_VOLUME', 'Enable for Search Volume'),
+('en', 'settings', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', 'Enable for Search Volume');
+
+-- AI Overview tracking UI labels
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'AI Overview', 'AI Overview'),
+('en', 'keyword', 'Cited', 'Cited'),
+('en', 'keyword', 'Sources', 'Sources'),
+('en', 'keyword', 'Present', 'Present'),
+('en', 'keyword', 'Absent', 'Absent'),
+('en', 'keyword', 'Not available', 'Not available'),
+('en', 'keyword', 'Yes', 'Yes'),
+('en', 'keyword', 'No', 'No'),
+('en', 'keyword', 'stale', 'stale'),
+('en', 'keyword', 'present in', 'present in'),
+('en', 'keyword', 'of last observations', 'of last observations'),
+('en', 'keyword', 'AI Overview is not available on your current data source', 'AI Overview is not available on your current data source.'),
+('en', 'keyword', 'Configure DataForSEO credentials to enable this feature immediately', 'Configure DataForSEO credentials to enable this feature immediately.'),
+('en', 'keyword', 'Data older than the configured freshness threshold', 'Data older than the configured freshness threshold'),
+('en', 'keyword', 'AI Overview Cited Sources', 'AI Overview Cited Sources'),
+('en', 'keyword', 'No AI Overview citations recorded for this keyword yet', 'No AI Overview citations recorded for this keyword yet.');
+
+-- Quick Keyword Position Checker: distinguish "SP API archive hasn't crawled
+-- this keyword yet" from a genuine zero-match result
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'SEO Panel API is still processing this keyword', 'SEO Panel API is still processing this keyword. Please check back in a few minutes.');
+
+-- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'ai-visibility', 'AI Visibility'),
+('en', 'seotools', 'AI Visibility', 'AI Visibility'),
+('en', 'seotools', 'Setup', 'Setup'),
+('en', 'seotools', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'AI Visibility', 'AI Visibility'),
+('en', 'aivisibility', 'Privacy note', 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'),
+('en', 'aivisibility', 'Install snippet', 'Install snippet'),
+('en', 'aivisibility', 'snippetinstructions', 'Paste this snippet just before the closing </body> tag on every page of your site.'),
+('en', 'aivisibility', 'Waiting for first hit', 'Waiting for first hit...'),
+('en', 'aivisibility', 'Receiving data', 'Receiving data'),
+('en', 'aivisibility', 'floornotice', 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'),
+('en', 'aivisibility', 'WordPress note', 'WordPress:'),
+('en', 'aivisibility', 'wordpressinstructions', 'Paste the snippet using a header/footer plugin (e.g. Insert Headers and Footers), or your theme''s footer.php.'),
+('en', 'aivisibility', 'AI Referral Report', 'AI Referral Report'),
+('en', 'aivisibility', 'Platform breakdown', 'Platform breakdown'),
+('en', 'aivisibility', 'Platform', 'Platform'),
+('en', 'aivisibility', 'Referrals', 'Referrals'),
+('en', 'aivisibility', 'Top landing pages', 'Top landing pages'),
+('en', 'aivisibility', 'Page', 'Page'),
+('en', 'aivisibility', 'Referrals over time', 'Referrals over time');
+
+-- AI Visibility "AI Overview" tab: website-level view of existing AI
+-- Overview presence/citation data (searchresults.aio_* + aio_references),
+-- no new ingest - reuses what the AI Overview Tracking feature collects
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'seotools', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'AI Overview', 'AI Overview'),
+('en', 'aivisibility', 'Measured Keywords', 'Measured Keywords'),
+('en', 'aivisibility', 'Cited Keywords', 'Cited Keywords'),
+('en', 'aivisibility', 'Domain', 'Domain'),
+('en', 'aivisibility', 'Citations', 'Citations'),
+('en', 'aivisibility', 'Competitor domains cited in your AI Overviews', 'Competitor domains cited in your AI Overviews'),
+('en', 'aivisibility', 'you', 'you');
+
+-- Scheduler Health dashboard + ping trigger card i18n (category 'panel',
+-- matching the existing Cron Command page's texts)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'Scheduler Health', 'Scheduler Health'),
+('en', 'panel', 'A cron run is currently in progress', 'A cron run is currently in progress'),
+('en', 'panel', 'Last run', 'Last run'),
+('en', 'panel', 'websites processed', 'websites processed'),
+('en', 'panel', 'No cron runs recorded yet', 'No cron runs recorded yet'),
+('en', 'panel', 'Recent runs', 'Recent runs'),
+('en', 'panel', 'Websites', 'Websites'),
+('en', 'panel', 'Per-tool activity (last 7 days)', 'Per-tool activity (last 7 days)'),
+('en', 'panel', 'Tool', 'Tool'),
+('en', 'panel', 'Success', 'Success'),
+('en', 'panel', 'Failed', 'Failed'),
+('en', 'panel', 'Avg duration', 'Avg duration'),
+('en', 'panel', 'No activity recorded in the last 7 days', 'No activity recorded in the last 7 days'),
+('en', 'panel', 'Job queue backlog', 'Job queue backlog'),
+('en', 'panel', 'Count', 'Count'),
+('en', 'panel', 'Oldest pending since', 'Oldest pending since'),
+('en', 'panel', 'Queue is empty', 'Queue is empty'),
+('en', 'panel', 'Recently failed chunks', 'Recently failed chunks'),
+('en', 'panel', 'Chunk', 'Chunk'),
+('en', 'panel', 'Error', 'Error'),
+('en', 'panel', 'When', 'When'),
+('en', 'panel', 'External ping trigger', 'External ping trigger'),
+('en', 'panel', 'pingtriggerdesc', 'Point an external cron/uptime service (or your own crontab) at this URL to trigger short, budget-limited cron runs - useful on hosts where you can''t set up a real system cron job.'),
+('en', 'panel', 'Enable ping trigger', 'Enable ping trigger'),
+('en', 'panel', 'Budget (seconds)', 'Budget (seconds)'),
+('en', 'panel', 'No secret generated yet - generate one below before enabling the ping trigger.', 'No secret generated yet - generate one below before enabling the ping trigger.'),
+('en', 'panel', 'Regenerating the secret will invalidate the current ping URL. Continue?', 'Regenerating the secret will invalidate the current ping URL. Continue?'),
+('en', 'panel', 'Generate new secret', 'Generate new secret'),
+('en', 'panel', 'pingsecretnote', 'The secret identifies and authorizes the caller - anyone with this URL can trigger a cron run, so treat it like a password. The endpoint always responds with no output.');
+
+-- AI Visibility: AI Bot Crawler Tracking i18n
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Bot Crawlers', 'AI Bot Crawlers'),
+('en', 'aivisibility', 'AI Bot Crawler Tracking', 'AI Bot Crawler Tracking'),
+('en', 'aivisibility', 'botcollectordesc', 'AI crawlers (GPTBot, ClaudeBot, PerplexityBot, and others) never execute JavaScript, so the referral snippet above cannot see them. Download this collector script and include it on your server to track real crawler visits.'),
+('en', 'aivisibility', 'Download collector script', 'Download collector script'),
+('en', 'aivisibility', 'botinstallinstructions', 'Generic PHP: include this file at the very top of your site''s bootstrap (e.g. the first line of index.php or wp-config.php).'),
+('en', 'aivisibility', 'botwordpressinstructions', 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'),
+('en', 'aivisibility', 'Waiting for first bot visit', 'Waiting for first bot visit...'),
+('en', 'aivisibility', 'Verified', 'Verified'),
+('en', 'aivisibility', 'Unverified', 'Unverified'),
+('en', 'aivisibility', 'botverifiednotice', '"Verified" means the crawler''s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'),
+('en', 'aivisibility', 'Bot crawls over time', 'Bot crawls over time'),
+('en', 'aivisibility', 'Crawls', 'Crawls'),
+('en', 'aivisibility', 'Top crawled pages', 'Top crawled pages');
+
+-- AI Insights email digest
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aiinsights', 'ai_insights_email_subject', 'New AI Insights for your website'),
+('en', 'aiinsights', 'ai_insights_email_body_intro', 'Our daily scan found new AI Insights for your website(s) that need your attention:'),
+('en', 'aiinsights', 'ai_insights_email_body_outro', 'View the full details and take action from your dashboard: [LOGIN_LINK]'),
+('en', 'report', 'AI Insights email notification', 'AI Insights email notification'),
+('en', 'settings', 'SP_AI_INSIGHTS_EMAIL_NOTIFICATION', 'Enable AI Insights email notification');
+
+-- AI Visibility weekly digest email
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'ai_visibility_email_subject', 'Your AI Visibility summary this week'),
+('en', 'aivisibility', 'ai_visibility_email_body_intro', 'Here''s how your website(s) performed with AI platforms this past week:'),
+('en', 'aivisibility', 'ai_visibility_email_body_outro', 'View the full dashboard: [LOGIN_LINK]'),
+('en', 'aivisibility', 'AI Referrals', 'AI Referrals'),
+('en', 'aivisibility', 'AI Bot Crawls', 'AI Bot Crawls'),
+('en', 'aivisibility', 'AI Overview Citations', 'AI Overview Citations'),
+('en', 'aivisibility', 'Top AI Platforms', 'Top AI Platforms'),
+('en', 'aivisibility', 'reflects the latest measured state, not this date range', 'reflects the latest measured state, not this date range'),
+('en', 'aivisibility', 'AI Visibility settings', 'AI Visibility settings'),
+('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
+('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
+
+-- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
+-- Settings page) was missing its 'settings'-category label too, unrelated
+-- to AI Insights.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_SETUP_WIZARD', 'Initial Setup Wizard');
+
+-- Same gap for the 4 AI Overview tracking settings on the Report Settings page.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_AIO_RETENTION_DAYS', 'AI Overview reference retention (days)'),
+('en', 'settings', 'SP_AIO_ROLLING_WINDOW', 'AI Overview rolling window (observations)'),
+('en', 'settings', 'SP_AIO_STALE_DAYS', 'AI Overview data considered stale after (days)'),
+('en', 'settings', 'SP_AIO_SUBDOMAIN_MATCH', 'AI Overview subdomain match policy (registrable or exact)');
+
+-- Same gap for the AI Visibility retention/rate-limit settings. (The
+-- DataForSEO/SP API "Enable for Search Volume" labels this same sweep found
+-- were already present earlier in this file, just never imported into the
+-- affected dev DB - no fix needed here for those two.)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'AIV_REFERRAL_RETENTION_DAYS', 'AI referral data retention (days)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_TOKEN', 'Rate limit per site token (requests/min)'),
+('en', 'settings', 'AIV_RATE_LIMIT_PER_IP', 'Rate limit per source IP (requests/min)'),
+('en', 'settings', 'AIB_BOT_RETENTION_DAYS', 'AI bot hit data retention (days)');
+
+-- Backlink Checker modernization: DataForSEO backlink summary alternative to Moz
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_DFS_BACKLINK', 'Enable DataForSEO for Backlink Checker'),
+('en', 'backlink', 'Broken Backlinks', 'Broken Backlinks'),
+('en', 'backlink', 'backlinkdfsnotice', 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.');
+
+-- AI Visibility: on-premise robots.txt/llms.txt control panel + access-log
+-- based bot detection (co-located sites only)
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'AIB_LOG_BYTES_PER_CRON_RUN', 'Access log bytes read per cron run'),
+('en', 'settings', 'AIB_LOG_MAX_IPS_PER_CRON_RUN', 'Access log unique IPs verified per cron run');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Server Access Configuration', 'Server Access Configuration'),
+('en', 'aivisibility', 'Document Root Path', 'Document Root Path'),
+('en', 'aivisibility', 'Access Log Path', 'Access Log Path'),
+('en', 'aivisibility', 'serveraccessnotice', 'Admin-only. Only set these if SEO Panel and this website are on the same server. Grants SEO Panel real filesystem read/write to this path with the web server''s own permissions.'),
+('en', 'aivisibility', 'combinedlogformatnotice', 'Expects standard Apache/Nginx Combined Log Format. Custom log_format configs may not parse.'),
+('en', 'aivisibility', 'Path not writable - view only', 'Path not writable - view only'),
+('en', 'aivisibility', 'Path not configured', 'Path not configured'),
+('en', 'aivisibility', 'AI Crawler Rules', 'AI Crawler Rules'),
+('en', 'aivisibility', 'Live robots.txt', 'Live robots.txt'),
+('en', 'aivisibility', 'robotswritenotice', 'Toggling a platform below adds or removes a Disallow rule for it inside a clearly marked block in this site''s robots.txt - everything else in the file is left untouched. This only works when an admin has configured a writable Document Root above. A platform being "Allowed" here means SEO Panel isn''t additionally blocking it, not that it is guaranteed crawlable - other rules elsewhere in the file still apply.'),
+('en', 'aivisibility', 'Block this platform', 'Block this platform'),
+('en', 'aivisibility', 'Regenerate llms.txt', 'Regenerate llms.txt'),
+('en', 'aivisibility', 'llmsoverwritenotice', 'llms.txt already exists and wasn''t generated by SEO Panel. Regenerating will overwrite it.'),
+('en', 'aivisibility', 'Yes, overwrite', 'Yes, overwrite'),
+('en', 'aivisibility', 'View live llms.txt', 'View live llms.txt');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Export Audit Trail', 'Export Audit Trail'),
+('en', 'aivisibility', 'auditlognotice', 'A timestamped record of every AI crawler rule change made through SEO Panel for this website - exportable as proof of policy enforcement for legal/compliance review.'),
+('en', 'aivisibility', 'Install Automatically', 'Install Automatically'),
+('en', 'aivisibility', 'wpdetectednotice', 'WordPress detected at your configured Document Root. Skip the manual download/paste step - install the collector directly as a must-use plugin.'),
+('en', 'aivisibility', 'Installed automatically', 'Installed automatically'),
+('en', 'aivisibility', 'wpinstallfailed', 'Could not write the collector to wp-content/mu-plugins/ - check filesystem permissions.');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI-Bot Response Headers', 'AI-Bot Response Headers'),
+('en', 'aivisibility', 'htaccessnotice', 'Adds an X-Robots-Tag header for the selected file types, inside a clearly marked block in this site''s .htaccess - everything else in the file is left untouched. Every save is verified live against your site before it is kept; if the new rules make your site unreachable, they are automatically reverted.'),
+('en', 'aivisibility', 'Save & Apply', 'Save & Apply'),
+('en', 'aivisibility', 'htaccessrollback', 'The new rules made your site unreachable and were automatically reverted. No changes were kept.'),
+('en', 'aivisibility', 'htaccessalreadydown', 'Your site is not currently reachable, so SEO Panel cannot safely verify a change. No changes were made.'),
+('en', 'aivisibility', 'Last applied', 'Last applied'),
+('en', 'aivisibility', 'Last error', 'Last error');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Advanced: Server-Side Configuration', 'Advanced: Server-Side Configuration'),
+('en', 'aivisibility', 'advancedsectionnotice', 'Document root access, robots.txt/llms.txt crawler rules, and .htaccess AI-bot headers - optional, for sites hosted on this same server.'),
+('en', 'aivisibility', 'Robots.txt User-agent token', 'Robots.txt User-agent token'),
+('en', 'aivisibility', 'robotsuseragenttokenhint', 'Optional. The exact token this crawler documents for its own robots.txt User-agent line (e.g. Google-Extended). Leave blank to reuse the UA match pattern above.'),
+('en', 'aivisibility', 'Setup', 'Setup'),
+('en', 'aivisibility', 'Advanced', 'Advanced'),
+('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
+('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings'),
+('en', 'aivisibility', 'Overview', 'Overview'),
+('en', 'aivisibility', 'AI Referrals (30 days)', 'AI Referrals (30 days)'),
+('en', 'aivisibility', 'AI Bot Crawls (30 days)', 'AI Bot Crawls (30 days)'),
+('en', 'aivisibility', 'AI Overview Citation Rate', 'AI Overview Citation Rate'),
+('en', 'aivisibility', 'overviewaiocaption', 'of keywords where Google AI Overview cited this site, among keywords where an AI Overview appeared'),
+('en', 'aivisibility', 'Top AI Platforms (30 days)', 'Top AI Platforms (30 days)'),
+('en', 'aivisibility', 'Bot Crawls', 'Bot Crawls'),
+('en', 'aivisibility', 'Total', 'Total'),
+('en', 'aivisibility', 'View full report', 'View full report'),
+('en', 'aivisibility', 'No AI Overview data measured yet for this website.', 'No AI Overview data measured yet for this website.'),
+('en', 'aivisibility', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.'),
+('en', 'aivisibility', 'Suggest description with Local AI', 'Suggest description with Local AI'),
+('en', 'aivisibility', 'llmsdescriptionhint', 'Paste this into your website''s Description field (Website Manager) so it appears in llms.txt.'),
+('en', 'aivisibility', 'nositeauditordatanotice', 'Run Site Auditor for this website first - no crawled page data to summarize yet.'),
+('en', 'aivisibility', 'Generating...', 'Generating...'),
+('en', 'aivisibility', 'Edit Platform', 'Edit Platform');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'MCP Access', 'MCP Access'),
+('en', 'myaccount', 'MCP Access Tokens', 'MCP Access Tokens'),
+('en', 'myaccount', 'mcpaccessnotice', 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'),
+('en', 'myaccount', 'Generate new token', 'Generate new token'),
+('en', 'myaccount', 'Token Label', 'Token Label'),
+('en', 'myaccount', 'mcptokenonceNotice', 'Copy this token now - it will not be shown again.'),
+('en', 'myaccount', 'Revoke', 'Revoke'),
+('en', 'myaccount', 'Last used', 'Last used'),
+('en', 'myaccount', 'Never', 'Never');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'myaccount', 'Expires', 'Expires'),
+('en', 'myaccount', 'Never expires', 'Never expires'),
+('en', 'myaccount', 'Expired', 'Expired'),
+('en', 'myaccount', '30 days', '30 days'),
+('en', 'myaccount', '90 days', '90 days'),
+('en', 'myaccount', '1 year', '1 year');
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_ENABLE_LOCAL_AI', 'Enable Local AI'),
+('en', 'settings', 'SP_LOCAL_AI_URL', 'Ollama Base URL'),
+('en', 'settings', 'SP_LOCAL_AI_MODEL', 'Ollama Model'),
+('en', 'panel', 'Local AI Settings', 'Local AI Settings'),
+('en', 'recommendations', 'Generate AI summary', 'Generate AI summary'),
+('en', 'recommendations', 'ai-summary-unavailable', 'Local AI summary is not available right now.'),
+('en', 'siteauditor', 'Suggest with AI', 'Suggest with AI');

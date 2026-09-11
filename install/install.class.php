@@ -21,7 +21,11 @@
  ***************************************************************************/
 
 class Install {
-	
+
+	// set by getUpgradeDBFiles() when the current version couldn't be
+	// determined/recognized cleanly, surfaced on the Upgrade Complete page
+	var $upgradeVersionNote = null;
+
 	# func to check requirements
 	function checkRequirements($error=false) {		
 		
@@ -36,7 +40,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query') || function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -260,16 +264,29 @@ class Install {
 	
 	# func to write to config file
 	function writeConfigFile($info) {
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_SAMPLE, "r");
 		$cfgData = fread($handle, filesize(SP_INSTALL_CONFIG_SAMPLE));
 		fclose($handle);
-		
-		
+
+
 		$search = array('[SP_WEBPATH]', '[DB_NAME]', '[DB_USER]', '[DB_PASSWORD]', '[DB_HOST]', '[DB_ENGINE]');
-		$replace = array($info['web_path'], $info['db_name'], $info['db_user'], $info['db_pass'], $info['db_host'], $info['db_engine'] );
+		// every placeholder sits inside a single-quoted define('X', '...')
+		// string in sp-config-sample.php - addslashes() here is NOT
+		// optional: without it, a single quote in any of these values
+		// (all client-supplied POST data) breaks out of the PHP string
+		// literal and injects arbitrary code into config/sp-config.php,
+		// which is include()'d on every single request.
+		$replace = array(
+			addslashes($info['web_path']),
+			addslashes($info['db_name']),
+			addslashes($info['db_user']),
+			addslashes($info['db_pass']),
+			addslashes($info['db_host']),
+			addslashes($info['db_engine']),
+		);
 		$cfgData = str_replace($search, $replace, $cfgData);
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_FILE, "w");
 		fwrite($handle, $cfgData);
 		fclose($handle);
@@ -313,12 +330,82 @@ class Install {
 		return $webPath;
 	}
 	
+	/**
+	 * Register + activate any of the shipped plugins whose directory is
+	 * present under plugins/ (mirrors
+	 * SeoPluginsController::__updateAllSeoPlugins()'s register-new-plugin
+	 * logic, but works directly against the raw DBI $db connection - the
+	 * full Controller/SeoPluginsController stack isn't safely
+	 * instantiable yet at this point in the installer, and several
+	 * plugin-related constants (SP_PLUGINPATH, SP_PLUGININFOFILE,
+	 * SP_PLUGINDBFILE) only get defined conditionally via
+	 * SP_INSTALL_CONFIG_FILE_EXTRA a few lines up, inside a
+	 * gethostbynamel() network-reachability check - not something this
+	 * should depend on).
+	 */
+	function activateShippedPlugins($db) {
+		$shippedPlugins = array('ArticleSubmitter', 'QuickWebProxy', 'SeoDiary', 'MetaTagGenerator');
+		$pluginBasePath = SP_INSTALL_DIR . '/../plugins';
+
+		foreach ($shippedPlugins as $pluginName) {
+			$pluginDir = $pluginBasePath . '/' . $pluginName;
+			$infoFile = $pluginDir . '/plugin.xml';
+			if (!is_dir($pluginDir) || !file_exists($infoFile)) {
+				continue;
+			}
+
+			$existing = $db->select("select id from seoplugins where name='" . addslashes($pluginName) . "'", true);
+			if (empty($existing['id'])) {
+				include_once(SP_INSTALL_DIR . '/../libs/xmlparser.class.php');
+				$pluginInfo = array();
+				$xml = new XML_Parser;
+				$parsed = $xml->parse($infoFile);
+				if (!empty($parsed[0]['child'])) {
+					foreach ($parsed[0]['child'] as $child) {
+						$pluginInfo[strtolower($child['name'])] = $child['content'];
+					}
+				}
+				$label = !empty($pluginInfo['label']) ? $pluginInfo['label'] : $pluginName;
+				$version = !empty($pluginInfo['version']) ? $pluginInfo['version'] : '1.0.0';
+				$author = !empty($pluginInfo['author']) ? $pluginInfo['author'] : 'Seo Panel';
+				$website = !empty($pluginInfo['website']) ? $pluginInfo['website'] : '';
+				$description = !empty($pluginInfo['description']) ? $pluginInfo['description'] : '';
+
+				$db->query("insert into seoplugins(label,name,author,description,version,website,status,installed)
+						values('" . addslashes($label) . "','" . addslashes($pluginName) . "','" . addslashes($author) . "','" . addslashes($description) . "','" . addslashes($version) . "','" . addslashes($website) . "',1,1)");
+
+				$pluginDbFile = $pluginDir . '/database.sql';
+				if (file_exists($pluginDbFile)) {
+					$db->importDatabaseFile($pluginDbFile, false);
+				}
+			} else {
+				$db->query("update seoplugins set status=1, installed=1 where id=" . intval($existing['id']));
+			}
+		}
+	}
+
 	# func to proceed installation
 	function proceedInstallation($info) {
-		
+
+		// checkRequirements() only performs this exact check on the GET
+		// landing page, never on this POST path - meaning if an admin
+		// ever skips the documented post-install "chmod config to 644"
+		// step (config/sp-config.php stays writable), anyone who can
+		// still reach sec=proceedinstall could re-run the entire fresh
+		// install against a live site: re-import the schema AND rewrite
+		// the DB connection itself with attacker-supplied credentials.
+		// This checks the file's CONTENTS (not its permissions), so it
+		// closes the hole regardless of whether the chmod step was done.
+		if (file_exists(SP_INSTALL_CONFIG_FILE)) {
+			include_once(SP_INSTALL_CONFIG_FILE);
+			if (defined('SP_INSTALLED')) {
+				die("<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>");
+			}
+		}
+
 		// if mysqli function exists
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
-		
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
+
 		# checking db settings
 		$errMsg = $db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		if($db->error ){
@@ -340,22 +427,20 @@ class Install {
 			return;
 		}
 
-		# importing data to db
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_FILE);
+		# importing data to db - streams a live progress bar to the
+		# browser rather than leaving the request looking hung, since
+		# these files (particularly the language/text data) can take a
+		# noticeable while on a large/slow database
+		$errMsg = $this->importWithProgress($db, array(
+			array('path' => SP_INSTALL_DB_FILE, 'label' => 'Importing core database structure'),
+			array('path' => SP_INSTALL_DB_LANG_FILE, 'label' => 'Importing language & text data'),
+		));
 		if($db->error ){
 			$errMsg = "Error occured while importing data: ". $errMsg;
 			$this->startInstallation($info, $errMsg);
 			return;
 		}
-		
-		# importing text file
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_LANG_FILE);
-		if($db->error ){
-			$errMsg = "Error occured while importing data: ". $errMsg;
-			$this->startInstallation($info, $errMsg);
-			return;
-		}
-		
+
 		# write to config file
 		$this->writeConfigFile($info);
 		
@@ -364,7 +449,15 @@ class Install {
 		
 		if(gethostbynamel('seopanel.org')){
 		    include_once(SP_INSTALL_DIR.'/../libs/spider.class.php');
-		    include_once(SP_INSTALL_CONFIG_FILE);
+		    // NOT include_once: SP_INSTALL_CONFIG_FILE was already
+		    // include_once()'d above (the already-installed guard) back
+		    // when config/sp-config.php was still blank, so PHP would
+		    // silently skip re-reading it here and leave SP_WEBPATH and
+		    // friends undefined - fataling sp-config-extra.php below,
+		    // which assumes they're already defined. writeConfigFile()
+		    // has since rewritten the file with real values, so this
+		    // needs a genuine re-read, not a no-op.
+		    include(SP_INSTALL_CONFIG_FILE);
 		    include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
 			$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
 			$installUpdateUrl .= "&version=".SP_INSTALLED;
@@ -372,13 +465,23 @@ class Install {
 			$spider->getContent($installUpdateUrl, false, false);
 		}
 		
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 		$db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		
 		// update email for admin
 		$sql = "update users set email='".addslashes($info['email'])."' where id=1";
 		$db->query($sql);
-		
+
+		// auto-install + activate the plugins shipped with this release
+		// (ArticleSubmitter, QuickWebProxy, SeoDiary, MetaTagGenerator -
+		// see CLAUDE.md's "Active Plugins" list) so a fresh install has
+		// them ready to use immediately, matching how
+		// build/build-release.sh bundles SeoDiary/QuickWebProxy into
+		// plugins/ for every release zip. A plugin whose directory isn't
+		// present (e.g. installing straight from a raw git checkout
+		// without the release build step) is silently skipped.
+		$this->activateShippedPlugins($db);
+
 		// select languages list
 		$sql = "select * from languages where translated=1";
 		$langList = $db->select($sql);
@@ -511,8 +614,154 @@ class Install {
 		</script>
 		<?php
 	}
-	
-	
+
+	/**
+	 * Imports one or more SQL files while streaming a live progress bar
+	 * to the browser, instead of leaving the request looking hung for
+	 * however long a large database file takes. Used by both
+	 * proceedInstallation() (fresh install) and proceedUpgrade()
+	 * (existing installs can replay many version-increment files).
+	 *
+	 * Deliberately NOT a separate AJAX/polling endpoint: this installer
+	 * is one synchronous request per step already, has to run unmodified
+	 * on the widest range of shared hosting, and flush()-ing progress
+	 * into the same response is the simplest thing that works within
+	 * that existing architecture - no new endpoint, no server-side state
+	 * to track between requests, nothing that can be blocked by
+	 * disable_functions on a locked-down host the way exec()/proc_open()
+	 * based approaches could be.
+	 *
+	 * $files is an array of ['path' => ..., 'label' => ...]. Returns ''
+	 * on success, or an error message on the same convention
+	 * importDatabaseFile() itself uses ($db->error will also be set).
+	 */
+	function importWithProgress($db, $files, $block = true, $stepsHtml = null, $heading = 'Installing Seo Panel') {
+		if ($stepsHtml === null) {
+			$stepsHtml = '<div class="step completed"><span class="step-number"></span> Requirements</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step active"><span class="step-number">2</span> Database</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step"><span class="step-number">3</span> Complete</div>';
+		}
+
+		// ask any upstream proxy (nginx) not to buffer this response, and
+		// flush out any output buffering layer PHP itself may have
+		// started (the output_buffering ini setting) - otherwise our
+		// flush() calls below queue up and all arrive at once at the end
+		if (!headers_sent()) {
+			@header('X-Accel-Buffering: no');
+		}
+		while (ob_get_level() > 0) {
+			@ob_end_flush();
+		}
+
+		$fileLineCounts = array();
+		$totalLines = 0;
+		foreach ($files as $key => $file) {
+			$fileLineCounts[$key] = @count(@file($file['path']));
+			$totalLines += $fileLineCounts[$key];
+		}
+		?>
+		<div id="installProgressWrap">
+			<div class="steps"><?php echo $stepsHtml; ?></div>
+			<h1 class="BlockHeader"><?php echo htmlspecialchars($heading); ?></h1>
+			<div class="content-section">
+				<div class="install-progress-track">
+					<div id="installProgressFill" class="install-progress-fill" style="width:0%;"></div>
+				</div>
+				<p id="installProgressText" class="install-progress-text">Preparing&hellip;</p>
+			</div>
+		</div>
+		<!-- padding to push this past small output buffers some hosts/proxies use before they start forwarding chunks
+		<?php echo str_repeat(' ', 4096); ?>
+		-->
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		$linesDoneBefore = 0;
+		foreach ($files as $key => $file) {
+			$label = $file['label'];
+			$baseline = $linesDoneBefore;
+
+			$onProgress = function($linesDone, $fileTotalLines) use ($label, $totalLines, $baseline) {
+				$overallDone = $baseline + $linesDone;
+				$percent = $totalLines > 0 ? min(100, (int) round(($overallDone / $totalLines) * 100)) : 100;
+				?>
+				<script>
+				(function(){
+					var fill = document.getElementById('installProgressFill');
+					var text = document.getElementById('installProgressText');
+					if (fill) { fill.style.width = '<?php echo $percent; ?>%'; }
+					if (text) { text.textContent = '<?php echo addslashes($label); ?>… (<?php echo $percent; ?>%)'; }
+				})();
+				</script>
+				<?php
+				flush();
+				if (ob_get_level() > 0) { @ob_flush(); }
+			};
+
+			$errMsg = $db->importDatabaseFile($file['path'], $block, $onProgress);
+			if ($block && $db->error) {
+				?>
+				<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+				<?php
+				flush();
+				return $errMsg;
+			}
+
+			$linesDoneBefore += $fileLineCounts[$key];
+		}
+		?>
+		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		return '';
+	}
+
+	/**
+	 * Requires an already-authenticated admin session before allowing any
+	 * interaction with the upgrade wizard on a live site. upgrade.php
+	 * previously had no real auth check at all - its only "guards" were
+	 * $info['php_support']/etc, which are read straight from
+	 * client-supplied POST fields, not verified server-side - so anyone
+	 * who could reach the URL could trigger a real database migration.
+	 *
+	 * Deliberately does NOT bootstrap the full app (includes/sp-load.php)
+	 * to check this, since that assumes a schema already matching the
+	 * CURRENT version - exactly what an upgrade cannot assume. Instead
+	 * reads $_SESSION['userInfo'] directly, the same session key/shape
+	 * isAdmin()/checkAdminLoggedIn() check (see libs/session.class.php,
+	 * includes/sp-common.php) - a real login via the main app's
+	 * login.php, in the same browser, is the only way to populate it.
+	 * Caller must have already called session_start() and
+	 * showDefaultHeader().
+	 */
+	function requireAdminSession() {
+		$userInfo = isset($_SESSION['userInfo']) ? $_SESSION['userInfo'] : array();
+		$isAdmin = !empty($userInfo['userId']) && !empty($userInfo['userType']) && $userInfo['userType'] === 'admin';
+		if ($isAdmin) {
+			return;
+		}
+
+		if (!headers_sent()) {
+			http_response_code(403);
+		}
+		?>
+		<div class="content-section">
+			<div class="alert alert-warning">
+				<strong>Admin login required.</strong>
+				<p>Please <a href="../login.php">log in to SEO Panel as an admin</a> first, then reload this page to continue.</p>
+			</div>
+		</div>
+		<?php
+		$this->showDefaultFooter();
+		exit;
+	}
+
+
 	# func to check upgrade requirements
 	function checkUpgradeRequirements($error=false, $errorMsg='') {
 
@@ -527,7 +776,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query')|| function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -579,7 +828,7 @@ class Install {
 		$dbSupport = "Database config variables not defined";
 		include_once(SP_INSTALL_CONFIG_FILE);
 		if(defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASSWORD') && defined('DB_ENGINE')){
-			$db = function_exists('mysqli_query') ? New DBI() : New DB();
+			$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 			
 			$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 			if($db->error ){
@@ -688,29 +937,53 @@ class Install {
 		    '4.11.0',
 		    '5.0.0',
 		    '5.1.0',
+		    '6.0.0',
+		    '7.0.0',
 		);
 		
 		// get current version number
 		$sql = "Select set_val from settings where set_name='SP_VERSION_NUMBER'";
 		$versionInfo = $db->select($sql, true);
 		$currentVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '3.8.0';
-		
+
+		// surfaced on the Upgrade Complete page below - a missing/garbled
+		// version previously took one of two very different silent paths
+		// (full historical replay from 3.8.0, or skip the whole
+		// version-chain and only run the generic catch-all) with no
+		// indication to the admin of which one happened or why
+		$this->upgradeVersionNote = null;
+		if (empty($versionInfo['set_val'])) {
+			$this->upgradeVersionNote = 'No existing version number was found, so every historical database update (from v3.8.0 onward) was replayed to be safe.';
+		}
+
+		// 4.12.0 shipped its schema changes via the generic upgrade.sql catch-all and
+		// never got its own entry in $spVersionList. Its schema is identical to 5.0.0's
+		// (upgrade_v4.11.0_v5.0.0.sql duplicates the 4.12.0 db changes verbatim), so
+		// treat it as 5.0.0 when locating the current position in the upgrade chain.
+		if ($currentVersion === '4.12.0') {
+			$currentVersion = '5.0.0';
+		}
+
 		// if current version is set
 		if ($currentVersion) {
-			
+
 			$index = array_search($currentVersion, $spVersionList);
 			$lastIndex = count($spVersionList) - 1;
-		
-			// if it is not last index value
-			if ($index != $lastIndex) {
+
+			// if it is not last index value, and the version is recognized (an
+			// unrecognized version must not silently fall back to index 0, which
+			// would replay every historical upgrade file from 3.8.0 onward)
+			if ($index !== false && $index != $lastIndex) {
 				$prevIndex = $index;
-			
+
 				// loop through the versions
 				for ($i = $index + 1; $i <= $lastIndex; $i++) {
 					$upgradeFileList[] = SP_INSTALL_DIR . "/data/upgrade_v$spVersionList[$prevIndex]_v$spVersionList[$i].sql";
 					$prevIndex = $i;
 				}
-				
+
+			} elseif ($index === false) {
+				$this->upgradeVersionNote = "Current version number ($currentVersion) was not recognized, so only the latest general database update was applied (no historical version-by-version updates).";
 			}
 			
 		}
@@ -728,7 +1001,7 @@ class Install {
 		}		
 		
 		include_once(SP_INSTALL_CONFIG_FILE);
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 		
 		// check database connection
 		$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
@@ -737,14 +1010,25 @@ class Install {
 			return;
 		}
 		
-		// loop through upgrade files and import data to db
+		// loop through upgrade files and import data to db - streamed with
+		// a live progress bar the same way proceedInstallation() is,
+		// since someone upgrading from a much older version can end up
+		// replaying many version-increment files here
 		$upgradeFileList = $this->getUpgradeDBFiles($db);
-		foreach ($upgradeFileList as $dbFile) {
-			$errMsg = $db->importDatabaseFile($dbFile, false);
+		$upgradeFiles = array();
+		foreach ($upgradeFileList as $index => $dbFile) {
+			$upgradeFiles[] = array('path' => $dbFile, 'label' => 'Applying database migration ' . ($index + 1) . ' of ' . count($upgradeFileList));
 		}
+		$upgradeFiles[] = array('path' => SP_UPGRADE_DB_LANG_FILE, 'label' => 'Updating language & text data');
 
-		// importing text file
-		$errMsg = $db->importDatabaseFile(SP_UPGRADE_DB_LANG_FILE, false);
+		// $block=false: matches this path's existing behavior exactly -
+		// a replayed migration can legitimately fail (e.g. a column that
+		// already exists from a prior partial run) and must not abort
+		// the rest of the chain
+		$upgradeStepsHtml = '<div class="step completed"><span class="step-number"></span> Check</div>'
+			. '<div class="step-divider"></div>'
+			. '<div class="step active"><span class="step-number">2</span> Complete</div>';
+		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
 		
 		# create API Key if not exists
@@ -763,6 +1047,12 @@ class Install {
 				<h3>Upgraded to Seo Panel v<?php echo SP_INSTALLED;?></h3>
 				<p>Your SEO Panel has been upgraded successfully.</p>
 			</div>
+
+			<?php if (!empty($this->upgradeVersionNote)) { ?>
+				<div class="alert alert-info">
+					<strong>Note:</strong> <?php echo htmlspecialchars($this->upgradeVersionNote); ?>
+				</div>
+			<?php } ?>
 
 			<div class="alert alert-warning">
 				<strong>Important Security Step:</strong>

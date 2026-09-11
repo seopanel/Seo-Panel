@@ -1,3 +1,124 @@
+<style>
+/* ============================================================
+   Dashboard visual refresh - scoped to .sp-dashboard so it never
+   bleeds into the shared card-header-gradient-blue/.badge/.table
+   styles used elsewhere in the app.
+   ============================================================ */
+.sp-dashboard { color: #1e293b; }
+
+.sp-dashboard .card {
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+	overflow: hidden;
+}
+
+.sp-dashboard .card-header-gradient-blue {
+	background: #1e3a5f !important;
+	box-shadow: none !important;
+	border-bottom: 2px solid #16304d;
+	padding: 0.85rem 1.25rem !important;
+}
+.sp-dashboard .card-header-gradient-blue h4 {
+	font-size: 0.95rem !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.02em;
+}
+.sp-dashboard .card-header-gradient-blue small {
+	opacity: 0.75;
+}
+
+.sp-dashboard .card-body { padding: 1.5rem; }
+
+/* Stat tiles - replaces oversized colored "badge" numbers with clean,
+   large typography; semantic color lives in the number/icon, not a
+   filled pill, which reads calmer and more editorial. */
+.sp-dashboard .stat-tile { padding: 0.25rem 0.5rem; }
+.sp-dashboard .stat-label {
+	font-size: 0.72rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #64748b;
+	margin-bottom: 0.6rem;
+	display: block;
+}
+.sp-dashboard .stat-label i { color: #94a3b8; margin-left: 0.15rem; cursor: help; }
+.sp-dashboard .stat-value {
+	font-size: 2rem;
+	font-weight: 700;
+	line-height: 1.15;
+	color: #0f172a;
+}
+.sp-dashboard .stat-value.text-success { color: #15803d; }
+.sp-dashboard .stat-value.text-warning { color: #b45309; }
+.sp-dashboard .stat-value.text-danger  { color: #b91c1c; }
+.sp-dashboard .stat-value.text-info    { color: #0369a1; }
+.sp-dashboard .stat-value.text-primary { color: #1e3a5f; }
+.sp-dashboard .stat-sublabel { font-size: 0.78rem; color: #94a3b8; margin-top: 0.15rem; }
+
+/* Soft trend chips (replaces plain colored <strong> text) */
+.sp-dashboard .trend-chip {
+	display: inline-block;
+	margin-top: 0.5rem;
+	padding: 0.2rem 0.55rem;
+	border-radius: 20px;
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+.sp-dashboard .trend-chip.trend-up      { background: rgba(21, 128, 61, 0.1); color: #15803d; }
+.sp-dashboard .trend-chip.trend-down    { background: rgba(185, 28, 28, 0.1); color: #b91c1c; }
+.sp-dashboard .trend-chip.trend-neutral { background: rgba(71, 85, 105, 0.1); color: #475569; }
+
+/* Soft badges everywhere else on the dashboard (rank chips, volatility,
+   trend, distribution tab counters) - same saturated bg-* class names
+   the controller already emits, restyled here into muted pills instead
+   of solid saturated ones, so no markup/controller changes are needed. */
+.sp-dashboard .badge.bg-success   { background-color: rgba(21, 128, 61, 0.12) !important; color: #15803d !important; }
+.sp-dashboard .badge.bg-danger    { background-color: rgba(185, 28, 28, 0.12) !important; color: #b91c1c !important; }
+.sp-dashboard .badge.bg-warning   { background-color: rgba(180, 83, 9, 0.14) !important; color: #b45309 !important; }
+.sp-dashboard .badge.bg-info      { background-color: rgba(3, 105, 161, 0.12) !important; color: #0369a1 !important; }
+.sp-dashboard .badge.bg-primary   { background-color: rgba(30, 58, 95, 0.12) !important; color: #1e3a5f !important; }
+.sp-dashboard .badge.bg-secondary { background-color: rgba(71, 85, 105, 0.12) !important; color: #475569 !important; }
+.sp-dashboard .badge { font-weight: 600; padding: 0.32rem 0.6rem; border-radius: 20px; }
+
+.sp-dashboard .alert-info    { background: #f0f7fc; border: 1px solid #d7e9f7; color: #1e3a5f; }
+.sp-dashboard .alert-warning { background: #fdf6ec; border: 1px solid #f5e3c8; color: #92400e; }
+
+/* Tables */
+.sp-dashboard table.table thead th {
+	background: #f8fafc;
+	color: #64748b;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	border-bottom: 2px solid #e2e8f0;
+	border-top: none;
+	white-space: nowrap;
+}
+.sp-dashboard table.table td { vertical-align: middle; font-size: 0.9rem; }
+.sp-dashboard table.table-striped tbody tr:nth-of-type(odd) { background-color: #f8fafc; }
+.sp-dashboard table.table-hover tbody tr:hover { background-color: #eef2f9; }
+
+/* Distribution tabs - flat underline style instead of boxed tabs */
+.sp-dashboard .nav-tabs { background: none; border-bottom: 2px solid #e2e8f0; }
+.sp-dashboard .nav-tabs .nav-link {
+	border: none;
+	color: #64748b;
+	font-weight: 600;
+	font-size: 0.85rem;
+	border-radius: 0;
+}
+.sp-dashboard .nav-tabs .nav-link.active {
+	color: #1e3a5f;
+	background: none;
+	box-shadow: inset 0 -2px 0 #1e3a5f;
+}
+
+.sp-dashboard .section-gap { margin-bottom: 1.75rem !important; }
+</style>
+
 <form id='dashboard_form' method="post">
 <table class="search">
 	<tr>
@@ -29,142 +150,72 @@
 </table>
 </form>
 
-<div class="dashboard-container" style="margin-top: 40px;">
+<?php
+// Renders one stat tile: label + big number (colored via the same
+// bootstrap-style color name the controller already computes) + an
+// optional soft trend chip. Kept local to this view (not promoted to a
+// shared helper) since its only caller is this one page. Guarded with
+// function_exists() since a plain top-level function declaration inside
+// an included .ctp.php view would fatal ("cannot redeclare") if this
+// view is ever rendered more than once within the same PHP process.
+if (!function_exists('renderStatTile')) {
+	function renderStatTile($label, $tooltip, $value, $color = null, $sublabel = null, $comparison = null) {
+		$colorClass = $color ? "text-$color" : '';
+		echo "<div class='stat-tile text-center'>";
+		echo "<span class='stat-label'>$label";
+		if (!empty($tooltip)) echo " <i class='fas fa-info-circle' data-toggle='tooltip' title=\"" . htmlspecialchars($tooltip) . "\"></i>";
+		echo "</span>";
+		echo "<div class='stat-value $colorClass'>$value</div>";
+		if (!empty($sublabel)) echo "<div class='stat-sublabel'>$sublabel</div>";
+		if (!empty($comparison)) {
+			$direction = $comparison['direction'];
+			$trendClass = $direction == 'up' ? 'trend-up' : ($direction == 'down' ? 'trend-down' : 'trend-neutral');
+			$icon = $direction == 'up' ? '↑' : ($direction == 'down' ? '↓' : '→');
+			$diff = $comparison['diff'] >= 0 ? '+' . $comparison['diff'] : $comparison['diff'];
+			echo "<span class='trend-chip $trendClass'>$icon $diff ({$comparison['percent']}%)</span>";
+		}
+		echo "</div>";
+	}
+}
+?>
+
+<div class="dashboard-container sp-dashboard" style="margin-top: 32px;">
 
 	<!-- Website Overview Stats -->
-	<div class="row mb-4">
+	<div class="row section-gap">
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextHome['Website Statistics']?></h4>
+					<h4><i class="fas fa-globe"></i> <?php echo $spTextHome['Website Statistics']?></h4>
 				</div>
 				<div class="card-body">
 					<div class="row">
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spText['common']['Domain Authority']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Domain Authority (0-100). Higher is better. Red: 1-20 (Weak), Yellow: 21-50 (Moderate), Blue: 51-70 (Strong), Green: 71-100 (Very Strong)"></i>
-							</h6>
+						<div class="col-md-2">
 							<?php
 							$da = floatval($websiteStats['domain_authority']);
-							$daColor = getAuthorityColor($da);
-							$daLabel = getAuthorityLabel($da);
+							renderStatTile($spText['common']['Domain Authority'], 'Domain Authority (0-100). Higher is better.', round($da, 2), getAuthorityColor($da), getAuthorityLabel($da), $websiteComparison['domain_authority'] ?? null);
 							?>
-							<h3>
-								<span class="badge bg-<?php echo $daColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $daLabel?>">
-									<?php echo round($da, 2)?>
-								</span>
-							</h3>
-							<small class="text-muted"><?php echo $daLabel?></small>
-							<?php if (isset($websiteComparison['domain_authority'])):
-								$comp = $websiteComparison['domain_authority'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<br><small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spText['common']['Page Authority']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Page Authority (0-100). Higher is better. Red: 1-20 (Weak), Yellow: 21-50 (Moderate), Blue: 51-70 (Strong), Green: 71-100 (Very Strong)"></i>
-							</h6>
+						<div class="col-md-2">
 							<?php
 							$pa = floatval($websiteStats['page_authority']);
-							$paColor = getAuthorityColor($pa);
-							$paLabel = getAuthorityLabel($pa);
+							renderStatTile($spText['common']['Page Authority'], 'Page Authority (0-100). Higher is better.', round($pa, 2), getAuthorityColor($pa), getAuthorityLabel($pa), $websiteComparison['page_authority'] ?? null);
 							?>
-							<h3>
-								<span class="badge bg-<?php echo $paColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $paLabel?>">
-									<?php echo round($pa, 2)?>
-								</span>
-							</h3>
-							<small class="text-muted"><?php echo $paLabel?></small>
-							<?php if (isset($websiteComparison['page_authority'])):
-								$comp = $websiteComparison['page_authority'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<br><small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spText['common']['Spam Score']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Spam likelihood (0-100%). Lower is better. Green: 0-30% (Low Risk), Yellow: 31-60% (Medium Risk), Red: 61-100% (High Risk)"></i>
-							</h6>
+						<div class="col-md-2">
 							<?php
 							$spamScore = floatval($websiteStats['spam_score']);
-							$spamScoreColor = getSpamScoreColor($spamScore);
-							$spamScoreLabel = getSpamScoreLabel($spamScore);
+							renderStatTile($spText['common']['Spam Score'], 'Spam likelihood (0-100%). Lower is better.', round($spamScore, 2) . '%', getSpamScoreColor($spamScore), getSpamScoreLabel($spamScore), $websiteComparison['spam_score'] ?? null);
 							?>
-							<h3>
-								<span class="badge bg-<?php echo $spamScoreColor?>" style="font-size: 1.5rem; padding: 0.5rem 1rem;" title="<?php echo $spamScoreLabel?>">
-									<?php echo round($spamScore, 2)?>%
-								</span>
-							</h3>
-							<small class="text-muted"><?php echo $spamScoreLabel?></small>
-							<?php if (isset($websiteComparison['spam_score'])):
-								$comp = $websiteComparison['spam_score'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<br><small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spTextHome['Backlinks']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="External pages linking to this page"></i>
-							</h6>
-							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['external_pages_to_page'])?></span></h3>
-							<?php if (isset($websiteComparison['external_pages_to_page'])):
-								$comp = $websiteComparison['external_pages_to_page'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-2">
+							<?php renderStatTile($spTextHome['Backlinks'], 'External pages linking to this page', number_format($websiteStats['external_pages_to_page']), 'primary', null, $websiteComparison['external_pages_to_page'] ?? null); ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spTextBack['Domain Backlinks']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="External pages linking to this root domain"></i>
-							</h6>
-							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['external_pages_to_root_domain'])?></span></h3>
-							<?php if (isset($websiteComparison['external_pages_to_root_domain'])):
-								$comp = $websiteComparison['external_pages_to_root_domain'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-2">
+							<?php renderStatTile($spTextBack['Domain Backlinks'], 'External pages linking to this root domain', number_format($websiteStats['external_pages_to_root_domain']), 'info', null, $websiteComparison['external_pages_to_root_domain'] ?? null); ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3">
-								<?php echo $spTextHome['Pages Indexed']?>
-								<i class="fas fa-info-circle" data-toggle="tooltip" title="Total pages indexed by Google"></i>
-							</h6>
-							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($websiteStats['indexed_pages'])?></span></h3>
-							<?php if (isset($websiteComparison['indexed_pages'])):
-								$comp = $websiteComparison['indexed_pages'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-2">
+							<?php renderStatTile($spTextHome['Pages Indexed'], 'Total pages indexed by Google', number_format($websiteStats['indexed_pages']), 'success', null, $websiteComparison['indexed_pages'] ?? null); ?>
 						</div>
 					</div>
 				</div>
@@ -172,70 +223,94 @@
 		</div>
 	</div>
 
-	<!-- Keyword Statistics -->
-	<div class="row mb-4">
+	<!-- AI Visibility -->
+	<?php
+	$aioMeasured = intval($aiVisibilityStats['aioMeasured']);
+	$aioPresent = intval($aiVisibilityStats['aioPresent']);
+	$aioCited = intval($aiVisibilityStats['aioCited']);
+	$referralHits = intval($aiVisibilityStats['referralHits']);
+	$topPlatform = $aiVisibilityStats['topPlatform'];
+
+	if ($referralHits > 0) {
+		$aiFindingTitle = "AI crawlers visited $referralHits time" . ($referralHits == 1 ? '' : 's') . " in the last 30 days";
+		$aiFindingDesc = "ChatGPT, Perplexity, Gemini, Claude and similar AI crawlers fetched this site $referralHits time" . ($referralHits == 1 ? '' : 's') . " over the last 30 days" . (!empty($topPlatform) ? ", most often via $topPlatform." : ".");
+	} else {
+		$aiFindingTitle = "No AI crawler activity in the last 30 days";
+		$aiFindingDesc = "No AI crawler visit has been recorded for this site in the selected period.";
+	}
+	?>
+	<div class="row section-gap">
 		<div class="col-md-12">
 			<div class="card">
-				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextDashboard['Keyword Statistics']?></h4>
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
+					<h4><i class="fas fa-robot"></i> AI Visibility</h4>
+					<?php if (!empty($seoDiaryPluginId)) {
+						// Opt-in only - never auto-created, same pattern as
+						// RecommendationsController's own "Add to SEO Diary"
+						// action. Opens in the app's existing modal dialog
+						// mechanism (scriptDoLoadDialog(), js/popup.js) rather
+						// than navigating away - see recommendations_main.ctp.php's
+						// own comment on this for the full rationale (also
+						// sidesteps the layout/jQuery bug a plain full-page
+						// link to seo-plugins.php used to hit).
+						$diaryArgs = "&pid=" . intval($seoDiaryPluginId)
+							. "&action=newDiary"
+							. "&title=" . urlencode($aiFindingTitle)
+							. "&description=" . urlencode($aiFindingDesc);
+						$diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
+					?>
+					<a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
+						<i class="fas fa-book"></i> Add to SEO Diary
+					</a>
+					<?php } ?>
 				</div>
 				<div class="card-body">
 					<div class="row">
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spText['common']['Total']?> <?php echo $spText['common']['Keywords']?></h6>
-							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['total']?></span></h3>
-							<?php if (isset($keywordComparison['total'])):
-								$comp = $keywordComparison['total'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-3">
+							<?php renderStatTile('AI Overview Keywords', 'Keywords with a recorded Google AI Overview check', $aioMeasured, 'secondary'); ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spTextKeyword['Keywords Tracked']?></h6>
-							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['tracked']?></span></h3>
-							<?php if (isset($keywordComparison['tracked'])):
-								$comp = $keywordComparison['tracked'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-3">
+							<?php renderStatTile('Appears in AI Overview', 'Measured keywords where an AI Overview was shown', $aioPresent, 'info'); ?>
 						</div>
-						<div class="col-md-3 text-center">
-							<h6 class="mb-3"><?php echo $spTextDashboard['Top 3']?> <?php echo $spText['common']['Rankings']?></h6>
-							<h3><span class="badge bg-warning" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top3']?></span></h3>
-							<?php if (isset($keywordComparison['top3'])):
-								$comp = $keywordComparison['top3'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-3">
+							<?php renderStatTile('Cited in AI Overview', 'Keywords where this site was cited as a source', $aioCited, 'success'); ?>
 						</div>
-						<div class="col-md-3 text-center">
-							<h6 class="mb-3"><?php echo $spTextDashboard['Top 10']?> <?php echo $spText['common']['Rankings']?></h6>
-							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['top10']?></span></h3>
-							<?php if (isset($keywordComparison['top10'])):
-								$comp = $keywordComparison['top10'];
-								$color = $comp['direction'] == 'up' ? 'success' : ($comp['direction'] == 'down' ? 'danger' : 'secondary');
-								$icon = $comp['direction'] == 'up' ? '↑' : ($comp['direction'] == 'down' ? '↓' : '→');
-							?>
-							<small class="text-<?php echo $color?>">
-								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo $comp['diff']?> (<?php echo $comp['percent']?>%)</strong>
-							</small>
-							<?php endif; ?>
+						<div class="col-md-3">
+							<?php renderStatTile('AI Crawler Visits (30d)', 'Requests from AI crawlers (ChatGPT, Perplexity, Gemini, Claude, etc.)', number_format($referralHits), 'primary', !empty($topPlatform) ? 'Top: ' . htmlspecialchars($topPlatform) : null); ?>
 						</div>
-						<div class="col-md-2 text-center">
-							<h6 class="mb-3"><?php echo $spTextDashboard['Not Ranked']?></h6>
-							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $keywordStats['total'] - $keywordStats['tracked']?></span></h3>
+					</div>
+					<div class="alert <?php echo $referralHits > 0 ? 'alert-info' : 'alert-warning'?> mt-3 mb-0">
+						<i class="fas <?php echo $referralHits > 0 ? 'fa-info-circle' : 'fa-exclamation-circle'?> me-2"></i>
+						<?php echo htmlspecialchars($aiFindingTitle)?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Keyword Statistics -->
+	<div class="row section-gap">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><i class="fas fa-key"></i> <?php echo $spTextDashboard['Keyword Statistics']?></h4>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-2">
+							<?php renderStatTile($spText['common']['Total'] . ' ' . $spText['common']['Keywords'], null, $keywordStats['total'], 'primary', null, $keywordComparison['total'] ?? null); ?>
+						</div>
+						<div class="col-md-2">
+							<?php renderStatTile($spTextKeyword['Keywords Tracked'], null, $keywordStats['tracked'], 'success', null, $keywordComparison['tracked'] ?? null); ?>
+						</div>
+						<div class="col-md-3">
+							<?php renderStatTile($spTextDashboard['Top 3'] . ' ' . $spText['common']['Rankings'], null, $keywordStats['top3'], 'warning', null, $keywordComparison['top3'] ?? null); ?>
+						</div>
+						<div class="col-md-3">
+							<?php renderStatTile($spTextDashboard['Top 10'] . ' ' . $spText['common']['Rankings'], null, $keywordStats['top10'], 'info', null, $keywordComparison['top10'] ?? null); ?>
+						</div>
+						<div class="col-md-2">
+							<?php renderStatTile($spTextDashboard['Not Ranked'], null, $keywordStats['total'] - $keywordStats['tracked'], 'secondary'); ?>
 						</div>
 					</div>
 				</div>
@@ -244,11 +319,11 @@
 	</div>
 
 	<!-- Pie Charts Row -->
-	<div class="row mb-4">
+	<div class="row section-gap">
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextDashboard['Keyword Distribution by Rank']?></h4>
+					<h4><i class="fas fa-chart-pie"></i> <?php echo $spTextDashboard['Keyword Distribution by Rank']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($keywordDistribution)) { ?>
@@ -268,10 +343,11 @@
 
 								var options = {
 									title: '<?php echo $spTextDashboard['Keywords by Ranking Position']?>',
+									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
 									pieHole: 0.4,
 									height: 350,
-									colors: ['#17a2b8', '#fd7e14', '#e83e8c', '#dc3545', '#6c757d'],
-									legend: { position: 'bottom' },
+									colors: ['#0369a1', '#b45309', '#7c3aed', '#b91c1c', '#94a3b8'],
+									legend: { position: 'bottom', textStyle: { color: '#475569' } },
 									chartArea: { width: '90%', height: '75%' }
 								};
 
@@ -291,12 +367,12 @@
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="top20-tab" data-toggle="tab" href="#top20" role="tab" onclick="showDistTab('top20'); return false;" style="padding: 0.5rem 1rem;">
-										<span class="badge" style="background-color: #fd7e14;"><?php echo $keywordDistribution['top20']['count']?></span> Top 11-20
+										<span class="badge bg-warning"><?php echo $keywordDistribution['top20']['count']?></span> Top 11-20
 									</a>
 								</li>
 								<li class="nav-item">
 									<a class="nav-link" id="top50-tab" data-toggle="tab" href="#top50" role="tab" onclick="showDistTab('top50'); return false;" style="padding: 0.5rem 1rem;">
-										<span class="badge" style="background-color: #e83e8c;"><?php echo $keywordDistribution['top50']['count']?></span> Top 21-50
+										<span class="badge" style="background-color: rgba(124,58,237,.12); color:#7c3aed;"><?php echo $keywordDistribution['top50']['count']?></span> Top 21-50
 									</a>
 								</li>
 								<li class="nav-item">
@@ -356,7 +432,7 @@
 													<?php foreach($keywordDistribution['top20']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
-															<td><span class="badge" style="background-color: #fd7e14;"><?php echo $kw['rank']?></span></td>
+															<td><span class="badge bg-warning"><?php echo $kw['rank']?></span></td>
 															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
@@ -384,7 +460,7 @@
 													<?php foreach($keywordDistribution['top50']['rows'] as $kw): ?>
 														<tr>
 															<td><?php echo htmlspecialchars($kw['name'])?></td>
-															<td><span class="badge" style="background-color: #e83e8c;"><?php echo $kw['rank']?></span></td>
+															<td><span class="badge" style="background-color: rgba(124,58,237,.12); color:#7c3aed;"><?php echo $kw['rank']?></span></td>
 															<td><?php echo htmlspecialchars(formatUrl($kw['search_engine']))?></td>
 														</tr>
 													<?php endforeach; ?>
@@ -491,7 +567,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextDashboard['Ranking Volatility']?></h4>
+					<h4><i class="fas fa-chart-bar"></i> <?php echo $spTextDashboard['Ranking Volatility']?></h4>
 					<small class="text-white"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
 				</div>
 				<div class="card-body">
@@ -508,13 +584,13 @@
 										// Color based on volatility score - higher = more red
 										$score = $row['volatility_score'];
 										if ($score > 15) {
-											$color = '#dc3545'; // Red - high volatility
+											$color = '#b91c1c'; // High volatility
 										} elseif ($score > 10) {
-											$color = '#fd7e14'; // Orange - medium volatility
+											$color = '#b45309'; // Medium volatility
 										} elseif ($score > 5) {
-											$color = '#ffc107'; // Yellow - moderate volatility
+											$color = '#ca8a04'; // Moderate volatility
 										} else {
-											$color = '#28a745'; // Green - low volatility
+											$color = '#15803d'; // Low volatility
 										}
 
 										$keyword = strlen($row['keyword']) > 20 ? substr($row['keyword'], 0, 20) . '...' : $row['keyword'];
@@ -525,6 +601,7 @@
 
 								var options = {
 									title: '<?php echo $spTextDashboard['Top 10 Most Volatile Keywords']?>',
+									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
 									height: 350,
 									legend: { position: 'none' },
 									chartArea: { width: '70%', height: '70%' },
@@ -540,7 +617,7 @@
 										textStyle: {
 											fontSize: 11,
 											bold: true,
-											color: '#000'
+											color: '#334155'
 										}
 									},
 									tooltip: { isHtml: true }
@@ -645,11 +722,11 @@
 	</div>
 
 	<!-- Ranking Trends Graph -->
-	<div class="row mb-4">
+	<div class="row section-gap">
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextKeyword['Ranking Trends']?></h4>
+					<h4><i class="fas fa-chart-line"></i> <?php echo $spTextKeyword['Ranking Trends']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($rankingTrends)) { ?>
@@ -672,13 +749,14 @@
 
 								var options = {
 									title: '<?php echo $spTextKeyword["Keyword Ranking Trends"]?>',
+									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
 									curveType: 'function',
-									legend: { position: 'bottom' },
+									legend: { position: 'bottom', textStyle: { color: '#475569' } },
 									height: 400,
 									series: {
-										0: { targetAxisIndex: 0, color: '#4285F4' },
-										1: { targetAxisIndex: 0, color: '#34A853' },
-										2: { targetAxisIndex: 1, color: '#EA4335' }
+										0: { targetAxisIndex: 0, color: '#0369a1' },
+										1: { targetAxisIndex: 0, color: '#15803d' },
+										2: { targetAxisIndex: 1, color: '#b91c1c' }
 									},
 									vAxes: {
 										0: { title: 'Number of Keywords' },
@@ -709,7 +787,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextKeyword['Top Keywords']?></h4>
+					<h4><i class="fas fa-trophy"></i> <?php echo $spTextKeyword['Top Keywords']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($topKeywords)) { ?>
@@ -752,7 +830,7 @@
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spText['label']['Recent Activity']?></h4>
+					<h4><i class="fas fa-history"></i> <?php echo $spText['label']['Recent Activity']?></h4>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($recentActivity)) { ?>

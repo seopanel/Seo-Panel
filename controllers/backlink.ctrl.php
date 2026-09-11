@@ -24,11 +24,7 @@
 class BacklinkController extends Controller{
 	var $url;
 	var $colList = array("external_pages_to_page" => "external_pages_to_page", "external_pages_to_root_domain" => "external_pages_to_root_domain");
-	var $backUrlList = array(
-		'google' => 'http://www.google.com/search?hl=en&q=link%3A',
-		'msn' => 'http://www.bing.com/search?q=link%3A',
-	);
-	
+
 	function showBacklink() {
 		$this->render('backlink/showbacklink');
 	}
@@ -155,6 +151,12 @@ class BacklinkController extends Controller{
 			$values[] = !empty($matchInfo[$col]) ? intval($matchInfo[$col]) : 0;
 		}
 
+		// broken_backlinks is DataForSEO-only - NULL means "not measured by
+		// this row's provider" (the Moz path never sets it), same convention
+		// as the aio_* columns on searchresults.
+		$columns[] = 'broken_backlinks';
+		$values[] = array_key_exists('broken_backlinks', $matchInfo) ? intval($matchInfo['broken_backlinks']) : 'NULL';
+
 		$sql = "insert into backlinkresults(website_id," . implode(',', $columns) . ",result_date)
 		values({$matchInfo['id']}," . implode(',', $values) . ", '$resultDate')";
 		$this->db->query($sql);
@@ -192,26 +194,36 @@ class BacklinkController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval( $searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a caller-supplied website_id must belong to one of the caller's
+		// own (already-scoped) websites for a non-admin - otherwise fall
+		// back to their own first website, same as when none is given at
+		// all. Previously this was never checked, so any non-admin could
+		// view ANY other user's backlink history just by passing an
+		// arbitrary website_id.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from backlinkresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-		
+
 		$i = 0;
 		$colList = $this->colList;
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * -1;
@@ -223,24 +235,48 @@ class BacklinkController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
-		
-		$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
-		$websiteUrl =  @Spider::removeTrailingSlash(formatUrl($websiteInfo['url']));
-		$websiteUrl = urldecode($websiteUrl);
-		$this->set('directLinkList', array(
-		    'google' => $this->backUrlList['google'] . $websiteUrl,		    
-		    'msn' => $this->backUrlList['msn'] . $websiteUrl,
-		));
+
+		$hasBrokenBacklinks = false;
+		foreach ($reportList as $repInfo) {
+			if ($repInfo['broken_backlinks'] !== null) {
+				$hasBrokenBacklinks = true;
+				break;
+			}
+		}
+		$this->set('hasBrokenBacklinks', $hasBrokenBacklinks);
 
 		$this->set('list', array_reverse($reportList, true));
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('backlink/backlinkreport');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) plain-language summary of
+	 * this website's backlink/referring-domain (+ broken backlinks, where
+	 * measured) trend over the selected date range - see
+	 * LocalAIController::summarizeBacklinkTrend(). Never auto-fired;
+	 * returns JSON for the "Summarize with AI" button in
+	 * backlinkreport.ctp.php. Ownership is enforced by
+	 * summarizeBacklinkTrend() itself, not re-checked here.
+	 */
+	function summarizeTrend($info) {
+		$userId = isLoggedIn();
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->summarizeBacklinkTrend($info['website_id'], $userId, $fromTime, $toTime);
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	# func to get backlink report for a website
@@ -303,14 +339,20 @@ class BacklinkController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same ownership check as showReports() above - a non-admin's
+		// caller-supplied website_id must be one of their own websites
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from backlinkresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-	
+
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {

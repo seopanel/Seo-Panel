@@ -101,6 +101,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "checksub":
 			$controller->checkSubmissionReports($_GET);
 			break;
+
+		case "suggestlisting":
+			$controller->suggestListing($_GET);
+			break;
 			
 		case "delete":
 			$controller->deleteSubmissionReports($_GET['id']);

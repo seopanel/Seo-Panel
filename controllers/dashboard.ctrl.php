@@ -49,6 +49,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -139,7 +147,70 @@ class DashboardController extends Controller {
         $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
         $this->set('searchEngineStats', $searchEngineStats);
 
+        // Get AI Visibility stats (AI Overview presence/citation + AI
+        // crawler referral traffic) for the overview card
+        $aiVisibilityStats = $this->getAIVisibilityStats($websiteId, $fromTime, $toTime);
+        $this->set('aiVisibilityStats', $aiVisibilityStats);
+
+        // "Add to SEO Diary" quick action for the AI Visibility card's
+        // headline finding - same deny-by-default access check as
+        // RecommendationsController::showRecommendationsDashboard()
+        // (see that method's own comment for why isPluginActive() alone
+        // isn't enough for a non-admin)
+        include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
+        $seoDiaryInfo = (new SeoPluginsController())->isPluginActive("SeoDiary");
+        $seoDiaryPluginId = 0;
+        if (!empty($seoDiaryInfo['id'])) {
+            if (isAdmin()) {
+                $seoDiaryPluginId = $seoDiaryInfo['id'];
+            } else {
+                include_once(SP_CTRLPATH . "/user-type.ctrl.php");
+                $userSessInfo = Session::readSession('userInfo');
+                $pluginAccessList = (new UserTypeController())->getPluginAccessSettings($userSessInfo['userTypeId']);
+                $hasAccess = !isset($pluginAccessList[$seoDiaryInfo['id']]['value']) || !empty($pluginAccessList[$seoDiaryInfo['id']]['value']);
+                if ($hasAccess) {
+                    $seoDiaryPluginId = $seoDiaryInfo['id'];
+                }
+            }
+        }
+        $this->set('seoDiaryPluginId', $seoDiaryPluginId);
+
         $this->render('dashboard/main');
+    }
+
+    // Get AI Visibility summary for the main dashboard's overview card:
+    // AI Overview (Google's AI-generated answer box) presence/citation,
+    // reusing AIVisibilityController's own summary helper so the numbers
+    // always match the dedicated AI Visibility report, plus AI crawler
+    // referral traffic (ChatGPT/Perplexity/Gemini/Claude, etc. fetching
+    // pages directly) over the selected period.
+    private function getAIVisibilityStats($websiteId, $fromTime, $toTime) {
+        include_once(SP_CTRLPATH . '/aivisibility.ctrl.php');
+        $aioSummary = (new AIVisibilityController())->__getAioSummaryForWebsite($websiteId);
+
+        $sql = "SELECT platform, SUM(hits) as hits
+                FROM ai_referrals
+                WHERE website_id=" . intval($websiteId) . "
+                    AND hit_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY platform
+                ORDER BY hits DESC";
+        $platformRows = $this->db->select($sql);
+
+        $referralHits = 0;
+        $topPlatform = null;
+        foreach ($platformRows as $row) {
+            $referralHits += intval($row['hits']);
+            if ($topPlatform === null) $topPlatform = $row['platform'];
+        }
+
+        return [
+            'aioMeasured' => $aioSummary['measured'],
+            'aioPresent' => $aioSummary['present'],
+            'aioCited' => $aioSummary['cited'],
+            'referralHits' => $referralHits,
+            'topPlatform' => $topPlatform,
+            'platformBreakdown' => $platformRows,
+        ];
     }
 
     function showSocialMediaDashboard($info=[]) {
@@ -161,6 +232,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -239,6 +318,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -929,6 +1016,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Get Site Auditor project for selected website
@@ -1065,6 +1160,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -1222,6 +1325,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1275,6 +1386,15 @@ class DashboardController extends Controller {
         $this->set('waSourceDistribution', $waSourceDistribution);
         $this->set('prevWAStats', $prevWAStats);
         $this->set('waComparison', $waComparison);
+
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Google Analytics traffic numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
+
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
 
         $this->render('dashboard/analytics_main');
     }
@@ -1399,6 +1519,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1453,7 +1581,35 @@ class DashboardController extends Controller {
         $this->set('prevSCStats', $prevSCStats);
         $this->set('scComparison', $scComparison);
 
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Search Console numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
+
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
         $this->render('dashboard/search_console_main');
+    }
+
+    /*
+     * AJAX action: on-demand Local AI (Ollama) summary combining Google
+     * Analytics and Search Console data for the same website+date range -
+     * see LocalAIController::summarizeTrafficSearchTrend(). Reachable from
+     * both the Website Analytics and Search Console dashboard tabs (both
+     * point at the same action) since it draws on both tools' data.
+     * Never auto-fired; ownership is enforced by
+     * summarizeTrafficSearchTrend() itself, not re-checked here.
+     */
+    function summarizeTrafficSearchTrend($info) {
+        $userId = isLoggedIn();
+        $fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+        $toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+        include_once(SP_CTRLPATH . '/localai.ctrl.php');
+        $result = (new LocalAIController())->summarizeTrafficSearchTrend($info['website_id'], $userId, $fromTime, $toTime);
+        header('Content-Type: application/json');
+        print json_encode($result);
     }
 
     // Get search console statistics
@@ -1571,6 +1727,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)

@@ -87,7 +87,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "graphical-reports":
 			$controller->showGraphicalReports($_GET);
 			break;
-		
+
+		case "summarizetrend":
+			$controller->summarizeTrend($_GET);
+			break;
+
 		default:
 			$controller->showBacklink();
 			break;

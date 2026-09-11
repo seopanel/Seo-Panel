@@ -1,3 +1,13 @@
+function openSerpModalSP(url) {
+	$('#serpModalSPBody').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+	$('#serpModalSP').modal('show');
+	$.get(url, function(response) {
+		$('#serpModalSPBody').html(response);
+	}).fail(function() {
+		$('#serpModalSPBody').html('<div class="alert alert-danger">Failed to load SERP results.</div>');
+	});
+}
+
 function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVal) {
 	var screenWidth, screenHeight;
     screenWidth = $(window).width();

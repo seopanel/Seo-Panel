@@ -84,34 +84,45 @@ class DBI{
 		return $error;
 	}
 	
-	function importDatabaseFile($filename, $block=true){
-		
+	// $onProgress, if given, is called periodically as callable($linesDone, $totalLines) -
+	// lets the caller stream a progress bar update to the browser during a large import
+	// (see Install::importWithProgress()) without changing anything about how the file
+	// itself is parsed/executed.
+	function importDatabaseFile($filename, $block=true, $onProgress=null){
+
 		# temporary variable, used to store current query
 		$tmpline = '';
-		
+
 		# read in entire file
 		$lines = file($filename);
-		
+		$totalLines = count($lines);
+
 		# loop through each line
-		foreach ($lines as $line){			
-			
+		foreach ($lines as $lineIndex => $line){
+
 			# skip it if it's a comment
 			if (substr($line, 0, 2) == '--' || $line == '')
 				continue;
-		 
+
 			# add this line to the current segment
 			$tmpline .= $line;
-			
+
 			# if it has a semicolon at the end, it's the end of the query
 			if (substr(trim($line), -1, 1) == ';'){
-				
+
 				if(!empty($tmpline)){
 					$errMsg = $this->query($tmpline);
 					if($block && $this->error) return $errMsg;
 				}
 				$tmpline = '';
 			}
-		}		
+
+			// throttled to every 25 lines - frequent enough to feel live,
+			// infrequent enough that the flush() overhead never dominates
+			if ($onProgress !== null && ($lineIndex % 25 === 0 || $lineIndex === $totalLines - 1)) {
+				call_user_func($onProgress, $lineIndex + 1, $totalLines);
+			}
+		}
 	}
 }
 ?>

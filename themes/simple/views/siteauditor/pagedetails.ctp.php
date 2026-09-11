@@ -669,6 +669,31 @@ $dofollowCount = $totalLinks - $nofollowCount;
 				<div class="detail-card full-width">
 					<div class="detail-label"><i class="fas fa-align-left"></i> <?php echo $spText['label']['Description']?></div>
 					<div class="detail-value"><?php echo strip_tags($reportInfo['page_description']) ?: '<em style="color:#adb5bd">Not found</em>'?></div>
+					<?php if (empty($reportInfo['page_description']) && !empty($localAiAvailable)) { ?>
+						<button type="button" class="btn btn-sm btn-secondary" id="aivSuggestMetaBtn" onclick="aivSuggestMetaDescription(<?php echo intval($reportInfo['id'])?>)" style="margin-top:6px;">
+							<i class="fas fa-robot"></i> <?php echo $spTextSiteAuditor['Suggest with AI'] ?? 'Suggest with AI'?>
+						</button>
+						<p id="aivSuggestMetaText" style="display:none;margin-top:8px;color:#444;"></p>
+						<script>
+						function aivSuggestMetaDescription(reportId) {
+							var btn = document.getElementById('aivSuggestMetaBtn');
+							var el = document.getElementById('aivSuggestMetaText');
+							btn.disabled = true;
+							fetch('siteauditor.php?sec=suggest-meta-description&report_id=' + reportId, { credentials: 'same-origin' })
+								.then(function(res) { return res.json(); })
+								.then(function(data) {
+									btn.disabled = false;
+									el.textContent = data.ok ? data.suggestion : (data.error || 'Suggestion unavailable.');
+									el.style.display = 'block';
+								})
+								.catch(function() {
+									btn.disabled = false;
+									el.textContent = 'Suggestion unavailable.';
+									el.style.display = 'block';
+								});
+						}
+						</script>
+					<?php } ?>
 				</div>
 				<div class="detail-card full-width">
 					<div class="detail-label"><i class="fas fa-key"></i> <?php echo $spText['label']['Keywords']?></div>

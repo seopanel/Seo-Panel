@@ -10,6 +10,15 @@
 		<td class="td_left_col"><strong><?php echo $spText['login']['Email']?>:</strong></td>
 		<td class="td_right_col"><input type="email" name="test_email" value="" class="form-control"><?php echo $errMsg['name']?></td>
 	</tr>
+	<tr class="white_row">
+		<td class="td_left_col"><strong>Debug:</strong></td>
+		<td class="td_right_col">
+			<select name="debug_mail" class="custom-select" style="width:150px;">
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1"><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</td>
+	</tr>
 </table>
 <table class="actionSec mt-2 float-right">
 	<tr>

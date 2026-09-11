@@ -1,0 +1,46 @@
+services:
+  seopanel:
+    image: !reset null
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html/sp
+      # spTests' provisioner rm -rf's + recreates the scratch dir itself on
+      # every run, which breaks a bind mount pointed directly at it (new
+      # inode, stale mount). Mounting this stable parent instead - the
+      # scratch path lives one level down, inside it - means only content
+      # under the mount point gets replaced, never the mount point itself.
+      - ../sp-e2e-root:/var/www/html/sp-e2e-root
+      # spTests' PHP backend integration tests (tests/php/*_test.php) are
+      # safe to run against a real install - they exercise its DB but never
+      # its filesystem. No PHP CLI on the host, so they run via this
+      # container's own PHP instead (see spTests bin/ for the wrapper).
+      - ../spTests:/var/www/html/spTests
+
+  db:
+    image: mysql:5.7
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: seopanel_phpmyadmin
+    environment:
+      - PMA_HOST=db
+      - PMA_ABSOLUTE_URI=http://localhost/phpmyadmin/
+    ports:
+      - "8081:80"
+    depends_on:
+      - db
+
+  spapi:
+    build:
+      context: ../spAPI
+      dockerfile: docker/Dockerfile
+    container_name: spapi
+    volumes:
+      - ../spAPI:/var/www/html/spAPI
+    depends_on:
+      - db

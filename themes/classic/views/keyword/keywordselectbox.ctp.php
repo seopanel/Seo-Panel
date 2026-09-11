@@ -4,9 +4,9 @@
 	<?php } ?>
 	<?php foreach($keywordList as $keywordInfo){?>
 		<?php if($keywordInfo['id'] == $keywordId){?>
-			<option value="<?php echo $keywordInfo['id']?>" selected><?php echo $keywordInfo['name']?></option>
+			<option value="<?php echo $keywordInfo['id']?>" selected><?php echo htmlspecialchars($keywordInfo['name'])?></option>
 		<?php }else{?>
-			<option value="<?php echo $keywordInfo['id']?>"><?php echo $keywordInfo['name']?></option>
+			<option value="<?php echo $keywordInfo['id']?>"><?php echo htmlspecialchars($keywordInfo['name'])?></option>
 		<?php }?>
 	<?php }?>
 </select>
