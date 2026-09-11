@@ -1387,6 +1387,12 @@ class DashboardController extends Controller {
         $this->set('prevWAStats', $prevWAStats);
         $this->set('waComparison', $waComparison);
 
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Google Analytics traffic numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
+
         include_once(SP_CTRLPATH . '/settings.ctrl.php');
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
 
@@ -1574,6 +1580,12 @@ class DashboardController extends Controller {
         $this->set('scSourceDistribution', $scSourceDistribution);
         $this->set('prevSCStats', $prevSCStats);
         $this->set('scComparison', $scComparison);
+
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Search Console numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
 
         include_once(SP_CTRLPATH . '/settings.ctrl.php');
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());

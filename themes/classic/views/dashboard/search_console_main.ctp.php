@@ -119,7 +119,6 @@ if (!empty($noWebsites)) {
 	</div>
 
 	<!-- AI Traffic & Search Insights -->
-	<?php if (!empty($localAiAvailable)) { ?>
 	<div class="row mb-4">
 		<div class="col-md-12">
 			<div class="card">
@@ -127,15 +126,32 @@ if (!empty($noWebsites)) {
 					<h4><i class="fas fa-robot"></i> AI Traffic &amp; Search Insights</h4>
 				</div>
 				<div class="card-body">
-					<p class="text-muted mb-2">Combines this Search Console data with Google Analytics data for the same period into one plain-language summary.</p>
-					<button type="button" class="btn btn-outline-secondary btn-sm" onclick="searchConsoleSummarizeTrafficSearch()">
-						<i class="fa fa-magic"></i> Summarize with AI
-					</button>
-					<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+					<div class="row mb-3">
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-mouse-pointer text-primary"></i> AI Referral Clicks</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo number_format($aiVisibilityStats['referralHits'] ?? 0)?></span></h3>
+							<small class="text-muted">visits from an AI platform link</small>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-eye text-info"></i> AI Overview Impressions</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo intval($aiVisibilityStats['aioPresent'] ?? 0)?></span></h3>
+							<small class="text-muted">of <?php echo intval($aiVisibilityStats['aioMeasured'] ?? 0)?> measured keywords</small>
+						</div>
+						<div class="col-md-6">
+							<p class="text-muted mb-2">Combines this Search Console data with Google Analytics data for the same period into one plain-language summary.</p>
+							<?php if (!empty($localAiAvailable)) { ?>
+							<button type="button" class="btn btn-outline-secondary btn-sm" onclick="searchConsoleSummarizeTrafficSearch()">
+								<i class="fa fa-magic"></i> Summarize with AI
+							</button>
+							<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+							<?php } ?>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+	<?php if (!empty($localAiAvailable)) { ?>
 	<script type="text/javascript">
 	function searchConsoleSummarizeTrafficSearch() {
 		var box = document.getElementById('trafficSearchSummary');
