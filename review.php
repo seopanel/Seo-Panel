@@ -116,7 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		case "viewGraphReports":
 			$controller->viewGraphReports($_GET);
 			break;
-			
+
+		case "summarizetrend":
+			$controller->summarizeTrend($_GET);
+			break;
+
 		case "linkSelectBox":
 		    $controller->showReviewLinkSelectBox($_GET['website_id']);
 		    break;

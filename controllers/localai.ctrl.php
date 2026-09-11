@@ -647,5 +647,59 @@ class LocalAIController extends Controller {
 
 		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
 	}
+
+	/*
+	 * Plain-language summary of one review link's review-count/rating
+	 * trend over a date range, for the Review Manager tool's Detailed
+	 * Reports screen - same restate-only-the-facts discipline as the
+	 * other trend summaries. Ownership is via review_links.website_id
+	 * (the link itself carries no user_id of its own) - verified against
+	 * the caller's own website list, same as every other tool this round.
+	 */
+	function summarizeReviewTrend($linkId, $userId, $fromTime, $toTime) {
+		if (!SettingsController::isLocalAIEnabled()) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Local AI is not enabled'];
+		}
+
+		$linkId = intval($linkId);
+		$linkInfo = $this->dbHelper->getRow('review_links', "id=$linkId");
+		if (empty($linkInfo)) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		$owned = false;
+		foreach ($websiteList as $w) {
+			if ($w['id'] == $linkInfo['website_id']) { $owned = true; break; }
+		}
+		if (!$owned) {
+			return ['ok' => false, 'summary' => '', 'error' => 'Not authorized'];
+		}
+
+		$fromTime = addslashes($fromTime);
+		$toTime = addslashes($toTime);
+		$rows = $this->db->select("SELECT report_date, reviews, rating FROM review_link_results WHERE review_link_id=$linkId AND report_date >= '$fromTime' AND report_date <= '$toTime' ORDER BY report_date");
+
+		if (count($rows) < 2) {
+			return ['ok' => true, 'summary' => 'Not enough history in this date range yet to summarize a trend - check back after a few more report runs.', 'error' => null];
+		}
+
+		$first = reset($rows);
+		$last = end($rows);
+		$prompt = 'Review link: ' . ($linkInfo['name'] ?? '') . ' (' . ($linkInfo['type'] ?? '') . ")\n\n"
+			. "Review count went from {$first['reviews']} on {$first['report_date']} to {$last['reviews']} on {$last['report_date']}.\n"
+			. "Rating went from {$first['rating']} on {$first['report_date']} to {$last['rating']} on {$last['report_date']}.";
+
+		$systemPrompt = 'You summarize a business review profile\'s review-count/rating trend in plain language for a non-technical client. '
+			. 'ONLY restate what the numbers show (direction, magnitude) - never invent a cause the data itself does not show. '
+			. 'Keep it to 1-2 sentences.';
+
+		$result = $this->__callOllama($prompt, $systemPrompt, 20, $userId);
+		if (!$result['ok']) {
+			return ['ok' => false, 'summary' => '', 'error' => $result['error']];
+		}
+
+		return ['ok' => true, 'summary' => trim($result['text']), 'error' => null];
+	}
 }
 ?>
