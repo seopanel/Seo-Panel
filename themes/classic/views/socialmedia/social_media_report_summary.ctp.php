@@ -155,10 +155,10 @@ $colCount = ($baseColCount * 3) - 1;
 				<tr>
 					<td>
 						<i class="fab fa-<?php echo strtolower($listInfo['type'])?>"></i>
-						<?php echo $listInfo['name']?>
+						<?php echo htmlspecialchars($listInfo['name'])?>
 					</td>
 					<td>
-						<a href="javascript:void(0)"><?php echo $websiteList[$listInfo['website_id']]['name']; ?></a>
+						<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
 					</td>
 					<?php
 					foreach ($colList as $colName => $colVal){
