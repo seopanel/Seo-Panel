@@ -8,23 +8,23 @@ echo showSectionHead($spTextLog['Mail Log Details']);
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['label']['Subject']?>:</td>
-		<td><?php echo $logInfo['subject']?></td>
+		<td><?php echo htmlspecialchars($logInfo['subject'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['common']['Category']?>:</td>
-		<td><?php echo $logInfo['mail_category']?></td>
+		<td><?php echo htmlspecialchars($logInfo['mail_category'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td>TO:</td>
-		<td><?php echo $logInfo['to_address']?></td>
+		<td><?php echo htmlspecialchars($logInfo['to_address'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td>CC:</td>
-		<td><?php echo $logInfo['cc_address']?></td>
+		<td><?php echo htmlspecialchars($logInfo['cc_address'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['label']['From']?>:</td>
-		<td><?php echo $logInfo['from_address']?></td>
+		<td><?php echo htmlspecialchars($logInfo['from_address'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['common']['Status']?>:</td>
@@ -40,7 +40,7 @@ echo showSectionHead($spTextLog['Mail Log Details']);
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['common']['Details']?>:</td>
-		<td><?php echo $logInfo['log_message']?></td>
+		<td><?php echo htmlspecialchars($logInfo['log_message'])?></td>
 	</tr>
 	<tr class="form_data">
 		<td><?php echo $spText['label']['Updated']?>:</td>
