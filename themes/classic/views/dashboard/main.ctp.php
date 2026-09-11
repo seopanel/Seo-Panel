@@ -172,6 +172,84 @@
 		</div>
 	</div>
 
+	<!-- AI Visibility -->
+	<?php
+	$aioMeasured = intval($aiVisibilityStats['aioMeasured']);
+	$aioPresent = intval($aiVisibilityStats['aioPresent']);
+	$aioCited = intval($aiVisibilityStats['aioCited']);
+	$referralHits = intval($aiVisibilityStats['referralHits']);
+	$topPlatform = $aiVisibilityStats['topPlatform'];
+
+	if ($referralHits > 0) {
+		$aiFindingTitle = "AI crawlers visited $referralHits time" . ($referralHits == 1 ? '' : 's') . " in the last 30 days";
+		$aiFindingDesc = "ChatGPT, Perplexity, Gemini, Claude and similar AI crawlers fetched this site $referralHits time" . ($referralHits == 1 ? '' : 's') . " over the last 30 days" . (!empty($topPlatform) ? ", most often via $topPlatform." : ".");
+	} else {
+		$aiFindingTitle = "No AI crawler activity in the last 30 days";
+		$aiFindingDesc = "No AI crawler visit has been recorded for this site in the selected period.";
+	}
+	?>
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
+					<h4><i class="fas fa-robot"></i> AI Visibility</h4>
+					<?php if (!empty($seoDiaryPluginId)) {
+						// Opt-in only - never auto-created, same pattern as
+						// RecommendationsController's own "Add to SEO Diary"
+						// action (see that controller for the full rationale)
+						$addToDiaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
+							. "&action=newDiary"
+							. "&title=" . urlencode($aiFindingTitle)
+							. "&description=" . urlencode($aiFindingDesc);
+					?>
+					<a href="<?php echo htmlspecialchars($addToDiaryUrl)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
+						<i class="fas fa-book"></i> Add to SEO Diary
+					</a>
+					<?php } ?>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">
+								AI Overview Keywords
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Keywords with a recorded Google AI Overview check"></i>
+							</h6>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $aioMeasured?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">
+								Appears in AI Overview
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Measured keywords where an AI Overview was shown"></i>
+							</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $aioPresent?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">
+								Cited in AI Overview
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Keywords where this site was cited as a source"></i>
+							</h6>
+							<h3><span class="badge bg-success" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo $aioCited?></span></h3>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-3">
+								AI Crawler Visits (30d)
+								<i class="fas fa-info-circle" data-toggle="tooltip" title="Requests from AI crawlers (ChatGPT, Perplexity, Gemini, Claude, etc.)"></i>
+							</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.5rem; padding: 0.5rem 1rem;"><?php echo number_format($referralHits)?></span></h3>
+							<?php if (!empty($topPlatform)) { ?>
+								<small class="text-muted">Top: <?php echo htmlspecialchars($topPlatform)?></small>
+							<?php } ?>
+						</div>
+					</div>
+					<div class="alert <?php echo $referralHits > 0 ? 'alert-info' : 'alert-warning'?> mt-3 mb-0">
+						<i class="fas <?php echo $referralHits > 0 ? 'fa-info-circle' : 'fa-exclamation-circle'?> me-2"></i>
+						<?php echo htmlspecialchars($aiFindingTitle)?>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Keyword Statistics -->
 	<div class="row mb-4">
 		<div class="col-md-12">

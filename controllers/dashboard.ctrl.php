@@ -139,7 +139,70 @@ class DashboardController extends Controller {
         $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
         $this->set('searchEngineStats', $searchEngineStats);
 
+        // Get AI Visibility stats (AI Overview presence/citation + AI
+        // crawler referral traffic) for the overview card
+        $aiVisibilityStats = $this->getAIVisibilityStats($websiteId, $fromTime, $toTime);
+        $this->set('aiVisibilityStats', $aiVisibilityStats);
+
+        // "Add to SEO Diary" quick action for the AI Visibility card's
+        // headline finding - same deny-by-default access check as
+        // RecommendationsController::showRecommendationsDashboard()
+        // (see that method's own comment for why isPluginActive() alone
+        // isn't enough for a non-admin)
+        include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
+        $seoDiaryInfo = (new SeoPluginsController())->isPluginActive("SeoDiary");
+        $seoDiaryPluginId = 0;
+        if (!empty($seoDiaryInfo['id'])) {
+            if (isAdmin()) {
+                $seoDiaryPluginId = $seoDiaryInfo['id'];
+            } else {
+                include_once(SP_CTRLPATH . "/user-type.ctrl.php");
+                $userSessInfo = Session::readSession('userInfo');
+                $pluginAccessList = (new UserTypeController())->getPluginAccessSettings($userSessInfo['userTypeId']);
+                $hasAccess = !isset($pluginAccessList[$seoDiaryInfo['id']]['value']) || !empty($pluginAccessList[$seoDiaryInfo['id']]['value']);
+                if ($hasAccess) {
+                    $seoDiaryPluginId = $seoDiaryInfo['id'];
+                }
+            }
+        }
+        $this->set('seoDiaryPluginId', $seoDiaryPluginId);
+
         $this->render('dashboard/main');
+    }
+
+    // Get AI Visibility summary for the main dashboard's overview card:
+    // AI Overview (Google's AI-generated answer box) presence/citation,
+    // reusing AIVisibilityController's own summary helper so the numbers
+    // always match the dedicated AI Visibility report, plus AI crawler
+    // referral traffic (ChatGPT/Perplexity/Gemini/Claude, etc. fetching
+    // pages directly) over the selected period.
+    private function getAIVisibilityStats($websiteId, $fromTime, $toTime) {
+        include_once(SP_CTRLPATH . '/aivisibility.ctrl.php');
+        $aioSummary = (new AIVisibilityController())->__getAioSummaryForWebsite($websiteId);
+
+        $sql = "SELECT platform, SUM(hits) as hits
+                FROM ai_referrals
+                WHERE website_id=" . intval($websiteId) . "
+                    AND hit_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY platform
+                ORDER BY hits DESC";
+        $platformRows = $this->db->select($sql);
+
+        $referralHits = 0;
+        $topPlatform = null;
+        foreach ($platformRows as $row) {
+            $referralHits += intval($row['hits']);
+            if ($topPlatform === null) $topPlatform = $row['platform'];
+        }
+
+        return [
+            'aioMeasured' => $aioSummary['measured'],
+            'aioPresent' => $aioSummary['present'],
+            'aioCited' => $aioSummary['cited'],
+            'referralHits' => $referralHits,
+            'topPlatform' => $topPlatform,
+            'platformBreakdown' => $platformRows,
+        ];
     }
 
     function showSocialMediaDashboard($info=[]) {
