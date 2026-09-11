@@ -237,37 +237,30 @@
                             <?php echo htmlspecialchars($rec['description']) ?>
                         </td>
                         <?php if (!empty($seoDiaryPluginId)) {
-                            // Opt-in only - never auto-created. A plain full-page link
-                            // (not an AJAX scriptDoLoad) so it works regardless of
-                            // whatever admin-panel.php section this dashboard happens to
-                            // be embedded in. newDiary() reads title/description straight
-                            // off $_REQUEST into the New Diary form's prefilled fields -
-                            // the user still picks a project/category/due date and
-                            // confirms before anything is actually created.
+                            // Opt-in only - never auto-created. newDiary() reads
+                            // title/description straight off $_REQUEST into the New
+                            // Diary form's prefilled fields - the user still picks a
+                            // project/category/due date and confirms before anything
+                            // is actually created.
                             //
-                            // FIXED: must go through admin-panel.php's own start_script
-                            // deep-link mechanism (the same one "newweb"/"connections"/etc
-                            // use), not link to seo-plugins.php directly - every plugin
-                            // controller (SeoPluginsController) hardcodes $layout='ajax',
-                            // which renders a bare HTML fragment with no header/jQuery at
-                            // all. That's correct for the NORMAL flow (SEO Plugins nav
-                            // link AJAX-loads it into an already-chrome-loaded
-                            // admin-panel.php page), but a direct top-level navigation to
-                            // seo-plugins.php gets that same bare fragment as the ENTIRE
-                            // response - no jQuery, so new_diary.ctp.php's own
-                            // $(function(){...datepicker...}) script fatals with
-                            // "$ is not defined". Routing through admin-panel.php loads
-                            // the full layout (jQuery included) first, which then
-                            // AJAX-loads seo-plugins.php into #content exactly like the
-                            // normal navigation path does.
-                            $addToDiaryUrl = SP_WEBPATH . "/admin-panel.php?start_script=seo-plugins.php"
-                                . "&pid=" . intval($seoDiaryPluginId)
+                            // Opens in the app's existing modal dialog mechanism
+                            // (scriptDoLoadDialog(), js/popup.js - the same one used
+                            // elsewhere for "open a plugin action in a popup") rather
+                            // than navigating away. This ALSO sidesteps the layout/
+                            // jQuery bug a plain full-page link to seo-plugins.php used
+                            // to hit (every plugin controller hardcodes $layout='ajax' -
+                            // a bare fragment with no jQuery, fine when AJAX-loaded like
+                            // this, fatal as a full top-level navigation) without
+                            // depending on admin-panel.php's start_script mechanism at
+                            // all - we never leave the current page.
+                            $diaryArgs = "&pid=" . intval($seoDiaryPluginId)
                                 . "&action=newDiary"
                                 . "&title=" . urlencode($rec['title'])
                                 . "&description=" . urlencode($rec['description']);
+                            $diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
                             ?>
                         <td>
-                            <a href="<?php echo htmlspecialchars($addToDiaryUrl) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
+                            <a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
                                 <i class="fas fa-book"></i>
                             </a>
                         </td>

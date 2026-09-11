@@ -247,21 +247,19 @@ if (!function_exists('renderStatTile')) {
 					<?php if (!empty($seoDiaryPluginId)) {
 						// Opt-in only - never auto-created, same pattern as
 						// RecommendationsController's own "Add to SEO Diary"
-						// action (see that controller for the full rationale).
-						// FIXED: routed through admin-panel.php's start_script
-						// deep-link mechanism, not linked to seo-plugins.php
-						// directly - see recommendations_main.ctp.php's own
-						// comment on this exact fix for the full "why" (every
-						// plugin controller hardcodes layout='ajax', so a
-						// direct top-level navigation gets a bare fragment
-						// with no jQuery at all).
-						$addToDiaryUrl = SP_WEBPATH . "/admin-panel.php?start_script=seo-plugins.php"
-							. "&pid=" . intval($seoDiaryPluginId)
+						// action. Opens in the app's existing modal dialog
+						// mechanism (scriptDoLoadDialog(), js/popup.js) rather
+						// than navigating away - see recommendations_main.ctp.php's
+						// own comment on this for the full rationale (also
+						// sidesteps the layout/jQuery bug a plain full-page
+						// link to seo-plugins.php used to hit).
+						$diaryArgs = "&pid=" . intval($seoDiaryPluginId)
 							. "&action=newDiary"
 							. "&title=" . urlencode($aiFindingTitle)
 							. "&description=" . urlencode($aiFindingDesc);
+						$diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
 					?>
-					<a href="<?php echo htmlspecialchars($addToDiaryUrl)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
+					<a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
 						<i class="fas fa-book"></i> Add to SEO Diary
 					</a>
 					<?php } ?>
