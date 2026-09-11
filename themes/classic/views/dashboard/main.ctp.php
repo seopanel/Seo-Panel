@@ -247,8 +247,16 @@ if (!function_exists('renderStatTile')) {
 					<?php if (!empty($seoDiaryPluginId)) {
 						// Opt-in only - never auto-created, same pattern as
 						// RecommendationsController's own "Add to SEO Diary"
-						// action (see that controller for the full rationale)
-						$addToDiaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
+						// action (see that controller for the full rationale).
+						// FIXED: routed through admin-panel.php's start_script
+						// deep-link mechanism, not linked to seo-plugins.php
+						// directly - see recommendations_main.ctp.php's own
+						// comment on this exact fix for the full "why" (every
+						// plugin controller hardcodes layout='ajax', so a
+						// direct top-level navigation gets a bare fragment
+						// with no jQuery at all).
+						$addToDiaryUrl = SP_WEBPATH . "/admin-panel.php?start_script=seo-plugins.php"
+							. "&pid=" . intval($seoDiaryPluginId)
 							. "&action=newDiary"
 							. "&title=" . urlencode($aiFindingTitle)
 							. "&description=" . urlencode($aiFindingDesc);

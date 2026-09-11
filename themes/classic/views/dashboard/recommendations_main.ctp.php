@@ -244,7 +244,24 @@
                             // off $_REQUEST into the New Diary form's prefilled fields -
                             // the user still picks a project/category/due date and
                             // confirms before anything is actually created.
-                            $addToDiaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
+                            //
+                            // FIXED: must go through admin-panel.php's own start_script
+                            // deep-link mechanism (the same one "newweb"/"connections"/etc
+                            // use), not link to seo-plugins.php directly - every plugin
+                            // controller (SeoPluginsController) hardcodes $layout='ajax',
+                            // which renders a bare HTML fragment with no header/jQuery at
+                            // all. That's correct for the NORMAL flow (SEO Plugins nav
+                            // link AJAX-loads it into an already-chrome-loaded
+                            // admin-panel.php page), but a direct top-level navigation to
+                            // seo-plugins.php gets that same bare fragment as the ENTIRE
+                            // response - no jQuery, so new_diary.ctp.php's own
+                            // $(function(){...datepicker...}) script fatals with
+                            // "$ is not defined". Routing through admin-panel.php loads
+                            // the full layout (jQuery included) first, which then
+                            // AJAX-loads seo-plugins.php into #content exactly like the
+                            // normal navigation path does.
+                            $addToDiaryUrl = SP_WEBPATH . "/admin-panel.php?start_script=seo-plugins.php"
+                                . "&pid=" . intval($seoDiaryPluginId)
                                 . "&action=newDiary"
                                 . "&title=" . urlencode($rec['title'])
                                 . "&description=" . urlencode($rec['description']);
