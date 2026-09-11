@@ -18,6 +18,19 @@ class RecommendationsController extends Controller {
         $this->set('noWebsites', empty($websiteList));
 
         $websiteId = !empty($data['website_id']) ? intval($data['website_id']) : 0;
+        // a non-admin's website_id must be one of their own (already-scoped)
+        // websites - previously unchecked. This matters more than the usual
+        // read-only IDOR shape: refreshRecommendations() below actually
+        // WRITES sp_recommendations rows keyed by (website_id, THIS
+        // session's own user_id), so an unchecked foreign website_id there
+        // would let a non-admin launder another user's real keyword/
+        // webmaster/site-auditor/AI-visibility data into a row their own
+        // user_id can then read back right here. Falling back to their own
+        // first website reuses this method's own existing "no website_id
+        // given" semantics.
+        if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = 0;
+        }
         if (empty($websiteId) && !empty($websiteList)) {
             $websiteId = intval($websiteList[0]['id']);
         }
@@ -90,6 +103,19 @@ class RecommendationsController extends Controller {
             exit;
         }
 
+        // same ownership check as refreshRecommendations() - without it a
+        // non-admin who already laundered another user's data via that
+        // write path (or simply guesses a website_id with pre-existing
+        // rows) could ask the AI to summarize it.
+        if (!isAdmin()) {
+            $websiteController = new WebsiteController();
+            $ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+            if (!in_array($websiteId, $ownedIds)) {
+                echo json_encode(['ok' => false, 'error' => 'Not authorized']);
+                exit;
+            }
+        }
+
         include_once(SP_CTRLPATH . "/settings.ctrl.php");
         include_once(SP_CTRLPATH . "/localai.ctrl.php");
         $localAiCtrler = new LocalAIController();
@@ -107,6 +133,17 @@ class RecommendationsController extends Controller {
 
         $userId    = isLoggedIn();
         $websiteId = !empty($data['website_id']) ? intval($data['website_id']) : 0;
+
+        // this is the actual write path the IDOR note in
+        // showRecommendationsDashboard() above is about - refuse to
+        // (re)generate recommendations for a website the caller doesn't own.
+        if (!empty($websiteId) && !isAdmin()) {
+            $websiteController = new WebsiteController();
+            $ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+            if (!in_array($websiteId, $ownedIds)) {
+                $websiteId = 0;
+            }
+        }
 
         if (!empty($websiteId)) {
             $this->refreshRecommendationsForWebsite($websiteId, $userId);
