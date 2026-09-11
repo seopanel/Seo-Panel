@@ -402,8 +402,17 @@ class AnalyticsController extends Controller {
 	    $websiteList = count($websiteList) ? $websiteList : array(0);
 	    $this->set('websiteList', $websiteList);
 	    $websiteId = intval($searchInfo['website_id']);
+	    // a non-admin's website_id must be one of their own (already-scoped)
+	    // websites - previously unchecked, letting any non-admin view ANY
+	    // other user's analytics summary for an arbitrary website_id.
+	    // Falling back to 0 (rather than a specific website) reuses this
+	    // method's own existing "no website_id given" semantics below - it
+	    // means "all of my websites", not one arbitrary pick.
+	    if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
+	        $websiteId = 0;
+	    }
 	    $this->set('websiteId', $websiteId);
-	    
+
 	    // to find order col
 	    if (!empty($searchInfo['order_col'])) {
 	        $orderCol = $searchInfo['order_col'];
@@ -572,21 +581,32 @@ class AnalyticsController extends Controller {
 	    $websiteController = New WebsiteController();
 	    $websiteList = $websiteController->__getAllWebsites($userId, true);
 	    $this->set('websiteList', $websiteList);
-	    $websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+	    $websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+	    // a non-admin's website_id must be one of their own (already-scoped)
+	    // websites - previously unchecked. Same fallback as the other
+	    // dashboard/tool fixes this session: their own first website.
+	    if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+	        $websiteId = '';
+	    }
+	    if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 	    $this->set('websiteId', $websiteId);
-	    
+
+	    // source_id is not itself sensitive - analytic_sources is a shared,
+	    // global lookup table (e.g. "google", "direct") with no per-website
+	    // ownership - and the query below is already scoped by the fixed
+	    // website_id, so an unrelated source_id just yields zero rows.
 	    $sourceList = $this->__getWebsiteSourceList($websiteId);
 	    $this->set('sourceList', $sourceList);
-	    $sourceId = empty ($searchInfo['source_id']) ? $sourceList[0]['id'] : $searchInfo['source_id'];
+	    $sourceId = empty ($searchInfo['source_id']) ? $sourceList[0]['id'] : intval($searchInfo['source_id']);
 	    $this->set('sourceId', $sourceId);
-	    
+
 	    $conditions = " and s.website_id=$websiteId";
 	    $conditions .= empty ($sourceId) ? "" : " and s.source_id=$sourceId";
 	    $sql = "select s.* from website_analytics s
 		  where report_date>='$fromTimeDate' and report_date<='$toTimeDate' $conditions
 		  order by s.report_date";
 	    $reportList = $this->db->select($sql);
-	    
+
 	    $colList = array_keys($this->metrics);
 	    $prevRank = [];
 	    $rankDiff = [];
@@ -651,21 +671,26 @@ class AnalyticsController extends Controller {
 	    $websiteController = New WebsiteController();
 	    $websiteList = $websiteController->__getAllWebsites($userId, true);
 	    $this->set('websiteList', $websiteList);
-	    $websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+	    $websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+	    // same fix as viewAnalyticsReports() - see that method's comment
+	    if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+	        $websiteId = '';
+	    }
+	    if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 	    $this->set('websiteId', $websiteId);
-	    
+
 	    $sourceList = $this->__getWebsiteSourceList($websiteId);
 	    $this->set('sourceList', $sourceList);
-	    $sourceId = empty ($searchInfo['source_id']) ? $sourceList[0]['id'] : $searchInfo['source_id'];
+	    $sourceId = empty ($searchInfo['source_id']) ? $sourceList[0]['id'] : intval($searchInfo['source_id']);
 	    $this->set('sourceId', $sourceId);
-	    
+
 	    $conditions = " and s.website_id=$websiteId";
 	    $conditions .= empty ($sourceId) ? "" : " and s.source_id=$sourceId";
 	    $sql = "select s.* from website_analytics s
 		  where report_date>='$fromTimeDate' and report_date<='$toTimeDate' $conditions
 		  order by s.report_date";
 	    $reportList = $this->db->select($sql);
-	    
+
 	    // if reports not empty
 	    $colList = $this->metrics;
 	    $this->set('colList', $colList);
