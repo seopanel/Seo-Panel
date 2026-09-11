@@ -481,8 +481,8 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	<!-- Page URL Banner -->
 	<div class="page-url-banner">
 		<h4><i class="fas fa-globe"></i> Analyzing Page</h4>
-		<a href="<?php echo $reportInfo['page_url']?>" target="_blank">
-			<?php echo $reportInfo['page_url']?>
+		<a href="<?php echo htmlspecialchars($reportInfo['page_url'], ENT_QUOTES)?>" target="_blank">
+			<?php echo htmlspecialchars($reportInfo['page_url'])?>
 			<i class="fas fa-external-link-alt" style="margin-left: 8px; font-size: 12px;"></i>
 		</a>
 	</div>

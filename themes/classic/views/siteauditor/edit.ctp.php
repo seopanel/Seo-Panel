@@ -13,9 +13,9 @@
 			<select name="website_id" id="website_id" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $post['website_id']){?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>
@@ -25,14 +25,14 @@
 	<tr>
 		<td><?php echo $spTextSA['Maximum number of pages to be checked']?>:*</td>
 		<td>
-			<input type="text" name="max_links" value="<?php echo $post['max_links']?>" class="form-control"><?php echo $errMsg['max_links']?>
+			<input type="text" name="max_links" value="<?php echo htmlspecialchars($post['max_links'] ?? '')?>" class="form-control"><?php echo $errMsg['max_links']?>
 			<p><b><?php echo $spTextSettings['SA_MAX_NO_PAGES']?>:</b> <?php echo SA_MAX_NO_PAGES?></p>
 		</td>
 	</tr>
 	<tr>
 		<td><?php echo $spTextSA['Sitemap URL']?>:</td>
 		<td>
-			<input type="text" name="sitemap_url" value="<?php echo $post['sitemap_url']?>" size="80" class="form-control">
+			<input type="text" name="sitemap_url" value="<?php echo htmlspecialchars($post['sitemap_url'] ?? '')?>" size="80" class="form-control">
 			<?php echo $errMsg['sitemap_url']?>
 			<p><b>Note:</b> Enter sitemap URL to fetch pages before crawling (e.g., https://example.com/sitemap.xml). Leave blank for automatic discovery.</p>
 		</td>
@@ -40,7 +40,7 @@
 	<tr>
 		<td><?php echo $spTextSA['Exclude links']?>:</td>
 		<td>
-			<textarea name="exclude_links" class="form-control"><?php echo $post['exclude_links']?></textarea>			
+			<textarea name="exclude_links" class="form-control"><?php echo htmlspecialchars($post['exclude_links'] ?? '')?></textarea>
 			<?php echo $errMsg['exclude_links']?>
 			<p><?php echo $spTextSA['insertlinkssepcoma']?>.</p>
 			<p><b>Note:</b> <?php echo $spTextSA['anylinkcontainabovelinks']?>.</p>
@@ -50,7 +50,7 @@
 	<tr>
 		<td><?php echo $spTextSA['Exclude Extensions']?>:</td>
 		<td>
-			<input type="text" name="exclude_extensions" value="<?php echo $post['exclude_extensions']?>" size="80" class="form-control">
+			<input type="text" name="exclude_extensions" value="<?php echo htmlspecialchars($post['exclude_extensions'] ?? '')?>" size="80" class="form-control">
 			<?php echo $errMsg['exclude_extensions']?>
 			<p><b>Note:</b> <?php echo $spTextSA['Leave blank to use system default']?>.</p>
 		</td>

@@ -24,8 +24,69 @@
 class SiteAuditorController extends Controller{
     
     var $cron = false;                    // to identify whether it is executed through cron
-    var $seArr = array('google', 'bing'); // the array contains search engines 
-    
+    var $seArr = array('google', 'bing'); // the array contains search engines
+
+	/*
+	 * Ownership gate for every project_id-scoped action reachable from
+	 * siteauditor.php - none of them previously verified the caller
+	 * actually owned the project's website before viewing/modifying it
+	 * (or, for __deleteProject()/updateProject(), before DELETING it or
+	 * reassigning it to a different website_id). Any non-admin could act
+	 * on ANY other user's site auditor project just by passing an
+	 * arbitrary project_id - the widest-blast-radius IDOR found this
+	 * session, since it's both read AND write (including destructive
+	 * delete). Exits via showErrorMsg() when not allowed, same convention
+	 * as SocialMediaController::verifyActionAllowed()/
+	 * ReviewManagerController::verifyActionAllowed(). Returns the
+	 * project's row (already fetched) so callers that need it aren't
+	 * forced to look it up a second time.
+	 */
+	function __verifyProjectOwnership($projectId) {
+		$projectId = intval($projectId);
+		$projectInfo = empty($projectId) ? [] : $this->dbHelper->getRow('auditorprojects', "id=$projectId");
+		$allowed = !empty($projectInfo['website_id']);
+
+		if ($allowed && !isAdmin()) {
+			$userId = isLoggedIn();
+			$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+			$allowed = in_array(intval($projectInfo['website_id']), array_column($websiteList, 'id'));
+		}
+
+		if (!$allowed) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+		}
+
+		return $projectInfo;
+	}
+
+	/*
+	 * Same gate, for the report_id-scoped actions (a crawled page belongs
+	 * to a project, which belongs to a website) - resolves report_id ->
+	 * project_id, then defers to __verifyProjectOwnership() above.
+	 */
+	function __verifyReportOwnership($reportId) {
+		$reportId = intval($reportId);
+		$reportInfo = empty($reportId) ? [] : $this->dbHelper->getRow('auditorreports', "id=$reportId");
+		if (empty($reportInfo['project_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+		}
+		$this->__verifyProjectOwnership($reportInfo['project_id']);
+		return $reportInfo;
+	}
+
+	/*
+	 * For createProject()/updateProject(): the website_id being assigned
+	 * (a NEW project has no project-level ownership to check yet, and
+	 * updateProject() can also reassign an existing project to a
+	 * different website_id) must belong to the caller.
+	 */
+	function __verifyWebsiteOwnership($websiteId) {
+		if (isAdmin()) return !empty($websiteId);
+		$userId = isLoggedIn();
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		return in_array(intval($websiteId), array_column($websiteList, 'id'));
+	}
+
 	function showAuditorProjects($info=[]) {
 		$info['userid'] = intval($info['userid']);
 	    $userId = isLoggedIn();
@@ -84,12 +145,23 @@ class SiteAuditorController extends Controller{
 	
 	// func to create project
 	function createProject($listInfo){
-	    
-		$userId = isLoggedIn();		
+
+		$userId = isLoggedIn();
 		$this->set('post', $listInfo);
 		$listInfo['website_id'] = intval($listInfo['website_id']);
 		$listInfo['max_links'] = intval($listInfo['max_links']);
-		
+
+		// a caller-supplied website_id was never verified to belong to the
+		// caller before creating a Site Auditor project against it - any
+		// non-admin could start crawling (and consuming crawl/API budget
+		// against) ANY other user's website by passing an arbitrary
+		// website_id.
+		if (!empty($listInfo['website_id']) && !$this->__verifyWebsiteOwnership($listInfo['website_id'])) {
+			$this->set('errMsg', ['website_id' => formatErrorMsg($_SESSION['text']['label']['Access denied'])]);
+			$this->newProject($listInfo);
+			return;
+		}
+
 		$errMsg['website_id'] = formatErrorMsg($this->validate->checkBlank($listInfo['website_id']));
 		$errMsg['max_links'] = formatErrorMsg($this->validate->checkNumber($listInfo['max_links']));
 		if(!$this->validate->flagErr){
@@ -191,10 +263,11 @@ class SiteAuditorController extends Controller{
 	}
 	
 	// func to edit project
-	function editProject($projectId, $listInfo=''){		
+	function editProject($projectId, $listInfo=''){
 	    $userId = isLoggedIn();
 	    $projectId = intval($projectId);
-		if(!empty($projectId)){			
+		if(!empty($projectId)){
+			$this->__verifyProjectOwnership($projectId);
 			if(empty($listInfo)){
 				$listInfo = $this->__getProjectInfo($projectId);
 				$listInfo['oldName'] = $listInfo['keyword'];
@@ -219,8 +292,21 @@ class SiteAuditorController extends Controller{
 		$listInfo['id'] = intval($listInfo['id']);
 		$userId = isLoggedIn();
 		$listInfo['website_id'] = intval($listInfo['website_id']);
-		$listInfo['max_links'] = intval($listInfo['max_links']);		
+		$listInfo['max_links'] = intval($listInfo['max_links']);
 		$this->set('post', $listInfo);
+
+		// must own the EXISTING project, and (since website_id can be
+		// changed here) must also own the NEW website_id being assigned -
+		// without this a non-admin could both modify another user's
+		// project and/or reassign their own project onto someone else's
+		// website.
+		$this->__verifyProjectOwnership($listInfo['id']);
+		if (!$this->__verifyWebsiteOwnership($listInfo['website_id'])) {
+			$this->set('errMsg', ['website_id' => formatErrorMsg($_SESSION['text']['label']['Access denied'])]);
+			$this->editProject($listInfo['id'], $listInfo);
+			return;
+		}
+
 		$errMsg['website_id'] = formatErrorMsg($this->validate->checkBlank($listInfo['website_id']));
 		$errMsg['max_links'] = formatErrorMsg($this->validate->checkNumber($listInfo['max_links']));
 		if(!$this->validate->flagErr){
@@ -291,7 +377,8 @@ class SiteAuditorController extends Controller{
 	}
 
 	// func to change status
-	function __changeStatus($projectId, $status){		
+	function __changeStatus($projectId, $status){
+		$this->__verifyProjectOwnership($projectId);
 		$projectId = intval($projectId);
 		$sql = "update auditorprojects set status=$status where id=$projectId";
 		$this->db->query($sql);
@@ -299,17 +386,23 @@ class SiteAuditorController extends Controller{
 
 	// func to delete project
 	function __deleteProject($projectId){
-	    // delete teh project
+		$this->__verifyProjectOwnership($projectId);
 		$projectId = intval($projectId);
-		$sql = "delete from auditorprojects where id=$projectId";
-		$this->db->query($sql);
-		
-		// delete all pages found in reports
+
+		// delete all pages found in reports FIRST, while the project row
+		// still exists - __deleteReportPage() now re-verifies ownership of
+		// its report's parent project (see __verifyReportOwnership()), so
+		// deleting the project row before this loop would make every one
+		// of these calls fail that check against an already-gone project.
 		$sql = "select id from auditorreports where project_id=$projectId";
-		$repList = $this->db->select($sql);		
+		$repList = $this->db->select($sql);
 		foreach ($repList as $repInfo) {
 		    $this->__deleteReportPage($repInfo['id']);
 		}
+
+	    // delete the project itself
+		$sql = "delete from auditorprojects where id=$projectId";
+		$this->db->query($sql);
 	}
 
 	// function to get number of links of a project
@@ -337,6 +430,7 @@ class SiteAuditorController extends Controller{
 
 	// function to show interface to run a project
 	function showRunProject($projectId) {
+	    $this->__verifyProjectOwnership($projectId);
 	    $projectId = intval($projectId);
 	    $projectInfo = $this->__getProjectInfo($projectId);
 	    $projectInfo['total_links'] = $this->getCountcrawledLinks($projectInfo['id']);
@@ -355,6 +449,7 @@ class SiteAuditorController extends Controller{
 	// function to check page score
 	function checkPageScore($info=[]) {
 	    if (!empty($info['report_id'])) {
+	        $this->__verifyReportOwnership($info['report_id']);
 	        $reportId = intval($info['report_id']);
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $reportInfo = $auditorComp->getReportInfo(" and id=$reportId");
@@ -367,8 +462,9 @@ class SiteAuditorController extends Controller{
 	// func to delete page of report
 	function __deleteReportPage($reportId){
 	    if (!empty($reportId)) {
+	        $this->__verifyReportOwnership($reportId);
 	        $reportId = intval($reportId);
-	        
+
 	        // delete report page
 	        $sql = "delete from auditorreports where id=$reportId";
 	        $this->db->query($sql);
@@ -383,6 +479,7 @@ class SiteAuditorController extends Controller{
 	function recheckReportPages($projectId) {
 	    $projectId = intval($projectId);
 	    if (!empty($projectId)) {
+	        $this->__verifyProjectOwnership($projectId);
 	        $sql = "update auditorreports set crawled=0 where project_id=$projectId";
 	        $this->db->query($sql);
 	        
@@ -402,6 +499,11 @@ class SiteAuditorController extends Controller{
 	
 	// function to run project, save blog links to database
 	function runProject($projectId) {
+	    // only enforce for the web route - executeCron() (siteauditorcron.php,
+	    // CLI-only, no HTTP session) calls this directly for every due
+	    // project across every user, which is the trusted, legitimate case
+	    // isLoggedIn()/isAdmin() have no meaning for.
+	    if (!$this->cron) $this->__verifyProjectOwnership($projectId);
 	    $projectId = intval($projectId);
         $projectInfo = $this->__getProjectInfo($projectId);
 	    $completed = 0;
@@ -413,8 +515,17 @@ class SiteAuditorController extends Controller{
 	        if (!$crawlUrl = $this->getProjectRandomUrl($projectId)) {
 	            $completed = 1;
 	        } else {
-	            if (!$this->cron) updateJsLocation('crawling_url', $crawledUrl);
-	        }	        
+	            // updateJsLocation() embeds this raw into a single-quoted JS
+	            // string with no escaping of its own (document.getElementById
+	            // ('crawling_url').innerHTML = '$text';) - $crawledUrl is a
+	            // crawled page URL, which can carry attacker-influenced
+	            // content (e.g. via importLinks()), so a bare single quote in
+	            // it would break out of the JS string. addslashes() here (the
+	            // same idiom already used elsewhere in this codebase for
+	            // embedding data into a single-quoted JS argument string)
+	            // closes that off.
+	            if (!$this->cron) updateJsLocation('crawling_url', addslashes($crawledUrl));
+	        }
 	    } else {
 	        $completed = 1;
 	    }
@@ -477,11 +588,19 @@ class SiteAuditorController extends Controller{
 	    }	    
 	    
 	    if (empty($info['project_id'])) {
-            $projectId = $projectList[0]['id']; 
+            $projectId = $projectList[0]['id'];
 	    } else {
 	        $projectId = intval($info['project_id']);
+	        // a foreign project_id must be one of the caller's own
+	        // (already-scoped) projects - previously unchecked. The actual
+	        // report data fetch is separately protected in
+	        // showProjectReport(), but this tab-list view sets projectId
+	        // too, so it gets the same fallback for consistency.
+	        if (!in_array($projectId, array_column($projectList, 'id'))) {
+	            $projectId = $projectList[0]['id'] ?? 0;
+	        }
 	    }
-	    
+
 	    $this->set('projectId', $projectId);
 	    $this->set('projectList', $projectList);
 	    $reportTypes = array(
@@ -498,8 +617,14 @@ class SiteAuditorController extends Controller{
 	}
 	
 	//function to show the reports by using view reportss filters
-	function showProjectReport($data='') {	    
+	function showProjectReport($data='') {
 	    $data['project_id'] = intval($data['project_id']);
+	    // single ownership check point for every report_type this
+	    // dispatches to below (rp_summary/rp_links/page_title/
+	    // page_description/page_keywords) - a foreign project_id
+	    // previously exposed another user's full crawl report (page URLs,
+	    // meta tags, backlink/indexation/broken-link data).
+	    $this->__verifyProjectOwnership($data['project_id']);
 	    $projectInfo = $this->__getProjectInfo($data['project_id']);
 	    $projectInfo['last_updated'] = $this->getProjectLastUpdate($data['project_id']);
 	    $this->set('projectId', $data['project_id']);
@@ -913,6 +1038,7 @@ class SiteAuditorController extends Controller{
 	function viewPageDetails($info=[]) {
 	    $reportId = intval($info['report_id']);
 	    if (!empty($reportId)) {
+	        $this->__verifyReportOwnership($reportId);
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $reportInfo = $auditorComp->getReportInfo(" and id=$reportId");
 	        $reportInfo['score'] = array_sum($auditorComp->countReportPageScore($reportInfo));
@@ -1199,7 +1325,8 @@ class SiteAuditorController extends Controller{
     function importLinks($listInfo) {
         $userId = isLoggedIn();
         $listInfo['project_id'] = intval($listInfo['project_id']);
-		$this->set('post', $listInfo);		
+        $this->__verifyProjectOwnership($listInfo['project_id']);
+		$this->set('post', $listInfo);
 		$errMsg['links'] = formatErrorMsg($this->validate->checkBlank($listInfo['links']));
 				
 		if (!$this->validate->flagErr) {
