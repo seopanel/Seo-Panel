@@ -159,24 +159,69 @@ class WebsiteController extends Controller{
 		return $cond;
 	}
 
+		/*
+	 * func to verify the logged-in caller owns (or is admin over) a
+	 * website - shared by __changeStatus()/__deleteWebsite()/
+	 * updateWebsite()/editWebsite(), none of which checked this before:
+	 * any logged-in non-admin could activate/deactivate, delete, rename/
+	 * reassign, or view the edit form of ANY other user's website just
+	 * by supplying its id, via the normal web UI (websites.php), no API
+	 * key or admin session needed.
+	 *
+	 * Deliberately returns a bool rather than calling showErrorMsg()
+	 * itself: __changeStatus()/__deleteWebsite() can be invoked in a
+	 * bulk loop (websites.php's activateall/inactivateall/deleteall),
+	 * where showErrorMsg()'s exit() on the first foreign id would abort
+	 * the rest of a legitimate batch too - callers silently skip what
+	 * they don't own instead. editWebsite()/updateWebsite() are
+	 * single-target and call showErrorMsg() themselves on a false
+	 * return.
+	 *
+	 * Also covers the __deleteUser()/__deleteWebsite() cascade
+	 * (controllers/user.ctrl.php) and the REST API's deleteWebsite()/
+	 * updateWebsite(): both only ever reach here from an already-admin
+	 * session (users.php gates user deletion with checkAdminLoggedIn();
+	 * the API's shared key is admin-equivalent by design, see
+	 * api.ctrl.php), so the isAdmin() bypass below covers them
+	 * correctly without needing a separate code path.
+	 */
+	function __verifyWebsiteOwnership($websiteId) {
+		if (isAdmin()) return true;
+		$userId = isLoggedIn();
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		return !empty($websiteInfo) && intval($websiteInfo['user_id']) === intval($userId);
+	}
+
 	# func to change status
 	function __changeStatus($websiteId, $status){
-		
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return;
+		}
+
 		$websiteId = intval($websiteId);
 		$sql = "update websites set status=$status where id=$websiteId";
 		$this->db->query($sql);
-		
+
 		$sql = "update keywords set status=$status where website_id=$websiteId";
 		$this->db->query($sql);
 	}
 
 	# func to delete website
 	function __deleteWebsite($websiteId){
-		
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return;
+		}
+
 		$websiteId = intval($websiteId);
-		$sql = "delete from websites where id=$websiteId";
-		$this->db->query($sql);
-		
+
+		// delete all cascading child records FIRST, while the website row
+		// still exists - __deleteKeyword() now re-verifies ownership via
+		// its keyword's parent website (see KeywordController::
+		// __verifyKeywordOwnership()), so deleting the website row before
+		// this loop would make every one of those calls fail that check
+		// against an already-gone website. Same fix shape as
+		// SiteAuditorController::__deleteProject()'s own reordering
+		// earlier this session.
 		# delete all keywords under this website
 		$sql = "select id from keywords where website_id=$websiteId";
 		$keywordList = $this->db->select($sql);
@@ -184,32 +229,36 @@ class WebsiteController extends Controller{
 		foreach($keywordList as $keywordInfo){
 			$keywordCtrler->__deleteKeyword($keywordInfo['id']);
 		}
-		
+
 		# remove rank results
 		$sql = "delete from rankresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
+
 		# remove backlink results
 		$sql = "delete from backlinkresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
+
 		# remove saturation results
 		$sql = "delete from saturationresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
-		# remove site auditor results		
+
+		# remove site auditor results
 		$sql = "select id from auditorprojects where website_id=$websiteId";
 		$info = $this->db->select($sql, true);
 		if (!empty($info['id'])) {
 		    $auditorObj = $this->createController('SiteAuditor');
 		    $auditorObj->__deleteProject($info['id']);
 		}
-		
+
 		#remove directory results
 		$sql = "delete from dirsubmitinfo where website_id=$websiteId";
 		$this->db->query($sql);
 		$sql = "delete from skipdirectories where website_id=$websiteId";
-		$this->db->query($sql);		    
+		$this->db->query($sql);
+
+		# the website row itself, last
+		$sql = "delete from websites where id=$websiteId";
+		$this->db->query($sql);
 	}
 
 	function newWebsite($info=[]) {
@@ -335,8 +384,12 @@ class WebsiteController extends Controller{
 		return empty($listInfo['id']) ? false :  $listInfo;
 	}
 
-	function editWebsite($websiteId, $listInfo=[]) {		
+	function editWebsite($websiteId, $listInfo=[]) {
 		$websiteId = intval($websiteId);
+		if (!empty($websiteId) && !$this->__verifyWebsiteOwnership($websiteId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 		if(!empty($websiteId)){
 			if(empty($listInfo)){
 				$listInfo = $this->__getWebsiteInfo($websiteId);
@@ -378,6 +431,16 @@ class WebsiteController extends Controller{
 		}
 		
 		$listInfo['id'] = intval($listInfo['id']);
+
+		// the web-UI path (not the REST API, which is admin-equivalent by
+		// design - see api.ctrl.php) previously never verified the caller
+		// owned the website being edited at all - only which user_id it
+		// gets REASSIGNED to (above) was ever checked, and only for admins
+		if (!$apiCall && !$this->__verifyWebsiteOwnership($listInfo['id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
