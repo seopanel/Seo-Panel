@@ -90,6 +90,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showAIOverviewSources($_GET);
 			break;
 
+		case "aiocompetitorkeywords":
+			$controller->showAIOverviewCompetitorKeywords($_GET);
+			break;
+
 		case "serparchive":
 			$controller->showSerpResultsArchive($_GET);
 			break;

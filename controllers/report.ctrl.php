@@ -1836,5 +1836,53 @@ class ReportController extends Controller {
 		$this->set('websiteUrl', $websiteUrl);
 		$this->render('report/aio_sources_popup', '');
 	}
+
+	/*
+	 * AI Overview competitor drill-down: which of this website's keywords a
+	 * given competitor domain is cited for, and whether the tracked site is
+	 * also cited for that same keyword - reached from the "Competitor
+	 * domains cited in your AI Overviews" table on the AI Overview report
+	 * (aivisibility.php?sec=aioverview). website_id is caller-supplied, so
+	 * it's verified against the caller's own website list first (unlike
+	 * showAIOverviewSources() above, which has no such check on keyword_id -
+	 * a pre-existing gap, out of scope for this change).
+	 */
+	function showAIOverviewCompetitorKeywords($info) {
+		$userId = isLoggedIn();
+		$websiteId = intval($info['website_id']);
+		$domain = trim($info['domain'] ?? '');
+
+		$websiteController = new WebsiteController();
+		$ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+		if (empty($websiteId) || empty($domain) || (!isAdmin() && !in_array($websiteId, $ownedIds))) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$domainSql = addslashes($domain);
+		$sql = "SELECT k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited
+				FROM keywords k
+				JOIN searchresults s ON s.keyword_id = k.id AND s.aio_checked_at IS NOT NULL
+					AND s.id = (
+						SELECT s2.id FROM searchresults s2
+						WHERE s2.keyword_id = k.id AND s2.searchengine_id = s.searchengine_id
+						AND s2.aio_checked_at IS NOT NULL
+						ORDER BY s2.result_date DESC, s2.id DESC LIMIT 1
+					)
+				JOIN searchengines se ON se.id = s.searchengine_id
+				JOIN aio_references ar ON ar.keyword_id = k.id
+					AND ar.domain = '$domainSql'
+					AND ar.checked_date = (
+						SELECT MAX(ar2.checked_date) FROM aio_references ar2 WHERE ar2.keyword_id = k.id
+					)
+				WHERE k.website_id = $websiteId AND k.status = 1
+				ORDER BY k.name";
+		$rows = $this->db->select($sql);
+
+		$this->set('rows', $rows);
+		$this->set('domain', $domain);
+		$this->set('spTextAIV', $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']));
+		$this->render('report/aio_competitor_keywords_popup', '');
+	}
 }
 ?>

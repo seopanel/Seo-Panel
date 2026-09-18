@@ -864,3 +864,16 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'siteauditor', 'The page has structured data (JSON-LD) that AI models and search engines can parse', 'The page has structured data (JSON-LD) that AI models and search engines can parse'),
 ('en', 'siteauditor', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content'),
 ('en', 'siteauditor', 'Structured Data', 'Structured Data');
+
+-- AI Overview report: Share of Voice column + competitor keyword
+-- drill-down (which of your keywords a competitor domain is cited for,
+-- and whether you're also cited for the same keyword). Built entirely
+-- from data the AI Overview Tracking feature already collects
+-- (aio_references) - no new ingest, no new schema.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Share of Voice', 'Share of Voice'),
+('en', 'aivisibility', 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.', 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'),
+('en', 'aivisibility', 'Competitor', 'Competitor'),
+('en', 'aivisibility', 'Keywords where this competitor is cited in the AI Overview', 'Keywords where this competitor is cited in the AI Overview'),
+('en', 'aivisibility', 'No overlapping keywords found for this competitor', 'No overlapping keywords found for this competitor.'),
+('en', 'aivisibility', 'You Cited?', 'You Cited?');

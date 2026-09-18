@@ -32341,6 +32341,12 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'siteauditor', 'The page has structured data (JSON-LD) that AI models and search engines can parse', 'The page has structured data (JSON-LD) that AI models and search engines can parse'),
 ('en', 'siteauditor', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content'),
 ('en', 'siteauditor', 'Structured Data', 'Structured Data'),
+('en', 'aivisibility', 'Share of Voice', 'Share of Voice'),
+('en', 'aivisibility', 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.', 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'),
+('en', 'aivisibility', 'Competitor', 'Competitor'),
+('en', 'aivisibility', 'Keywords where this competitor is cited in the AI Overview', 'Keywords where this competitor is cited in the AI Overview'),
+('en', 'aivisibility', 'No overlapping keywords found for this competitor', 'No overlapping keywords found for this competitor.'),
+('en', 'aivisibility', 'You Cited?', 'You Cited?'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
 ('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
 
