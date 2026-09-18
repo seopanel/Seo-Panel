@@ -37,12 +37,19 @@ class Seopanel{
 		include_once(SP_LIBPATH.'/paging.class.php');
 		include_once(SP_LIBPATH.'/pchart.class.php');
 		include_once(SP_LIBPATH.'/pdata.class.php');
-		include_once(SP_LIBPATH.'/xmlparser.class.php');		
-		include_once(SP_LIBPATH.'/captcha.class.php');		
+		include_once(SP_LIBPATH.'/xmlparser.class.php');
 		include_once(SP_LIBPATH.'/PHPMailerException.php');
 		include_once(SP_LIBPATH.'/PHPMailer.php');
 		include_once(SP_LIBPATH.'/SMTP.php');
+		// must run before captcha.class.php, which starts a plain,
+		// unhardened session itself at file-scope on include (`if
+		// (session_status() === PHP_SESSION_NONE) { session_start(); }`)
+		// if no session is active yet - once THAT session_start() runs,
+		// this call's session_set_cookie_params() would silently no-op
+		// (PHP refuses to change cookie params on an already-active
+		// session) and every cookie hardening flag below would be lost
 		@Session::startSession();
+		include_once(SP_LIBPATH.'/captcha.class.php');
 		
 		// include common functions		
 		include_once(SP_INCPATH.'/sp-common.php');
