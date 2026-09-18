@@ -67,7 +67,7 @@
 				<?php if(!empty($isAdmin)){ ?>
 					<td><?php echo $listInfo['username']?></td>
 				<?php } ?>
-				<td class="text-left"><?php echo wordwrap($listInfo['url'], 70, "<br>", true); ?></td>
+				<td class="text-left"><?php echo wordwrap(htmlspecialchars($listInfo['url']), 70, "<br>", true); ?></td>
 				<td>
 					<?php echo !empty($listInfo['analytics_view_id']) ? $propertyList[$listInfo['analytics_view_id']] : ""?>
 				</td>

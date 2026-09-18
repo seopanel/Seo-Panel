@@ -53,7 +53,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
 		<td class="td_right_col">
-			<input type="text" name="name" value="<?php echo $post['name']?>" class="form-control"><?php echo $errMsg['name']?>
+			<input type="text" name="name" value="<?php echo htmlspecialchars($post['name'])?>" class="form-control"><?php echo $errMsg['name']?>
 		</td>
 	</tr>
 	<tr class="blue_row">
@@ -61,7 +61,7 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		<td class="td_right_col">
 			<div class="row">
 				<div class="col-sm-9">
-					<input type="text" id='weburl' name="url" value="<?php echo $post['url']?>" class="form-control">
+					<input type="text" id='weburl' name="url" value="<?php echo htmlspecialchars($post['url'])?>" class="form-control">
 				</div>
 				<div class="col-sm-3">
     				<a  class="btn btn-info" href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta', 'crawlstats')">

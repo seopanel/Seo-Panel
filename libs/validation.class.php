@@ -276,13 +276,20 @@ class Validation{
     
     function checkUrl($url) {
         $msg = '';
-        
-        $url = formatUrl($url, TRUE);
-        if(strlen( $url) == 0){
+
+        $formattedUrl = formatUrl($url, TRUE);
+        // reject anything containing HTML-special characters - a
+        // legitimate URL never contains a literal <, >, ", or ' (they'd
+        // be percent-encoded), and this field was previously accepted
+        // with no character validation at all, then echoed unescaped on
+        // the admin's Website Manager page (stored XSS - any non-admin
+        // customer could plant a payload that ran in an admin's browser
+        // the next time they viewed the website list)
+        if (strlen($formattedUrl) == 0 || preg_match('/[<>"\']/', $url)) {
             $msg = $_SESSION['text']['common']['Invalid Url'];
             $this->flagErr = true;
         }
-        
+
         return $msg;
     }
 }
