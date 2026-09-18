@@ -706,11 +706,25 @@ class DirectoryController extends Controller{
 	}
 	
 	function deleteSubmissionReports($dirSubId){
-		
 		$dirSubId = intval($dirSubId);
+
+		// previously no ownership check at all - any logged-in non-admin
+		// could delete another user's directory submission report just by
+		// supplying its id
+		if (!isAdmin()) {
+			$userId = isLoggedIn();
+			$subInfo = $this->dbHelper->getRow('dirsubmitinfo', "id=$dirSubId");
+			if (empty($subInfo)) return;
+			include_once(SP_CTRLPATH . "/website.ctrl.php");
+			$websiteInfo = (new WebsiteController())->__getWebsiteInfo($subInfo['website_id']);
+			if (empty($websiteInfo) || intval($websiteInfo['user_id']) !== intval($userId)) {
+				return;
+			}
+		}
+
 		$sql = "delete from dirsubmitinfo where id=$dirSubId";
 		$this->db->query($sql);
-		
+
 		echo "<script>scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=reports');</script>";
 	}
 	

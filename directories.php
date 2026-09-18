@@ -65,27 +65,33 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "startdircheck":
-			checkAdminLoggedIn();			
+			checkAdminLoggedIn();
 			$controller->startDirectoryCheckStatus($_POST);
 			break;
-		
+
+		// state-changing single-item action - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "delete":
+			$controller->deleteSubmissionReports($_POST['id']);
+			break;
+
 		default:
 			$controller->showWebsiteSubmissionPage($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "skip":
 			$controller->skipSubmission($_GET);
 			break;
-		
+
 		case "unskip":
 			$controller->unSkipSubmission($_GET['id']);
 			$controller->showSkippedDirectories($_GET);
 			break;
-		
+
 		case "reload":
 			$controller->startSubmission($_GET['website_id'], $_GET['dir_id']);
 			break;
@@ -105,11 +111,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "suggestlisting":
 			$controller->suggestListing($_GET);
 			break;
-			
-		case "delete":
-			$controller->deleteSubmissionReports($_GET['id']);
-			break;
-		
+
 		case "changeconfirm":
 			$controller->changeConfirmStatus($_GET);
 			$controller->showConfirmStatus($_GET['id']);

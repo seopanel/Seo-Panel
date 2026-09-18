@@ -93,29 +93,31 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    $controller->manageWebsiteAccessManager($_POST);
 		    break;
 
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['userId'], 1);
+			$controller->listUsers($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['userId'], 0);
+			$controller->listUsers($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteUser($_POST['userId']);
+			$controller->listUsers($_POST);
+			break;
+
 		default:
 			$controller->listUsers($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['userId'], 1);			
-			$controller->listUsers($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['userId'], 0);
-			$controller->listUsers($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteUser($_GET['userId']);
-			$controller->listUsers($_GET);
-			break;
-		
+
 		case "edit":
 			$controller->editUser($_GET['userId']);
 			break;		

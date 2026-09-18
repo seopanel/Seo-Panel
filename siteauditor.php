@@ -83,30 +83,37 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "importlinks":
 		    $controller->importLinks($_POST);
 		    break;
-		
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['project_id'], 1);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['project_id'], 0);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteProject($_POST['project_id']);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "deletepage":
+			$controller->__deleteReportPage($_POST['report_id']);
+			$controller->loadReportsPage($_POST);
+			break;
+
 		default:
 			$controller->showAuditorProjects($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['project_id'], 1);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['project_id'], 0);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteProject($_GET['project_id']);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
+
 	    case "new":
 	        $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 	        $controller->newProject($_GET);
@@ -152,12 +159,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			header('Content-Type: application/json');
 			echo json_encode($localAiCtrler->suggestMetaDescription(intval($_GET['report_id'] ?? 0), isLoggedIn()));
 			exit;
-
-
-		case "deletepage":
-			$controller->__deleteReportPage($_GET['report_id']);
-			$controller->loadReportsPage($_GET);
-			break;
 			
 		case "croncommand":
 			$controller->showCronCommand();

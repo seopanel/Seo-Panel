@@ -50,74 +50,84 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $controller->verifyActionAllowed($_POST['id']);
             $controller->updateReviewLink($_POST);
             break;
-        
+
         case "createReviewLink":
             $controller->createReviewLink($_POST);
             break;
-	    
+
 	    case "reportSummary":
 	        $controller->viewReportSummary($_POST);
 	        break;
-	        
+
 	    case "viewDetailedReports":
 	        $controller->viewDetailedReports($_POST);
 	        break;
-	        
+
 	    case "viewGraphReports":
 	        $controller->viewGraphReports($_POST);
 	        break;
-			
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+        case "Activate":
+            $controller->verifyActionAllowed($_POST['id']);
+            $controller->__changeStatus($_POST['id'], 1);
+            $controller->showReviewLinks($_POST);
+            break;
+
+        case "Inactivate":
+            $controller->verifyActionAllowed($_POST['id']);
+            $controller->__changeStatus($_POST['id'], 0);
+            $controller->showReviewLinks($_POST);
+            break;
+
+        case "delete":
+            $controller->verifyActionAllowed($_POST['id']);
+            $controller->deleteReviewLink($_POST['id']);
+            break;
+
 	    default:
 	        $controller->showReviewLinks($_POST);
 			break;
 	}
-	
+
 } else {
-	
+
     switch($_GET['sec']) {
-			
+
 		case "quickChecker":
 			$controller->viewQuickChecker($_GET);
 			break;
-        
-        case "Activate":
-            $controller->verifyActionAllowed($_GET['id']);
-            $controller->__changeStatus($_GET['id'], 1);
-            $controller->showReviewLinks($_GET);
-            break;
-            
-        case "Inactivate":
-            $controller->verifyActionAllowed($_GET['id']);
-            $controller->__changeStatus($_GET['id'], 0);
-            $controller->showReviewLinks($_GET);
-            break;
-        
-        case "delete":
-            $controller->verifyActionAllowed($_GET['id']);
-            $controller->deleteReviewLink($_GET['id']);
-            break;
-        
+
         case "edit":
+            // previously the only single-target review-link action with no
+            // ownership check at all - a non-admin could view another
+            // user's review link name/url/type via the edit form
+            $controller->verifyActionAllowed($_GET['id']);
             $controller->editReviewLink($_GET['id']);
             break;
-	    
+
 	    case "newReviewLink":
 	        $controller->newReviewLink($_GET);
 	        break;
-	    
+
 	    case "reportSummary":
 	        $controller->viewReportSummary($_GET);
 	        break;
-			
+
 		case "viewDetailedReports":
 			$controller->viewDetailedReports($_GET);
 			break;
-			
+
 		case "viewGraphReports":
 			$controller->viewGraphReports($_GET);
 			break;
 
 		case "summarizetrend":
+			// previously took link_id with no ownership check - could
+			// trigger an AI-generated summary of a foreign account's
+			// review trend data
+			$controller->verifyActionAllowed($_GET['link_id']);
 			$controller->summarizeTrend($_GET);
 			break;
 
