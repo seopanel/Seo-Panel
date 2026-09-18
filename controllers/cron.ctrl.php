@@ -1879,12 +1879,22 @@ class CronController extends Controller {
 	/**
 	 * Phase 2: bounded, externally-triggered run. Called only from
 	 * cron-ping.php, which has already validated the secret before
-	 * reaching here. Mirrors cron.php's CLI branch (lock, run log, the
-	 * same sync/alerts/executeCron()/cleanup/prune sequence, finish log,
-	 * release lock) but with a wall-clock deadline instead of running to
-	 * exhaustion - executeCron()/routeCronJob()/drainChunkQueue() all
-	 * check $this->deadline and stop cleanly, leaving whatever's left as
-	 * pending job_queue rows (or un-crawled legacy state) for next time.
+	 * reaching here. Mirrors cron.php's CLI branch step-for-step (lock,
+	 * run log, sync/alerts/executeCron()/cleanup/prune/AI Visibility bot
+	 * detection+anomaly alerts+weekly digest/AI Insights/AI Perception
+	 * tracking, finish log, release lock) but with a wall-clock deadline
+	 * instead of running to exhaustion - executeCron()/routeCronJob()/
+	 * drainChunkQueue() all check $this->deadline and stop cleanly,
+	 * leaving whatever's left as pending job_queue rows (or un-crawled
+	 * legacy state) for next time.
+	 *
+	 * IMPORTANT: any new "run once per day/week in cron.php's CLI tail"
+	 * feature must ALSO be added here, or an install running only on the
+	 * ping trigger (the whole point of Zero-Setup) silently never gets
+	 * it - this drifted out of sync once already (bot detection/anomaly
+	 * alerts/weekly digest were missing here for a release, and AI
+	 * Perception tracking was added to the CLI tail without a matching
+	 * call here) before being caught and fixed.
 	 *
 	 * Known limitation: the sync/alert/cleanup/prune steps below are not
 	 * individually budgeted - only the website/tool/chunk dispatch inside
@@ -1902,7 +1912,20 @@ class CronController extends Controller {
 			return;
 		}
 
+		// this is a public, secret-gated, server-to-server endpoint (see
+		// cron-ping.php) meant to return a silent 204 - but executeCron()
+		// and friends echo human-readable progress text throughout
+		// (inherited from the CLI path, where that's exactly the point).
+		// Buffer and discard it all rather than let it leak into the HTTP
+		// response, which would also send headers as an implicit 200
+		// before cron-ping.php's own http_response_code(204) call ever
+		// gets a chance to take effect. Also discarded on a fatal error
+		// via the shutdown function below, so a mid-run crash can't leak
+		// a partial buffer either.
+		ob_start();
+
 		register_shutdown_function(function() {
+			if (ob_get_level() > 0) ob_end_clean();
 			$this->finishRunLog('incomplete');
 			$this->releaseSchedulerLock();
 		});
@@ -1951,8 +1974,25 @@ class CronController extends Controller {
 		$aivCtrler->pruneOldBotHits();
 		$aivCtrler->pruneRateLimitBuckets();
 
+		// on-premise AI bot detection from co-located websites' own access
+		// logs (opt-in, admin-configured) - no-ops immediately if no
+		// website has an access_log_path configured
+		$aivCtrler->processAccessLogsForBotHits();
+
+		// week-over-week AI referral/bot-crawl traffic anomaly alerts (at most once/day)
+		$aivCtrler->checkTrafficAnomalies();
+
+		// weekly AI Visibility digest email (opt-out, at most once per 7 days per user)
+		$aivCtrler->sendWeeklyDigests();
+
 		$this->refreshAllAIInsights();
 
+		// scheduled AI Perception tracking - each (prompt, provider) pair
+		// internally gated to once per AiPerceptionController::
+		// TRACKING_INTERVAL_DAYS, so safe to call on every ping too
+		$this->refreshAllLlmPerceptionTracking();
+
+		ob_end_clean();
 		$this->finishRunLog('completed');
 		$this->releaseSchedulerLock();
 	}
