@@ -42,7 +42,36 @@ class UserController extends Controller{
 		// clear SP API check cache so a fresh check runs on the next page load
 		$this->db->query("DELETE FROM information_list WHERE info_type='spapi_check'");
 	}
-	
+
+	// generates a salted, adaptive-cost hash (bcrypt via PASSWORD_DEFAULT)
+	// for storing a new/changed password - replaces the legacy plain md5()
+	// used everywhere in this file, which has no salt (identical passwords
+	// across users produce identical hashes) and is fast enough to brute
+	// force billions of guesses/sec on commodity hardware if the users
+	// table is ever exposed
+	function __hashPassword($password) {
+		return password_hash($password, PASSWORD_DEFAULT);
+	}
+
+	// a legacy md5 hash is exactly 32 lowercase hex chars - password_hash()
+	// output always starts with an algorithm tag like "$2y$" and is never
+	// valid hex, so this can't collide with a real bcrypt/argon2 hash
+	function __isLegacyMd5Hash($hash) {
+		return (bool) preg_match('/^[a-f0-9]{32}$/', (string) $hash);
+	}
+
+	// verifies a password against either hash format so existing users'
+	// stored md5 hashes keep working without a forced mass password reset -
+	// login() upgrades a legacy hash to bcrypt in place the moment it sees
+	// one verify successfully, so accounts migrate transparently over time
+	// as their owners log in
+	function __verifyPassword($password, $hash) {
+		if ($this->__isLegacyMd5Hash($hash)) {
+			return hash_equals($hash, md5($password));
+		}
+		return password_verify($password, (string) $hash);
+	}
+
 	# login function
 	function login(){	    
 	    
@@ -54,8 +83,15 @@ class UserController extends Controller{
 			$sql = "select u.*,ut.user_type from users u,usertypes ut where u.utype_id=ut.id and u.username='".addslashes($_POST['userName'])."'";
 			$userInfo = $this->db->select($sql, true);
 			if(!empty($userInfo['id'])){
-				if($userInfo['password'] == md5($_POST['password'])){
-					
+				if($this->__verifyPassword($_POST['password'], $userInfo['password'])){
+					// transparently upgrade a legacy md5 hash to bcrypt now
+					// that we have the plaintext password in hand - the
+					// only point in the app where that's ever true
+					if ($this->__isLegacyMd5Hash($userInfo['password'])) {
+						$newHash = addslashes($this->__hashPassword($_POST['password']));
+						$this->db->query("update users set password='$newHash' where id=".intval($userInfo['id']));
+					}
+
 					// get user type spec details and verify whether to check activation or not
 					$activationStatus = true;
 					$userTypeCtrler = new UserTypeController();
@@ -301,7 +337,7 @@ class UserController extends Controller{
 					$utypeId = intval($userInfo['utype_id']);
 					$sql = "insert into users
 					(utype_id,username,password,first_name,last_name,email,created,status) 
-					values ($utypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."',
+					values ($utypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."',
 					'".addslashes($userInfo['firstName'])."','".addslashes($userInfo['lastName'])."',
 					'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus)";
 					$this->db->query($sql);
@@ -568,7 +604,7 @@ class UserController extends Controller{
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
 					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm) 
-						values($userTypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."'
+						values($userTypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
 						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
 					$this->db->query($sql);
@@ -642,7 +678,7 @@ class UserController extends Controller{
 		// if password needs to be reset
 		if(!empty($userInfo['password'])){
 			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		
 		// if change status of user
@@ -842,7 +878,7 @@ class UserController extends Controller{
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
 		if(!empty($userInfo['password'])){
 			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
@@ -916,7 +952,7 @@ class UserController extends Controller{
 	           	} else {
 	           		
 	           		// update password in DB
-	           		$sql = "update users set password=md5('$rand') where id={$userInfo['id']}";
+	           		$sql = "update users set password='".addslashes($this->__hashPassword($rand))."' where id={$userInfo['id']}";
 	           		$this->db->query($sql);
 	           		
 	           	}
