@@ -133,6 +133,15 @@
 	</span>
 </div>
 
+<div class="aiv-note">
+	<i class="fas fa-robot"></i>
+	<span>
+		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
+		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
+	</span>
+</div>
+
 </div>
 
 <div class="aiv-tab-panel" id="aivPanelAdvanced" data-tab="advanced" role="tabpanel" aria-labelledby="aivTabBtnAdvanced" tabindex="0" hidden>
