@@ -2025,6 +2025,30 @@ class CronController extends Controller {
 		$infoCtrler->updateTodayInformation('done', 'ai_insights_refresh');
 	}
 
+	/*
+	 * Scheduled AI Perception tracking - only iterates websites that
+	 * actually have at least one active tracked prompt (presence of a
+	 * prompt IS the opt-in, no separate flag to check here). Each
+	 * website's own refreshTrackingForWebsite() call internally gates
+	 * every (prompt, provider) pair to at most once per
+	 * AiPerceptionController::TRACKING_INTERVAL_DAYS, so running this
+	 * every cron pass is safe - most calls no-op immediately on the date
+	 * check, long before any network request would be made.
+	 */
+	function refreshAllLlmPerceptionTracking() {
+		include_once(SP_CTRLPATH . "/aiperception.ctrl.php");
+		$aipCtrler = new AiPerceptionController();
+
+		$websiteIds = $this->db->select("SELECT DISTINCT website_id FROM llm_perception_prompts WHERE status=1");
+		foreach ($websiteIds as $row) {
+			try {
+				$aipCtrler->refreshTrackingForWebsite(intval($row['website_id']));
+			} catch (Throwable $e) {
+				continue; // one website's tracking failing must not affect the rest
+			}
+		}
+	}
+
 	// func to show debug messages
 	function debugMsg($msg='') {
 		if($this->debug == true) print $msg;

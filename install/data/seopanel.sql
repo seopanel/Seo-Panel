@@ -1085,6 +1085,34 @@ CREATE TABLE IF NOT EXISTS `llm_api_keys` (
   UNIQUE KEY `user_provider` (`user_id`,`provider`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Scheduled AI Perception tracking: a customer-defined prompt set,
+-- checked on a weekly cron cycle against their own configured providers
+-- (llm_api_keys), with a historical "were we mentioned" result per
+-- prompt+provider+week. Presence of an active prompt IS the opt-in - no
+-- separate enable/disable flag.
+CREATE TABLE IF NOT EXISTS `llm_perception_prompts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `prompt_text` varchar(500) NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `llm_perception_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `response_text` text,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Per-website-per-platform desired robots.txt state - absence of a row
 -- means "allowed" (not additionally blocked by SEO Panel). Written into the
 -- website's own robots.txt only inside a clearly delimited managed block

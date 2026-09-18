@@ -48,6 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->removeApiKey($_POST);
 			break;
 
+		case "add-prompt":
+			$controller->addPrompt($_POST);
+			break;
+
+		case "remove-prompt":
+			$controller->removePrompt($_POST);
+			break;
+
 		default:
 			$controller->showSettings();
 			break;
@@ -60,6 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 		case "ask":
 			$controller->askAboutWebsite($_GET);
+			break;
+
+		case "tracking":
+			$controller->showTracking($_GET);
 			break;
 
 		default:

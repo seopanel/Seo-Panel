@@ -206,6 +206,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$controller->refreshAllAIInsights();
 	echo "Refreshed AI Insights for active websites (once per day)\n";
 
+	// scheduled AI Perception tracking - only websites with at least one
+	// tracked prompt do anything, and each (prompt, provider) pair is
+	// gated to once per TRACKING_INTERVAL_DAYS internally
+	$controller->refreshAllLlmPerceptionTracking();
+	echo "Refreshed AI Perception tracking for websites with tracked prompts (at most once per " . AiPerceptionController::TRACKING_INTERVAL_DAYS . " days per prompt/provider)\n";
+
 	$controller->finishRunLog('completed');
 	$controller->releaseSchedulerLock();
 }

@@ -912,3 +912,46 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Curious what ChatGPT or Claude actually says about your site?', 'Curious what ChatGPT or Claude actually says about your site?'),
 ('en', 'aivisibility', 'Run an AI Perception Check', 'Run an AI Perception Check'),
 ('en', 'aivisibility', 'uses your own API key', 'uses your own API key');
+
+-- Scheduled AI Perception tracking (weekly, customer-defined prompts,
+-- customer's own provider keys) - see aiperception.ctrl.php's
+-- MAX_PROMPTS_PER_WEBSITE/TRACKING_INTERVAL_DAYS for the unattended-
+-- spend guardrails.
+CREATE TABLE IF NOT EXISTS `llm_perception_prompts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `prompt_text` varchar(500) NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `llm_perception_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `response_text` text,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Perception Tracking', 'AI Perception Tracking'),
+('en', 'aivisibility', 'Share of Voice (latest checks)', 'Share of Voice (latest checks)'),
+('en', 'aivisibility', 'Tracked Prompts', 'Tracked Prompts'),
+('en', 'aivisibility', 'Add a prompt to track weekly (e.g. \"best CRM for small business\")', 'Add a prompt to track weekly (e.g. "best CRM for small business")'),
+('en', 'aivisibility', 'Add Prompt', 'Add Prompt'),
+('en', 'aivisibility', 'You can track up to', 'You can track up to'),
+('en', 'aivisibility', 'prompts per website, checked at most once every', 'prompts per website, checked at most once every'),
+('en', 'aivisibility', 'days, against every AI provider you have configured a key for.', 'days, against every AI provider you have configured a key for.'),
+('en', 'aivisibility', 'Mentioned', 'Mentioned'),
+('en', 'aivisibility', 'Not mentioned', 'Not mentioned'),
+('en', 'aivisibility', 'Not checked yet', 'Not checked yet'),
+('en', 'aivisibility', 'No prompts tracked yet for this website.', 'No prompts tracked yet for this website.'),
+('en', 'aivisibility', 'Go to Scheduled Tracking', 'Go to Scheduled Tracking'),
+('en', 'aivisibility', 'Set up weekly, unattended tracking of your own prompts', 'Set up weekly, unattended tracking of your own prompts');

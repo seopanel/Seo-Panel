@@ -43,6 +43,14 @@
 	<div id="aip_results" style="margin-top:10px;"></div>
 <?php } ?>
 
+<div class="aiv-note" style="margin-top:15px;">
+	<i class="fas fa-calendar-check"></i>
+	<span>
+		<?php echo $spTextAIV['Set up weekly, unattended tracking of your own prompts'] ?? 'Set up weekly, unattended tracking of your own prompts'?>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Go to Scheduled Tracking'] ?? 'Go to Scheduled Tracking'?></a>
+	</span>
+</div>
+
 <script>
 function aipAsk(provider) {
 	var websiteId = document.getElementById('aip_website_id').value;
