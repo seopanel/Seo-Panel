@@ -120,6 +120,50 @@ class CronController extends Controller {
 		}
 	}
 
+	/*
+	 * Record a scheduled report-generation cycle as successfully
+	 * completed - only ever called from executeCron() after the email
+	 * (when one was required) actually sent, or wasn't required in the
+	 * first place. Pure DB writes, no crawling/network - independently
+	 * unit-testable, unlike executeCron() itself.
+	 */
+	function __recordReportGenerationSuccess($reportCtrler, $userInfo, $lastGenerated) {
+		$reportCtrler->updateUserReportSetting($userInfo['id'], 'last_generated', $lastGenerated);
+		$reportCtrler->updateUserReportGenerationLogs($userInfo['id'], date('Y-m-d H:i:s'));
+
+		$reportTxt = $this->getLanguageTexts('reports', $_SESSION['lang_code']);
+		$alertCtrl = new AlertController();
+		$alertInfo = array(
+			'alert_subject' => $reportTxt["Reports Generated Successfully"],
+			'alert_message' => $reportTxt['report_email_subject'],
+			'alert_category' => "reports",
+			'alert_url' => SP_WEBPATH,
+		);
+		$alertCtrl->createAlert($alertInfo, $userInfo['id']);
+	}
+
+	/*
+	 * Record a scheduled report's email delivery failure. Deliberately
+	 * does NOT touch last_generated/user_report_logs - leaving
+	 * last_generated unchanged is what makes the NEXT cron pass retry
+	 * this same period, rather than the failure being silently skipped
+	 * until the following interval. createAlert() already dedupes per
+	 * (user, subject, day), so repeated retries within the same day
+	 * don't spam the customer with duplicate failure alerts.
+	 */
+	function __recordReportGenerationFailure($userInfo) {
+		$reportTxt = $this->getLanguageTexts('reports', $_SESSION['lang_code']);
+		$alertCtrl = new AlertController();
+		$alertInfo = array(
+			'alert_subject' => $reportTxt['Report Email Failed'] ?? 'Report Email Failed',
+			'alert_message' => $reportTxt['report_email_failed_message'] ?? 'Your scheduled SEO report was generated but could not be emailed - it will be retried automatically.',
+			'alert_category' => "reports",
+			'alert_url' => SP_WEBPATH,
+		);
+		$alertCtrl->createAlert($alertInfo, $userInfo['id']);
+		$this->debugMsg("Report email failed for user {$userInfo['id']} - last_generated left unchanged, will retry next run\n");
+	}
+
 
 	/**
 	 * Zero-Setup Scheduler, Phase 1: resumable job queue primitives.
@@ -158,6 +202,49 @@ class CronController extends Controller {
 			UPDATE job_queue SET status = 'pending', available_at = NOW()
 			WHERE status = 'running' AND claimed_at < (NOW() - INTERVAL $staleMinutes MINUTE)
 		");
+	}
+
+	/**
+	 * Prune finished job_queue rows past retention - 'pending'/'running'
+	 * rows are NEVER touched (that's live work). A pruned 'completed' row
+	 * is functionally equivalent to keeping it: enqueueChunks()'s INSERT
+	 * ... ON DUPLICATE KEY UPDATE just inserts a fresh 'pending' row next
+	 * time that chunk_key is due, same as reviving the old one would have.
+	 * A pruned 'failed' row is actually a small improvement over keeping
+	 * it: enqueueChunks() only revives a 'completed' row to 'pending', not
+	 * a 'failed' one (`status = IF(status = 'completed', 'pending',
+	 * status)`), so a chunk that permanently failed had no path back to
+	 * ever running again short of an admin manually deleting the row -
+	 * pruning it after the retention window gives it exactly that path,
+	 * for free.
+	 */
+	function pruneOldJobQueueRows() {
+		$retentionDays = defined('SP_JOB_QUEUE_RETENTION_DAYS') ? intval(SP_JOB_QUEUE_RETENTION_DAYS) : 7;
+		if ($retentionDays <= 0) return;
+		$cutoff = date('Y-m-d H:i:s', strtotime("-$retentionDays days"));
+		$this->db->query("DELETE FROM job_queue WHERE status IN ('completed','failed') AND updated_at < '$cutoff'");
+	}
+
+	# func to prune old cron_run_log rows past the configured retention window
+	function pruneOldRunLogs() {
+		$retentionDays = defined('SP_CRON_RUN_LOG_RETENTION_DAYS') ? intval(SP_CRON_RUN_LOG_RETENTION_DAYS) : 30;
+		if ($retentionDays <= 0) return;
+		$cutoff = date('Y-m-d H:i:s', strtotime("-$retentionDays days"));
+		$this->db->query("DELETE FROM cron_run_log WHERE started_at < '$cutoff'");
+	}
+
+	// func to prune old cron_job_timing rows - the highest-volume of the
+	// three scheduler tables (one row per tool per website per run), so
+	// the shortest default retention; kept in sync with cron_run_log by
+	// also deleting any row whose run_id no longer has a parent (covers
+	// the gap between the two tables' own retention windows)
+	function pruneOldJobTimingRows() {
+		$retentionDays = defined('SP_CRON_JOB_TIMING_RETENTION_DAYS') ? intval(SP_CRON_JOB_TIMING_RETENTION_DAYS) : 14;
+		if ($retentionDays > 0) {
+			$cutoff = date('Y-m-d H:i:s', strtotime("-$retentionDays days"));
+			$this->db->query("DELETE FROM cron_job_timing WHERE started_at < '$cutoff'");
+		}
+		$this->db->query("DELETE ct FROM cron_job_timing ct LEFT JOIN cron_run_log rl ON rl.id = ct.run_id WHERE rl.id IS NULL");
 	}
 
 	# atomically claim the oldest pending+due chunk for (website, tool); returns null when none left
@@ -391,33 +478,37 @@ class CronController extends Controller {
         				}
         				
         			}
-        			
-        			// save report generated time
-    				$reportCtrler->updateUserReportSetting($userInfo['id'], 'last_generated', $lastGenerated);
-    				
-    				// update report generation logs
-    				$reportCtrler->updateUserReportGenerationLogs($userInfo['id'], date('Y-m-d H:i:s'));
-    				
-    				// update user alerts section
-    				$alertCtrl = new AlertController();
-    				$reportTxt = $this->getLanguageTexts('reports', $_SESSION['lang_code']);
-    				$alertInfo = array(
-    					'alert_subject' => $reportTxt["Reports Generated Successfully"],
-    					'alert_message' => $reportTxt['report_email_subject'],
-    					'alert_category' => "reports",
-    					'alert_url' => SP_WEBPATH,
-    				);
-    				$alertCtrl->createAlert($alertInfo, $userInfo['id']);
-    				
-    				// send email notification if enabled
-    				if (SP_REPORT_EMAIL_NOTIFICATION && $repSetInfo['email_notification']) {
-    					$reportCtrler->spTextTools = $this->getLanguageTexts('seotools', $_SESSION['lang_code']);
-    					$reportCtrler->set('spTextTools', $reportCtrler->spTextTools);
-    				    $reportCtrler->sentEmailNotificationForReportGen($userInfo, $repSetInfo['last_generated'], $lastGenerated);
-    				}
-    				
+
+        			// Send the email FIRST (when required) and only record this
+        			// cycle as done - advance last_generated, log it, raise the
+        			// "success" alert - if it actually succeeded, or wasn't
+        			// required in the first place. Previously all three were
+        			// written unconditionally before sendMail() was even called,
+        			// so a failed send (SMTP/SendGrid outage) was reported to the
+        			// customer as success, silently dropped, and never retried -
+        			// the interval gate had already advanced past it. On failure,
+        			// last_generated is left untouched so the next cron pass
+        			// (which, with the ping/beacon triggers, may be minutes away
+        			// rather than a full interval) retries the same period, and a
+        			// distinct alert is raised so the failure isn't invisible -
+        			// createAlert() already dedupes per (user, subject, day), so
+        			// repeated retries within the same day don't spam it.
+        			$emailRequired = SP_REPORT_EMAIL_NOTIFICATION && $repSetInfo['email_notification'];
+        			$emailSucceeded = true;
+        			if ($emailRequired) {
+        				$reportCtrler->spTextTools = $this->getLanguageTexts('seotools', $_SESSION['lang_code']);
+        				$reportCtrler->set('spTextTools', $reportCtrler->spTextTools);
+        				$emailSucceeded = $reportCtrler->sentEmailNotificationForReportGen($userInfo, $repSetInfo['last_generated'], $lastGenerated);
+        			}
+
+        			if ($emailSucceeded) {
+        				$this->__recordReportGenerationSuccess($reportCtrler, $userInfo, $lastGenerated);
+        			} else {
+        				$this->__recordReportGenerationFailure($userInfo);
+        			}
+
     			}
-    			
+
 			}
 		}
 		
@@ -1979,6 +2070,12 @@ class CronController extends Controller {
 		$aivCtrler->pruneOldReferrals();
 		$aivCtrler->pruneOldBotHits();
 		$aivCtrler->pruneRateLimitBuckets();
+
+		// prune the scheduler's own operational tables - see cron.php's
+		// CLI tail for the same three calls
+		$this->pruneOldJobQueueRows();
+		$this->pruneOldRunLogs();
+		$this->pruneOldJobTimingRows();
 
 		// on-premise AI bot detection from co-located websites' own access
 		// logs (opt-in, admin-configured) - no-ops immediately if no

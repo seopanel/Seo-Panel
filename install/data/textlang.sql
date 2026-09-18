@@ -32378,6 +32378,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'No prompts tracked yet for this website.', 'No prompts tracked yet for this website.'),
 ('en', 'aivisibility', 'Go to Scheduled Tracking', 'Go to Scheduled Tracking'),
 ('en', 'aivisibility', 'Set up weekly, unattended tracking of your own prompts', 'Set up weekly, unattended tracking of your own prompts'),
+('en', 'reports', 'Report Email Failed', 'Report Email Failed'),
+('en', 'reports', 'report_email_failed_message', 'Your scheduled SEO report was generated but could not be emailed - it will be retried automatically.'),
+('en', 'settings', 'SP_JOB_QUEUE_RETENTION_DAYS', 'Job queue finished-row retention (days)'),
+('en', 'settings', 'SP_CRON_RUN_LOG_RETENTION_DAYS', 'Cron run log retention (days)'),
+('en', 'settings', 'SP_CRON_JOB_TIMING_RETENTION_DAYS', 'Cron job timing retention (days)'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
 ('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
 

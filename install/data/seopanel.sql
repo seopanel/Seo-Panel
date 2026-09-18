@@ -2040,6 +2040,15 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('Ping trigger secret key', 'SP_CRON_PING_SECRET', '', 'report', 'medium', 0),
 ('Ping-triggered run budget (seconds)', 'SP_JOB_QUEUE_BUDGET_SECONDS', '20', 'report', 'small', 0);
 
+-- Scheduler operational-table retention (job_queue completed/failed rows,
+-- cron_run_log, cron_job_timing) - previously never pruned at all.
+-- Editable via the generic Report Settings page, same as
+-- SP_AIO_RETENTION_DAYS.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Job queue finished-row retention (days)', 'SP_JOB_QUEUE_RETENTION_DAYS', '7', 'report', 'small', 1),
+('Cron run log retention (days)', 'SP_CRON_RUN_LOG_RETENTION_DAYS', '30', 'report', 'small', 1),
+('Cron job timing retention (days)', 'SP_CRON_JOB_TIMING_RETENTION_DAYS', '14', 'report', 'small', 1);
+
 -- AI Insights email digest: opt-out email when a website has genuinely new
 -- AI Insights (not the same unresolved issue re-appearing with a different
 -- count). Reuses the existing per-user reports_settings row/UI.

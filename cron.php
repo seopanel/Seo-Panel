@@ -188,6 +188,18 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	echo "Pruned AI Visibility referrals older than " . (defined('AIV_REFERRAL_RETENTION_DAYS') ? AIV_REFERRAL_RETENTION_DAYS : 365) . " days\n";
 	echo "Pruned AI bot hits older than " . (defined('AIB_BOT_RETENTION_DAYS') ? AIB_BOT_RETENTION_DAYS : 365) . " days\n";
 
+	// prune the scheduler's own operational tables (job_queue completed/
+	// failed rows, cron_run_log, cron_job_timing) - previously never
+	// pruned at all; cron_job_timing in particular writes one row per
+	// tool per website per run, and now runs far more often thanks to
+	// the ping/beacon triggers
+	$controller->pruneOldJobQueueRows();
+	$controller->pruneOldRunLogs();
+	$controller->pruneOldJobTimingRows();
+	echo "Pruned finished job_queue rows older than " . (defined('SP_JOB_QUEUE_RETENTION_DAYS') ? SP_JOB_QUEUE_RETENTION_DAYS : 7) . " days\n";
+	echo "Pruned cron_run_log rows older than " . (defined('SP_CRON_RUN_LOG_RETENTION_DAYS') ? SP_CRON_RUN_LOG_RETENTION_DAYS : 30) . " days\n";
+	echo "Pruned cron_job_timing rows older than " . (defined('SP_CRON_JOB_TIMING_RETENTION_DAYS') ? SP_CRON_JOB_TIMING_RETENTION_DAYS : 14) . " days\n";
+
 	// on-premise AI bot detection from co-located websites' own access logs
 	// (opt-in, admin-configured - see ai_visibility_site_access). No-ops
 	// immediately if no website has an access_log_path configured.

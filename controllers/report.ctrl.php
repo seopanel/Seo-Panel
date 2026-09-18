@@ -1664,8 +1664,10 @@ class ReportController extends Controller {
 		
 		if (!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)) {
 			echo 'An internal error occured while sending mail!';
+			return false;
 		} else {
 		    echo "Reports send successfully to ".$userInfo['email']."\n";
+		    return true;
 		}
 	}
 	
