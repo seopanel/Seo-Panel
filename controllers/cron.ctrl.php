@@ -1901,8 +1901,14 @@ class CronController extends Controller {
 	 * executeCron() respects the deadline. A slow DFS pending-task backlog
 	 * could still make one ping run long. Acceptable for a first cut since
 	 * these are normally fast; revisit if it proves otherwise in practice.
+	 *
+	 * $triggerSource distinguishes the public, secret-gated cron-ping.php
+	 * caller ('ping', the default) from cron-beacon.php's session-
+	 * authenticated, no-secret opportunistic trigger ('ping-beacon') in
+	 * cron_run_log - same underlying run, just worth telling apart on the
+	 * Scheduler Health page.
 	 */
-	function runPingTrigger() {
+	function runPingTrigger($triggerSource = 'ping') {
 		if (empty(SP_CRON_PING_ENABLED)) {
 			return;
 		}
@@ -1932,7 +1938,7 @@ class CronController extends Controller {
 
 		$this->timeStamp = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		$this->deadline = microtime(true) + intval(SP_JOB_QUEUE_BUDGET_SECONDS);
-		$this->startRunLog('ping');
+		$this->startRunLog($triggerSource);
 
 		include_once(SP_CTRLPATH . "/report.ctrl.php");
 		include_once(SP_CTRLPATH . "/searchengine.ctrl.php");

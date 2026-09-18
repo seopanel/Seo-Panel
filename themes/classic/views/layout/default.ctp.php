@@ -165,8 +165,43 @@
         }
     }
     ?>
+    <?php
+    // Zero-Setup Scheduler opportunistic trigger: fire a non-blocking
+    // beacon at cron-beacon.php on admin page loads, so an install with no
+    // external pinger/crontab configured still gets scheduled work done
+    // just from the admin using the panel. Client-side throttled to once
+    // per 5 minutes via localStorage - the server-side lock in
+    // runPingTrigger() already makes overlapping fires harmless, this just
+    // avoids firing on every single page load. Only rendered when the
+    // ping trigger is actually enabled (see Scheduler Health) - off by
+    // default, so this is silent unless an admin has opted in.
+    if (isLoggedIn() && isAdmin() && defined('SP_CRON_PING_ENABLED') && SP_CRON_PING_ENABLED) {
+    ?>
+    <script>
+    (function() {
+        var THROTTLE_MS = 5 * 60 * 1000;
+        var STORAGE_KEY = 'sp_cron_beacon_last_fired';
+        try {
+            var last = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10);
+            if (Date.now() - last < THROTTLE_MS) return;
+            localStorage.setItem(STORAGE_KEY, String(Date.now()));
+        } catch (e) {
+            // localStorage unavailable (private browsing, blocked, etc.) -
+            // fire anyway rather than never triggering at all; the
+            // server-side lock still makes this safe
+        }
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon('<?php echo SP_WEBPATH?>/cron-beacon.php');
+        } else {
+            fetch('<?php echo SP_WEBPATH?>/cron-beacon.php', { credentials: 'same-origin', keepalive: true }).catch(function() {});
+        }
+    })();
+    </script>
+    <?php
+    }
+    ?>
 
-    <div class="container-fluid" style="margin-bottom: 50px;">  	
+    <div class="container-fluid" style="margin-bottom: 50px;">
     	<div class="row">
     		<?php echo $viewContent?>
     	</div>
