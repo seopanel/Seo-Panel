@@ -208,6 +208,44 @@ WHERE NOT EXISTS (SELECT 1 FROM `seotools` WHERE `url_section`='ai-visibility');
 -- AI Visibility should lead the menu, ahead of Keyword Position Checker (priority 10)
 UPDATE `seotools` SET `priority`=5 WHERE `url_section`='ai-visibility';
 
+-- Backfill the missing per-usertype access grant for seotool_9..12
+-- (Social Media Checker, Website Analytics, Review Manager, AI
+-- Visibility). Every SEO tool is deny-by-default unless a usertype has
+-- an explicit user_specs row for it - seotools 1-8 were seeded that way
+-- from the original install, but 9-12 never were, on either a fresh
+-- install or an upgrade. Net effect: every non-admin customer has been
+-- unable to see or use any of these 4 tools, including the one this
+-- feature specifically shipped to attract AI-era customers. Grants each
+-- tool to any usertype that already has seotool_1 (the same "this
+-- account gets the SEO tools" signal every non-locked-down account
+-- already carries), and only where no explicit row exists yet for the
+-- new column - so an admin who has since manually toggled one of these
+-- off for a specific usertype is left alone, and re-running this file is
+-- a no-op.
+INSERT INTO `user_specs` (`user_type_id`, `spec_column`, `spec_value`, `spec_category`)
+SELECT us.user_type_id, 'seotool_9', '1', 'system'
+FROM `user_specs` us
+WHERE us.spec_column = 'seotool_1' AND us.spec_value = '1'
+AND NOT EXISTS (SELECT 1 FROM `user_specs` us2 WHERE us2.user_type_id = us.user_type_id AND us2.spec_column = 'seotool_9');
+
+INSERT INTO `user_specs` (`user_type_id`, `spec_column`, `spec_value`, `spec_category`)
+SELECT us.user_type_id, 'seotool_10', '1', 'system'
+FROM `user_specs` us
+WHERE us.spec_column = 'seotool_1' AND us.spec_value = '1'
+AND NOT EXISTS (SELECT 1 FROM `user_specs` us2 WHERE us2.user_type_id = us.user_type_id AND us2.spec_column = 'seotool_10');
+
+INSERT INTO `user_specs` (`user_type_id`, `spec_column`, `spec_value`, `spec_category`)
+SELECT us.user_type_id, 'seotool_11', '1', 'system'
+FROM `user_specs` us
+WHERE us.spec_column = 'seotool_1' AND us.spec_value = '1'
+AND NOT EXISTS (SELECT 1 FROM `user_specs` us2 WHERE us2.user_type_id = us.user_type_id AND us2.spec_column = 'seotool_11');
+
+INSERT INTO `user_specs` (`user_type_id`, `spec_column`, `spec_value`, `spec_category`)
+SELECT us.user_type_id, 'seotool_12', '1', 'system'
+FROM `user_specs` us
+WHERE us.spec_column = 'seotool_1' AND us.spec_value = '1'
+AND NOT EXISTS (SELECT 1 FROM `user_specs` us2 WHERE us2.user_type_id = us.user_type_id AND us2.spec_column = 'seotool_12');
+
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),
 ('Rate limit per site token (requests/min)','AIV_RATE_LIMIT_PER_TOKEN','120','aivisibility','small',1),
@@ -804,3 +842,13 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is_referral_source`,`bot_ua_pattern`,`verify_suffix`) VALUES
 ('claude','claude-user.anthropic.com','Claude',1,0,'Claude-User',NULL),
 ('claude','claude-searchbot.anthropic.com','Claude',1,0,'Claude-SearchBot',NULL);
+
+-- Overview and Setup footer notes: cross-link to the MCP Access token
+-- manager, which was previously only reachable via top nav > Settings >
+-- My Profile, with no link anywhere inside AI Visibility pointing to it -
+-- discoverability gap for the one feature that lets a customer's own AI
+-- agent query this data directly.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'Prefer to ask your own AI agent directly?', 'Prefer to ask your own AI agent directly?'),
+('en', 'aivisibility', 'Connect Claude Desktop or any MCP client', 'Connect Claude Desktop or any MCP client'),
+('en', 'aivisibility', 'self-hosted, no data leaves this server', 'self-hosted, no data leaves this server');

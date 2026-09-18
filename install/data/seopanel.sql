@@ -1580,7 +1580,7 @@ CREATE TABLE IF NOT EXISTS `user_specs` (
   `spec_category` varchar(32) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'system',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_type_id` (`user_type_id`,`spec_column`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=19 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=23 ;
 
 INSERT INTO `user_specs` (`id`, `user_type_id`, `spec_column`, `spec_value`, `spec_category`) VALUES
 (1, 2, 'keywordcount', '50', 'system'),
@@ -1600,7 +1600,15 @@ INSERT INTO `user_specs` (`id`, `user_type_id`, `spec_column`, `spec_value`, `sp
 (15, 2, 'seotool_5', '1', 'system'),
 (16, 2, 'seotool_6', '1', 'system'),
 (17, 2, 'seotool_7', '1', 'system'),
-(18, 2, 'seotool_8', '1', 'system');
+(18, 2, 'seotool_8', '1', 'system'),
+-- seotool_9..12 (Social Media Checker, Website Analytics, Review
+-- Manager, AI Visibility) were never granted to the default "user" type
+-- here, unlike every earlier tool above - meaning a brand-new non-admin
+-- account could not see or use any of these 4 tools on a fresh install.
+(19, 2, 'seotool_9', '1', 'system'),
+(20, 2, 'seotool_10', '1', 'system'),
+(21, 2, 'seotool_11', '1', 'system'),
+(22, 2, 'seotool_12', '1', 'system');
 
 CREATE TABLE IF NOT EXISTS `user_tokens` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
