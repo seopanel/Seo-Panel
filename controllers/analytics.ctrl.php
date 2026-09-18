@@ -413,8 +413,17 @@ class AnalyticsController extends Controller {
 	    }
 	    $this->set('websiteId', $websiteId);
 
-	    // to find order col
-	    if (!empty($searchInfo['order_col'])) {
+	    // to find order col - order_col is caller-supplied and lands
+	    // directly in an ORDER BY clause with no way to parameterize an
+	    // identifier position, so it must be checked against a fixed
+	    // whitelist (not just addslashes()'d, which does nothing for an
+	    // unquoted SQL identifier) - previously unchecked, letting any
+	    // logged-in non-admin run a blind SQL injection via ORDER BY
+	    // (e.g. a CASE/SLEEP() expression), same fix shape Site Auditor
+	    // already uses for its own order_col. $this->metrics is also
+	    // exactly the column set actually SELECTed below ($analyticsCols),
+	    // so this doubles as keeping the two in sync.
+	    if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->metrics)) {
 	        $orderCol = $searchInfo['order_col'];
 	        $orderVal = getOrderByVal($searchInfo['order_val']);
 	    } else {
