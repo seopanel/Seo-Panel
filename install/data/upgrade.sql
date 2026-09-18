@@ -980,3 +980,23 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_JOB_QUEUE_RETENTION_DAYS', 'Job queue finished-row retention (days)'),
 ('en', 'settings', 'SP_CRON_RUN_LOG_RETENTION_DAYS', 'Cron run log retention (days)'),
 ('en', 'settings', 'SP_CRON_JOB_TIMING_RETENTION_DAYS', 'Cron job timing retention (days)');
+
+-- Security fix: every fresh install used to ship with the exact SAME
+-- hardcoded SP_API_KEY value (11a9b9070c7d7633831f603f0454ef5b, publicly
+-- visible in this project's own source on GitHub), and API_SECRET had no
+-- generator at all and defaulted to an empty string - so any install
+-- that never manually edited these directly in the database was
+-- authenticatable by anyone who'd read that file (verifyAPICredentials()
+-- compared both with a plain ==, and an empty stored API_SECRET matched
+-- an omitted request parameter). Rotate both for any install still on
+-- that known-compromised state; leave alone if the admin already
+-- changed them to something else. This is a one-time SQL-side rotation
+-- (decent but not PHP random_bytes()-grade entropy) - admins should use
+-- the new "Regenerate" buttons on the API Connection page right after
+-- upgrading for a cryptographically strong replacement.
+UPDATE `settings` SET set_val = MD5(CONCAT(UUID(), RAND(), NOW(6), CONNECTION_ID())) WHERE set_name='SP_API_KEY' AND set_val='11a9b9070c7d7633831f603f0454ef5b';
+UPDATE `settings` SET set_val = MD5(CONCAT(UUID(), RAND(), NOW(6), CONNECTION_ID())) WHERE set_name='API_SECRET' AND set_val='';
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'api', 'Regenerate', 'Regenerate'),
+('en', 'api', 'api_regenerate_warning', 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.');

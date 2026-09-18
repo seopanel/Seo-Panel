@@ -32383,6 +32383,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_JOB_QUEUE_RETENTION_DAYS', 'Job queue finished-row retention (days)'),
 ('en', 'settings', 'SP_CRON_RUN_LOG_RETENTION_DAYS', 'Cron run log retention (days)'),
 ('en', 'settings', 'SP_CRON_JOB_TIMING_RETENTION_DAYS', 'Cron job timing retention (days)'),
+('en', 'api', 'Regenerate', 'Regenerate'),
+('en', 'api', 'api_regenerate_warning', 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
 ('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
 

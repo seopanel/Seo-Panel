@@ -1108,24 +1108,40 @@ class Install {
 		<?php
 	}
 	
-	# function to create seo panel API Key
+	/*
+	 * function to create the seo panel API key AND secret if either is
+	 * missing - previously only ever generated SP_API_KEY, and even then
+	 * only via PHP's non-cryptographic rand(); API_SECRET had no
+	 * generator at all and defaulted to an empty string, and the fresh-
+	 * install seed shipped the SAME hardcoded SP_API_KEY value on every
+	 * install (publicly visible in this project's own source), so an
+	 * install that never manually edited these in the database directly
+	 * was authenticatable by anyone who'd read that file - the empty
+	 * secret alone was enough, since verifyAPICredentials() compared
+	 * both with a plain ==. Now uses random_bytes(), matching every
+	 * other credential generator in this codebase (MCP tokens, the
+	 * scheduler ping secret, AI Visibility site tokens).
+	 */
 	function createSeoPanelAPIKey($db) {
-	    $sql = "Select id, set_val from settings where set_name='SP_API_KEY'";
-	    $apiInfo = $db->select($sql, true);
-
-	    if (empty($apiInfo['set_val'])) {
-	        $apiKey = rand(10000000, 100000000);
-	        $apiKey .= rand(10000000, 100000000);
-	        $apiKey .= rand(10000000, 100000000);
-	        $apiKey = md5($apiKey);
-	        
-	        if (empty($apiInfo['id'])) {
-	            $sql = "Insert into settings(set_label,set_name,set_val,set_type) values('Seo Panel API Key', 'SP_API_KEY', '$apiKey', 'large')";
+	    $keyInfo = $db->select("Select id, set_val from settings where set_name='SP_API_KEY'", true);
+	    if (empty($keyInfo['set_val'])) {
+	        $apiKey = bin2hex(random_bytes(24));
+	        if (empty($keyInfo['id'])) {
+	            $db->query("Insert into settings(set_label,set_name,set_val,set_type) values('Seo Panel API Key', 'SP_API_KEY', '$apiKey', 'large')");
 	        } else {
-	            $sql = "update settings set set_val='$apiKey' where set_name='SP_API_KEY'";
+	            $db->query("update settings set set_val='$apiKey' where set_name='SP_API_KEY'");
 	        }
-	        $apiInfo = $db->query($sql);
 	    }
-	}	    
+
+	    $secretInfo = $db->select("Select id, set_val from settings where set_name='API_SECRET'", true);
+	    if (empty($secretInfo['set_val'])) {
+	        $apiSecret = bin2hex(random_bytes(24));
+	        if (empty($secretInfo['id'])) {
+	            $db->query("Insert into settings(set_label,set_name,set_val,set_type) values('API Secret', 'API_SECRET', '$apiSecret', 'medium')");
+	        } else {
+	            $db->query("update settings set set_val='$apiSecret' where set_name='API_SECRET'");
+	        }
+	    }
+	}
 }
 ?>

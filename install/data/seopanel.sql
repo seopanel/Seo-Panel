@@ -1354,7 +1354,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (9, 'Enable Proxy', 'SP_ENABLE_PROXY', '0', 'proxy', 'bool', 1),
 (10, 'Default Language', 'SP_DEFAULTLANG', 'en', 'system', 'small', 1),
 (11, 'User agent', 'SP_USER_AGENT', 'Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))', 'report', 'large', 1),
-(12, 'Seo Panel API Key', 'SP_API_KEY', '11a9b9070c7d7633831f603f0454ef5b', 'api', 'large', 1),
+(12, 'Seo Panel API Key', 'SP_API_KEY', '', 'api', 'large', 1),
 (13, 'Maximum number of pages allowed per website', 'SA_MAX_NO_PAGES', '500', 'siteauditor', 'small', 1),
 (14, 'Site auditor crawl delay', 'SA_CRAWL_DELAY_TIME', '10', 'siteauditor', 'small', 1),
 (15, 'Maximum length of page title', 'SA_TITLE_MAX_LENGTH', '80', 'siteauditor', 'small', 0),
