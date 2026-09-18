@@ -244,6 +244,10 @@ if (!function_exists('renderStatTile')) {
 			<div class="card">
 				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-robot"></i> AI Visibility</h4>
+					<div>
+					<a href="javascript:void(0);" onclick="scriptDoLoadDialog('mcp-access.php', 'content')" class="btn btn-sm btn-light" title="Connect your own AI agent (Claude Desktop or any MCP client) to this data">
+						<i class="fas fa-plug"></i> Connect via MCP
+					</a>
 					<?php if (!empty($seoDiaryPluginId)) {
 						// Opt-in only - never auto-created, same pattern as
 						// RecommendationsController's own "Add to SEO Diary"
@@ -263,6 +267,7 @@ if (!function_exists('renderStatTile')) {
 						<i class="fas fa-book"></i> Add to SEO Diary
 					</a>
 					<?php } ?>
+					</div>
 				</div>
 				<div class="card-body">
 					<div class="row">
