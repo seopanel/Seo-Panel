@@ -98,15 +98,37 @@ class AlertController extends Controller {
 	    $this->render('alerts/alert_list');
 	}
 	
+	// IDOR guard - alerts are scoped per user_id everywhere they're listed
+	// (see listAlerts()), but deleteAlert()/showAlertInfo() previously had
+	// no ownership check at all, so any logged-in user could delete or
+	// view any other user's alert just by guessing/iterating its id
+	function __verifyAlertOwnership($alertId) {
+		if (isAdmin()) return true;
+		$userId = isLoggedIn();
+		$alertInfo = $this->__getAlertInfo($alertId);
+		return !empty($alertInfo) && intval($alertInfo['user_id']) === intval($userId);
+	}
+
 	/**
 	 * function to delete alert
 	 */
 	function deleteAlert($alertId) {
+	    // reachable from both the single delete_alert action and the
+	    // delete_all_alerts bulk loop - stays silent on rejection either
+	    // way, matching every other bulk-loop-safe ownership check this
+	    // session added (e.g. WebsiteController::__changeStatus())
+	    if (!$this->__verifyAlertOwnership($alertId)) {
+	        return;
+	    }
 	    $sql = "delete from $this->tableName where id=".intval($alertId);
 	    $this->db->query($sql);
 	}
-	
+
 	function showAlertInfo($alertId) {
+	    if (!$this->__verifyAlertOwnership($alertId)) {
+	        showErrorMsg($_SESSION['text']['label']['Access denied']);
+	        return;
+	    }
 	    $alertInfo = $this->__getAlertInfo($alertId);
 	    $this->set('listInfo', $alertInfo);
 	    $this->set('alertCategory', $this->alertCategory);

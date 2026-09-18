@@ -246,7 +246,7 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 // already defines for its own bulk-select actions; if a given view
 // doesn't have one, jQuery's serialize() on a missing selector just
 // returns an empty string, so this degrades safely rather than breaking.
-var SP_STATE_CHANGING_ACTIONS = ['delete', 'Activate', 'Inactivate', 'recheckreport', 'addToWebmasterTools',
+var SP_STATE_CHANGING_ACTIONS = ['delete', 'delete_alert', 'Activate', 'Inactivate', 'recheckreport', 'addToWebmasterTools',
 	'showrunproject', 'checkscore', 'deletepage', 'upgrade', 'reinstall', 'deleteSitemap'];
 
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
