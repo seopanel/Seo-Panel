@@ -48,7 +48,7 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 	$colCount = 7;
 	if(count($list) > 0){
 		foreach($list as $i => $listInfo){
-            $proxyLink = scriptAJAXLinkHref('proxy.php', 'content', "sec=edit&proxyId={$listInfo['id']}", "{$listInfo['proxy']}");
+            $proxyLink = scriptAJAXLinkHref('proxy.php', 'content', "sec=edit&proxyId={$listInfo['id']}", htmlspecialchars($listInfo['proxy']));
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>

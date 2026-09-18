@@ -125,8 +125,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<th id="head" colspan="3"><?php echo $linkName; ?></th>
 			<?php
 		}
-		?>
-	</tr>	
+		if (!empty($showSearchVolume)): ?>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spText['keyword']['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
+		<?php endif; ?>
+	</tr>
 	<tr>
 		<?php
 		$pTxt = str_replace("-", "/", substr($fromTime, -5));
@@ -141,7 +143,8 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		?>
 	</tr>
 	<?php
-	$colCount = empty($websiteId) ? ($seCount * 3) + 2 : ($seCount * 3) + 1; 
+	$svExtra = !empty($showSearchVolume) ? 1 : 0;
+	$colCount = empty($websiteId) ? ($seCount * 3) + 2 + $svExtra : ($seCount * 3) + 1 + $svExtra; 
 	if (count($list) > 0) {
 		foreach($indexList as $keywordId => $rankValue){
 		    $listInfo = $list[$keywordId];
@@ -150,11 +153,18 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
             $scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";          
 			?>
 			<tr>				
+				<?php
+				$serpKwIcon = '';
+				if (empty($pdfVersion) && empty($printVersion)) {
+					$serpKwUrl = SP_WEBPATH . "/reports.php?sec=serpresults&keyword_id={$listInfo['id']}&date=$toTime";
+					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#d35400; font-size:0.75rem;"></i></a>';
+				}
+				?>
 				<?php if (empty($websiteId)) {?>
-					<td><?php echo $listInfo['name'] ?></td>
+					<td><?php echo $listInfo['name'] . $serpKwIcon ?></td>
 					<td><?php echo $listInfo['webname']; ?></td>
 				<?php } else { ?>
-					<td><?php echo $listInfo['name']; ?></td>
+					<td><?php echo $listInfo['name'] . $serpKwIcon; ?></td>
 				<?php }?>				
 				<?php
 				foreach ($seList as $index => $seInfo){
@@ -162,24 +172,24 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					$prevRank = isset($rankInfo[$fromTime]) ? $rankInfo[$fromTime] : "";
 					$currRank = isset($rankInfo[$toTime]) ? $rankInfo[$toTime] : "";
 					$rankDiffTxt = "";
-					
+
 					// if both ranks are existing
 					if ($prevRank != '' && $currRank != '') {
 						$rankDiff = $prevRank - $currRank;
-						
+
 						if ($rankDiff > 0) {
 							$rankDiffTxt = "<font class='green'>($rankDiff)</font>";
 						} else if ($rankDiff < 0) {
 							$rankDiffTxt = "<font class='red'>($rankDiff)</font>";
 						} else {
 							$rankDiffTxt = "0";
-						}													
+						}
 					}
 
 					$prevRankLink = scriptAJAXLinkHrefDialog('reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], $prevRank);
 					$currRankLink = scriptAJAXLinkHrefDialog('reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], $currRank);
 					$graphLink = scriptAJAXLinkHrefDialog('graphical-reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], '&nbsp;', 'graphicon');
-					
+
 					// if pdf report remove links
 					if ($pdfVersion) {
 						$prevRankLink = str_replace("href='javascript:void(0);'", "", $prevRankLink);
@@ -190,9 +200,20 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<td><?php echo $prevRankLink; ?></td>
 					<td><?php echo $currRankLink; ?></td>
 					<td><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
-					<?php					
+					<?php
 				}
-				?>				
+				?>
+				<?php if (!empty($showSearchVolume)): ?>
+				<td class="text-center">
+					<?php if (!is_null($listInfo['search_volume'])): ?>
+						<strong><?php echo number_format($listInfo['search_volume'])?></strong>
+					<?php elseif (!empty($listInfo['sv_status'])): ?>
+						<span class="badge badge-secondary"><?php echo htmlspecialchars($listInfo['sv_status'])?></span>
+					<?php else: ?>
+						&mdash;
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
 			</tr>
 			<?php
 		}
@@ -205,3 +226,21 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	echo $pdfVersion ? showPdfFooter($spText) : showPrintFooter($spText);
 }
 ?>
+
+<?php if (empty($printVersion) && empty($pdfVersion)): ?>
+<div class="modal fade" id="serpModalSP" tabindex="-1" role="dialog" aria-labelledby="serpModalSPLabel" aria-hidden="true">
+	<div class="modal-dialog modal-lg" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="serpModalSPLabel"><i class="fas fa-list-ol"></i> SERP Results</h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+					<span aria-hidden="true">&times;</span>
+				</button>
+			</div>
+			<div class="modal-body" id="serpModalSPBody">
+				<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+			</div>
+		</div>
+	</div>
+</div>
+<?php endif; ?>

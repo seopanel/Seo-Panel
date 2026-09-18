@@ -234,13 +234,28 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 	return false;
 }
 
+// State-changing actions this dropdown can trigger - previously ALL of
+// these (including delete) went out over confirmLoad(), a plain GET
+// request. A GET-triggered destructive action is forgeable by a bare
+// <img src="..."> or link on any page a logged-in victim (admin or not)
+// has open, no JavaScript required - not mitigated by modern browsers'
+// SameSite=Lax cookie default, which explicitly still allows simple/
+// top-level GET requests to carry cookies. Routed through confirmSubmit()
+// instead (POST, via scriptDoLoadPost()) for exactly these - 'listform'
+// is the consistent wrapping form id every list view using this dropdown
+// already defines for its own bulk-select actions; if a given view
+// doesn't have one, jQuery's serialize() on a missing selector just
+// returns an empty string, so this degrades safely rather than breaking.
+var SP_STATE_CHANGING_ACTIONS = ['delete', 'Activate', 'Inactivate', 'recheckreport', 'addToWebmasterTools',
+	'showrunproject', 'checkscore', 'deletepage', 'upgrade', 'reinstall', 'deleteSitemap'];
+
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 	actVal = document.getElementById(actionDiv).value;
 	scriptArgs += "&sec=" + actVal;
 	switch (actVal) {
-		case "select":		
+		case "select":
 			break;
-		
+
 		case "checkstatus":
 		case "edit":
 		case "reports":
@@ -249,17 +264,19 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 		case "website-access-manager":
 			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 			break;
-	
+
 		default:
 			if(spdemo){
-				if((actVal == 'delete') || (actVal == 'Activate') || (actVal == 'Inactivate') || (actVal == 'recheckreport') || (actVal == 'addToWebmasterTools')
-					|| (actVal == 'showrunproject') || (actVal == 'checkscore') || (actVal == 'deletepage') || (actVal == 'upgrade') || (actVal == 'reinstall') 
-					|| (actVal == 'deleteSitemap')){
+				if(SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1){
 					alertDemoMsg();
 					return false;
 				}
 			}
-			confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			if (SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1) {
+				confirmSubmit(scriptUrl, 'listform', scriptPos, scriptArgs);
+			} else {
+				confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			}
 			break;
 	}
 }
@@ -454,6 +471,12 @@ function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	apiLogin = $('input:text[name=SP_DFS_API_LOGIN]').val();
 	apiPassword = $('input:text[name=SP_DFS_API_PASSWORD]').val();
 	scriptArgs += "&api_login=" + apiLogin + "&api_password=" + apiPassword;
+	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}
+
+function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
+	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
+	scriptArgs += "&base_url=" + encodeURIComponent(baseUrl);
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 

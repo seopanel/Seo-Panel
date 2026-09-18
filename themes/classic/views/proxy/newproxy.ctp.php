@@ -8,12 +8,12 @@
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Proxy']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="proxy" value="<?php echo $post['proxy']?>" class="form-control"><?php echo $errMsg['proxy']?></td>
+		<td class="td_right_col"><input type="text" name="proxy" value="<?php echo htmlspecialchars($post['proxy'] ?? '')?>" class="form-control"><?php echo $errMsg['proxy']?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Port']?>:</strong></td>
 		<td class="td_right_col">
-			<input type="text" name="port" value="<?php echo $post['port']?>" class="form-control" style="width:60px;"><?php echo $errMsg['port']?>
+			<input type="text" name="port" value="<?php echo htmlspecialchars($post['port'] ?? '')?>" class="form-control" style="width:60px;"><?php echo $errMsg['port']?>
 		</td>
 	</tr>
 	<tr class="white_row">
@@ -22,12 +22,12 @@
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spTextProxy['Proxy Username']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="proxy_username" value="<?php echo $post['proxy_username']?>" class="form-control"><?php echo $errMsg['proxy_username']?></td>
+		<td class="td_right_col"><input type="text" name="proxy_username" value="<?php echo htmlspecialchars($post['proxy_username'] ?? '')?>" class="form-control"><?php echo $errMsg['proxy_username']?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spTextProxy['Proxy Password']?>:</strong></td>
 		<td class="td_right_col">
-			<input type="password" name="proxy_password" value="<?php echo $post['proxy_password']?>" class="form-control"><?php echo $errMsg['proxy_password']?>
+			<input type="password" name="proxy_password" value="<?php echo htmlspecialchars($post['proxy_password'] ?? '')?>" class="form-control"><?php echo $errMsg['proxy_password']?>
 		</td>
 	</tr>
 </table>

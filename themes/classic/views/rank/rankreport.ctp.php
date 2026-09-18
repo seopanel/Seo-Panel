@@ -118,4 +118,36 @@
 		<td class="right"></td>
 	</tr>
 </table>
+
+<?php if (!empty($localAiAvailable) && count($list) > 0) { ?>
+	<div class="mt-2">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="rankSummarizeTrend()">
+			<i class="fa fa-magic"></i> Summarize with AI
+		</button>
+		<div id="rankTrendSummary" class="alert alert-info mt-2" style="display:none;"></div>
+	</div>
+	<script type="text/javascript">
+	function rankSummarizeTrend() {
+		var box = document.getElementById('rankTrendSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: 'rank.php',
+			data: {
+				sec: 'summarizetrend',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+<?php } ?>
 </div>

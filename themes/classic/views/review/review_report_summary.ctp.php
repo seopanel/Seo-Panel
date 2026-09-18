@@ -9,7 +9,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
         		<td>
-        			<?php echo $websiteList[$websiteId]['url']; ?>
+        			<?php echo htmlspecialchars($websiteList[$websiteId]['url'] ?? ''); ?>
     			</td>
     		</tr>
 		<?php }?>
@@ -155,12 +155,12 @@ $colCount = ($baseColCount * 3);
 				?>
 				<tr>
 					<td>
-						<a href="<?php echo $listInfo['url']?>" target="_blank">
-							<?php echo $listInfo['name']; ?>
+						<a href="<?php echo htmlspecialchars($listInfo['url'], ENT_QUOTES)?>" target="_blank">
+							<?php echo htmlspecialchars($listInfo['name']); ?>
 						</a>
 					</td>
 					<td>
-						<?php echo $websiteList[$listInfo['website_id']]['name']; ?>
+						<?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? ''); ?>
 					</td>
 					<td>
 						<a href="javascript:void(0)">

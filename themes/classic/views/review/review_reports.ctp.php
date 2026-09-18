@@ -67,4 +67,36 @@ $submitLink = "scriptDoLoadPost('$pageScriptPath', 'search_form', 'content', '&s
 	}
 	?>
 </table>
+
+<?php if (!empty($localAiAvailable) && count($list) > 0) { ?>
+	<div class="mt-2">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="reviewSummarizeTrend()">
+			<i class="fa fa-magic"></i> Summarize with AI
+		</button>
+		<div id="reviewTrendSummary" class="alert alert-info mt-2" style="display:none;"></div>
+	</div>
+	<script type="text/javascript">
+	function reviewSummarizeTrend() {
+		var box = document.getElementById('reviewTrendSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: '<?php echo $pageScriptPath ?>',
+			data: {
+				sec: 'summarizetrend',
+				link_id: <?php echo intval($linkId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+<?php } ?>
 </div>

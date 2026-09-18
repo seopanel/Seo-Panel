@@ -270,7 +270,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			$noText = $spText['common']['No'];
 			?>
 			<tr>
-				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo $listInfo['page_url']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo htmlspecialchars($listInfo['page_url'])?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['page_authority']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_backlinks']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_indexed'] ? $yesText : $noText?></td>
@@ -336,7 +336,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){            
-            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));             
+            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap(htmlspecialchars($listInfo['page_url']), 100, "<br>", true));
             $pageLink = !empty($pdfVersion) ? str_replace("href='javascript:void(0);'", "", $pageLink) : $pageLink;
             ?>
 			<tr>

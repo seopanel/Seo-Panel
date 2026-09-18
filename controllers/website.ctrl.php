@@ -159,24 +159,69 @@ class WebsiteController extends Controller{
 		return $cond;
 	}
 
+		/*
+	 * func to verify the logged-in caller owns (or is admin over) a
+	 * website - shared by __changeStatus()/__deleteWebsite()/
+	 * updateWebsite()/editWebsite(), none of which checked this before:
+	 * any logged-in non-admin could activate/deactivate, delete, rename/
+	 * reassign, or view the edit form of ANY other user's website just
+	 * by supplying its id, via the normal web UI (websites.php), no API
+	 * key or admin session needed.
+	 *
+	 * Deliberately returns a bool rather than calling showErrorMsg()
+	 * itself: __changeStatus()/__deleteWebsite() can be invoked in a
+	 * bulk loop (websites.php's activateall/inactivateall/deleteall),
+	 * where showErrorMsg()'s exit() on the first foreign id would abort
+	 * the rest of a legitimate batch too - callers silently skip what
+	 * they don't own instead. editWebsite()/updateWebsite() are
+	 * single-target and call showErrorMsg() themselves on a false
+	 * return.
+	 *
+	 * Also covers the __deleteUser()/__deleteWebsite() cascade
+	 * (controllers/user.ctrl.php) and the REST API's deleteWebsite()/
+	 * updateWebsite(): both only ever reach here from an already-admin
+	 * session (users.php gates user deletion with checkAdminLoggedIn();
+	 * the API's shared key is admin-equivalent by design, see
+	 * api.ctrl.php), so the isAdmin() bypass below covers them
+	 * correctly without needing a separate code path.
+	 */
+	function __verifyWebsiteOwnership($websiteId) {
+		if (isAdmin()) return true;
+		$userId = isLoggedIn();
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		return !empty($websiteInfo) && intval($websiteInfo['user_id']) === intval($userId);
+	}
+
 	# func to change status
 	function __changeStatus($websiteId, $status){
-		
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return;
+		}
+
 		$websiteId = intval($websiteId);
 		$sql = "update websites set status=$status where id=$websiteId";
 		$this->db->query($sql);
-		
+
 		$sql = "update keywords set status=$status where website_id=$websiteId";
 		$this->db->query($sql);
 	}
 
 	# func to delete website
 	function __deleteWebsite($websiteId){
-		
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return;
+		}
+
 		$websiteId = intval($websiteId);
-		$sql = "delete from websites where id=$websiteId";
-		$this->db->query($sql);
-		
+
+		// delete all cascading child records FIRST, while the website row
+		// still exists - __deleteKeyword() now re-verifies ownership via
+		// its keyword's parent website (see KeywordController::
+		// __verifyKeywordOwnership()), so deleting the website row before
+		// this loop would make every one of those calls fail that check
+		// against an already-gone website. Same fix shape as
+		// SiteAuditorController::__deleteProject()'s own reordering
+		// earlier this session.
 		# delete all keywords under this website
 		$sql = "select id from keywords where website_id=$websiteId";
 		$keywordList = $this->db->select($sql);
@@ -184,32 +229,36 @@ class WebsiteController extends Controller{
 		foreach($keywordList as $keywordInfo){
 			$keywordCtrler->__deleteKeyword($keywordInfo['id']);
 		}
-		
+
 		# remove rank results
 		$sql = "delete from rankresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
+
 		# remove backlink results
 		$sql = "delete from backlinkresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
+
 		# remove saturation results
 		$sql = "delete from saturationresults where website_id=$websiteId";
 		$this->db->query($sql);
-		
-		# remove site auditor results		
+
+		# remove site auditor results
 		$sql = "select id from auditorprojects where website_id=$websiteId";
 		$info = $this->db->select($sql, true);
 		if (!empty($info['id'])) {
 		    $auditorObj = $this->createController('SiteAuditor');
 		    $auditorObj->__deleteProject($info['id']);
 		}
-		
+
 		#remove directory results
 		$sql = "delete from dirsubmitinfo where website_id=$websiteId";
 		$this->db->query($sql);
 		$sql = "delete from skipdirectories where website_id=$websiteId";
-		$this->db->query($sql);		    
+		$this->db->query($sql);
+
+		# the website row itself, last
+		$sql = "delete from websites where id=$websiteId";
+		$this->db->query($sql);
 	}
 
 	function newWebsite($info=[]) {
@@ -335,8 +384,12 @@ class WebsiteController extends Controller{
 		return empty($listInfo['id']) ? false :  $listInfo;
 	}
 
-	function editWebsite($websiteId, $listInfo=[]) {		
+	function editWebsite($websiteId, $listInfo=[]) {
 		$websiteId = intval($websiteId);
+		if (!empty($websiteId) && !$this->__verifyWebsiteOwnership($websiteId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 		if(!empty($websiteId)){
 			if(empty($listInfo)){
 				$listInfo = $this->__getWebsiteInfo($websiteId);
@@ -378,6 +431,16 @@ class WebsiteController extends Controller{
 		}
 		
 		$listInfo['id'] = intval($listInfo['id']);
+
+		// the web-UI path (not the REST API, which is admin-equivalent by
+		// design - see api.ctrl.php) previously never verified the caller
+		// owned the website being edited at all - only which user_id it
+		// gets REASSIGNED to (above) was ever checked, and only for admins
+		if (!$apiCall && !$this->__verifyWebsiteOwnership($listInfo['id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$listInfo['name'] = strip_tags($listInfo['name']);
 		$this->set('post', $listInfo);
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
@@ -640,6 +703,25 @@ class WebsiteController extends Controller{
 				$metaInfo['has_twitter_cards'] = 1;
 			}
 
+			// Check Structured Data (JSON-LD schema.org markup) - the
+			// machine-facing fact layer AI answer engines (ChatGPT,
+			// Perplexity, Google AI Overview) parse to understand what an
+			// entity/product/page actually is, distinct from the OG/Twitter
+			// tags above which only affect social share previews.
+			$metaInfo['has_structured_data'] = 0; // Default: no structured data found
+			preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $ret['page'], $jsonLdMatches);
+			if (!empty($jsonLdMatches[1])) {
+				foreach ($jsonLdMatches[1] as $jsonLdBlock) {
+					// require a recognized @type key - an empty or malformed
+					// <script> tag would otherwise false-positive as "has
+					// structured data"
+					if (preg_match('/"@type"\s*:\s*"[^"]+"/i', $jsonLdBlock)) {
+						$metaInfo['has_structured_data'] = 1;
+						break;
+					}
+				}
+			}
+
 			// Check if page is blocked by robots.txt
 			$metaInfo['blocked_by_robots'] = Spider::isBlockedByRobotsTxt($websiteUrl, $websiteUrl);
 		}
@@ -721,33 +803,37 @@ class WebsiteController extends Controller{
 		// process file upload option
 		$fileInfo = $_FILES['website_csv_file'];
 		if (!empty($fileInfo['name']) && !empty($userId)) {
-			if ($fileInfo["type"] == "text/csv" || $fileInfo["type"] == "application/vnd.ms-excel") {
-				$targetFile = SP_TMPPATH . "/".$fileInfo['name'];
+			$uploadedExt = strtolower(pathinfo($fileInfo['name'], PATHINFO_EXTENSION));
+			if ($uploadedExt === 'csv' && ($fileInfo["type"] == "text/csv" || $fileInfo["type"] == "application/vnd.ms-excel")) {
+				// Use a random server-generated filename to prevent attacker-controlled filenames
+				$safeFilename = uniqid('import_', true) . '.csv';
+				$targetFile = SP_TMPPATH . "/" . $safeFilename;
 				if(move_uploaded_file($fileInfo['tmp_name'], $targetFile)) {
 
 					$delimiterChar = empty($info['delimiter']) ? ',' : $info['delimiter'];
 					$enclosureChar = empty($info['enclosure']) ? '"' : $info['enclosure'];
 					$escapeChar = empty($info['escape']) ? '\\' : $info['escape'];
-					
+
 					// open file read through csv file
 					if (($handle = fopen($targetFile, "r")) !== FALSE) {
-					
+
 						// loop through the data row
 						while (($websiteInfo = fgetcsv($handle, 4096, $delimiterChar, $enclosureChar, $escapeChar)) !== FALSE) {
 							if (empty($websiteInfo[0])) continue;
 							$count++;
 						}
-					
+
 						fclose($handle);
 					}
-					
+
 					// Check the user website count for validation
 					if (!$this->validateWebsiteCount($userId, $count)) {
+						@unlink($targetFile);
 						$validationMag = strip_tags($this->setValidationMessageForLimit($userId));
 						print "<script>alert('$validationMag')</script>";
 						return False;
 					}
-					
+
 					// open file read through csv file
 					if (($handle = fopen($targetFile, "r")) !== FALSE) {
 
@@ -758,9 +844,11 @@ class WebsiteController extends Controller{
 							$resultInfo[$status] += 1;
 							$resultInfo['total'] += 1;
 						}
-						
+
 						fclose($handle);
-					}					
+					}
+
+					@unlink($targetFile);
 				}
 			}
 		}
@@ -1092,18 +1180,34 @@ class WebsiteController extends Controller{
 	}	
 	
 	function syncGoogleAnalyticProperties($userId) {
+	    $debug = [];
+	    $debug[] = "--- syncGoogleAnalyticProperties START ---";
+
 	    $userId = intval($userId);
+	    $debug[] = "User ID: $userId";
+
 	    $analyticList = $this->dbHelper->getAllRows("analytics_properties", "user_id=$userId");
+	    $debug[] = "Existing DB properties count: " . count($analyticList);
+
 	    $propertyList = createSelectList($analyticList, "ALL", 'property_id');
-	    
+
 	    $GoogleCtrl  = new GoogleAPIController();
-	    [$status, $result, $errMsg] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    $debug[] = "Calling getanalyticWebsitesPropertyIds...";
+
+	    [$status, $result, $errMsg, $apiDebug] = $GoogleCtrl->getanalyticWebsitesPropertyIds($userId);
+	    $debug = array_merge($debug, $apiDebug);
+	    $debug[] = "API call status: " . ($status ? 'TRUE' : 'FALSE');
+	    $debug[] = "API msg: $errMsg";
+	    $debug[] = "Properties returned from API: " . count($result);
+
 	    if($status && !empty($result)) {
 	        foreach ($result as $data) {
 	            $propertyId = $data['property_id'];
-	            
+	            $debug[] = "Processing property: {$data['property_name']} (ID: $propertyId, Account: {$data['account_name']})";
+
 	            if (!empty($propertyList[$propertyId])) {
 	                $propertyDbId = $propertyList[$propertyId]['id'];
+	                $debug[] = "  -> EXISTS in DB (db_id=$propertyDbId), updating...";
 	                $dataList = [
 	                    'user_id' => $userId,
 	                    'account_name' => $data['account_name'],
@@ -1111,9 +1215,11 @@ class WebsiteController extends Controller{
 	                    'property_name' => $data['property_name'],
 	                    'datetime_updated' => date('Y-m-d H:i:s'),
 	                ];
-	                
+
 	                $this->dbHelper->updateRow('analytics_properties', $dataList, "id=$propertyDbId");
+	                $debug[] = "  -> Updated OK";
 	            } else {
+	                $debug[] = "  -> NEW property, inserting...";
 	                $dataList = [
 	                    'user_id' => $userId,
 	                    'account_name' => $data['account_name'],
@@ -1121,29 +1227,45 @@ class WebsiteController extends Controller{
 	                    'property_name' => $data['property_name'],
 	                    'property_id' => $data['property_id'],
 	                ];
-	                
+
 	                $this->dbHelper->insertRow('analytics_properties', $dataList);
+	                $debug[] = "  -> Inserted OK";
 	            }
 	        }
+	    } else {
+	        $debug[] = "No properties returned or API call failed.";
 	    }
-	    
-	    return [$status, $errMsg];
+
+	    $debug[] = "--- syncGoogleAnalyticProperties END ---";
+	    return [$status, $errMsg, $debug];
 	}
 	
 	function fetchGoogleAnalyticProperties() {
-	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error"];
+	    $debug = [];
+	    $debug[] = "[" . date('Y-m-d H:i:s') . "] fetchGoogleAnalyticProperties triggered";
+
+	    $response = ['status' => 0, 'data' => [], 'msg' => "API Error", 'debug' => []];
 	    $userId = isLoggedIn();
-	    
-	    // sync google analytics properties using the connectin
-	    [$status, $errMsg] = $this->syncGoogleAnalyticProperties($userId);
+	    $debug[] = "Logged-in user ID: $userId";
+
+	    // sync google analytics properties using the connection
+	    [$status, $errMsg, $syncDebug] = $this->syncGoogleAnalyticProperties($userId);
+	    $debug = array_merge($debug, $syncDebug);
+	    $debug[] = "syncGoogleAnalyticProperties returned status: " . ($status ? 'TRUE' : 'FALSE') . ", msg: $errMsg";
+
 	    if ($status) {
 	        $propertyList = $this->__getAllAnalyticProperties(TRUE);
+	        $debug[] = "Final property list count for dropdown: " . count($propertyList);
 	        $response['data'] = $propertyList;
 	        $response['status'] = TRUE;
 	    } else {
 	        $response['msg'] = $errMsg;
+	        $debug[] = "Returning error response: $errMsg";
 	    }
-	    
+
+	    // Internal diagnostics only — never expose account/property IDs or API
+	    // error internals to the browser outside of debug mode.
+	    $response['debug'] = (defined('SP_DEBUG') && SP_DEBUG) ? $debug : [];
 	    return $response;
 	}
 	

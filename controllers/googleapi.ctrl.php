@@ -232,40 +232,60 @@ class GoogleAPIController extends Controller{
 	}
 	
 	function getanalyticWebsitesPropertyIds($userId) {
+	    $debug = [];
+	    $debug[] = "-- getanalyticWebsitesPropertyIds START (userId=$userId) --";
+
 	    $websites = array();
 	    $client = $this->getAuthClient($userId);
-	    
+
 	    // if error occured
 	    if (!is_object($client)) {
-	        return [FALSE, $websites, $client];
+	        $debug[] = "getAuthClient FAILED. Error: $client";
+	        return [FALSE, $websites, $client, $debug];
 	    }
-	    
+	    $debug[] = "getAuthClient OK";
+
 	    // GA4 Admin API: list accounts + properties in ONE call (UA analytics/v3 was decommissioned 2024-07)
 	    $accessToken = $this->__getAccessToken($client);
 	    $apiUrl = "https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200";
+	    $debug[] = "  Calling API: $apiUrl";
 	    $ret = $this->plainAPICall($apiUrl, $accessToken);
+
 	    if (!empty($ret['error'])) {
-	        return [FALSE, $websites, $ret['errmsg']];
+	        $debug[] = "  API error: HTTP " . $ret['error'] . " - " . ($ret['errmsg'] ?? 'no message');
+	        return [FALSE, $websites, $ret['errmsg'] ?? 'API Error', $debug];
 	    }
+
 	    if (!empty($ret['page']['accountSummaries'])) {
+	        $debug[] = "Total GA accounts found: " . count($ret['page']['accountSummaries']);
 	        foreach ($ret['page']['accountSummaries'] as $acc) {
 	            $accountId = str_replace("accounts/", "", $acc['account']);
 	            $accountName = $acc['displayName'];
+	            $debug[] = "Account: $accountName (ID: $accountId)";
+
 	            if (!empty($acc['propertySummaries'])) {
+	                $debug[] = "  Properties found: " . count($acc['propertySummaries']);
 	                foreach ($acc['propertySummaries'] as $prop) {
 	                    $propertyId = str_replace("properties/", "", $prop['property']);
+	                    $propertyName = $prop['displayName'];
+	                    $debug[] = "    Property: $propertyName (ID: $propertyId)";
 	                    $websites[] = array(
 	                        'account_name' => $accountName,
 	                        'account_id' => $accountId,
-	                        'property_name' => $prop['displayName'],
+	                        'property_name' => $propertyName,
 	                        'property_id' => $propertyId,
 	                    );
 	                }
+	            } else {
+	                $debug[] = "  No properties found for account $accountId";
 	            }
 	        }
+	    } else {
+	        $debug[] = "No GA accounts found";
 	    }
-	    
-	    return [TRUE, $websites, "success"];
+
+	    $debug[] = "-- getanalyticWebsitesPropertyIds END, total websites: " . count($websites) . " --";
+	    return [TRUE, $websites, "success", $debug];
 	}
 	
 	// Function to get GA4 properties

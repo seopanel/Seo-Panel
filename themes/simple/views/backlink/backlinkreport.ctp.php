@@ -41,18 +41,27 @@
 ?>
 
 <div id='subcontent'>
+<?php if (!empty($hasBrokenBacklinks)) { ?>
+<div class="alert alert-secondary">
+	<i class="fas fa-info-circle me-2"></i>
+	<?php echo $spTextBack['backlinkdfsnotice'] ?? 'Rows measured via DataForSEO show total backlinks and referring domains (not the same page-count metric Moz used) plus a broken-backlinks count. Rows measured via Moz are unaffected.' ?>
+</div>
+<?php } ?>
 <table width="100%" class="list">
 	<tr class="listHead">
 		<td class="left"><?php echo $spText['common']['Date']?></td>
 		<td><?php echo $spTextBack['Backlink Count']?></td>
-		<td class="right"><?php echo $spTextBack['Domain Backlink Count']?></td>
+		<td<?php echo empty($hasBrokenBacklinks) ? ' class="right"' : '' ?>><?php echo $spTextBack['Domain Backlink Count']?></td>
+		<?php if (!empty($hasBrokenBacklinks)) { ?>
+		<td class="right"><?php echo $spTextBack['Broken Backlinks'] ?? 'Broken Backlinks' ?></td>
+		<?php } ?>
 	</tr>
 	<?php
-	$colCount = 3; 
+	$colCount = !empty($hasBrokenBacklinks) ? 4 : 3;
 	if(count($list) > 0){
 		$catCount = count($list);
 		$i = 0;
-		foreach($list as $listInfo) {			
+		foreach($list as $listInfo) {
 			$class = ($i % 2) ? "blue_row" : "white_row";
             if($catCount == ($i + 1)){
                 $leftBotClass = "tab_left_bot";
@@ -60,19 +69,22 @@
             }else{
                 $leftBotClass = "td_left_border td_br_right";
                 $rightBotClass = "td_br_right";
-            }            
+            }
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
 				<td class='td_br_right' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_page'].' '. $listInfo['rank_diff_external_pages_to_page']?></td>
-				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_root_domain'].' '. $listInfo['rank_diff_external_pages_to_root_domain']?></td>
+				<td class='<?php echo empty($hasBrokenBacklinks) ? $rightBotClass : 'td_br_right' ?>' style='text-align:left;padding-left:40px;'><?php echo $listInfo['external_pages_to_root_domain'].' '. $listInfo['rank_diff_external_pages_to_root_domain']?></td>
+				<?php if (!empty($hasBrokenBacklinks)) { ?>
+				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><?php echo ($listInfo['broken_backlinks'] === null) ? '—' : $listInfo['broken_backlinks']?></td>
+				<?php } ?>
 			</tr>
 			<?php
 			$i++;
 		}
 	}else{
-		echo showNoRecordsList($colCount-2);		
-	} 
+		echo showNoRecordsList($colCount-2);
+	}
 	?>
 	<tr class="listBot">
 		<td class="left" colspan="<?php echo ($colCount-1)?>"></td>

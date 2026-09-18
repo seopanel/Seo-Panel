@@ -36,13 +36,78 @@ class UserController extends Controller{
 	
 	# function to set login session items
 	function setLoginSession($userInfo) {
+		// session fixation: without this, an attacker who gets a victim to
+		// visit the app first (planting a known, pre-auth session id via
+		// the cookie or a session-id-in-URL trick) would have that same
+		// session id become a fully authenticated one the moment the
+		// victim logs in - regenerating here discards the pre-login id and
+		// its session file, so a session id observed/set before
+		// authentication is never valid after it
+		session_regenerate_id(true);
 		@Session::setSession('userInfo', $userInfo);
 		@Session::setSession('lang_code', $userInfo['lang_code']);
 		@Session::setSession('text', '');
 		// clear SP API check cache so a fresh check runs on the next page load
 		$this->db->query("DELETE FROM information_list WHERE info_type='spapi_check'");
 	}
-	
+
+	// generates a salted, adaptive-cost hash (bcrypt via PASSWORD_DEFAULT)
+	// for storing a new/changed password - replaces the legacy plain md5()
+	// used everywhere in this file, which has no salt (identical passwords
+	// across users produce identical hashes) and is fast enough to brute
+	// force billions of guesses/sec on commodity hardware if the users
+	// table is ever exposed
+	function __hashPassword($password) {
+		return password_hash($password, PASSWORD_DEFAULT);
+	}
+
+	// a legacy md5 hash is exactly 32 lowercase hex chars - password_hash()
+	// output always starts with an algorithm tag like "$2y$" and is never
+	// valid hex, so this can't collide with a real bcrypt/argon2 hash
+	function __isLegacyMd5Hash($hash) {
+		return (bool) preg_match('/^[a-f0-9]{32}$/', (string) $hash);
+	}
+
+	// verifies a password against either hash format so existing users'
+	// stored md5 hashes keep working without a forced mass password reset -
+	// login() upgrades a legacy hash to bcrypt in place the moment it sees
+	// one verify successfully, so accounts migrate transparently over time
+	// as their owners log in
+	function __verifyPassword($password, $hash) {
+		if ($this->__isLegacyMd5Hash($hash)) {
+			return hash_equals($hash, md5($password));
+		}
+		return password_verify($password, (string) $hash);
+	}
+
+	// throttles login attempts to blunt online brute-force/credential-
+	// stuffing, which login() previously had zero protection against - a
+	// tight per-username bucket stops repeatedly guessing one account's
+	// password regardless of source IP, and a looser per-IP bucket stops
+	// one source spraying many usernames. Reuses the same fixed-window
+	// limiter every other rate-limited endpoint in the app already goes
+	// through (see AIVisibilityController::__checkRateLimit()).
+	function __checkLoginRateLimit($userName) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$userKey = 'login-user:' . strtolower(trim((string) $userName));
+		$ipKey = 'login-ip:' . $ip;
+		// both calls must run even if the first fails, so each bucket's
+		// hit count still reflects this attempt
+		$userOk = $aivCtrler->__checkRateLimit($userKey, 8);
+		$ipOk = $aivCtrler->__checkRateLimit($ipKey, 20);
+		return $userOk && $ipOk;
+	}
+
+	// generates a temporary password for requestPassword()'s reset email -
+	// extracted to its own method so it can be tested directly for
+	// strength. random_bytes() is a cryptographically secure source,
+	// unlike the rand()-based generator this replaces
+	function __generateRandomPassword($byteLength = 12) {
+		return bin2hex(random_bytes($byteLength));
+	}
+
 	# login function
 	function login(){	    
 	    
@@ -51,11 +116,19 @@ class UserController extends Controller{
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkBlank($_POST['userName']));
 		$errMsg['password'] = formatErrorMsg($this->validate->checkBlank($_POST['password']));
 		if(!$this->validate->flagErr){
+		    if ($this->__checkLoginRateLimit($_POST['userName'])) {
 			$sql = "select u.*,ut.user_type from users u,usertypes ut where u.utype_id=ut.id and u.username='".addslashes($_POST['userName'])."'";
 			$userInfo = $this->db->select($sql, true);
 			if(!empty($userInfo['id'])){
-				if($userInfo['password'] == md5($_POST['password'])){
-					
+				if($this->__verifyPassword($_POST['password'], $userInfo['password'])){
+					// transparently upgrade a legacy md5 hash to bcrypt now
+					// that we have the plaintext password in hand - the
+					// only point in the app where that's ever true
+					if ($this->__isLegacyMd5Hash($userInfo['password'])) {
+						$newHash = addslashes($this->__hashPassword($_POST['password']));
+						$this->db->query("update users set password='$newHash' where id=".intval($userInfo['id']));
+					}
+
 					// get user type spec details and verify whether to check activation or not
 					$activationStatus = true;
 					$userTypeCtrler = new UserTypeController();
@@ -111,6 +184,14 @@ class UserController extends Controller{
 			}else{
 				$errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']["Login incorrect"]);
 			}
+		    } else {
+		        // per-username AND per-IP fixed-window caps blunt both a
+		        // focused brute-force against one account and a
+		        // credential-stuffing spray across many - deliberately
+		        // generic wording so a rate-limited response looks the
+		        // same as any other failed attempt to an attacker
+		        $errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']['Too many login attempts']);
+		    }
 		}
 		$this->set('errMsg', $errMsg);
 		$this->index($_POST);
@@ -301,7 +382,7 @@ class UserController extends Controller{
 					$utypeId = intval($userInfo['utype_id']);
 					$sql = "insert into users
 					(utype_id,username,password,first_name,last_name,email,created,status) 
-					values ($utypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."',
+					values ($utypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."',
 					'".addslashes($userInfo['firstName'])."','".addslashes($userInfo['lastName'])."',
 					'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus)";
 					$this->db->query($sql);
@@ -355,7 +436,8 @@ class UserController extends Controller{
 						if(!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)){
 							$error = showErrorMsg(
 								'An internal error occured while sending confirmation mail! Please <a href="'.SP_CONTACT_LINK.'">contact</a> seo panel team.',
-								false
+								false,
+								true
 							);
 						}						
 					}
@@ -567,7 +649,7 @@ class UserController extends Controller{
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
 					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm) 
-						values($userTypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."'
+						values($userTypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
 						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
 					$this->db->query($sql);
@@ -641,7 +723,7 @@ class UserController extends Controller{
 		// if password needs to be reset
 		if(!empty($userInfo['password'])){
 			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		
 		// if change status of user
@@ -841,7 +923,7 @@ class UserController extends Controller{
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
 		if(!empty($userInfo['password'])){
 			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
@@ -896,7 +978,12 @@ class UserController extends Controller{
 	        $userId = $this->__checkEmail($userEmail);
 	        if(!empty($userId)){
 	            $userInfo = $this->__getUserInfo($userId);
-	        	$rand = str_shuffle(rand().$userInfo['username']);
+	        	// the old rand()-based generator (str_shuffle(rand().username))
+	        	// was not cryptographically secure - rand()'s output range and
+	        	// internal state are small enough to be guessable/brute-
+	        	// forceable, and shuffling in the username (public knowledge)
+	        	// added no real entropy
+	        	$rand = $this->__generateRandomPassword();
 
 	            // get admin details
 	            $adminInfo = $this->__getAdminInfo();
@@ -915,7 +1002,7 @@ class UserController extends Controller{
 	           	} else {
 	           		
 	           		// update password in DB
-	           		$sql = "update users set password=md5('$rand') where id={$userInfo['id']}";
+	           		$sql = "update users set password='".addslashes($this->__hashPassword($rand))."' where id={$userInfo['id']}";
 	           		$this->db->query($sql);
 	           		
 	           	}

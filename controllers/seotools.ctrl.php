@@ -72,6 +72,14 @@ class SeoToolsController extends Controller{
 		
 		$this->set('menuList', $menuList);
 		$defaultArgs = empty($info['default_args']) ? "" : urldecode($info['default_args']);
+
+		// land on whichever tool is first in priority order (menuList is
+		// already sorted+access-filtered above) rather than a hardcoded
+		// tool, so this default stays correct if priorities change again
+		if (empty($info['menu_sec']) && !empty($menuList[0]['url_section'])) {
+			$info['menu_sec'] = $menuList[0]['url_section'];
+		}
+
 		switch($info['menu_sec']){
 			
 			case "sitemap-generator":
@@ -116,6 +124,10 @@ class SeoToolsController extends Controller{
 				
 			case "web-analytics":
 			    $defaultScript = "analytics.php";
+			    break;
+
+			case "ai-visibility":
+			    $defaultScript = "aivisibility.php";
 			    break;
 
 			default:

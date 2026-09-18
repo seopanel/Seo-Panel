@@ -65,8 +65,8 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['google']?>" target="_blank"><?php echo $listInfo['google'].'</a> '. $listInfo['rank_diff_google']?></td>
-				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['msn']?>" target="_blank"><?php echo $listInfo['msn'].'</a> '. $listInfo['rank_diff_msn']?></td>
+				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo htmlspecialchars($directLinkList['google'])?>" target="_blank"><?php echo intval($listInfo['google'])?></a> <?php echo $listInfo['rank_diff_google']?></td>
+				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo htmlspecialchars($directLinkList['msn'])?>" target="_blank"><?php echo intval($listInfo['msn'])?></a> <?php echo $listInfo['rank_diff_msn']?></td>
 			</tr>
 			<?php
 			$i++;
@@ -80,4 +80,36 @@
 		<td class="right"></td>
 	</tr>
 </table>
+
+<?php if (!empty($localAiAvailable) && count($list) > 0) { ?>
+	<div class="mt-2">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="saturationSummarizeTrend()">
+			<i class="fa fa-magic"></i> Summarize with AI
+		</button>
+		<div id="saturationTrendSummary" class="alert alert-info mt-2" style="display:none;"></div>
+	</div>
+	<script type="text/javascript">
+	function saturationSummarizeTrend() {
+		var box = document.getElementById('saturationTrendSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: 'saturationchecker.php',
+			data: {
+				sec: 'summarizetrend',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+<?php } ?>
 </div>
