@@ -36,6 +36,14 @@ class UserController extends Controller{
 	
 	# function to set login session items
 	function setLoginSession($userInfo) {
+		// session fixation: without this, an attacker who gets a victim to
+		// visit the app first (planting a known, pre-auth session id via
+		// the cookie or a session-id-in-URL trick) would have that same
+		// session id become a fully authenticated one the moment the
+		// victim logs in - regenerating here discards the pre-login id and
+		// its session file, so a session id observed/set before
+		// authentication is never valid after it
+		session_regenerate_id(true);
 		@Session::setSession('userInfo', $userInfo);
 		@Session::setSession('lang_code', $userInfo['lang_code']);
 		@Session::setSession('text', '');
