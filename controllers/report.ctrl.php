@@ -1785,9 +1785,36 @@ class ReportController extends Controller {
 	}
 
 	# func to show SERP results popup for a keyword across all search engines for a date
+	// func to verify the logged-in caller owns (or is admin over) the
+	// website a keyword_id belongs to - shared by showSerpResults()/
+	// showAIOverviewSources() below, neither of which checked this before:
+	// any logged-in user could pull another account's SERP snapshot or
+	// AI Overview cited-sources popup just by guessing/incrementing a
+	// keyword_id. Returns the keyword row on success, false on failure.
+	function __verifyKeywordOwnership($keywordId) {
+		$userId = isLoggedIn();
+		$keyword = $this->dbHelper->getRow('keywords', "id = " . intval($keywordId));
+		if (empty($keyword['website_id'])) {
+			return false;
+		}
+		if (isAdmin()) {
+			return $keyword;
+		}
+		include_once(SP_CTRLPATH . "/website.ctrl.php");
+		$websiteController = new WebsiteController();
+		$ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+		return in_array(intval($keyword['website_id']), $ownedIds) ? $keyword : false;
+	}
+
 	function showSerpResults($info) {
 		$keywordId = intval($info['keyword_id']);
 		$date      = addslashes($info['date']);
+
+		$keyword = $this->__verifyKeywordOwnership($keywordId);
+		if (empty($keyword)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 
 		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain
 				FROM searchresults sr
@@ -1802,7 +1829,6 @@ class ReportController extends Controller {
 			$item['serp_data'] = json_decode($item['serp_results'], true);
 		}
 
-		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
 		$websiteUrl = '';
 		if (!empty($keyword['website_id'])) {
 			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
@@ -1819,7 +1845,12 @@ class ReportController extends Controller {
 	function showAIOverviewSources($info) {
 		$keywordId = intval($info['keyword_id']);
 
-		$keyword = $this->dbHelper->getRow('keywords', "id = $keywordId");
+		$keyword = $this->__verifyKeywordOwnership($keywordId);
+		if (empty($keyword)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$websiteUrl = '';
 		if (!empty($keyword['website_id'])) {
 			$website = $this->dbHelper->getRow('websites', "id = " . intval($keyword['website_id']));
