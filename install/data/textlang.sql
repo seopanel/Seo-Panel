@@ -32338,6 +32338,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Prefer to ask your own AI agent directly?', 'Prefer to ask your own AI agent directly?'),
 ('en', 'aivisibility', 'Connect Claude Desktop or any MCP client', 'Connect Claude Desktop or any MCP client'),
 ('en', 'aivisibility', 'self-hosted, no data leaves this server', 'self-hosted, no data leaves this server'),
+('en', 'siteauditor', 'The page has structured data (JSON-LD) that AI models and search engines can parse', 'The page has structured data (JSON-LD) that AI models and search engines can parse'),
+('en', 'siteauditor', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content'),
+('en', 'siteauditor', 'Structured Data', 'Structured Data'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
 ('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
 

@@ -653,6 +653,16 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						<?php } ?>
 					</div>
 				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-project-diagram"></i> <?php echo $spTextSA['Structured Data'] ?? 'Structured Data'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['has_structured_data']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
+						<?php } else { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Missing</span>
+						<?php } ?>
+					</div>
+				</div>
 			</div>
 		</div>
 

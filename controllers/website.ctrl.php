@@ -640,6 +640,25 @@ class WebsiteController extends Controller{
 				$metaInfo['has_twitter_cards'] = 1;
 			}
 
+			// Check Structured Data (JSON-LD schema.org markup) - the
+			// machine-facing fact layer AI answer engines (ChatGPT,
+			// Perplexity, Google AI Overview) parse to understand what an
+			// entity/product/page actually is, distinct from the OG/Twitter
+			// tags above which only affect social share previews.
+			$metaInfo['has_structured_data'] = 0; // Default: no structured data found
+			preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $ret['page'], $jsonLdMatches);
+			if (!empty($jsonLdMatches[1])) {
+				foreach ($jsonLdMatches[1] as $jsonLdBlock) {
+					// require a recognized @type key - an empty or malformed
+					// <script> tag would otherwise false-positive as "has
+					// structured data"
+					if (preg_match('/"@type"\s*:\s*"[^"]+"/i', $jsonLdBlock)) {
+						$metaInfo['has_structured_data'] = 1;
+						break;
+					}
+				}
+			}
+
 			// Check if page is blocked by robots.txt
 			$metaInfo['blocked_by_robots'] = Spider::isBlockedByRobotsTxt($websiteUrl, $websiteUrl);
 		}

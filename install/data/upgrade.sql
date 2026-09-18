@@ -852,3 +852,15 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Prefer to ask your own AI agent directly?', 'Prefer to ask your own AI agent directly?'),
 ('en', 'aivisibility', 'Connect Claude Desktop or any MCP client', 'Connect Claude Desktop or any MCP client'),
 ('en', 'aivisibility', 'self-hosted, no data leaves this server', 'self-hosted, no data leaves this server');
+
+-- Site Auditor: structured data (JSON-LD schema.org) check. AI answer
+-- engines (ChatGPT, Perplexity, Google AI Overview) rely on structured
+-- data as a machine-facing fact layer distinct from OG/Twitter tags,
+-- which only affect social share previews - Site Auditor had no coverage
+-- of this at all until now.
+ALTER TABLE `auditorreports` ADD COLUMN `has_structured_data` tinyint(1) NOT NULL DEFAULT '0' AFTER `has_twitter_cards`;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'siteauditor', 'The page has structured data (JSON-LD) that AI models and search engines can parse', 'The page has structured data (JSON-LD) that AI models and search engines can parse'),
+('en', 'siteauditor', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content', 'The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content'),
+('en', 'siteauditor', 'Structured Data', 'Structured Data');

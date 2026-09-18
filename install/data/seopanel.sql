@@ -83,6 +83,7 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `https_secure` tinyint(1) NOT NULL DEFAULT '0',
   `has_og_tags` tinyint(1) NOT NULL DEFAULT '0',
   `has_twitter_cards` tinyint(1) NOT NULL DEFAULT '0',
+  `has_structured_data` tinyint(1) NOT NULL DEFAULT '0',
   `blocked_by_robots` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `project_id_2` (`project_id`,`page_url`),

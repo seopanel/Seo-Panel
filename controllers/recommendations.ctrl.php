@@ -609,6 +609,13 @@ class RecommendationsController extends Controller {
                 'title'     => function($n) { return $n == 1 ? "1 page is missing Open Graph tags" : "{$n} pages are missing Open Graph tags"; },
                 'desc'      => function($n) { return $n == 1 ? "Site Auditor found 1 page missing Open Graph (og:) meta tags, which affects how it appears when shared on social media." : "Site Auditor found {$n} pages missing Open Graph (og:) meta tags, which affects how they appear when shared on social media."; },
             ),
+            array(
+                'condition' => 'has_structured_data=0',
+                'type'      => 'todo',
+                'rule'      => 'structured_data',
+                'title'     => function($n) { return $n == 1 ? "1 page is missing structured data" : "{$n} pages are missing structured data"; },
+                'desc'      => function($n) { return $n == 1 ? "Site Auditor found 1 page with no structured data (JSON-LD), which is what AI models like ChatGPT and Google's AI Overview read to understand what the page is actually about." : "Site Auditor found {$n} pages with no structured data (JSON-LD), which is what AI models like ChatGPT and Google's AI Overview read to understand what those pages are actually about."; },
+            ),
         );
 
         foreach ($checks as $check) {

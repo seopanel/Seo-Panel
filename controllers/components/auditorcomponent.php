@@ -26,7 +26,7 @@ class AuditorComponent extends Controller{
     var $commentInfo = array(); // to store the details about the score of each page
 
     // Maximum possible score for a page (sum of all positive scoring factors)
-    var $maxScore = 38;
+    var $maxScore = 40;
     
     // function to save report info
     function saveReportInfo($reportInfo, $action='create') {
@@ -110,6 +110,7 @@ class AuditorComponent extends Controller{
             $reportInfo['https_secure'] = isset($pageInfo['https_secure']) ? intval($pageInfo['https_secure']) : 0;
             $reportInfo['has_og_tags'] = isset($pageInfo['has_og_tags']) ? intval($pageInfo['has_og_tags']) : 0;
             $reportInfo['has_twitter_cards'] = isset($pageInfo['has_twitter_cards']) ? intval($pageInfo['has_twitter_cards']) : 0;
+            $reportInfo['has_structured_data'] = isset($pageInfo['has_structured_data']) ? intval($pageInfo['has_structured_data']) : 0;
             $reportInfo['blocked_by_robots'] = isset($pageInfo['blocked_by_robots']) ? intval($pageInfo['blocked_by_robots']) : 0;
             $reportInfo['crawled'] = 1;
         
@@ -428,6 +429,20 @@ class AuditorComponent extends Controller{
             $scoreInfo['has_twitter_cards'] = -1; // Minor penalty for missing Twitter cards
             $msg = $spTextSA["The page is missing Twitter Card tags - limits Twitter optimization"];
             $this->commentInfo['has_twitter_cards'] = formatErrorMsg($msg, 'warning', '');
+        }
+
+        // Check Structured Data / schema.org markup (JSON-LD) - the
+        // machine-facing fact layer AI answer engines read to understand
+        // entities, products, and FAQs, distinct from the OG/Twitter tags
+        // above which only affect social share previews.
+        if ($reportInfo['has_structured_data']) {
+            $scoreInfo['has_structured_data'] = 2; // Good score for structured data present
+            $msg = $spTextSA["The page has structured data (JSON-LD) that AI models and search engines can parse"];
+            $this->commentInfo['has_structured_data'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['has_structured_data'] = -1; // Minor penalty for missing structured data
+            $msg = $spTextSA["The page is missing structured data (JSON-LD) - limits how AI models and search engines understand its content"];
+            $this->commentInfo['has_structured_data'] = formatErrorMsg($msg, 'warning', '');
         }
 
         // Check robots.txt blocking (critical for crawlability)
