@@ -100,6 +100,14 @@ class UserController extends Controller{
 		return $userOk && $ipOk;
 	}
 
+	// generates a temporary password for requestPassword()'s reset email -
+	// extracted to its own method so it can be tested directly for
+	// strength. random_bytes() is a cryptographically secure source,
+	// unlike the rand()-based generator this replaces
+	function __generateRandomPassword($byteLength = 12) {
+		return bin2hex(random_bytes($byteLength));
+	}
+
 	# login function
 	function login(){	    
 	    
@@ -970,7 +978,12 @@ class UserController extends Controller{
 	        $userId = $this->__checkEmail($userEmail);
 	        if(!empty($userId)){
 	            $userInfo = $this->__getUserInfo($userId);
-	        	$rand = str_shuffle(rand().$userInfo['username']);
+	        	// the old rand()-based generator (str_shuffle(rand().username))
+	        	// was not cryptographically secure - rand()'s output range and
+	        	// internal state are small enough to be guessable/brute-
+	        	// forceable, and shuffling in the username (public knowledge)
+	        	// added no real entropy
+	        	$rand = $this->__generateRandomPassword();
 
 	            // get admin details
 	            $adminInfo = $this->__getAdminInfo();
