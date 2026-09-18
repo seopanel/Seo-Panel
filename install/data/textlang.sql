@@ -32386,7 +32386,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'api', 'Regenerate', 'Regenerate'),
 ('en', 'api', 'api_regenerate_warning', 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
-('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification');
+('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification'),
+('en', 'login', 'Too many login attempts', 'Too many login attempts. Please wait a minute and try again.');
 
 -- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
 -- Settings page) was missing its 'settings'-category label too, unrelated

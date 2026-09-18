@@ -72,6 +72,26 @@ class UserController extends Controller{
 		return password_verify($password, (string) $hash);
 	}
 
+	// throttles login attempts to blunt online brute-force/credential-
+	// stuffing, which login() previously had zero protection against - a
+	// tight per-username bucket stops repeatedly guessing one account's
+	// password regardless of source IP, and a looser per-IP bucket stops
+	// one source spraying many usernames. Reuses the same fixed-window
+	// limiter every other rate-limited endpoint in the app already goes
+	// through (see AIVisibilityController::__checkRateLimit()).
+	function __checkLoginRateLimit($userName) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$userKey = 'login-user:' . strtolower(trim((string) $userName));
+		$ipKey = 'login-ip:' . $ip;
+		// both calls must run even if the first fails, so each bucket's
+		// hit count still reflects this attempt
+		$userOk = $aivCtrler->__checkRateLimit($userKey, 8);
+		$ipOk = $aivCtrler->__checkRateLimit($ipKey, 20);
+		return $userOk && $ipOk;
+	}
+
 	# login function
 	function login(){	    
 	    
@@ -80,6 +100,7 @@ class UserController extends Controller{
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkBlank($_POST['userName']));
 		$errMsg['password'] = formatErrorMsg($this->validate->checkBlank($_POST['password']));
 		if(!$this->validate->flagErr){
+		    if ($this->__checkLoginRateLimit($_POST['userName'])) {
 			$sql = "select u.*,ut.user_type from users u,usertypes ut where u.utype_id=ut.id and u.username='".addslashes($_POST['userName'])."'";
 			$userInfo = $this->db->select($sql, true);
 			if(!empty($userInfo['id'])){
@@ -147,6 +168,14 @@ class UserController extends Controller{
 			}else{
 				$errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']["Login incorrect"]);
 			}
+		    } else {
+		        // per-username AND per-IP fixed-window caps blunt both a
+		        // focused brute-force against one account and a
+		        // credential-stuffing spray across many - deliberately
+		        // generic wording so a rate-limited response looks the
+		        // same as any other failed attempt to an attacker
+		        $errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']['Too many login attempts']);
+		    }
 		}
 		$this->set('errMsg', $errMsg);
 		$this->index($_POST);

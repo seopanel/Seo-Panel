@@ -1000,3 +1000,9 @@ UPDATE `settings` SET set_val = MD5(CONCAT(UUID(), RAND(), NOW(6), CONNECTION_ID
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'api', 'Regenerate', 'Regenerate'),
 ('en', 'api', 'api_regenerate_warning', 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.');
+
+-- Security fix: login() had no rate limiting - unlimited password
+-- guesses against any account/from any IP. Now throttled through the
+-- same rate-limit bucket table AI Visibility's endpoints already use.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'login', 'Too many login attempts', 'Too many login attempts. Please wait a minute and try again.');
