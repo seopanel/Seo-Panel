@@ -129,3 +129,12 @@
 		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
 	</span>
 </div>
+
+<div class="aiv-note">
+	<i class="fas fa-comment-dots"></i>
+	<span>
+		<?php echo $spTextAIV['Curious what ChatGPT or Claude actually says about your site?'] ?? 'Curious what ChatGPT or Claude actually says about your site?'?>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Run an AI Perception Check'] ?? 'Run an AI Perception Check'?></a>
+		&mdash; <?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?>
+	</span>
+</div>

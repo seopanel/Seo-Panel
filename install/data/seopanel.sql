@@ -1072,6 +1072,19 @@ CREATE TABLE IF NOT EXISTS `mcp_tokens` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Per-user, per-provider hosted-LLM API keys for the AI Perception Check
+-- feature (controllers/aiperception.ctrl.php) - the customer's own key,
+-- used only when they explicitly click "Ask". One row per user+provider.
+CREATE TABLE IF NOT EXISTS `llm_api_keys` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `api_key` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_provider` (`user_id`,`provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Per-website-per-platform desired robots.txt state - absence of a row
 -- means "allowed" (not additionally blocked by SEO Panel). Written into the
 -- website's own robots.txt only inside a clearly delimited managed block

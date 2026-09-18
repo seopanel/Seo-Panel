@@ -877,3 +877,38 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Keywords where this competitor is cited in the AI Overview', 'Keywords where this competitor is cited in the AI Overview'),
 ('en', 'aivisibility', 'No overlapping keywords found for this competitor', 'No overlapping keywords found for this competitor.'),
 ('en', 'aivisibility', 'You Cited?', 'You Cited?');
+
+-- AI Perception Check: a customer-initiated, one-off diagnostic that asks
+-- a real hosted AI model (the customer's OWN OpenAI/Anthropic/Google API
+-- key) what it knows about their website. Deliberately separate from the
+-- rest of AI Visibility / Local AI, which never send data to a third
+-- party - this is opt-in, per-provider, and only ever runs with a key
+-- the customer themselves entered.
+CREATE TABLE IF NOT EXISTS `llm_api_keys` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `api_key` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_provider` (`user_id`,`provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'aivisibility', 'AI Perception Check', 'AI Perception Check'),
+('en', 'aivisibility', 'perceptionprivacynotice', 'Unlike the rest of AI Visibility, this feature sends your website''s name and URL directly to the AI provider you choose below, using the API key you enter. It only runs when you click "Ask", using a key you supply - nothing is sent automatically, and SEO Panel never sees or pays for these calls.'),
+('en', 'aivisibility', 'API Key', 'API Key'),
+('en', 'aivisibility', 'Configured', 'Configured'),
+('en', 'aivisibility', 'Not configured', 'Not configured'),
+('en', 'aivisibility', 'Remove', 'Remove'),
+('en', 'aivisibility', 'Add key', 'Add key'),
+('en', 'aivisibility', 'Paste your API key', 'Paste your API key'),
+('en', 'aivisibility', 'Go to AI Perception Check', 'Go to AI Perception Check'),
+('en', 'aivisibility', 'No AI providers configured yet.', 'No AI providers configured yet.'),
+('en', 'aivisibility', 'Add an API key', 'Add an API key'),
+('en', 'aivisibility', 'Ask', 'Ask'),
+('en', 'aivisibility', 'Asking...', 'Asking...'),
+('en', 'aivisibility', 'Request failed', 'Request failed.'),
+('en', 'aivisibility', 'Curious what ChatGPT or Claude actually says about your site?', 'Curious what ChatGPT or Claude actually says about your site?'),
+('en', 'aivisibility', 'Run an AI Perception Check', 'Run an AI Perception Check'),
+('en', 'aivisibility', 'uses your own API key', 'uses your own API key');
