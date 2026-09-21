@@ -84,13 +84,26 @@ class KeywordController extends Controller{
 		# set keywords list
 		$keywordList = $this->db->select($sql);
 		$this->set('pageNo', $info['pageno']);
+		// perf fix: this used to run a fresh SELECT per row (2 queries x
+		// ~50 rows/page = ~100 extra single-row queries on every keyword
+		// list view - one of the most-visited pages in the app) to look
+		// up each keyword's language/country name. languages/country are
+		// small, near-static reference tables (~50/~250 rows) - loading
+		// each ONCE into a lookup map, outside the loop, does the exact
+		// same job in 2 queries total regardless of page size.
 		$langCtrler = New LanguageController();
 		$countryCtrler = New CountryController();
+		$langMap = array();
+		foreach ($langCtrler->__getAllLanguages() as $langInfo) {
+			$langMap[$langInfo['lang_code']] = $langInfo['lang_name'];
+		}
+		$countryMap = array();
+		foreach ($countryCtrler->__getAllCountries() as $countryInfo) {
+			$countryMap[$countryInfo['country_code']] = $countryInfo['country_name'];
+		}
 		foreach ($keywordList as $i => $keyInfo) {
-			$info = $langCtrler->__getLanguageInfo($keyInfo['lang_code']);
-			$keywordList[$i]['lang_name'] = $info['lang_name'];
-			$info = $countryCtrler->__getCountryInfo($keyInfo['country_code']); 
-			$keywordList[$i]['country_name'] = $info['country_name'];
+			$keywordList[$i]['lang_name'] = $langMap[$keyInfo['lang_code']] ?? '';
+			$keywordList[$i]['country_name'] = $countryMap[$keyInfo['country_code']] ?? '';
 		}
 		$this->set('list', $keywordList);
 		$this->render('keyword/list');
