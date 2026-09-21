@@ -32,7 +32,18 @@ class DownloadController extends Controller{
 			switch($fileSec) {
 				case "sitemap":
 				default:
-					$file = SP_TMPPATH."/".$fileName;
+					// IDOR fix: previously read straight from the shared
+					// SP_TMPPATH root with no ownership check at all - any
+					// logged-in user could download any other user's
+					// sitemap just by guessing/knowing its filename.
+					// SitemapController now writes every sitemap under a
+					// per-user subdirectory (see its constructor); scoping
+					// the read to THIS caller's own subdirectory - derived
+					// from their own session, never from $fileInfo/client
+					// input - means a filename they don't own simply
+					// doesn't exist at the path they're allowed to read.
+					$userId = intval(isLoggedIn());
+					$file = SP_TMPPATH."/sitemap/".$userId."/".$fileName;
 					break;
 			}
 
