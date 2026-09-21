@@ -711,6 +711,16 @@ class UserController extends Controller{
 		$userInfo['id'] = intval($userInfo['id']);
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
+
+		// bug fix: this used to interpolate $userInfo['userType']
+		// straight into the SQL with no default - a caller that omitted
+		// it produced a syntactically invalid UPDATE ("utype_id = " with
+		// nothing before "where"), which failed silently (the query's
+		// return value was never checked) while still reporting success
+		// and persisting nothing. Defaults to 2 ("user") when missing,
+		// matching createUser()'s own already-established fallback for
+		// the exact same field, for consistency between the two.
+		$userTypeId = empty($userInfo['userType']) ? 2 : intval($userInfo['userType']);
 		
 		// if expiry date is not empty
 		if (!empty($userInfo['expiry_date'])) {
@@ -760,18 +770,22 @@ class UserController extends Controller{
 						$activeStr
 						$expiryStr
 						email = '".addslashes($userInfo['email'])."',
-						utype_id = ".addslashes($userInfo['userType'])."
+						utype_id = $userTypeId
 						where id={$userInfo['id']}";
-				$this->db->query($sql);
-				
-				// if render results
-				if ($renderResults) {
+				$queryResult = $this->db->query($sql);
+
+				// bug fix: the query's result was never checked - a
+				// failed UPDATE (e.g. a transient DB error) still
+				// reported success with nothing actually persisted
+				if (!$queryResult) {
+					$errMsg['userName'] = formatErrorMsg('An internal error occurred while updating the user. Please try again.');
+				} else if ($renderResults) {
 					$this->listUsers();
 					exit;
 				} else {
 					return array('success', 'Successfully updated user');
 				}
-				
+
 			}
 		}
 		
