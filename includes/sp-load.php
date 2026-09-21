@@ -58,11 +58,20 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 
 	# debug settings
 	if (SP_DEBUG){
-		@ini_set("display_erros", "On");
+		@ini_set("display_errors", "On");
 		@ini_set("display_startup_errors", "On");
 		error_reporting(E_ALL ^ E_NOTICE);
 	} else {
-		@ini_set("display_erros", "Off");
+		// "display_erros" (misspelled) previously here meant this call
+		// silently no-oped on an unknown ini key, so display_errors was
+		// NEVER actually turned off by SP_DEBUG=0 - only error_reporting()
+		// was. An uncaught fatal error/exception bypasses error_reporting()
+		// entirely and is printed whenever display_errors is On, so on any
+		// host whose php.ini ships it On by default (common on shared/
+		// budget hosting, which this self-hosted app explicitly targets),
+		// a real fatal error could leak a full stack trace and file paths
+		// to an unauthenticated visitor even with SP_DEBUG=0.
+		@ini_set("display_errors", "Off");
 		@ini_set("display_startup_errors", "Off");
 		error_reporting(0);
 	}
