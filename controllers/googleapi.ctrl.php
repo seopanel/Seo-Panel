@@ -155,23 +155,48 @@ class GoogleAPIController extends Controller{
 	function getAPIAuthUrl($userId) {
 		$ret = array('auth_url' => false);
 		$client = $this->createAuthAPIClient();
-		
+
 		// if client created successfully
 		if (is_object($client)) {
-			
+
 			try {
+				// CSRF: without a state param tying this specific
+				// authorization request to the session that started it,
+				// an attacker could start their own OAuth flow, capture
+				// the resulting authorization code (never letting it
+				// reach their own callback), then trick a logged-in
+				// victim into visiting the callback URL with THAT code -
+				// silently linking the victim's SEO Panel account to the
+				// attacker's Google account (classic OAuth login/
+				// account-linkage CSRF, RFC 6819 §4.4.1.8). Verified and
+				// consumed by verifyOAuthState() below on the callback.
+				$state = bin2hex(random_bytes(16));
+				Session::setSession('google_oauth_state', $state);
+				$client->setState($state);
 				$authUrl = $client->createAuthUrl();
 				$ret['auth_url'] = $authUrl;
 			} catch (Exception $e) {
 				$err = $e->getMessage();
-				$ret['msg'] = "Error: Create token - $err";								
+				$ret['msg'] = "Error: Create token - $err";
 			}
-				
+
 		} else {
 			$ret['msg'] = $client;
 		}
-		
-		return $ret;		
+
+		return $ret;
+	}
+
+	/*
+	 * verifies the OAuth callback's state param against the one this
+	 * session's own getAPIAuthUrl() call generated, and consumes it
+	 * (single-use) regardless of outcome so a captured/replayed callback
+	 * URL can't be reused
+	 */
+	function verifyOAuthState($state) {
+		$expected = $_SESSION['google_oauth_state'] ?? '';
+		unset($_SESSION['google_oauth_state']);
+		return !empty($expected) && !empty($state) && hash_equals($expected, (string) $state);
 	}
 	
 	/*
