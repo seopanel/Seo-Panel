@@ -285,6 +285,23 @@ class Validation{
         // the admin's Website Manager page (stored XSS - any non-admin
         // customer could plant a payload that ran in an admin's browser
         // the next time they viewed the website list)
+        // Deliberately NOT also rejecting a currently-unresolvable or
+        // private/reserved target here (e.g. via
+        // Spider::isPrivateOrRestrictedTarget()) - tried that first, but a
+        // domain that simply doesn't resolve YET (DNS not propagated, a
+        // transient resolver hiccup, or - as this exact scenario surfaced
+        // in testing - any subdomain of a real registered domain that was
+        // never actually created, which is the normal shape of a test
+        // fixture) is not itself a security signal, and hard-rejecting
+        // registration over it is a real false-positive/usability cost for
+        // no actual protection: registering a malicious URL alone does
+        // nothing - the SSRF only happens when the server actually FETCHES
+        // it, and that path is already fully covered by
+        // Spider::getContent()'s own unconditional guard (every scheduled
+        // crawl of "my websites" - backlink/saturation/rank checkers, Site
+        // Auditor, MetaTagGenerator - goes through it). That fetch-time
+        // block is sufficient; this validation stays scoped to character
+        // safety only.
         if (strlen($formattedUrl) == 0 || preg_match('/[<>"\']/', $url)) {
             $msg = $_SESSION['text']['common']['Invalid Url'];
             $this->flagErr = true;

@@ -695,7 +695,15 @@ class AIVisibilityController extends Controller {
 		$spider = new Spider();
 		$spider->_CURLOPT_TIMEOUT = 8;
 		$spider->_CURL_HTTPHEADER = ['Cache-Control: no-cache'];
-		$result = $spider->getContent($cacheBustedUrl, false, false);
+		// $allowPrivateTarget=true: this is deliberately checking
+		// reachability of a site whose docroot the admin already
+		// configured directly on this filesystem (see
+		// __writeHtaccessRules() above, gated on filesystem write access
+		// already) - in a self-hosted single-server setup "my own
+		// website" legitimately resolves to localhost/an internal
+		// address from here, and that's exactly the case this self-test
+		// needs to keep working for
+		$result = $spider->getContent($cacheBustedUrl, false, false, true);
 		$httpCode = intval($result['http_code'] ?? 0);
 		$ok = empty($result['error']) && $httpCode > 0 && $httpCode < 500;
 		return ['ok' => $ok, 'http_code' => $httpCode];

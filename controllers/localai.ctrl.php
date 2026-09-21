@@ -29,7 +29,13 @@ class LocalAIController extends Controller {
 		ob_start();
 		$spider = new Spider();
 		$spider->_CURLOPT_TIMEOUT = 5; // same-host/LAN traffic, unlike remote APIs' longer timeouts
-		$response = $spider->getContent(rtrim($baseUrl, '/') . self::OLLAMA_TAGS_PATH, false, false);
+		// $allowPrivateTarget=true: Ollama is normally self-hosted on
+		// localhost or an internal LAN/Docker address by design (that's
+		// the whole point of "Local AI" - zero content sent to a third
+		// party) - this call is also admin-only (settings.php gates the
+		// whole file on checkAdminLoggedIn()), so it's a trusted target,
+		// not attacker-controlled input
+		$response = $spider->getContent(rtrim($baseUrl, '/') . self::OLLAMA_TAGS_PATH, false, false, true);
 		ob_end_clean();
 
 		if (empty($response['page'])) {
@@ -92,7 +98,10 @@ class LocalAIController extends Controller {
 		$spider->_CURL_HTTPHEADER = ['Content-Type: application/json'];
 		$spider->_CURLOPT_TIMEOUT = $timeout;
 		$spider->_CURLOPT_POSTFIELDS = json_encode($payload);
-		$response = $spider->getContent(rtrim(SP_LOCAL_AI_URL, '/') . self::OLLAMA_GENERATE_PATH, false, false);
+		// $allowPrivateTarget=true: SP_LOCAL_AI_URL is an admin-configured
+		// setting, not attacker input - see __checkOllamaConnection()'s
+		// comment above for why this needs to reach an internal target
+		$response = $spider->getContent(rtrim(SP_LOCAL_AI_URL, '/') . self::OLLAMA_GENERATE_PATH, false, false, true);
 		ob_end_clean();
 
 		if (empty($response['page'])) {
