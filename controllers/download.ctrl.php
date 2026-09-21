@@ -43,9 +43,30 @@ class DownloadController extends Controller{
 					// input - means a filename they don't own simply
 					// doesn't exist at the path they're allowed to read.
 					$userId = intval(isLoggedIn());
-					$file = SP_TMPPATH."/sitemap/".$userId."/".$fileName;
+					$baseDir = SP_TMPPATH."/sitemap/".$userId;
+					$file = $baseDir."/".$fileName;
 					break;
 			}
+
+			// Defense in depth on top of isValidFile()'s blocklist (a
+			// blocklist is inherently fragile - str_replace()-ing out
+			// '../'/'./'/'..' once doesn't catch every shape, e.g. a
+			// literal null byte or a platform-specific separator quirk),
+			// with a real canonicalization + prefix check: resolve both
+			// paths with realpath() (following symlinks, collapsing any
+			// remaining '..' segments) and verify the target actually
+			// lives inside the caller's own directory. The trailing
+			// separator on $realBaseDir matters - without it, a sibling
+			// directory that merely SHARES the base dir's name as a
+			// prefix (e.g. "sitemap/5-evil" against a naive "sitemap/5"
+			// check) would wrongly pass.
+			$realBaseDir = realpath($baseDir);
+			$realFile = realpath($file);
+			if ($realBaseDir === false || $realFile === false || strpos($realFile, $realBaseDir . DIRECTORY_SEPARATOR) !== 0) {
+				echo "<font style='color:red;'>You are not allowed to access this file!</font>";
+				exit;
+			}
+			$file = $realFile;
 
 			// Set appropriate Content-Type based on file type
 			if ($fileType == 'gz' || pathinfo($fileName, PATHINFO_EXTENSION) == 'gz') {
