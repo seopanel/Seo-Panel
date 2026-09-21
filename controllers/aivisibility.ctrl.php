@@ -1382,12 +1382,31 @@ PHP;
 		foreach ($rowList as $row) {
 			$line = [];
 			foreach ($cols as $col) {
-				$line[] = $row[$col] ?? '';
+				$line[] = $this->__neutralizeCsvFormula($row[$col] ?? '');
 			}
 			fputcsv($out, $line);
 		}
 		fclose($out);
 		exit;
+	}
+
+	// CSV formula injection guard - a cell value opening with =, +, -, or
+	// @ is interpreted as a FORMULA by Excel/Sheets/LibreOffice when the
+	// exported file is opened, not literal text. The robots-audit-log
+	// export's "Changed By" column is a username (checkUname()'s charset
+	// blocks the higher-risk =/+/@ but still allows - or . at any
+	// position, including the start) - without this, a crafted username
+	// could run a formula (including a DDE/external-command payload in
+	// older Excel versions) the moment an admin opens the exported file.
+	// Prefixing with a single quote is the standard mitigation (OWASP CSV
+	// Injection cheat sheet) - affected spreadsheet apps then treat the
+	// cell as forced plain text.
+	function __neutralizeCsvFormula($value) {
+		$value = (string) $value;
+		if (preg_match('/^[=+\-@]/', $value)) {
+			return "'" . $value;
+		}
+		return $value;
 	}
 
 	# func to resolve/validate the requested website_id against the user's own website list
