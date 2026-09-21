@@ -141,15 +141,25 @@ class Paging {
 		if(isset($_POST["pageno"])){
 			$pageNo = $_POST["pageno"];
 		}elseif(isset($_GET["pageno"])){
-			$pageNo = $_GET["pageno"];			
+			$pageNo = $_GET["pageno"];
 		}
-		if(!empty($pageNo)) {
-			$this->start = ($pageNo - 1) * $this->per_page;
-			$this->setCurrentPage($pageNo);
-		} else {
-			$this->setCurrentPage(1);
-			$this->start = 0;
+		// bug fix: $pageNo was used completely unvalidated - a crafted
+		// or stale request with pageno=-1 (or any negative value; a
+		// non-numeric value like pageno=abc hits the same path, since
+		// PHP arithmetic coerces it to 0 first) produced a NEGATIVE SQL
+		// LIMIT offset, which MySQL rejects outright - breaking the
+		// list page entirely for that request, silently (none of the
+		// callers check select()'s return value either). A stale
+		// bookmark, a browser back-button replay, or a hand-edited
+		// query string all reach this. Clamped to a sane positive
+		// integer, defaulting to page 1 for anything else invalid
+		// (missing, zero, negative, or non-numeric).
+		$pageNo = intval($pageNo);
+		if ($pageNo < 1) {
+			$pageNo = 1;
 		}
+		$this->start = ($pageNo - 1) * $this->per_page;
+		$this->setCurrentPage($pageNo);
 		return $this->printPaging($scriptArgs);
 		
 	}
