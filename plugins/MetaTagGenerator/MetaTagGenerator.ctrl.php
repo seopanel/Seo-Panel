@@ -20,6 +20,17 @@ class MetaTagGenerator extends SeoPluginsController{
 			return;
 		}
 
+		// IDOR guard - __getWebsiteInfo() below is an intentionally
+		// unscoped helper (callers are expected to verify ownership
+		// themselves, same as everywhere else in the app it's used); this
+		// caller never did, so any logged-in user could view another
+		// user's website title/description/keywords/canonical url just by
+		// supplying its website_id
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($info['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$langController = New LanguageController();
 		$this->set('langList', $langController->__getAllLanguages());
 		$this->set('langNull', true);
@@ -206,6 +217,12 @@ class MetaTagGenerator extends SeoPluginsController{
 	function showPreview($info) {
 		if(empty($info['website_id'])) {
 			print( "<script>".pluginGETMethod('action=preview')."</script>");
+			return;
+		}
+
+		// IDOR guard - same gap as show() above
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($info['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
 			return;
 		}
 
