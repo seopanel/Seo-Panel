@@ -34,30 +34,30 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
 		<td class="left" width='30%'><?php echo $spTextPanel['New Website']?></td>
 		<td class="right">&nbsp;</td>
 	</tr>
-	<?php if(!empty($isAdmin)){ ?>	
+	<?php if(!empty($isAdmin)){ ?>
 		<tr class="blue_row">
-			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
+			<td class="td_left_col"><label for="webuserid"><?php echo $spText['common']['User']?>:</label></td>
 			<td class="td_right_col">
-				<select name="userid" class="custom-select">
+				<select name="userid" id="webuserid" class="custom-select">
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $userSelected){?>
 							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
 						<?php }else{?>
 							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
-						<?php }?>						
+						<?php }?>
 					<?php }?>
 				</select>
 			</td>
 		</tr>
 	<?php }?>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
+		<td class="td_left_col"><label for="webname"><?php echo $spText['common']['Name']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" name="name" value="<?php echo htmlspecialchars($post['name'])?>" class="form-control"><?php echo $errMsg['name']?>
+			<input type="text" id="webname" name="name" value="<?php echo htmlspecialchars($post['name'])?>" class="form-control"><?php echo $errMsg['name']?>
 		</td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spText['common']['Url']?>:</td>
+		<td class="td_left_col"><label for="weburl"><?php echo $spText['common']['Url']?>:</label></td>
 		<td class="td_right_col">
 			<div class="row">
 				<div class="col-sm-9">
@@ -68,25 +68,25 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
     					<?php echo $spText['common']['Crawl Meta Data']?>
     				</a>
 				</div>
-			</div>							
+			</div>
 			<?php echo $errMsg['url']?>
 			<div id="crawlstats" style="padding-right:40px;" class="mt-2 float-right mt-2"></div>
 		</td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['label']['Title']?>:</td>
+		<td class="td_left_col"><label for="webtitle"><?php echo $spText['label']['Title']?>:</label></td>
 		<td class="td_right_col"><input type="text" id="webtitle" name="title" value="<?php echo $post['title']?>" class="form-control"></td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spText['label']['Description']?>:</td>
+		<td class="td_left_col"><label for="webdescription"><?php echo $spText['label']['Description']?>:</label></td>
 		<td class="td_right_col"><textarea name="description" id="webdescription" class="form-control"><?php echo $post['description']?></textarea><?php echo $errMsg['description']?></td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['label']['Keywords']?>:</td>
+		<td class="td_left_col"><label for="webkeywords"><?php echo $spText['label']['Keywords']?>:</label></td>
 		<td class="td_right_col"><textarea name="keywords" id="webkeywords" class="form-control"><?php echo $post['keywords']?></textarea><?php echo $errMsg['keywords']?></td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spTextWeb['Google Analytics Property']?>:</td>
+		<td class="td_left_col"><label for="analytics_view_id"><?php echo $spTextWeb['Google Analytics Property']?>:</label></td>
 		<td class="td_right_col">
 			<div class="row">
             	<div class="col-sm-8">    					
