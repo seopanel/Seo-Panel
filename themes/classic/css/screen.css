@@ -898,6 +898,32 @@ div.tab button.active {	background-color: #ccc;}
     text-decoration: underline;
 }
 
+/* Mobile responsive fix: .list and #cust_tab are the app's shared
+   list/report table hooks, used by over 100 views throughout the app
+   between them (grep confirmed) - 87% had no responsive wrapper at
+   all, so on a phone they either overflowed the whole page layout or
+   got clipped depending on the ancestor's own overflow handling, with
+   no way to see the rest of the row. Rather than adding a wrapper div
+   to every one of those view files individually (the HTML-side fix,
+   .table-responsive), the same effect is achieved here in one place:
+   `display: block` turns the table itself into the horizontally-
+   scrolling container - the exact mechanism Bootstrap's own
+   .table-responsive class uses internally (.table-responsive {
+   display: block; overflow-x: auto; }), just applied directly to the
+   existing table elements via a media query instead of requiring a
+   wrapper in the markup. #cust_tab is an id reused as a shared styling
+   hook across many separate view templates (same convention as .list,
+   just historically built as an id instead of a class), not a single
+   unique element - same fix applies to it for the same reason. */
+@media screen and (max-width: 768px) {
+    .list, #cust_tab {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 #cust_tab th a {
     color: #282222;
     text-decoration: none;
