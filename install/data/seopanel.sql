@@ -114,7 +114,8 @@ CREATE TABLE IF NOT EXISTS `backlinkresults` (
   `result_date` date DEFAULT NULL,
   `broken_backlinks` int(11) DEFAULT NULL COMMENT 'DataForSEO-only; NULL means this row was measured via Moz',
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `country` (
@@ -810,7 +811,8 @@ CREATE TABLE IF NOT EXISTS `rankresults` (
   `page_authority` float NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `reports_settings` (
@@ -1236,7 +1238,8 @@ CREATE TABLE IF NOT EXISTS `searchresultdetails` (
   `url` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `title` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
   `description` text COLLATE utf8_unicode_ci,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `searchresult_id` (`searchresult_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `searchresults` (
@@ -1257,7 +1260,8 @@ CREATE TABLE IF NOT EXISTS `searchresults` (
   `aio_checked_at` datetime DEFAULT NULL COMMENT 'NULL means this row predates AI Overview tracking',
   `aio_data_date` date DEFAULT NULL COMMENT 'freshness date of the AI Overview observation itself',
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `keyword_id_result_date` (`keyword_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 -- Search volume results table (populated via SP API /v1/search-volume).

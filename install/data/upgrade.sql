@@ -1014,3 +1014,21 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- longer refresh token past that limit - widened to match access_token's
 -- already-unbounded `text` type so encryption can never get truncated.
 ALTER TABLE `user_tokens` MODIFY COLUMN `refresh_token` text COLLATE utf8_unicode_ci NOT NULL;
+
+-- Performance fix: rankresults/backlinkresults had no index on
+-- website_id at all (only on result_date), and searchresults had none
+-- on keyword_id, and searchresultdetails none on searchresult_id -
+-- these are the app's ever-growing per-check history tables, queried
+-- by website_id/keyword_id constantly (including once per website on
+-- EVERY cron pass just to check "does today's report already exist" -
+-- see RankController::isReportsExists()/BacklinkController::
+-- isReportsExists()). At a few hundred websites with a year of daily
+-- history these were full table scans. The composite (id, result_date)
+-- shape matches how every report/graph view actually queries these
+-- tables (equality on website_id/keyword_id, filtered/ordered by
+-- result_date) - keeping the existing single-column result_date index
+-- too, since some cron/pruning queries filter by date alone.
+ALTER TABLE `rankresults` ADD KEY `website_id_result_date` (`website_id`,`result_date`);
+ALTER TABLE `backlinkresults` ADD KEY `website_id_result_date` (`website_id`,`result_date`);
+ALTER TABLE `searchresults` ADD KEY `keyword_id_result_date` (`keyword_id`,`result_date`);
+ALTER TABLE `searchresultdetails` ADD KEY `searchresult_id` (`searchresult_id`);
