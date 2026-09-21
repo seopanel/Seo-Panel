@@ -1006,3 +1006,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- same rate-limit bucket table AI Visibility's endpoints already use.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'login', 'Too many login attempts', 'Too many login attempts. Please wait a minute and try again.');
+
+-- Security fix: Google OAuth access_token/refresh_token were stored in
+-- plaintext - UserTokenController now encrypts both at rest (see its
+-- own comments). refresh_token was only varchar(255); encrypting adds
+-- ~40 raw bytes (nonce+MAC) plus base64 overhead, which could push a
+-- longer refresh token past that limit - widened to match access_token's
+-- already-unbounded `text` type so encryption can never get truncated.
+ALTER TABLE `user_tokens` MODIFY COLUMN `refresh_token` text COLLATE utf8_unicode_ci NOT NULL;

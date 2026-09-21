@@ -1656,7 +1656,7 @@ CREATE TABLE IF NOT EXISTS `user_tokens` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `access_token` text COLLATE utf8_unicode_ci NOT NULL,
-  `refresh_token` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `refresh_token` text COLLATE utf8_unicode_ci NOT NULL,
   `token_type` varchar(120) COLLATE utf8_unicode_ci NOT NULL,
   `expires_in` int(11) NOT NULL DEFAULT '3600' COMMENT 'seconds',
   `created` datetime NOT NULL,
