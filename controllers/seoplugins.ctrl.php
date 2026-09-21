@@ -93,6 +93,27 @@ class SeoPluginsController extends Controller{
 		} else {
 			$this->pluginCtrler = $pluginControler;
 			$action = empty($info['action']) ? "index" : $info['action'];
+
+			// CSRF: this dispatcher calls $pluginControler->$action($data)
+			// for ANY $action name with no whitelist, and (unlike every
+			// core-app entry point fixed earlier this session) never
+			// actually used $method to restrict which actions a plain GET
+			// may reach - so a bare <img src="...seo-plugins.php?pid=..&
+			// action=deleteProject&project_id=5"> on any page a logged-in
+			// victim had open could silently trigger it, for ANY plugin
+			// (built-in or third-party). Convention-based rather than a
+			// fixed per-plugin whitelist, so it protects every plugin that
+			// follows this codebase's own established naming convention
+			// for state-changing actions (see js/common.js's
+			// SP_STATE_CHANGING_ACTIONS and SeoDiary's own
+			// SD_STATE_CHANGING_ACTIONS) without needing per-plugin
+			// cooperation. Not applied to a cron invocation - $cronJob is
+			// only ever true for a trusted CLI call (see diarycron.php),
+			// never attacker-reachable over HTTP.
+			if (!$cronJob && $method === 'get' && preg_match('/^(delete|Activate|Inactivate)/', $action)) {
+				showErrorMsg($_SESSION['text']['label']['Access denied']);
+			}
+
 			$pluginControler->initPlugin($data);
 			$pluginControler->$action($data);
 		}
