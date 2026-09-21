@@ -725,9 +725,35 @@ class WebsiteController extends Controller{
 			// Check if page is blocked by robots.txt
 			$metaInfo['blocked_by_robots'] = Spider::isBlockedByRobotsTxt($websiteUrl, $websiteUrl);
 		}
+	} else if (empty($pageContent) && !$returVal) {
+		// UX fix: the live "Crawl Meta Data" button call (empty
+		// $pageContent, $returVal=false) previously echoed NOTHING at
+		// all when the crawl failed (bad/unreachable URL, timeout,
+		// blocked by the SSRF guard, a non-HTML response, etc.) - the
+		// AJAX call still completed, so the loading spinner cleared,
+		// but the #crawlstats div was simply replaced with an empty
+		// string and the user had no idea whether it worked, failed, or
+		// why. Echoes a visible error into that same div instead, using
+		// the same addInputValue()-style pattern (a <script> block that
+		// sets the target element directly) already used elsewhere in
+		// this exact method.
+		// this URL comes straight from $_POST['url']/$_GET['url'] with
+		// zero validation (unlike checkUrl()-gated website registration),
+		// and curl error messages commonly echo the failing host/URL
+		// back verbatim - htmlspecialchars(), not just quote-escaping,
+		// since the string below is assigned via innerHTML (which DOES
+		// get HTML-parsed), unlike addInputValue()'s .value assignment
+		// elsewhere in this method (never HTML-parsed, safe by nature)
+		$errorText = !empty($ret['errmsg']) ? $ret['errmsg'] : 'Could not fetch the URL. Please check it and try again.';
+		$errorText = htmlspecialchars(removeNewLines($errorText), ENT_QUOTES);
+		?>
+		<script type="text/javascript">
+		document.getElementById('crawlstats').innerHTML = '<span class="text-danger"><i class="ri-error-warning-line"></i> <?php echo $errorText; ?></span>';
+		</script>
+		<?php
 	}
 
-	return $metaInfo; 
+	return $metaInfo;
 	}
 	
 	public static function addInputValue($value, $col) {
