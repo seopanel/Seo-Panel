@@ -214,6 +214,11 @@ class WebsiteController extends Controller{
 
 		$websiteId = intval($websiteId);
 
+		// fetched BEFORE any of the cascading deletes below - the audit
+		// log needs a readable label (name/url) that survives
+		// independently of the row it describes being gone
+		$websiteAuditInfo = $this->db->select("select name, url from websites where id=$websiteId", true);
+
 		// delete all cascading child records FIRST, while the website row
 		// still exists - __deleteKeyword() now re-verifies ownership via
 		// its keyword's parent website (see KeywordController::
@@ -310,6 +315,9 @@ class WebsiteController extends Controller{
 		# the website row itself, last
 		$sql = "delete from websites where id=$websiteId";
 		$this->db->query($sql);
+
+		$label = !empty($websiteAuditInfo['name']) ? $websiteAuditInfo['name'] : ($websiteAuditInfo['url'] ?? null);
+		$this->logAuditEvent('website.delete', 'website', $websiteId, $label);
 	}
 
 	function newWebsite($info=[]) {

@@ -117,8 +117,12 @@ class SettingsController extends Controller{
 	}
 	
 	function updateSystemSettings($postInfo) {
-		
+
 		$setList = $this->__getAllSettings(true, 1, $postInfo['category']);
+		// names only, not old/new values - several settings in this list
+		// are secrets (SMTP password, API keys) that must never land in
+		// a table other admins can browse
+		$changedSettingNames = [];
 		foreach($setList as $setInfo){
 		    
 		    // exclude from update
@@ -160,14 +164,52 @@ class SettingsController extends Controller{
 		            break;
 			}			
 			
+			if ((string) $setInfo['set_val'] !== (string) $postInfo[$setInfo['set_name']]) {
+				$changedSettingNames[] = $setInfo['set_name'];
+			}
+
 			$sql = "update settings set set_val='".addslashes($postInfo[$setInfo['set_name']])."' where set_name='".addslashes($setInfo['set_name'])."'";
 			$this->db->query($sql);
 		}
-		
+
+		if (!empty($changedSettingNames)) {
+			$this->logAuditEvent('settings.update', 'settings', null, $postInfo['category'] ?? null, implode(', ', $changedSettingNames));
+		}
+
 		$this->set('saved', 1);
 		$this->showSystemSettings($postInfo['category']);
 	}
-	
+
+	// GET settings.php?sec=auditlog - admin-only (settings.php gates the
+	// entire file with checkAdminLoggedIn() except sec=aboutus, so no
+	// separate check needed here). Paginated, most recent first, with an
+	// optional action-type filter - same pagination pattern already used
+	// by every other list in the app (see UserController::listUsers()).
+	function showAuditLog($info=[]) {
+		$info['pageno'] = intval($info['pageno'] ?? 0);
+		$pageScriptPath = 'settings.php?sec=auditlog&actionfilter=' . urlencode($info['actionfilter'] ?? '');
+
+		$sql = "select * from audit_log where 1=1";
+		if (!empty($info['actionfilter'])) {
+			$sql .= " and action='" . addslashes($info['actionfilter']) . "'";
+		}
+		$sql .= " order by id desc";
+
+		$this->db->query($sql, true);
+		$this->paging->setDivClass('pagingdiv');
+		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
+		$pagingDiv = $this->paging->printPages($pageScriptPath, '', 'scriptDoLoad', 'content', 'layout=ajax');
+		$this->set('pagingDiv', $pagingDiv);
+		$sql .= " limit " . $this->paging->start . "," . $this->paging->per_page;
+		$this->set('auditLogList', $this->db->select($sql));
+
+		$actionList = $this->db->select("select distinct action from audit_log order by action");
+		$this->set('actionList', $actionList);
+		$this->set('actionFilter', $info['actionfilter'] ?? '');
+
+		$this->render('settings/auditlog');
+	}
+
 	# func to show about us of seo panel
 	function showAboutUs($info) {
 	    

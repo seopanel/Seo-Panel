@@ -80,6 +80,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "proxysettings":
 			$controller->showSystemSettings('proxy');
 			break;
+
+		case "auditlog":
+			$controller->showAuditLog($_GET);
+			break;
 		
 		case "aboutus":
 			$controller->showAboutUs($_GET);

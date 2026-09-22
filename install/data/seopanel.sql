@@ -24,6 +24,32 @@ CREATE TABLE IF NOT EXISTS `analytic_sources` (
   UNIQUE KEY `source_name` (`source_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+-- Security/trust feature: a durable, append-only record of security-
+-- relevant admin actions (user create/delete/activate/role-change/
+-- password-reset, website delete, settings changes, 2FA enable/
+-- disable) for later review - see Controller::logAuditEvent() (libs/
+-- controller.class.php) for the single write path every caller uses,
+-- and controllers/settings.ctrl.php's showAuditLog() for the admin-only
+-- browse page. actor_username/target_label are deliberately
+-- denormalized (not just the ids) so an entry stays readable even after
+-- the user/website/etc. it refers to is itself later deleted.
+CREATE TABLE IF NOT EXISTS `audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `actor_user_id` int unsigned DEFAULT NULL,
+  `actor_username` varchar(64) DEFAULT NULL,
+  `action` varchar(100) NOT NULL,
+  `target_type` varchar(50) DEFAULT NULL,
+  `target_id` int unsigned DEFAULT NULL,
+  `target_label` varchar(255) DEFAULT NULL,
+  `details` text,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `actor_user_id` (`actor_user_id`),
+  KEY `action_created_at` (`action`,`created_at`),
+  KEY `target_type_id` (`target_type`,`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `auditorpagelinks` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `report_id` bigint(20) NOT NULL,

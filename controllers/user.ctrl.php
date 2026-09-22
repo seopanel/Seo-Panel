@@ -408,6 +408,8 @@ class UserController extends Controller{
 			$this->set('backupCodes', $backupCodes);
 			$this->set('justEnabled', true);
 			$this->set('twoFactorEnabled', true);
+			$userInfo = $this->__getUserInfo($userId);
+			$this->logAuditEvent('twofactor.enable', 'user', $userId, $userInfo['username'] ?? null);
 			$this->render('user/twofactor_setup', 'ajax');
 			exit;
 		}
@@ -429,6 +431,7 @@ class UserController extends Controller{
 		if ($this->__verifyPassword($info['password'] ?? '', $userInfo['password'])) {
 			$this->db->query("delete from user_totp where user_id=" . intval($userId));
 			$this->db->query("delete from user_totp_backup_codes where user_id=" . intval($userId));
+			$this->logAuditEvent('twofactor.disable', 'user', $userId, $userInfo['username'] ?? null);
 			$this->set('msg', 'Two-factor authentication has been disabled.');
 		} else {
 			$this->set('errMsg', ['password' => formatErrorMsg('Incorrect password.')]);
@@ -848,7 +851,10 @@ class UserController extends Controller{
 		$confirmStr = !empty($status) ? ",confirm=1" : "";
 		$sql = "update users set status=$status $confirmStr where id=$userId";
 		$this->db->query($sql);
-		
+
+		$targetUsername = $this->db->select("select username from users where id=$userId", true)['username'] ?? null;
+		$this->logAuditEvent(!empty($status) ? 'user.activate' : 'user.deactivate', 'user', $userId, $targetUsername);
+
 		# deaactivate all websites under this user
 		if(empty($status)){
 			$websiteCtrler = New WebsiteController();
@@ -858,14 +864,20 @@ class UserController extends Controller{
 			}
 		}
 	}
-	
+
 	# func to change status
 	function __deleteUser($userId){
-		
+
 		$userId = intval($userId);
+		// fetched BEFORE the delete - the audit log needs a readable label
+		// that survives independently of the row it describes being gone
+		$targetUsername = $this->db->select("select username from users where id=$userId", true)['username'] ?? null;
+
 		$sql = "delete from users where id=$userId";
 		$this->db->query($sql);
-		
+
+		$this->logAuditEvent('user.delete', 'user', $userId, $targetUsername);
+
 		$sql = "select id from websites where user_id=$userId";
 		$webisteList = $this->db->select($sql);
 		$webisteCtrler = New WebsiteController();
@@ -967,6 +979,10 @@ class UserController extends Controller{
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
 						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
 					$insertOk = $this->db->query($sql);
+
+					if ($insertOk) {
+						$this->logAuditEvent('user.create', 'user', $this->db->lastInsertId, $userInfo['userName']);
+					}
 
 					// bug fix: a second request racing this same
 					// __checkUserName()/__checkEmail() check (TOCTOU) can still
@@ -1086,6 +1102,13 @@ class UserController extends Controller{
 			
 			// if no error to inputs
 			if (!$this->validate->flagErr) {
+				// captured BEFORE the update, purely to tell the audit log
+				// whether the role actually changed (vs. was just
+				// resubmitted unchanged) - the old value on its own is
+				// worth recording too, since "who had this role before"
+				// is exactly the kind of thing an audit trail is for
+				$oldUtypeId = $this->db->select("select utype_id from users where id={$userInfo['id']}", true)['utype_id'] ?? null;
+
 				$sql = "update users set
 						username = '".addslashes($userInfo['userName'])."',
 						first_name = '".addslashes($userInfo['firstName'])."',
@@ -1103,11 +1126,23 @@ class UserController extends Controller{
 				// reported success with nothing actually persisted
 				if (!$queryResult) {
 					$errMsg['userName'] = formatErrorMsg('An internal error occurred while updating the user. Please try again.');
-				} else if ($renderResults) {
-					$this->listUsers();
-					exit;
 				} else {
-					return array('success', 'Successfully updated user');
+					// logged regardless of $renderResults - a role change
+					// or password reset matters the same whether it came
+					// through the web UI or an API-style call
+					if ($oldUtypeId !== null && intval($oldUtypeId) !== $userTypeId) {
+						$this->logAuditEvent('user.role_change', 'user', $userInfo['id'], $userInfo['userName'], "utype_id $oldUtypeId -> $userTypeId");
+					}
+					if (!empty($userInfo['password'])) {
+						$this->logAuditEvent('user.password_reset_by_admin', 'user', $userInfo['id'], $userInfo['userName']);
+					}
+
+					if ($renderResults) {
+						$this->listUsers();
+						exit;
+					} else {
+						return array('success', 'Successfully updated user');
+					}
 				}
 
 			}

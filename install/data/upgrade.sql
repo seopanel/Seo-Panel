@@ -1090,3 +1090,22 @@ CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
   PRIMARY KEY (`id`),
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Admin action audit log - see install/data/seopanel.sql's own CREATE
+-- TABLE comment for the full design.
+CREATE TABLE IF NOT EXISTS `audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `actor_user_id` int unsigned DEFAULT NULL,
+  `actor_username` varchar(64) DEFAULT NULL,
+  `action` varchar(100) NOT NULL,
+  `target_type` varchar(50) DEFAULT NULL,
+  `target_id` int unsigned DEFAULT NULL,
+  `target_label` varchar(255) DEFAULT NULL,
+  `details` text,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `actor_user_id` (`actor_user_id`),
+  KEY `action_created_at` (`action`,`created_at`),
+  KEY `target_type_id` (`target_type`,`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
