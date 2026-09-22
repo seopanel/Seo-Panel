@@ -1066,3 +1066,27 @@ ALTER TABLE `review_link_results` ADD KEY `review_link_id_report_date` (`review_
 ALTER TABLE `social_media_link_results` ADD KEY `sm_link_id_report_date` (`sm_link_id`,`report_date`);
 ALTER TABLE `website_search_analytics` ADD KEY `website_id_report_date` (`website_id`,`report_date`);
 ALTER TABLE `dirsubmitinfo` ADD KEY `website_id_directory_id` (`website_id`,`directory_id`);
+
+-- Opt-in TOTP two-factor authentication - see install/data/seopanel.sql's
+-- own CREATE TABLE comment for the full design.
+CREATE TABLE IF NOT EXISTS `user_totp` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `secret` text NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `confirmed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `code_hash` varchar(255) NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

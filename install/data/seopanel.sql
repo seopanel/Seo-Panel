@@ -1076,6 +1076,41 @@ CREATE TABLE IF NOT EXISTS `mcp_tokens` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Opt-in TOTP two-factor authentication, per user. secret is encrypted at
+-- rest via UserController's __encryptTotpSecret()/__decryptTotpSecret()
+-- (sodium_crypto_secretbox, same "sbx:"-prefixed pattern already used for
+-- OAuth tokens - see UserTokenController) - a DB leak alone must not be
+-- enough to derive a user's live 2FA codes. enabled only flips to 1 once
+-- the user has proven they actually scanned/entered the secret correctly
+-- (confirmed_at set) - a row can exist mid-setup with enabled=0 if they
+-- never finish confirming.
+CREATE TABLE IF NOT EXISTS `user_totp` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `secret` text NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `confirmed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Single-use backup codes, generated once when 2FA is confirmed enabled -
+-- lets a user log in if they lose their authenticator device. code_hash
+-- uses the same bcrypt helper as the password hash (UserController::
+-- __hashPassword()) - never stored plaintext or reversibly, since a code
+-- only ever needs to be checked, never displayed again after generation.
+CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `code_hash` varchar(255) NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Per-user, per-provider hosted-LLM API keys for the AI Perception Check
 -- feature (controllers/aiperception.ctrl.php) - the customer's own key,
 -- used only when they explicitly click "Ask". One row per user+provider.

@@ -70,6 +70,9 @@ if(!empty($msg)){ showSuccessMsg($msg, false);}
 			<a onclick="scriptDoLoad('users.php?sec=edit-profile', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spTextPanel['Edit My Profile']?>
          	</a>
+         	<a onclick="scriptDoLoad('users.php?sec=two-factor', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-secondary">
+         		<i class="fas fa-shield-alt"></i> Two-Factor Authentication
+         	</a>
 		</td>
 	</tr>
 </table>

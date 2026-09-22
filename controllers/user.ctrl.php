@@ -108,8 +108,26 @@ class UserController extends Controller{
 		return bin2hex(random_bytes($byteLength));
 	}
 
+	// finishes a successful login (real setLoginSession() + the same
+	// redirect logic login() has always used) - extracted so both the
+	// direct (no 2FA) path and verifyTwoFactorLogin()'s post-2FA path
+	// share the exact same completion code, rather than risking the two
+	// drifting apart
+	function __completeLogin($uInfo, $postInfo) {
+		$this->setLoginSession($uInfo);
+
+		if ($referer = isValidReferer($postInfo['red_referer'] ?? '')) {
+			redirectUrl($referer);
+		} else if (!empty($postInfo['source']) && $postInfo['source'] == 'install') {
+			redirectUrl(SP_WEBPATH."/admin-panel.php");
+		} else {
+			$extArgs = !empty($postInfo['source']) ? "?source=" . $postInfo['source'] : "";
+			redirectUrl(SP_WEBPATH."/" . $extArgs);
+		}
+	}
+
 	# login function
-	function login(){	    
+	function login(){
 	    
 	    $_POST['userName'] = sanitizeData($_POST['userName']);
 		$this->set('post', $_POST);
@@ -163,15 +181,27 @@ class UserController extends Controller{
 						$uInfo['userType'] = $userInfo['user_type'];
 						$uInfo['userTypeId'] = $userInfo['utype_id'];
 						$uInfo['lang_code'] = $userInfo['lang_code'];
-						$this->setLoginSession($uInfo);
-						
-						if ($referer = isValidReferer($_POST['red_referer'])) {
-							redirectUrl($referer);
-						} else if (!empty($_POST['source']) && $_POST['source'] == 'install') {
-							redirectUrl(SP_WEBPATH."/admin-panel.php");
+
+						// opt-in TOTP 2FA: a user who has confirmed setup
+						// (user_totp.enabled=1) does NOT get setLoginSession()
+						// called yet - the session stays unauthenticated
+						// (isLoggedIn() still false) until they also prove
+						// possession of their authenticator app/a backup code
+						// on the separate verifyTwoFactorLogin() step below.
+						// $pending2faInfo intentionally holds only what's
+						// needed to complete login afterwards - never the
+						// password or anything else from this request.
+						if ($this->__isTwoFactorEnabled($userInfo['id'])) {
+							Session::setSession('pending_2fa', [
+								'uInfo' => $uInfo,
+								'redirectPost' => [
+									'red_referer' => $_POST['red_referer'] ?? '',
+									'source' => $_POST['source'] ?? '',
+								],
+							]);
+							redirectUrl(SP_WEBPATH . "/login.php?sec=twofactor");
 						} else {
-						    $extArgs = !empty($_POST['source']) ? "?source=" . $_POST['source'] : "";
-							redirectUrl(SP_WEBPATH."/" . $extArgs);
+							$this->__completeLogin($uInfo, $_POST);
 						}
 												
 					}else{
@@ -196,7 +226,291 @@ class UserController extends Controller{
 		$this->set('errMsg', $errMsg);
 		$this->index($_POST);
 	}
-	
+
+	/* =====================================================================
+	 * Opt-in TOTP two-factor authentication (RFC 6238, libs/totp.class.php)
+	 * ===================================================================== */
+
+	// resolves (generating + persisting on first use) the symmetric key
+	// used to encrypt user_totp.secret at rest - same lazy-generation-into-
+	// settings pattern as UserTokenController's OAuth token encryption key,
+	// but a SEPARATE key (SP_TOTP_ENCRYPTION_KEY) for proper key
+	// separation between the two secret types
+	function __getTotpEncryptionKey() {
+		$keyInfo = $this->db->select("select set_val from settings where set_name='SP_TOTP_ENCRYPTION_KEY'", true);
+		if (!empty($keyInfo['set_val'])) {
+			return base64_decode($keyInfo['set_val']);
+		}
+
+		$key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+		$encoded = addslashes(base64_encode($key));
+		if (!empty($keyInfo['id']) || $this->db->select("select id from settings where set_name='SP_TOTP_ENCRYPTION_KEY'", true)) {
+			$this->db->query("update settings set set_val='$encoded' where set_name='SP_TOTP_ENCRYPTION_KEY'");
+		} else {
+			$this->db->query("insert into settings(set_label,set_name,set_val,set_type) values('TOTP Encryption Key','SP_TOTP_ENCRYPTION_KEY','$encoded','large')");
+		}
+		return $key;
+	}
+
+	// every user_totp.secret this app ever writes is encrypted from day
+	// one (unlike OAuth tokens, there's no pre-existing plaintext format
+	// to stay backward compatible with)
+	function __encryptTotpSecret($plaintext) {
+		$key = $this->__getTotpEncryptionKey();
+		$nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$cipher = sodium_crypto_secretbox($plaintext, $nonce, $key);
+		return base64_encode($nonce . $cipher);
+	}
+
+	function __decryptTotpSecret($stored) {
+		$raw = base64_decode((string) $stored);
+		if (strlen($raw) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+			return false;
+		}
+		$nonce = substr($raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$cipher = substr($raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$key = $this->__getTotpEncryptionKey();
+		return sodium_crypto_secretbox_open($cipher, $nonce, $key);
+	}
+
+	function __getUserTotpInfo($userId) {
+		return $this->db->select("select * from user_totp where user_id=" . intval($userId), true);
+	}
+
+	function __isTwoFactorEnabled($userId) {
+		$info = $this->__getUserTotpInfo($userId);
+		return !empty($info['enabled']);
+	}
+
+	// generates $count fresh backup codes, fully replacing any existing
+	// set (a regenerate never appends - avoids an ever-growing list of
+	// half-used old codes). Only the bcrypt hash is ever stored - same
+	// helper as password hashing - the plaintext codes returned here are
+	// the only time they're ever available; the caller must show them to
+	// the user now, they can't be recovered later, only regenerated
+	function __generateBackupCodes($userId, $count = 8) {
+		$userId = intval($userId);
+		$this->db->query("delete from user_totp_backup_codes where user_id=$userId");
+		$now = date('Y-m-d H:i:s');
+		$plainCodes = [];
+		for ($i = 0; $i < $count; $i++) {
+			$raw = strtoupper(bin2hex(random_bytes(5))); // 40 bits - not brute-forceable at any real rate, backed by its own bcrypt hash
+			$formatted = substr($raw, 0, 4) . '-' . substr($raw, 4, 4) . '-' . substr($raw, 8, 2);
+			$plainCodes[] = $formatted;
+			$hash = addslashes($this->__hashPassword($formatted));
+			$this->db->query("insert into user_totp_backup_codes (user_id, code_hash, created_at) values ($userId, '$hash', '$now')");
+		}
+		return $plainCodes;
+	}
+
+	// checks $code against every unused backup code for this user
+	// (bcrypt hashes can't be looked up by value, only verified one at a
+	// time - negligible cost, at most a handful of rows per user) and
+	// marks the matching one used (single-use) on success
+	function __verifyBackupCode($userId, $code) {
+		$code = trim((string) $code);
+		if ($code === '') {
+			return false;
+		}
+		$rows = $this->db->select("select id, code_hash from user_totp_backup_codes where user_id=" . intval($userId) . " and used_at is null");
+		foreach ($rows as $row) {
+			if (password_verify($code, $row['code_hash'])) {
+				$now = date('Y-m-d H:i:s');
+				$this->db->query("update user_totp_backup_codes set used_at='$now' where id=" . intval($row['id']));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// throttles the 2FA code-verification steps (both the login-time
+	// check and setup confirmation) - without this, a 6-digit TOTP code
+	// (1,000,000 possibilities) would be a realistic online brute-force
+	// target. Same per-user + per-IP fixed-window limiter already used
+	// for login itself.
+	function __checkTwoFactorRateLimit($userId) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$userKey = 'twofactor-user:' . intval($userId);
+		$ipKey = 'twofactor-ip:' . $ip;
+		$userOk = $aivCtrler->__checkRateLimit($userKey, 10);
+		$ipOk = $aivCtrler->__checkRateLimit($ipKey, 20);
+		return $userOk && $ipOk;
+	}
+
+	// GET users.php?sec=two-factor - self-service, any logged-in user
+	// (not admin-only - see users.php's $userIncludeList). Shows current
+	// status; if not yet enabled, (re)uses a pending secret so repeated
+	// visits/failed confirmation attempts don't force a re-scan.
+	function showTwoFactorSetup() {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		include_once(SP_LIBPATH . "/totp.class.php");
+		$totpInfo = $this->__getUserTotpInfo($userId);
+
+		if (!empty($totpInfo['enabled'])) {
+			$this->set('twoFactorEnabled', true);
+			$this->set('confirmedAt', $totpInfo['confirmed_at']);
+		} else {
+			$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+			if ($secretBytes === false) {
+				$secretBytes = Totp::generateSecret();
+				$now = date('Y-m-d H:i:s');
+				$encrypted = addslashes($this->__encryptTotpSecret($secretBytes));
+				if (empty($totpInfo['id'])) {
+					$this->db->query("insert into user_totp (user_id, secret, enabled, created_at, updated_at) values ($userId, '$encrypted', 0, '$now', '$now')");
+				} else {
+					$this->db->query("update user_totp set secret='$encrypted', updated_at='$now' where user_id=$userId");
+				}
+			}
+
+			$userInfo = $this->__getUserInfo($userId);
+			$custSiteInfo = getCustomizerDetails();
+			$siteName = !empty($custSiteInfo['site_name']) ? $custSiteInfo['site_name'] : "Seo Panel";
+
+			$this->set('twoFactorEnabled', false);
+			$this->set('secretBase32', Totp::base32Encode($secretBytes));
+			$this->set('otpAuthUri', Totp::buildOtpAuthUri($secretBytes, $userInfo['username'], $siteName));
+		}
+
+		$this->render('user/twofactor_setup', 'ajax');
+		exit;
+	}
+
+	// POST users.php?sec=confirm-two-factor - verifies the code against
+	// the pending secret; on success marks 2FA enabled and generates
+	// backup codes (shown once, right here)
+	function confirmTwoFactorSetup($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		include_once(SP_LIBPATH . "/totp.class.php");
+
+		if (!$this->__checkTwoFactorRateLimit($userId)) {
+			$this->set('errMsg', ['code' => formatErrorMsg('Too many attempts - please wait a minute and try again.')]);
+			$this->showTwoFactorSetup();
+			return;
+		}
+
+		$totpInfo = $this->__getUserTotpInfo($userId);
+		$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+
+		if ($secretBytes !== false && Totp::verifyCode($secretBytes, $info['code'] ?? '')) {
+			$now = date('Y-m-d H:i:s');
+			$this->db->query("update user_totp set enabled=1, confirmed_at='$now', updated_at='$now' where user_id=" . intval($userId));
+			$backupCodes = $this->__generateBackupCodes($userId);
+			$this->set('backupCodes', $backupCodes);
+			$this->set('justEnabled', true);
+			$this->set('twoFactorEnabled', true);
+			$this->render('user/twofactor_setup', 'ajax');
+			exit;
+		}
+
+		$this->set('errMsg', ['code' => formatErrorMsg('Incorrect code - please try again.')]);
+		$this->showTwoFactorSetup();
+	}
+
+	// POST users.php?sec=disable-two-factor - requires re-entering the
+	// current password (not just being logged in) before disabling, so a
+	// hijacked/left-open session alone isn't enough to strip 2FA protection
+	function disableTwoFactor($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		$userInfo = $this->__getUserInfo($userId);
+		if ($this->__verifyPassword($info['password'] ?? '', $userInfo['password'])) {
+			$this->db->query("delete from user_totp where user_id=" . intval($userId));
+			$this->db->query("delete from user_totp_backup_codes where user_id=" . intval($userId));
+			$this->set('msg', 'Two-factor authentication has been disabled.');
+		} else {
+			$this->set('errMsg', ['password' => formatErrorMsg('Incorrect password.')]);
+		}
+
+		$this->showTwoFactorSetup();
+	}
+
+	// POST users.php?sec=regenerate-backup-codes - requires 2FA already
+	// enabled; fully replaces the set, old codes stop working
+	function regenerateBackupCodes($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		if ($this->__isTwoFactorEnabled($userId)) {
+			$backupCodes = $this->__generateBackupCodes($userId);
+			$this->set('backupCodes', $backupCodes);
+			$this->set('justRegenerated', true);
+		}
+
+		$this->showTwoFactorSetup();
+	}
+
+	// GET login.php?sec=twofactor - the code-entry step after a correct
+	// username/password for a user with 2FA enabled. Requires the pending
+	// state login() set - reachable only via a real, just-completed
+	// primary login, never bookmarkable/replayable on its own.
+	function showTwoFactorLoginForm() {
+		$pending = Session::readSession('pending_2fa');
+		if (empty($pending['uInfo']['userId'])) {
+			redirectUrl(SP_WEBPATH . "/login.php");
+			return;
+		}
+		$this->render('common/twofactor_login');
+		exit;
+	}
+
+	// POST login.php?sec=verify_2fa
+	function verifyTwoFactorLogin($info=[]) {
+		$pending = Session::readSession('pending_2fa');
+		if (empty($pending['uInfo']['userId'])) {
+			redirectUrl(SP_WEBPATH . "/login.php");
+			return;
+		}
+
+		$userId = $pending['uInfo']['userId'];
+		$errMsg = [];
+
+		if (!$this->__checkTwoFactorRateLimit($userId)) {
+			$errMsg['code'] = formatErrorMsg('Too many attempts - please wait a minute and try again.');
+		} else {
+			include_once(SP_LIBPATH . "/totp.class.php");
+			$totpInfo = $this->__getUserTotpInfo($userId);
+			$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+			$code = $info['code'] ?? '';
+
+			$verified = ($secretBytes !== false && Totp::verifyCode($secretBytes, $code))
+				|| $this->__verifyBackupCode($userId, $code);
+
+			if ($verified) {
+				Session::setSession('pending_2fa', '');
+				$this->__completeLogin($pending['uInfo'], $pending['redirectPost'] ?? []);
+				return;
+			}
+
+			$errMsg['code'] = formatErrorMsg('Incorrect code - please try again.');
+		}
+
+		$this->set('errMsg', $errMsg);
+		$this->showTwoFactorLoginForm();
+	}
+
+	// GET login.php?sec=cancel_2fa - abandons a pending 2FA login (e.g.
+	// "wrong account, let me sign in as someone else") without waiting
+	// for the code step to naturally expire with the session
+	function cancelTwoFactorLogin() {
+		Session::setSession('pending_2fa', '');
+		redirectUrl(SP_WEBPATH . "/login.php");
+	}
+
 	# func to confirm the user registration
 	function confirmUser($confirmCode) {
 		$confirmCode = addslashes($confirmCode);
