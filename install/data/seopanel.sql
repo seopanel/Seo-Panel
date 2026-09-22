@@ -1304,6 +1304,22 @@ CREATE TABLE IF NOT EXISTS `saturationresults` (
   KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+-- AI-era feature: one saved schema.org (JSON-LD) config per
+-- (website, schema type) - see controllers/schemagenerator.ctrl.php.
+-- field_data is the raw form field values (JSON-encoded), re-editable
+-- on a later visit; the actual JSON-LD markup is always regenerated
+-- from field_data on demand rather than stored redundantly, so there's
+-- a single source of truth.
+CREATE TABLE IF NOT EXISTS `schema_markup` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `schema_type` varchar(50) NOT NULL,
+  `field_data` text NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_schema_type` (`website_id`,`schema_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `searchengines` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `domain` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,

@@ -1135,3 +1135,15 @@ CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
   KEY `competitor_provider_date` (`competitor_id`,`provider`,`checked_date`),
   KEY `prompt_id` (`prompt_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- AI Schema Markup Generator - see install/data/seopanel.sql's own
+-- CREATE TABLE comment for the full design.
+CREATE TABLE IF NOT EXISTS `schema_markup` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `schema_type` varchar(50) NOT NULL,
+  `field_data` text NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_schema_type` (`website_id`,`schema_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -138,3 +138,12 @@
 		&mdash; <?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?>
 	</span>
 </div>
+
+<div class="aiv-note">
+	<i class="fas fa-code"></i>
+	<span>
+		<?php echo $spTextAIV['Give AI answer engines a clean fact layer to cite'] ?? 'Give AI answer engines a clean fact layer to cite'?>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Generate Schema Markup'] ?? 'Generate Schema Markup'?></a>
+		&mdash; <?php echo $spTextAIV['Organization, LocalBusiness, Article, FAQPage'] ?? 'Organization, LocalBusiness, Article, FAQPage'?>
+	</span>
+</div>
