@@ -5,3 +5,25 @@
         AddType application/manifest+json .json
     </Files>
 </IfModule>
+
+# Performance fix: static assets (JS/CSS/images/fonts) had no browser
+# caching directive at all - every repeat page view re-fetched them from
+# scratch. Every JS/CSS <script>/<link> tag across every theme's layout
+# already appends "?v<version>" (see $spKey in themes/*/views/layout/
+# default.ctp.php, derived from SP_INSTALLED) - a long max-age here is
+# safe because that query string, and therefore the URL, only ever
+# changes when the file's actual content does (a real app version bump),
+# so a returning visitor can never be served stale content from cache.
+# Wrapped in IfModule so this is a silent no-op on a host without these
+# modules, rather than a 500.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$">
+        ExpiresDefault "access plus 1 year"
+    </FilesMatch>
+</IfModule>
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
