@@ -3,6 +3,21 @@ var buttonList = new Array();
 var scriptList = new Array();
 var needPopup = false;
 
+// bug fix: scriptDoLoad()/scriptDoLoadPost() (below) and the dialog/popup
+// variants in popup.js drive virtually all in-page navigation across the
+// entire panel (every list, edit form, report, and action link), but none
+// of them had an error handler - only success. A session timeout, a PHP
+// fatal error, a 500, or a dropped connection left the loading spinner
+// showing forever with zero feedback and no way to know anything went
+// wrong. This mirrors the working pattern openSerpModalSP() (this file)
+// already uses for its own AJAX call.
+function showAjaxLoadError(targetElementId) {
+	var target = document.getElementById(targetElementId);
+	if (target) {
+		target.innerHTML = '<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>';
+	}
+}
+
 function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading) {
 	if(needPopup) {
 		scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading);
@@ -16,12 +31,15 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 	jQuery.ajax({
 		type: "POST",
 		url:scriptUrl,
-		data: scriptArgs, 
+		data: scriptArgs,
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
 	            eval($(this).text());
 	         });
+	     },
+	     error: function() {
+	         showAjaxLoadError(scriptPos);
 	     }
 	});
 }
@@ -43,6 +61,9 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
              jQuery("#"+scriptPos).find("script").each(function(i) {
                 eval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
      });
 }
@@ -88,6 +109,9 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
              jQuery("#"+scriptPos).find("script").each(function(i) {
                 eval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
     });
 }

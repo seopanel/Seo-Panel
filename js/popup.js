@@ -51,6 +51,7 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -107,6 +108,7 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -142,6 +144,7 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }
@@ -167,6 +170,7 @@ function scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading) {
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }
