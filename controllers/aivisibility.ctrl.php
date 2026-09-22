@@ -144,6 +144,7 @@ class AIVisibilityController extends Controller {
 		$this->set('combinedPlatforms', $this->__getCombinedPlatformTotals($websiteId, $fromTimeSql, $toTimeSql));
 
 		$this->set('aioSummary', $this->__getAioSummaryForWebsite($websiteId));
+		$this->set('aiVisibilityScore', $this->__getAiVisibilityScore($websiteId, $fromTime, $toTime));
 
 		$this->render('aivisibility/overview');
 	}
@@ -1055,6 +1056,103 @@ PHP;
 					ORDER BY s2.result_date DESC, s2.id DESC LIMIT 1
 				)";
 		return $this->__summarizeAioRows($this->db->select($sql));
+	}
+
+	/**
+	 * A single, explainable 0-100 "AI Visibility Score" combining the 4
+	 * signals this app already tracks separately (AI bot crawling, AI
+	 * Overview citation, LLM mention rate via AI Perception Check, AI
+	 * referral traffic) - the data already exists across 3 different
+	 * controllers/tools, this just rolls it into one at-a-glance number
+	 * rather than requiring a customer to mentally combine 4 dashboards.
+	 *
+	 * Each component only counts toward the overall average when it's
+	 * actually MEASURED - a customer who never configured AI Perception
+	 * Check (needs their own API key) is not silently penalized with a 0
+	 * for it; that component just shows as "not measured yet" and is
+	 * excluded from the average, same honesty principle already used by
+	 * __getShareOfVoice() returning null rather than 0 for "nothing
+	 * checked yet".
+	 *
+	 * Thresholds below (5 distinct bot platforms / 50 referral visits =
+	 * "excellent") are deliberately round, documented numbers for a
+	 * directional signal, not a claim of statistical precision.
+	 */
+	function __getAiVisibilityScore($websiteId, $fromTime, $toTime) {
+		$websiteId = intval($websiteId);
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+		$components = [];
+
+		// 1) AI bot crawling: distinct AI platforms that crawled this site
+		// in the period - 5 distinct platforms is treated as excellent (100)
+		$distinctPlatforms = intval($this->db->select(
+			"SELECT COUNT(DISTINCT platform) AS c FROM ai_bot_hits WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql'", true
+		)['c'] ?? 0);
+		$components['bot_crawl'] = [
+			'label' => 'AI Bot Crawling',
+			'score' => min(100, (int) round(($distinctPlatforms / 5) * 100)),
+			'measured' => true,
+			'detail' => $distinctPlatforms . ' AI platform' . ($distinctPlatforms == 1 ? '' : 's') . ' crawling you',
+		];
+
+		// 2) AI Overview citation rate - only measured once an AI Overview
+		// has actually appeared for at least one tracked keyword
+		$aioSummary = $this->__getAioSummaryForWebsite($websiteId);
+		if (!empty($aioSummary['present'])) {
+			$rate = (int) round((intval($aioSummary['cited']) / intval($aioSummary['present'])) * 100);
+			$components['aio_citation'] = [
+				'label' => 'AI Overview Citation',
+				'score' => $rate,
+				'measured' => true,
+				'detail' => 'cited in ' . intval($aioSummary['cited']) . ' of ' . intval($aioSummary['present']) . ' AI Overviews seen',
+			];
+		} else {
+			$components['aio_citation'] = [
+				'label' => 'AI Overview Citation',
+				'score' => null,
+				'measured' => false,
+				'detail' => 'no AI Overview seen yet for your tracked keywords',
+			];
+		}
+
+		// 3) LLM mention rate - only measured once AI Perception Check has
+		// real results (needs the customer's own API key configured)
+		include_once(SP_CTRLPATH . "/aiperception.ctrl.php");
+		$aipCtrler = new AiPerceptionController();
+		$shareOfVoice = $aipCtrler->__getShareOfVoice($websiteId);
+		if ($shareOfVoice !== null) {
+			$components['llm_mentions'] = [
+				'label' => 'LLM Mention Rate',
+				'score' => (int) $shareOfVoice,
+				'measured' => true,
+				'detail' => 'mentioned in ' . intval($shareOfVoice) . '% of tracked AI Perception checks',
+			];
+		} else {
+			$components['llm_mentions'] = [
+				'label' => 'LLM Mention Rate',
+				'score' => null,
+				'measured' => false,
+				'detail' => 'no AI Perception Check configured/run yet',
+			];
+		}
+
+		// 4) AI referral traffic: real click-through visits FROM an AI
+		// platform in the period - 50+ visits is treated as excellent (100)
+		$referralTotal = intval($this->db->select(
+			"SELECT COALESCE(SUM(hits),0) AS total FROM ai_referrals WHERE website_id=$websiteId AND hit_date >= '$fromTimeSql' AND hit_date <= '$toTimeSql'", true
+		)['total']);
+		$components['ai_referrals'] = [
+			'label' => 'AI Referral Traffic',
+			'score' => min(100, (int) round(($referralTotal / 50) * 100)),
+			'measured' => true,
+			'detail' => $referralTotal . ' visit' . ($referralTotal == 1 ? '' : 's') . ' from AI platforms',
+		];
+
+		$measuredScores = array_column(array_filter($components, function($c) { return $c['measured']; }), 'score');
+		$overall = !empty($measuredScores) ? (int) round(array_sum($measuredScores) / count($measuredScores)) : null;
+
+		return ['overall' => $overall, 'components' => $components];
 	}
 
 	function showAIOverviewReport($info=[]) {
