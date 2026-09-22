@@ -79,8 +79,9 @@
 					<?php
 					$spamScore = floatval($listInfo['spam_score']);
 					$spamScoreColor = getSpamScoreColor($spamScore);
+					$spamScoreLabel = getSpamScoreLabel($spamScore);
 					?>
-					<span class="badge bg-<?php echo $spamScoreColor?>">
+					<span class="badge bg-<?php echo $spamScoreColor?>" title="<?php echo $spamScoreLabel?>">
 						<?php echo round($spamScore, 2)?>%
 					</span>
 					<?php echo $listInfo['rank_diff_spam_score']?>
@@ -89,8 +90,9 @@
 					<?php
 					$da = floatval($listInfo['domain_authority']);
 					$daColor = getAuthorityColor($da);
+					$daLabel = getAuthorityLabel($da);
 					?>
-					<span class="badge bg-<?php echo $daColor?>">
+					<span class="badge bg-<?php echo $daColor?>" title="<?php echo $daLabel?>">
 						<?php echo round($da, 2)?>
 					</span>
 					<?php echo $listInfo['rank_diff_domain_authority']?>
@@ -99,8 +101,9 @@
 					<?php
 					$pa = floatval($listInfo['page_authority']);
 					$paColor = getAuthorityColor($pa);
+					$paLabel = getAuthorityLabel($pa);
 					?>
-					<span class="badge bg-<?php echo $paColor?>">
+					<span class="badge bg-<?php echo $paColor?>" title="<?php echo $paLabel?>">
 						<?php echo round($pa, 2)?>
 					</span>
 					<?php echo $listInfo['rank_diff_page_authority']?>
