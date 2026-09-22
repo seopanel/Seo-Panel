@@ -668,7 +668,7 @@ class UserController extends Controller{
 		$userStatus = 1;
 		
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
-		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
 		$errMsg['email'] = formatErrorMsg($this->validate->checkEmail($userInfo['email']));
@@ -943,7 +943,7 @@ class UserController extends Controller{
 	    $userInfo = sanitizeData($userInfo);
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
-		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
 		$errMsg['email'] = formatErrorMsg($this->validate->checkEmail($userInfo['email']));
@@ -1056,7 +1056,7 @@ class UserController extends Controller{
 
 		// if password needs to be reset
 		if(!empty($userInfo['password'])){
-			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		
@@ -1260,7 +1260,7 @@ class UserController extends Controller{
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
 		if(!empty($userInfo['password'])){
-			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
