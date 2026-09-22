@@ -1054,6 +1054,29 @@ class Install {
 				</div>
 			<?php } ?>
 
+			<?php if (!empty($db->nonBlockingFailedCount)) { ?>
+				<div class="alert alert-info">
+					<!-- bug fix: this page previously always said "upgraded
+					successfully" with no way to know a migration statement
+					actually failed - $db->nonBlockingFailedCount/
+					nonBlockingFailedSamples are populated by
+					DBI::importDatabaseFile() now (see its own comments).
+					Not styled as a hard error - a replayed migration
+					legitimately re-hitting an "already exists" style error
+					is the common, harmless case (e.g. re-running this
+					upgrade, or an intermediate version's change already
+					applied by hand) - but surfaced honestly either way,
+					with the real detail in the PHP/web server error log
+					rather than only there. -->
+					<strong>Note:</strong> <?php echo intval($db->nonBlockingFailedCount); ?> database migration statement<?php echo $db->nonBlockingFailedCount == 1 ? '' : 's'; ?> did not apply during this upgrade. This is often expected (e.g. re-running an upgrade, or a change already applied). If something looks missing after upgrading, check your PHP/web server error log for lines starting "SEO Panel installer:", or ask for help with the details below.
+					<ul style="margin-top:8px;">
+						<?php foreach ($db->nonBlockingFailedSamples as $sample) { ?>
+							<li><?php echo htmlspecialchars($sample); ?></li>
+						<?php } ?>
+					</ul>
+				</div>
+			<?php } ?>
+
 			<div class="alert alert-warning">
 				<strong>Important Security Step:</strong>
 				<ul>

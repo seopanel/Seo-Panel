@@ -25,6 +25,8 @@ class DBI{
 
 	var $connectionId = false; 	# db connectio id
 	var $error = false;   		# error while databse operations
+	var $nonBlockingFailedCount = 0;	# statements that failed with $block=false (see importDatabaseFile())
+	var $nonBlockingFailedSamples = array();
 	
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
 
@@ -33,7 +35,14 @@ class DBI{
 
 			if (!$this->connectionId){
 				$this->error = true;
-				$error = "Database connection failed. Please check your credentials.";
+				// bug fix: this always showed the same generic message
+				// regardless of the real cause (wrong password, unknown
+				// database, unreachable host) - the target user here
+				// (shared hosting, no SSH, phpMyAdmin at best) has no
+				// other way to self-diagnose which one it is.
+				// mysqli_connect_error() is server-generated text, not
+				// attacker input, so safe to surface directly.
+				$error = "Database connection failed: " . mysqli_connect_error();
 				return $error;
 			}
 
@@ -97,6 +106,19 @@ class DBI{
 		$lines = file($filename);
 		$totalLines = count($lines);
 
+		// bug fix: with $block=false (the upgrade path - a replayed
+		// migration can legitimately fail on a statement that already
+		// applied, so the whole chain must keep going), every failed
+		// statement was previously discarded completely - no log, no
+		// count, nothing - and proceedUpgrade() always rendered
+		// "Upgraded successfully" regardless. Accumulated onto $this
+		// (not a local var) since this method runs once per migration
+		// file, across many files in one upgrade run - the caller reads
+		// the running total off $db after the whole chain finishes. Each
+		// failure is also error_log()'d immediately (independent of
+		// $block), same fix shape as MysqliHelper::showError() in the
+		// main app.
+
 		# loop through each line
 		foreach ($lines as $lineIndex => $line){
 
@@ -112,7 +134,20 @@ class DBI{
 
 				if(!empty($tmpline)){
 					$errMsg = $this->query($tmpline);
-					if($block && $this->error) return $errMsg;
+					if ($this->error) {
+						error_log("SEO Panel installer: statement failed in $filename: $errMsg | statement: " . trim($tmpline));
+						if ($block) return $errMsg;
+						$this->nonBlockingFailedCount++;
+						if (count($this->nonBlockingFailedSamples) < 5) {
+							$this->nonBlockingFailedSamples[] = $errMsg;
+						}
+						// query() leaves $this->error=true for the REST of
+						// this object's lifetime (getError() never resets
+						// it) - clear it back to false so a later,
+						// genuinely successful statement isn't misreported
+						// as having failed too
+						$this->error = false;
+					}
 				}
 				$tmpline = '';
 			}

@@ -251,6 +251,21 @@ class SettingsController extends Controller{
 	        'tmp' => SP_TMPPATH,
 	    ];
 	    foreach ($writablePaths as $label => $path) {
+	        // bug fix: is_writable() returns false for BOTH "exists but not
+	        // writable" and "doesn't exist at all", and this loop couldn't
+	        // tell those apart - so an admin who followed the documented
+	        // "remove install/ for security" step got a generic
+	        // "missing requirements" failure that never said WHY, blocking
+	        // one-click upgrade entirely. __overlay()'s __copyRecursive()
+	        // (libs/onlineupgrade.class.php) already mkdir()s any directory
+	        // present in the release zip but missing locally - install/ IS
+	        // shipped in the release, so it will be recreated automatically.
+	        // Only a genuinely missing 'install' needs its PARENT (already
+	        // checked separately here as 'application root') writable, not
+	        // itself - skip it rather than false-failing on it.
+	        if ($label === 'install' && !file_exists($path)) {
+	            continue;
+	        }
 	        if (!is_writable($path)) {
 	            $failed[] = $label.' ('.$path.')';
 	        }
