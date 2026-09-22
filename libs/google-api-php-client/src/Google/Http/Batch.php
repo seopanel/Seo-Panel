@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 
@@ -165,7 +165,7 @@ EOF;
           $response = new Response(
               $status,
               $partHeaders,
-              Psr7\stream_for($partBody)
+              Utils::streamFor($partBody)
           );
 
           // Need content id.

@@ -17,20 +17,32 @@
 
 namespace Google\Auth;
 
+use Google\Auth\Credentials\ExternalAccountCredentials;
+use Google\Auth\Credentials\ImpersonatedServiceAccountCredentials;
+use Google\Auth\Credentials\InsecureCredentials;
 use Google\Auth\Credentials\ServiceAccountCredentials;
 use Google\Auth\Credentials\UserRefreshCredentials;
+use RuntimeException;
+use UnexpectedValueException;
 
 /**
  * CredentialsLoader contains the behaviour used to locate and find default
  * credentials files on the file system.
  */
-abstract class CredentialsLoader implements FetchAuthTokenInterface
+abstract class CredentialsLoader implements
+    GetUniverseDomainInterface,
+    FetchAuthTokenInterface,
+    UpdateMetadataInterface
 {
-    const TOKEN_CREDENTIAL_URI = 'https://www.googleapis.com/oauth2/v4/token';
+    use UpdateMetadataTrait;
+
+    const TOKEN_CREDENTIAL_URI = 'https://oauth2.googleapis.com/token';
     const ENV_VAR = 'GOOGLE_APPLICATION_CREDENTIALS';
+    const QUOTA_PROJECT_ENV_VAR = 'GOOGLE_CLOUD_QUOTA_PROJECT';
     const WELL_KNOWN_PATH = 'gcloud/application_default_credentials.json';
     const NON_WINDOWS_WELL_KNOWN_PATH_BASE = '.config';
-    const AUTH_METADATA_KEY = 'Authorization';
+    const MTLS_WELL_KNOWN_PATH = '.secureConnect/context_aware_metadata.json';
+    const MTLS_CERT_ENV_VAR = 'GOOGLE_API_USE_CLIENT_CERTIFICATE';
 
     /**
      * @param string $cause
@@ -60,32 +72,33 @@ abstract class CredentialsLoader implements FetchAuthTokenInterface
      * variable GOOGLE_APPLICATION_CREDENTIALS. Return null if
      * GOOGLE_APPLICATION_CREDENTIALS is not specified.
      *
-     * @return array JSON key | null
+     * @return array<mixed>|null JSON key | null
      */
     public static function fromEnv()
     {
         $path = getenv(self::ENV_VAR);
         if (empty($path)) {
-            return;
+            return null;
         }
         if (!file_exists($path)) {
             $cause = 'file ' . $path . ' does not exist';
             throw new \DomainException(self::unableToReadEnv($cause));
         }
         $jsonKey = file_get_contents($path);
-        return json_decode($jsonKey, true);
+        return json_decode((string) $jsonKey, true);
     }
 
     /**
      * Load a JSON key from a well known path.
      *
      * The well known path is OS dependent:
-     * - windows: %APPDATA%/gcloud/application_default_credentials.json
-     * - others: $HOME/.config/gcloud/application_default_credentials.json
      *
-     * If the file does not exists, this returns null.
+     * * windows: %APPDATA%/gcloud/application_default_credentials.json
+     * * others: $HOME/.config/gcloud/application_default_credentials.json
      *
-     * @return array JSON key | null
+     * If the file does not exist, this returns null.
+     *
+     * @return array<mixed>|null JSON key | null
      */
     public static function fromWellKnownFile()
     {
@@ -97,67 +110,179 @@ abstract class CredentialsLoader implements FetchAuthTokenInterface
         $path[] = self::WELL_KNOWN_PATH;
         $path = implode(DIRECTORY_SEPARATOR, $path);
         if (!file_exists($path)) {
-            return;
+            return null;
         }
         $jsonKey = file_get_contents($path);
-        return json_decode($jsonKey, true);
+        return json_decode((string) $jsonKey, true);
     }
 
     /**
      * Create a new Credentials instance.
      *
-     * @param string|array scope the scope of the access request, expressed
-     *   either as an Array or as a space-delimited String.
-     * @param array $jsonKey the JSON credentials.
+     * @param string|string[] $scope the scope of the access request, expressed
+     *        either as an Array or as a space-delimited String.
+     * @param array<mixed> $jsonKey the JSON credentials.
+     * @param string|string[] $defaultScope The default scope to use if no
+     *   user-defined scopes exist, expressed either as an Array or as a
+     *   space-delimited string.
      *
-     * @return ServiceAccountCredentials|UserRefreshCredentials
+     * @return ServiceAccountCredentials|UserRefreshCredentials|ImpersonatedServiceAccountCredentials|ExternalAccountCredentials
      */
-    public static function makeCredentials($scope, array $jsonKey)
-    {
+    public static function makeCredentials(
+        $scope,
+        array $jsonKey,
+        $defaultScope = null
+    ) {
         if (!array_key_exists('type', $jsonKey)) {
             throw new \InvalidArgumentException('json key is missing the type field');
         }
 
         if ($jsonKey['type'] == 'service_account') {
+            // Do not pass $defaultScope to ServiceAccountCredentials
             return new ServiceAccountCredentials($scope, $jsonKey);
-        } elseif ($jsonKey['type'] == 'authorized_user') {
-            return new UserRefreshCredentials($scope, $jsonKey);
-        } else {
-            throw new \InvalidArgumentException('invalid value in the type field');
         }
+
+        if ($jsonKey['type'] == 'authorized_user') {
+            $anyScope = $scope ?: $defaultScope;
+            return new UserRefreshCredentials($anyScope, $jsonKey);
+        }
+
+        if ($jsonKey['type'] == 'impersonated_service_account') {
+            $anyScope = $scope ?: $defaultScope;
+            return new ImpersonatedServiceAccountCredentials($anyScope, $jsonKey);
+        }
+
+        if ($jsonKey['type'] == 'external_account') {
+            $anyScope = $scope ?: $defaultScope;
+            return new ExternalAccountCredentials($anyScope, $jsonKey);
+        }
+
+        throw new \InvalidArgumentException('invalid value in the type field');
     }
 
     /**
-     * export a callback function which updates runtime metadata.
+     * Create an authorized HTTP Client from an instance of FetchAuthTokenInterface.
      *
-     * @return array updateMetadata function
+     * @param FetchAuthTokenInterface $fetcher is used to fetch the auth token
+     * @param array<mixed> $httpClientOptions (optional) Array of request options to apply.
+     * @param callable $httpHandler (optional) http client to fetch the token.
+     * @param callable $tokenCallback (optional) function to be called when a new token is fetched.
+     * @return \GuzzleHttp\Client
      */
-    public function getUpdateMetadataFunc()
-    {
-        return array($this, 'updateMetadata');
-    }
-
-    /**
-     * Updates metadata with the authorization token.
-     *
-     * @param array $metadata metadata hashmap
-     * @param string $authUri optional auth uri
-     * @param callable $httpHandler callback which delivers psr7 request
-     *
-     * @return array updated metadata hashmap
-     */
-    public function updateMetadata(
-        $metadata,
-        $authUri = null,
-        callable $httpHandler = null
+    public static function makeHttpClient(
+        FetchAuthTokenInterface $fetcher,
+        array $httpClientOptions = [],
+        ?callable $httpHandler = null,
+        ?callable $tokenCallback = null
     ) {
-        $result = $this->fetchAuthToken($httpHandler);
-        if (!isset($result['access_token'])) {
-            return $metadata;
-        }
-        $metadata_copy = $metadata;
-        $metadata_copy[self::AUTH_METADATA_KEY] = array('Bearer ' . $result['access_token']);
+        $middleware = new Middleware\AuthTokenMiddleware(
+            $fetcher,
+            $httpHandler,
+            $tokenCallback
+        );
+        $stack = \GuzzleHttp\HandlerStack::create();
+        $stack->push($middleware);
 
-        return $metadata_copy;
+        return new \GuzzleHttp\Client([
+            'handler' => $stack,
+            'auth' => 'google_auth',
+        ] + $httpClientOptions);
+    }
+
+    /**
+     * Create a new instance of InsecureCredentials.
+     *
+     * @return InsecureCredentials
+     */
+    public static function makeInsecureCredentials()
+    {
+        return new InsecureCredentials();
+    }
+
+    /**
+     * Fetch a quota project from the environment variable
+     * GOOGLE_CLOUD_QUOTA_PROJECT. Return null if
+     * GOOGLE_CLOUD_QUOTA_PROJECT is not specified.
+     *
+     * @return string|null
+     */
+    public static function quotaProjectFromEnv()
+    {
+        return getenv(self::QUOTA_PROJECT_ENV_VAR) ?: null;
+    }
+
+    /**
+     * Gets a callable which returns the default device certification.
+     *
+     * @throws UnexpectedValueException
+     * @return callable|null
+     */
+    public static function getDefaultClientCertSource()
+    {
+        if (!$clientCertSourceJson = self::loadDefaultClientCertSourceFile()) {
+            return null;
+        }
+        $clientCertSourceCmd = $clientCertSourceJson['cert_provider_command'];
+
+        return function () use ($clientCertSourceCmd) {
+            $cmd = array_map('escapeshellarg', $clientCertSourceCmd);
+            exec(implode(' ', $cmd), $output, $returnVar);
+
+            if (0 === $returnVar) {
+                return implode(PHP_EOL, $output);
+            }
+            throw new RuntimeException(
+                '"cert_provider_command" failed with a nonzero exit code'
+            );
+        };
+    }
+
+    /**
+     * Determines whether or not the default device certificate should be loaded.
+     *
+     * @return bool
+     */
+    public static function shouldLoadClientCertSource()
+    {
+        return filter_var(getenv(self::MTLS_CERT_ENV_VAR), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    /**
+     * @return array{cert_provider_command:string[]}|null
+     */
+    private static function loadDefaultClientCertSourceFile()
+    {
+        $rootEnv = self::isOnWindows() ? 'APPDATA' : 'HOME';
+        $path = sprintf('%s/%s', getenv($rootEnv), self::MTLS_WELL_KNOWN_PATH);
+        if (!file_exists($path)) {
+            return null;
+        }
+        $jsonKey = file_get_contents($path);
+        $clientCertSourceJson = json_decode((string) $jsonKey, true);
+        if (!$clientCertSourceJson) {
+            throw new UnexpectedValueException('Invalid client cert source JSON');
+        }
+        if (!isset($clientCertSourceJson['cert_provider_command'])) {
+            throw new UnexpectedValueException(
+                'cert source requires "cert_provider_command"'
+            );
+        }
+        if (!is_array($clientCertSourceJson['cert_provider_command'])) {
+            throw new UnexpectedValueException(
+                'cert source expects "cert_provider_command" to be an array'
+            );
+        }
+        return $clientCertSourceJson;
+    }
+
+    /**
+     * Get the universe domain from the credential. Defaults to "googleapis.com"
+     * for all credential types which do not support universe domain.
+     *
+     * @return string
+     */
+    public function getUniverseDomain(): string
+    {
+        return self::DEFAULT_UNIVERSE_DOMAIN;
     }
 }
