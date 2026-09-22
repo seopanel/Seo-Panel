@@ -256,6 +256,57 @@ class WebsiteController extends Controller{
 		$sql = "delete from skipdirectories where website_id=$websiteId";
 		$this->db->query($sql);
 
+		// bug fix: these tables all carry a website_id but had no cleanup
+		// path at all (review_links/social_media_links/user_website_access/
+		// website_analytics are already DB-level ON DELETE CASCADE - see
+		// install/data/seopanel.sql's ALTER TABLE block - so those are
+		// correctly left out here). Without this, every deleted website
+		// left permanent orphans in all of these: AI Visibility site
+		// registration/bot-hit/referral history, AI Perception prompts
+		// (+ their own child results), robots.txt rule state, dashboard
+		// recommendations, Webmaster Tools sitemap/keyword data, and
+		// PageSpeed history.
+		#remove pagespeed results
+		$sql = "delete from pagespeeddetails where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from pagespeedresults where website_id=$websiteId";
+		$this->db->query($sql);
+
+		#remove AI Visibility data
+		$sql = "delete from ai_visibility_sites where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from ai_bot_hits where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from ai_referrals where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from ai_visibility_site_access where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from ai_visibility_robots_rules where website_id=$websiteId";
+		$this->db->query($sql);
+		// ai_visibility_htaccess_audit_log / ai_visibility_robots_audit_log
+		// are deliberately NOT cleaned up here - both are documented,
+		// append-only compliance/audit trails (see their CREATE TABLE
+		// comments in install/data/seopanel.sql) meant to prove what
+		// happened while the website existed, not live operational data.
+
+		#remove AI Perception prompts and their results
+		$sql = "delete from llm_perception_results where prompt_id in (select id from llm_perception_prompts where website_id=$websiteId)";
+		$this->db->query($sql);
+		$sql = "delete from llm_perception_prompts where website_id=$websiteId";
+		$this->db->query($sql);
+
+		#remove dashboard recommendations
+		$sql = "delete from sp_recommendations where website_id=$websiteId";
+		$this->db->query($sql);
+
+		#remove webmaster tools data
+		$sql = "delete from webmaster_keywords where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from webmaster_sitemaps where website_id=$websiteId";
+		$this->db->query($sql);
+		$sql = "delete from website_search_analytics where website_id=$websiteId";
+		$this->db->query($sql);
+
 		# the website row itself, last
 		$sql = "delete from websites where id=$websiteId";
 		$this->db->query($sql);
