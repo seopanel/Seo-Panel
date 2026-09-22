@@ -42,6 +42,10 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 				$controller->executeReportGenerationScript($_POST);
 				break;
 
+			case "save_job_queue_settings":
+				$controller->saveJobQueueSettings($_POST);
+				break;
+
 			case "save_ping_settings":
 				$controller->saveSchedulePingSettings($_POST);
 				break;

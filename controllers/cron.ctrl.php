@@ -1952,6 +1952,21 @@ class CronController extends Controller {
 		$this->render('report/schedulerhealth');
 	}
 
+	// POST-only: toggle the chunked/resumable job_queue scheduler on/off.
+	// Fresh installs default this on (install/data/seopanel.sql); an
+	// install that upgraded through an older install/data/upgrade.sql run
+	// may still have it stored as '0' from before the queued *CronQueued()
+	// paths were the confirmed default - this is the only way to flip it
+	// without editing the settings table directly, since display=0 keeps
+	// it out of the generic settings grid (same reasoning as the ping
+	// trigger settings above).
+	function saveJobQueueSettings($info=[]) {
+		$enabled = !empty($info['job_queue_enabled']) ? '1' : '0';
+		$this->db->query("UPDATE settings SET set_val='$enabled' WHERE set_name='SP_JOB_QUEUE_ENABLED'");
+
+		$this->showSchedulerHealth();
+	}
+
 	// POST-only: toggle the ping trigger on/off and set its run budget.
 	// Does not touch the secret - that's regeneratePingSecret()'s job, kept
 	// separate so saving the budget can never accidentally rotate the key.

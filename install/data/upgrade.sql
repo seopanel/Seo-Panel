@@ -345,12 +345,17 @@ CREATE TABLE IF NOT EXISTS `job_queue` (
   KEY `run_id` (`claimed_by_run_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Temporary rollout flag: old monolithic *Cron() bodies vs. new
--- enqueue+drain bodies, selected per tool inside routeCronJob(). Defaults
--- off for existing installs; flipped on (and eventually deleted, along with
--- the old bodies) once real installs confirm clean job_queue behavior.
+-- Rollout flag: old monolithic *Cron() bodies vs. new enqueue+drain
+-- bodies, selected per tool inside routeCronJob(). Originally defaulted
+-- off for existing installs pending confirmation the job_queue path was
+-- clean; the queued path has been the DEFAULT for every fresh install
+-- (seopanel.sql) since, and is now covered end to end by spTests -
+-- flipped on here too. INSERT IGNORE means this only affects an install
+-- upgrading through this file for the first time (never run either path
+-- yet) - an install that already stored '0' from an earlier upgrade run
+-- keeps that value; this is not retroactive.
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('Enable resumable job queue for cron execution', 'SP_JOB_QUEUE_ENABLED', '0', 'report', 'small', 0);
+('Enable resumable job queue for cron execution', 'SP_JOB_QUEUE_ENABLED', '1', 'report', 'small', 0);
 
 -- Zero-Setup Scheduler, Phase 2: secret-protected external ping trigger.
 -- Fails closed by default - disabled, and no secret (settings can't
