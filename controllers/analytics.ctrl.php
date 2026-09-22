@@ -283,6 +283,15 @@ class AnalyticsController extends Controller {
 			}
 		}
 	
+
+		// bug fix: none of this method's cron.ctrl.php callers check its
+		// return value at all - a failure here (bad/expired credentials,
+		// a Google API error, a missing analytics source) previously
+		// left zero trace anywhere. $result['msg'] already carries the
+		// real error from getAnalyticsResults()/getGoogleAnalyticsGA4AuthClient().
+		if (empty($result['status']) && !empty($result['msg'])) {
+			error_log("SEO Panel: storeWebsiteAnalytics() failed for website $websiteId: " . $result['msg']);
+		}
 		return $result;
 	
 	}

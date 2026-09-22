@@ -1169,6 +1169,10 @@ class CronController extends Controller {
 							$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
 						}
 					} catch (Exception $e) {
+						// bug fix: debugMsg() only prints when $this->debug is
+						// on, never true for a real cron run - this failure
+						// left no trace anywhere
+						error_log("SEO Panel: AI Overview parse/save failed for keyword {$keywordInfo['id']}: " . $e->getMessage());
 						$this->debugMsg("AI Overview parse/save failed for <b>{$keywordInfo['name']}</b>: {$e->getMessage()}.....<br>\n");
 					}
 
@@ -1810,6 +1814,10 @@ class CronController extends Controller {
 							$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
 						}
 					} catch (Exception $e) {
+						// bug fix: debugMsg() only prints when $this->debug is
+						// on, never true for a real cron run - this failure
+						// left no trace anywhere
+						error_log("SEO Panel: AI Overview parse/save failed for keyword {$keywordInfo['id']}: " . $e->getMessage());
 						$this->debugMsg("AI Overview parse/save failed for <b>{$keywordInfo['name']}</b>: {$e->getMessage()}.....<br>\n");
 					}
 
@@ -2136,6 +2144,10 @@ class CronController extends Controller {
 			try {
 				$newRows = $recCtrler->refreshRecommendationsForWebsite($websiteInfo['id'], $websiteInfo['user_id']);
 			} catch (Throwable $e) {
+				// bug fix: this used to discard $e completely - a per-website
+				// failure here left no trace anywhere (debugMsg() only prints
+				// when $this->debug is on, never true for a real cron run)
+				error_log("SEO Panel: refreshAllAIInsights() failed for website {$websiteInfo['id']}: " . $e->getMessage());
 				continue; // one website's insight generation failing must not affect the rest
 			}
 			if (!empty($newRows)) {
@@ -2161,6 +2173,7 @@ class CronController extends Controller {
 			try {
 				$recCtrler->sendAIInsightsDigestEmail($userInfo, $byWebsite);
 			} catch (Throwable $e) {
+				error_log("SEO Panel: sendAIInsightsDigestEmail() failed for user $userId: " . $e->getMessage());
 				continue; // one user's email failing must not affect the rest
 			}
 		}
@@ -2187,6 +2200,7 @@ class CronController extends Controller {
 			try {
 				$aipCtrler->refreshTrackingForWebsite(intval($row['website_id']));
 			} catch (Throwable $e) {
+				error_log("SEO Panel: refreshAllLlmPerceptionTracking() failed for website {$row['website_id']}: " . $e->getMessage());
 				continue; // one website's tracking failing must not affect the rest
 			}
 		}

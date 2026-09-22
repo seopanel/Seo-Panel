@@ -1472,6 +1472,9 @@ class DataForSEOController extends Controller {
                 $normalized = AIOverviewController::parseDataForSEO($apiResult['data']['items'] ?? [], $reportDate);
                 $aioCtrler->saveResult($keywordId, $seId, $reportDate, 'dataforseo', $normalized, $websiteUrl, $subdomainPolicy);
             } catch (Exception $e) {
+                // bug fix: this was only visible with $verbose on - never
+                // true for a real cron run - so the failure left no trace
+                error_log("SEO Panel: AI Overview parse/save failed for keyword {$keywordId}: " . $e->getMessage());
                 if ($verbose) echo "  - AI Overview parse/save failed for keyword {$keywordId}: {$e->getMessage()}\n";
             }
         }
