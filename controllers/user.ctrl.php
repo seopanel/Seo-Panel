@@ -652,10 +652,20 @@ class UserController extends Controller{
 						values($userTypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
 						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
-					$this->db->query($sql);
-					
-					// if render results
-					if ($renderResults) {					
+					$insertOk = $this->db->query($sql);
+
+					// bug fix: a second request racing this same
+					// __checkUserName()/__checkEmail() check (TOCTOU) can still
+					// hit the DB-level UNIQUE constraint on users.username/email
+					// and fail here - the insert's result was never checked
+					// before, so this reported success with nothing actually
+					// persisted. Only the actual duplicate-key error (1062) is
+					// treated as the same "already exists" case; any other
+					// insert failure falls through to the generic error path
+					// below instead of being mislabeled as a duplicate.
+					if (!$insertOk && mysqli_errno($this->db->connectionId) == 1062) {
+						$errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']['usernameexist']);
+					} else if ($renderResults) {
 						$this->listUsers();
 						exit;
 					} else {

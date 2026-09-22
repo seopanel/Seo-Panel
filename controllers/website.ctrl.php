@@ -401,16 +401,25 @@ class WebsiteController extends Controller{
     				values('".addslashes($listInfo['name'])."','".addslashes($listInfo['url'])."','".
     				addslashes($listInfo['title'])."','".addslashes($listInfo['description'])."', '".addslashes($listInfo['analytics_view_id'])."', '".
     				addslashes($listInfo['keywords'])."', $userId, $statusVal)";
-    				$this->db->query($sql);
-    				
-    				// if api call
-    				if ($apiCall) {
+    				$insertOk = $this->db->query($sql);
+
+    				// bug fix: a second request racing this same __checkWebsiteUrl()
+    				// check (TOCTOU) can still hit the DB-level UNIQUE constraint on
+    				// websites.url and fail here - the insert's result was never
+    				// checked before, so this reported success with nothing actually
+    				// persisted. Only the actual duplicate-key error (1062) is
+    				// treated as the same "already exists" case; any other insert
+    				// failure falls through to the generic error path below instead
+    				// of being mislabeled as a duplicate.
+    				if (!$insertOk && mysqli_errno($this->db->connectionId) == 1062) {
+    				    $errMsg['url'] = formatErrorMsg($this->spTextWeb['Website already exist']);
+    				} else if ($apiCall) {
     					return array('success', 'Successfully created website');
     				} else {
 	    				$this->listWebsites([]);
 	    				exit;
     				}
-    				
+
 			    } else {
 			        $errMsg['url'] = formatErrorMsg($this->spTextWeb['Website already exist']);
 			    }

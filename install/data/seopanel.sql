@@ -1592,7 +1592,9 @@ CREATE TABLE IF NOT EXISTS `users` (
   `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0,
   `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0,
   `version_upgrade_skip_date` date DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
 INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`, `version_upgrade_skip_date`) VALUES
@@ -1726,7 +1728,8 @@ CREATE TABLE IF NOT EXISTS `websites` (
   `status` tinyint(1) NOT NULL,
   `crawled` tinyint(1) NOT NULL DEFAULT '0',
   `analytics_view_id` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `url` (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `website_analytics` (

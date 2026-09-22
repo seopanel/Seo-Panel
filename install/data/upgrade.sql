@@ -1032,3 +1032,20 @@ ALTER TABLE `rankresults` ADD KEY `website_id_result_date` (`website_id`,`result
 ALTER TABLE `backlinkresults` ADD KEY `website_id_result_date` (`website_id`,`result_date`);
 ALTER TABLE `searchresults` ADD KEY `keyword_id_result_date` (`keyword_id`,`result_date`);
 ALTER TABLE `searchresultdetails` ADD KEY `searchresult_id` (`searchresult_id`);
+
+-- Data integrity fix: websites.url / users.username / users.email had no
+-- DB-level UNIQUE constraint at all - only the app-level "SELECT then
+-- decide" checks in __checkWebsiteUrl()/__checkUserName()/__checkEmail(),
+-- which have a real TOCTOU race under two concurrent requests (both pass
+-- the check, both INSERT, producing a real duplicate with no backstop).
+-- createWebsite()/createUser() now also check the INSERT's own result
+-- and surface the same "already exists" error for an actual duplicate-key
+-- failure (1062), so a caught race degrades to a clean rejection instead
+-- of a silent no-op. On an install that already has duplicate url/
+-- username/email values from before this fix, the matching ALTER below
+-- fails and is skipped (this upgrade path already tolerates a failed
+-- individual statement) - existing duplicates must be resolved manually
+-- before that specific constraint can be added.
+ALTER TABLE `websites` ADD UNIQUE KEY `url` (`url`);
+ALTER TABLE `users` ADD UNIQUE KEY `username` (`username`);
+ALTER TABLE `users` ADD UNIQUE KEY `email` (`email`);
