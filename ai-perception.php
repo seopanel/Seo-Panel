@@ -56,6 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->removePrompt($_POST);
 			break;
 
+		case "add-competitor":
+			$controller->addCompetitor($_POST);
+			break;
+
+		case "remove-competitor":
+			$controller->removeCompetitor($_POST);
+			break;
+
 		default:
 			$controller->showSettings();
 			break;

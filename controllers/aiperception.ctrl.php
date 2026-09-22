@@ -30,6 +30,12 @@ class AiPerceptionController extends Controller {
 	const MAX_PROMPTS_PER_WEBSITE = 10;
 	const TRACKING_INTERVAL_DAYS = 7;
 
+	// Competitive share-of-voice: named competitors checked for a mention
+	// in the SAME LLM response already fetched for the site's own check -
+	// no extra API calls, so this cap is generous relative to
+	// MAX_PROMPTS_PER_WEBSITE.
+	const MAX_COMPETITORS_PER_WEBSITE = 5;
+
 	// func to list this user's configured providers (never returns the raw key)
 	function __getUserProviders($userId) {
 		$userId = intval($userId);
@@ -132,6 +138,9 @@ class AiPerceptionController extends Controller {
 		$this->set('shareOfVoice', $this->__getShareOfVoice($websiteId));
 		$this->set('promptCap', self::MAX_PROMPTS_PER_WEBSITE);
 		$this->set('trackingIntervalDays', self::TRACKING_INTERVAL_DAYS);
+		$this->set('competitors', !empty($websiteId) ? $this->__getCompetitors($websiteId) : []);
+		$this->set('competitorShareOfVoice', !empty($websiteId) ? $this->__getCompetitorShareOfVoice($websiteId) : []);
+		$this->set('competitorCap', self::MAX_COMPETITORS_PER_WEBSITE);
 		$this->set('providers', $this->__getUserProviders($userId));
 		$this->set('spTextAIV', $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']));
 		$this->render('aiperception/tracking');
@@ -188,6 +197,126 @@ class AiPerceptionController extends Controller {
 		$this->db->query("DELETE FROM llm_perception_prompts WHERE id=$promptId");
 
 		$this->showTracking(['website_id' => $websiteId]);
+	}
+
+	// func to add a tracked competitor for a website - verifies ownership
+	// and the MAX_COMPETITORS_PER_WEBSITE cap, same shape as addPrompt().
+	// Immediately backfills mention results from every already-stored
+	// response_text for this website's prompts (no extra API calls,
+	// the text is already sitting in llm_perception_results) so a newly
+	// added competitor shows real data right away instead of waiting up
+	// to TRACKING_INTERVAL_DAYS for the next scheduled check.
+	function addCompetitor($info) {
+		$userId = isLoggedIn();
+		$websiteId = intval($info['website_id'] ?? 0);
+		$name = trim($info['name'] ?? '');
+		$domain = trim($info['domain'] ?? '');
+
+		$websiteController = new WebsiteController();
+		$ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+		if (empty($websiteId) || empty($name) || (!isAdmin() && !in_array($websiteId, $ownedIds))) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$activeCount = intval($this->db->select("SELECT COUNT(*) AS c FROM llm_perception_competitors WHERE website_id=$websiteId AND status=1", true)['c'] ?? 0);
+		if ($activeCount >= self::MAX_COMPETITORS_PER_WEBSITE) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$this->dbHelper->insertRow('llm_perception_competitors', [
+			'website_id|int' => $websiteId,
+			'name'           => mb_substr($name, 0, 150),
+			'domain'         => !empty($domain) ? mb_substr($domain, 0, 255) : null,
+			'status|int'     => 1,
+			'created_at'     => 'NOW()',
+		]);
+		$competitorId = intval($this->db->lastInsertId);
+
+		$this->__backfillCompetitorMentions($websiteId, $competitorId, ['name' => $name, 'url' => $domain]);
+
+		$this->showTracking(['website_id' => $websiteId]);
+	}
+
+	// func to remove a tracked competitor - ownership verified via a join
+	// back to websites, same shape as removePrompt()
+	function removeCompetitor($info) {
+		$userId = isLoggedIn();
+		$competitorId = intval($info['competitor_id'] ?? 0);
+
+		$competitor = $this->db->select("SELECT c.id, c.website_id FROM llm_perception_competitors c
+			JOIN websites w ON w.id = c.website_id
+			WHERE c.id=$competitorId AND (w.user_id=$userId OR " . (isAdmin() ? '1=1' : '1=0') . ")", true);
+		if (empty($competitor['id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$websiteId = intval($competitor['website_id']);
+		$this->db->query("DELETE FROM llm_perception_competitor_results WHERE competitor_id=$competitorId");
+		$this->db->query("DELETE FROM llm_perception_competitors WHERE id=$competitorId");
+
+		$this->showTracking(['website_id' => $websiteId]);
+	}
+
+	// func to list a website's active tracked competitors
+	function __getCompetitors($websiteId) {
+		$websiteId = intval($websiteId);
+		return $this->db->select("SELECT id, name, domain FROM llm_perception_competitors WHERE website_id=$websiteId AND status=1 ORDER BY id");
+	}
+
+	// scans every already-stored (non-error) response_text for this
+	// website's prompts and checks the new competitor against each one,
+	// preserving the ORIGINAL checked_date of that check (this is a
+	// backfill of existing data, not a new check) - see addCompetitor()
+	function __backfillCompetitorMentions($websiteId, $competitorId, $competitorInfo) {
+		$websiteId = intval($websiteId);
+		$competitorId = intval($competitorId);
+		$rows = $this->db->select(
+			"SELECT r.prompt_id, r.provider, r.checked_date, r.response_text FROM llm_perception_results r
+			 JOIN llm_perception_prompts p ON p.id = r.prompt_id
+			 WHERE p.website_id=$websiteId AND r.response_text NOT LIKE 'ERROR:%'"
+		);
+		foreach ($rows as $row) {
+			$mentioned = $this->__isMentioned($row['response_text'], $competitorInfo);
+			$this->dbHelper->insertRow('llm_perception_competitor_results', [
+				'competitor_id|int' => $competitorId,
+				'prompt_id|int'     => intval($row['prompt_id']),
+				'provider'          => $row['provider'],
+				'checked_date'      => $row['checked_date'],
+				'mentioned|int'     => $mentioned ? 1 : 0,
+				'created_at'        => 'NOW()',
+			]);
+		}
+	}
+
+	// func to compute each tracked competitor's own share of voice, same
+	// definition/shape as __getShareOfVoice() but per competitor - lets
+	// the tracking dashboard show "you: X% vs Competitor A: Y%" using a
+	// directly comparable number
+	function __getCompetitorShareOfVoice($websiteId) {
+		$websiteId = intval($websiteId);
+		$competitors = $this->__getCompetitors($websiteId);
+		$result = [];
+		foreach ($competitors as $competitor) {
+			$competitorId = intval($competitor['id']);
+			$sql = "SELECT cr.mentioned FROM llm_perception_competitor_results cr
+					JOIN llm_perception_prompts p ON p.id = cr.prompt_id
+					WHERE cr.competitor_id=$competitorId AND p.status=1
+					AND cr.checked_date = (
+						SELECT MAX(cr2.checked_date) FROM llm_perception_competitor_results cr2
+						WHERE cr2.prompt_id = cr.prompt_id AND cr2.provider = cr.provider AND cr2.competitor_id = cr.competitor_id
+					)";
+			$rows = $this->db->select($sql);
+			$share = null;
+			if (!empty($rows)) {
+				$mentionedCount = count(array_filter($rows, function($r) { return !empty($r['mentioned']); }));
+				$share = round(($mentionedCount / count($rows)) * 100);
+			}
+			$result[] = ['id' => $competitorId, 'name' => $competitor['name'], 'share' => $share];
+		}
+		return $result;
 	}
 
 	// func to list a website's active prompts with each provider's latest result
@@ -267,6 +396,12 @@ class AiPerceptionController extends Controller {
 		$prompts = $this->db->select("SELECT id, prompt_text, user_id FROM llm_perception_prompts WHERE website_id=$websiteId AND status=1");
 		if (empty($prompts)) return 0;
 
+		// fetched once, reused for every (prompt, provider) check below -
+		// checking a competitor costs no extra API call, it's just another
+		// __isMentioned() pass over the SAME response text already fetched
+		// for the site's own check
+		$competitors = $this->__getCompetitors($websiteId);
+
 		$cutoff = date('Y-m-d', strtotime('-' . self::TRACKING_INTERVAL_DAYS . ' days'));
 		$checksRun = 0;
 
@@ -307,6 +442,20 @@ class AiPerceptionController extends Controller {
 					'mentioned|int'   => $mentioned ? 1 : 0,
 					'created_at'      => 'NOW()',
 				]);
+
+				if (!empty($result['ok'])) {
+					foreach ($competitors as $competitor) {
+						$competitorMentioned = $this->__isMentioned($result['text'], ['name' => $competitor['name'], 'url' => $competitor['domain']]);
+						$this->dbHelper->insertRow('llm_perception_competitor_results', [
+							'competitor_id|int' => intval($competitor['id']),
+							'prompt_id|int'     => intval($prompt['id']),
+							'provider'          => $provider,
+							'checked_date'      => date('Y-m-d'),
+							'mentioned|int'     => $competitorMentioned ? 1 : 0,
+							'created_at'        => 'NOW()',
+						]);
+					}
+				}
 			}
 		}
 

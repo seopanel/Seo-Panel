@@ -1109,3 +1109,29 @@ CREATE TABLE IF NOT EXISTS `audit_log` (
   KEY `action_created_at` (`action`,`created_at`),
   KEY `target_type_id` (`target_type`,`target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Competitive AI share-of-voice - see install/data/seopanel.sql's own
+-- CREATE TABLE comments for the full design.
+CREATE TABLE IF NOT EXISTS `llm_perception_competitors` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `domain` varchar(255) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `competitor_id` int unsigned NOT NULL,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `competitor_provider_date` (`competitor_id`,`provider`,`checked_date`),
+  KEY `prompt_id` (`prompt_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1178,6 +1178,40 @@ CREATE TABLE IF NOT EXISTS `llm_perception_results` (
   KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Competitive AI share-of-voice: named competitors to check for a
+-- mention alongside the tracked website itself, in the SAME LLM
+-- response - see AiPerceptionController::refreshTrackingForWebsite().
+-- domain is optional (a well-known brand may not need one for
+-- __isMentioned()'s name-matching to work).
+CREATE TABLE IF NOT EXISTS `llm_perception_competitors` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `domain` varchar(255) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One row per (competitor, prompt, provider, checked_date) - mirrors
+-- llm_perception_results' own shape, but for a competitor instead of
+-- the tracked website. Checked against the SAME response_text already
+-- captured for the site's own mention check, so tracking a competitor
+-- costs no extra API calls.
+CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `competitor_id` int unsigned NOT NULL,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `competitor_provider_date` (`competitor_id`,`provider`,`checked_date`),
+  KEY `prompt_id` (`prompt_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Per-website-per-platform desired robots.txt state - absence of a row
 -- means "allowed" (not additionally blocked by SEO Panel). Written into the
 -- website's own robots.txt only inside a clearly delimited managed block

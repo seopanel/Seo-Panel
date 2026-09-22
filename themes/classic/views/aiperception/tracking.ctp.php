@@ -28,11 +28,84 @@
 </div>
 
 <?php if (!empty($shareOfVoice) || $shareOfVoice === 0) { ?>
-	<div class="aiv-card" style="text-align:center;padding:22px;max-width:260px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($shareOfVoice)?>%</div>
-		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Share of Voice (latest checks)'] ?? 'Share of Voice (latest checks)'?></div>
+	<div class="aiv-card" style="max-width:480px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-balance-scale"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextAIV['Share of Voice vs. Competitors'] ?? 'Share of Voice vs. Competitors'?></div>
+		</div>
+		<?php
+		// same bar for "you" and every tracked competitor, so the
+		// comparison reads at a glance - a null share (competitor with no
+		// backfilled/checked data yet) is shown as a dash, not 0%, since
+		// those are different things (0% = checked and never mentioned;
+		// null = nothing checked yet)
+		$compareRows = [['label' => $spTextAIV['You'] ?? 'You', 'share' => $shareOfVoice, 'you' => true]];
+		foreach ($competitorShareOfVoice as $c) {
+			$compareRows[] = ['label' => $c['name'], 'share' => $c['share'], 'you' => false];
+		}
+		?>
+		<?php foreach ($compareRows as $row) { ?>
+			<div style="margin-bottom:10px;">
+				<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+					<span style="font-weight:<?php echo $row['you'] ? '700' : '500'; ?>;"><?php echo htmlspecialchars($row['label']); ?></span>
+					<span style="color:#8a8ea3;"><?php echo ($row['share'] === null) ? '&mdash;' : intval($row['share']) . '%'; ?></span>
+				</div>
+				<div style="background:#eef0f5; border-radius:6px; height:10px; overflow:hidden;">
+					<div style="height:100%; width:<?php echo intval($row['share'] ?? 0); ?>%; background:<?php echo $row['you'] ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#c3c6d4'; ?>;"></div>
+				</div>
+			</div>
+		<?php } ?>
 	</div>
 <?php } ?>
+
+<div class="aiv-card">
+	<div class="aiv-card-header">
+		<div class="aiv-card-icon"><i class="fas fa-users"></i></div>
+		<div class="aiv-card-title"><?php echo $spTextAIV['Tracked Competitors'] ?? 'Tracked Competitors'?></div>
+	</div>
+
+	<?php if (empty($competitors)) { ?>
+		<?php echo showNoRecordsList(0); ?>
+	<?php } else { ?>
+		<table class="aiv-table">
+			<tr>
+				<th><?php echo $spText['common']['Name'] ?? 'Name'?></th>
+				<th><?php echo $spTextAIV['Domain'] ?? 'Domain'?></th>
+				<th style="width:10%"><?php echo $spText['common']['Action'] ?? 'Action'?></th>
+			</tr>
+			<?php foreach ($competitors as $competitor) { ?>
+				<tr>
+					<td><?php echo htmlspecialchars($competitor['name'])?></td>
+					<td><?php echo htmlspecialchars($competitor['domain'] ?? '')?></td>
+					<td>
+						<form id="aip_remove_competitor_form_<?php echo $competitor['id']?>" onsubmit="return false;">
+							<input type="hidden" name="sec" value="remove-competitor">
+							<input type="hidden" name="competitor_id" value="<?php echo $competitor['id']?>">
+						</form>
+						<a onclick="confirmSubmit('ai-perception.php', 'aip_remove_competitor_form_<?php echo $competitor['id']?>', 'content')" href="javascript:void(0);" class="btn btn-danger btn-sm">
+							<?php echo $spText['button']['Delete'] ?? 'Delete'?>
+						</a>
+					</td>
+				</tr>
+			<?php } ?>
+		</table>
+	<?php } ?>
+
+	<?php if (count($competitors) < $competitorCap) { ?>
+		<form id="aip_add_competitor_form" onsubmit="return false;" style="margin-top:15px;">
+			<input type="hidden" name="sec" value="add-competitor">
+			<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
+			<input type="text" name="name" class="form-control" style="max-width:220px;display:inline-block;" maxlength="150" placeholder="<?php echo $spTextAIV['Competitor name'] ?? 'Competitor name'?>">
+			<input type="text" name="domain" class="form-control" style="max-width:220px;display:inline-block;" maxlength="255" placeholder="<?php echo $spTextAIV['Domain (optional)'] ?? 'Domain (optional)'?>">
+			<a href="javascript:void(0);" onclick="scriptDoLoadPost('ai-perception.php', 'aip_add_competitor_form', 'content')" class="btn btn-primary">
+				<?php echo $spTextAIV['Add Competitor'] ?? 'Add Competitor'?>
+			</a>
+		</form>
+		<div style="font-size:12px; color:#8a8ea3; margin-top:8px;">
+			<?php echo $spTextAIV['Checked against your existing tracked prompts using the same responses already fetched - no extra AI calls.'] ?? 'Checked against your existing tracked prompts using the same responses already fetched - no extra AI calls.'?>
+		</div>
+	<?php } ?>
+</div>
 
 <div class="aiv-card">
 	<div class="aiv-card-header">
