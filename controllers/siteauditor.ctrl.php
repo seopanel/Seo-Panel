@@ -484,14 +484,14 @@ class SiteAuditorController extends Controller{
 	        $this->db->query($sql);
 	        
 	        
-    	    // delete all pages found in reports
-    		$sql = "select id from auditorreports where project_id=$projectId";
-    		$repList = $this->db->select($sql);		
-    		foreach ($repList as $repInfo) {
-    		    // delete all links under this page
-	            $sql = "delete from auditorpagelinks where report_id=".$repInfo['id'];
-	            $this->db->query($sql);    
-    		}
+    	    // delete all links under every page found in this project's
+    	    // reports - bug fix: this was previously one DELETE round trip
+    	    // per report row (a project with hundreds/thousands of crawled
+    	    // pages issued that many separate queries on every recheck);
+    	    // a single DELETE...WHERE IN(subquery) does the same thing in
+    	    // one query
+    		$sql = "delete from auditorpagelinks where report_id in (select id from auditorreports where project_id=$projectId)";
+    		$this->db->query($sql);
 	        
 	        
 	    }    
