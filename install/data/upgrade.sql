@@ -1054,3 +1054,15 @@ ALTER TABLE `searchresultdetails` ADD KEY `searchresult_id` (`searchresult_id`);
 ALTER TABLE `websites` ADD UNIQUE KEY `url` (`url`);
 ALTER TABLE `users` ADD UNIQUE KEY `username` (`username`);
 ALTER TABLE `users` ADD UNIQUE KEY `email` (`email`);
+
+-- Performance fix: same shape as the website_id/result_date composite
+-- indexes above, for 4 more ever-growing per-check-history tables that
+-- were missed in that pass - every report/graph view for these tools
+-- queries by website_id (or its equivalent FK) filtered/grouped by date,
+-- and dirsubmitinfo had no secondary index at all (full table scan on
+-- every directory-submission status check and per-directory lookup).
+ALTER TABLE `saturationresults` ADD KEY `website_id_result_date` (`website_id`,`result_date`);
+ALTER TABLE `review_link_results` ADD KEY `review_link_id_report_date` (`review_link_id`,`report_date`);
+ALTER TABLE `social_media_link_results` ADD KEY `sm_link_id_report_date` (`sm_link_id`,`report_date`);
+ALTER TABLE `website_search_analytics` ADD KEY `website_id_report_date` (`website_id`,`report_date`);
+ALTER TABLE `dirsubmitinfo` ADD KEY `website_id_directory_id` (`website_id`,`directory_id`);

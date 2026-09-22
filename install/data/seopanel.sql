@@ -659,7 +659,8 @@ CREATE TABLE IF NOT EXISTS `dirsubmitinfo` (
   `status` tinyint(1) NOT NULL DEFAULT '0',
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `submit_time` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `website_id_directory_id` (`website_id`,`directory_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `di_directory_meta` (
@@ -850,7 +851,8 @@ CREATE TABLE IF NOT EXISTS `review_link_results` (
   `rating` float NOT NULL DEFAULT '0',
   `report_date` date NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `review_link_rel` (`review_link_id`)
+  KEY `review_link_rel` (`review_link_id`),
+  KEY `review_link_id_report_date` (`review_link_id`,`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `dfs_tasks` (
@@ -1203,7 +1205,8 @@ CREATE TABLE IF NOT EXISTS `saturationresults` (
   `result_time` int(11) NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `searchengines` (
@@ -1431,7 +1434,8 @@ CREATE TABLE IF NOT EXISTS `social_media_link_results` (
   `followers` int(11) NOT NULL DEFAULT '0',
   `report_date` date NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `social_media_link_rel` (`sm_link_id`)
+  KEY `social_media_link_rel` (`sm_link_id`),
+  KEY `sm_link_id_report_date` (`sm_link_id`,`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `sp_recommendations` (
@@ -1758,7 +1762,8 @@ CREATE TABLE IF NOT EXISTS `website_search_analytics` (
   `report_date` date NOT NULL,
   `source` enum('google','yahoo','bing','baidu','yandex') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'google',
   PRIMARY KEY (`id`),
-  KEY `website_id` (`website_id`)
+  KEY `website_id` (`website_id`),
+  KEY `website_id_report_date` (`website_id`,`report_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 
