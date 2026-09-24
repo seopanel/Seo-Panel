@@ -3444,3 +3444,49 @@ a.btn, a.btn:hover {
         white-space: nowrap;
     }
 }
+
+/* === Top navbar hamburger menu: floating dropdown on mobile, not an
+   expanding panel that pushes content down ===
+   Bootstrap's default .navbar-collapse expands in normal document flow
+   (block-level, pushes everything below it further down the page) -
+   on a phone that meant tapping the hamburger shoved the #main_dashboard_nav
+   tabs and all page content down by the height of the whole menu. Anchors
+   it instead as a small floating card in the top-right corner (under the
+   hamburger button itself), overlaying the page instead of displacing it -
+   the standard mobile "kebab menu" pattern. Targets both .collapsing (the
+   mid-animation state) and .show (fully open) so the whole open/close
+   transition happens in the floating position, not a page-push that then
+   snaps into a corner once the animation finishes. */
+@media screen and (max-width: 767px) {
+    .navbar.navbar-expand-md {
+        position: relative;
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing {
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        left: auto;
+        width: 250px;
+        max-width: calc(100vw - 24px);
+        max-height: 80vh;
+        overflow-y: auto;
+        background: #1a1e24;
+        border-radius: 10px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        padding: 10px 14px 14px;
+        z-index: 1050;
+        flex-basis: auto;
+        flex-grow: 0;
+        align-items: stretch;
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
