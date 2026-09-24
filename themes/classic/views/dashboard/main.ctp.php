@@ -167,29 +167,10 @@
 	}
 	.sp-dashboard .nav-tabs .nav-item { flex: 0 0 auto; }
 
-	/* Website/Period filter bar: a plain <table> squeezes selects into
-	   narrow table cells on a phone - stack it into a clean vertical
-	   form instead. Scoped to #dashboard_form specifically (table.search
-	   is used for filter bars across many other pages that aren't in
-	   scope here). */
-	#dashboard_form table.search,
-	#dashboard_form table.search tbody,
-	#dashboard_form table.search tr {
-		display: block;
-		width: 100%;
-	}
-	#dashboard_form table.search th,
-	#dashboard_form table.search td {
-		display: block;
-		width: 100%;
-		text-align: left;
-		padding: 4px 0;
-	}
-	#dashboard_form table.search th.pl-4 { padding-left: 0; margin-top: 6px; }
-	#dashboard_form table.search select,
-	#dashboard_form table.search .btn {
-		width: 100%;
-	}
+	/* Website/Period filter bar: now handled by the sitewide
+	   table.search mobile rule in screen.css (originally added here
+	   dashboard-local, then generalized since the same cramped-cell
+	   problem exists on the ~80 other pages using table.search). */
 }
 </style>
 

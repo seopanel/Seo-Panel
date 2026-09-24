@@ -26,5 +26,31 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "url": "./dashboard.php",
+      "icons": [{ "src": "images/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Keywords",
+      "short_name": "Keywords",
+      "url": "./keywords.php",
+      "icons": [{ "src": "images/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Rank Checker",
+      "short_name": "Rank Checker",
+      "url": "./rank.php",
+      "icons": [{ "src": "images/pwa-icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Site Auditor",
+      "short_name": "Site Auditor",
+      "url": "./siteauditor.php",
+      "icons": [{ "src": "images/pwa-icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }

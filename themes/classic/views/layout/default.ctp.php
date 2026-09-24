@@ -119,7 +119,67 @@
             ?>
     	</div>
     </nav>
-    	
+
+    <!-- PWA install prompt - Chrome/Edge/Android only (beforeinstallprompt
+         has no Safari/iOS equivalent, so this simply never shows there).
+         Hidden by default; JS below reveals it only when the browser
+         actually offers an install, the user hasn't dismissed it before,
+         and the app isn't already running installed (standalone). -->
+    <div id="sp-pwa-install-banner">
+        <div class="sp-pwa-install-content">
+            <img src="<?php echo SP_IMGPATH?>/pwa-icon-192.png" alt="" class="sp-pwa-install-icon">
+            <div class="sp-pwa-install-text">
+                <strong>Install SEO Panel</strong>
+                <p>Add it to your home screen for quick, full-screen access.</p>
+            </div>
+            <div class="sp-pwa-install-buttons">
+                <button type="button" class="btn btn-sm btn-light" id="sp-pwa-install-btn">Install</button>
+                <button type="button" class="sp-pwa-install-dismiss" id="sp-pwa-install-dismiss-btn" aria-label="Dismiss">&times;</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var deferredInstallPrompt = null;
+        var banner = document.getElementById('sp-pwa-install-banner');
+        var installBtn = document.getElementById('sp-pwa-install-btn');
+        var dismissBtn = document.getElementById('sp-pwa-install-dismiss-btn');
+
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            if (!banner) return;
+
+            var dismissed = false;
+            try { dismissed = localStorage.getItem('sp_pwa_install_dismissed') === '1'; } catch (err) {}
+            var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+            if (dismissed || standalone) return;
+
+            banner.style.display = 'block';
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', function() {
+                if (banner) banner.style.display = 'none';
+                if (!deferredInstallPrompt) return;
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.then(function() { deferredInstallPrompt = null; });
+            });
+        }
+
+        if (dismissBtn) {
+            dismissBtn.addEventListener('click', function() {
+                if (banner) banner.style.display = 'none';
+                try { localStorage.setItem('sp_pwa_install_dismissed', '1'); } catch (err) {}
+            });
+        }
+
+        window.addEventListener('appinstalled', function() {
+            if (banner) banner.style.display = 'none';
+        });
+    })();
+    </script>
+
     <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
     <?php
     // show initial setup wizard for logged-in users who haven't completed or dismissed it
