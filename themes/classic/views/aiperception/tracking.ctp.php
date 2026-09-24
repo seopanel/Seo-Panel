@@ -150,6 +150,17 @@
 							<td>
 								<?php if (!empty($result['mentioned'])) { ?>
 									<span class="badge badge-success py-1 px-2 text-light"><?php echo $spTextAIV['Mentioned'] ?? 'Mentioned'?></span>
+									<?php
+									$sentimentIcons = [
+										'positive' => ['icon' => 'fa-thumbs-up', 'color' => '#28a745', 'label' => $spTextAIV['Positive'] ?? 'Positive'],
+										'neutral'  => ['icon' => 'fa-minus', 'color' => '#8a8ea3', 'label' => $spTextAIV['Neutral'] ?? 'Neutral'],
+										'negative' => ['icon' => 'fa-thumbs-down', 'color' => '#dc3545', 'label' => $spTextAIV['Negative'] ?? 'Negative'],
+									];
+									$sentimentInfo = $sentimentIcons[$result['sentiment'] ?? ''] ?? null;
+									?>
+									<?php if (!empty($sentimentInfo)) { ?>
+										<i class="fas <?php echo $sentimentInfo['icon']?>" style="color:<?php echo $sentimentInfo['color']?>; margin-left:6px;" title="<?php echo htmlspecialchars($sentimentInfo['label'])?>"></i>
+									<?php } ?>
 								<?php } else { ?>
 									<span class="badge badge-secondary py-1 px-2 text-light"><?php echo $spTextAIV['Not mentioned'] ?? 'Not mentioned'?></span>
 								<?php } ?>

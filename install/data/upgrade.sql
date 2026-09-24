@@ -1147,3 +1147,7 @@ CREATE TABLE IF NOT EXISTS `schema_markup` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `website_schema_type` (`website_id`,`schema_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- AI Perception Check: mention sentiment - see
+-- AiPerceptionController::__classifySentiment().
+ALTER TABLE `llm_perception_results` ADD COLUMN `sentiment` varchar(10) DEFAULT NULL COMMENT 'positive/neutral/negative; NULL when not mentioned or the check errored';

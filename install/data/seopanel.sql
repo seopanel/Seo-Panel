@@ -1173,6 +1173,7 @@ CREATE TABLE IF NOT EXISTS `llm_perception_results` (
   `checked_date` date NOT NULL,
   `response_text` text,
   `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `sentiment` varchar(10) DEFAULT NULL COMMENT 'positive/neutral/negative; NULL when not mentioned or the check errored',
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)

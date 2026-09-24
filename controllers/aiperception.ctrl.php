@@ -36,6 +36,17 @@ class AiPerceptionController extends Controller {
 	// MAX_PROMPTS_PER_WEBSITE.
 	const MAX_COMPETITORS_PER_WEBSITE = 5;
 
+	// Mention sentiment: a simple, explainable keyword-proximity heuristic
+	// (not NLP) applied to the text immediately around a confirmed mention -
+	// same "directional signal, not a scientific measurement" spirit as
+	// __isMentioned() itself.
+	// deliberately no plural/inflected forms that are pure superstrings of
+	// a shorter entry already in the same list (e.g. "issue"/"issues") -
+	// matching is substring-based, so keeping both would double-count a
+	// single occurrence
+	const SENTIMENT_POSITIVE_WORDS = ['excellent', 'great', 'best', 'recommend', 'trusted', 'reliable', 'leading', 'popular', 'solid', 'impressive', 'reputable', 'effective', 'helpful', 'top-rated', 'high-quality', 'well-known', 'favorite', 'favourite', 'go-to', 'love', 'outstanding', 'praised'];
+	const SENTIMENT_NEGATIVE_WORDS = ['avoid', 'poor', 'bad', 'scam', 'complaint', 'unreliable', 'untrustworthy', 'issue', 'problem', 'concern', 'warning', 'risky', 'outdated', 'discontinued', 'defunct', 'disappointing', 'overpriced', 'clunky', 'buggy', 'unfortunately', 'criticized'];
+
 	// func to list this user's configured providers (never returns the raw key)
 	function __getUserProviders($userId) {
 		$userId = intval($userId);
@@ -325,7 +336,7 @@ class AiPerceptionController extends Controller {
 		$prompts = $this->db->select("SELECT id, prompt_text FROM llm_perception_prompts WHERE website_id=$websiteId AND status=1 ORDER BY id");
 		foreach ($prompts as &$prompt) {
 			$prompt['results'] = $this->db->select(
-				"SELECT r.provider, r.checked_date, r.mentioned FROM llm_perception_results r
+				"SELECT r.provider, r.checked_date, r.mentioned, r.sentiment FROM llm_perception_results r
 				 WHERE r.prompt_id={$prompt['id']} AND r.checked_date = (
 					 SELECT MAX(r2.checked_date) FROM llm_perception_results r2
 					 WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
@@ -376,6 +387,44 @@ class AiPerceptionController extends Controller {
 		}
 
 		return false;
+	}
+
+	// func to classify the sentiment of a CONFIRMED mention by scanning a
+	// window of text around wherever the domain/name actually matched, so
+	// sentiment words elsewhere in a long multi-topic response aren't
+	// wrongly attributed to this mention. Returns null (not 'neutral')
+	// when the website isn't actually mentioned or the response is
+	// empty/an error - sentiment is deliberately UNSET in that case so it's
+	// never confused with a genuinely neutral mention.
+	function __classifySentiment($responseText, $website) {
+		if (empty($responseText)) return null;
+		if (!$this->__isMentioned($responseText, $website)) return null;
+
+		$haystack = mb_strtolower($responseText);
+
+		$domain = !empty($website['url']) ? preg_replace('#^https?://(www\.)?#i', '', rtrim($website['url'], '/')) : '';
+		$domain = mb_strtolower(preg_replace('#/.*$#', '', $domain));
+		$name = mb_strtolower(trim($website['name'] ?? ''));
+
+		$pos = false;
+		if (!empty($domain)) $pos = mb_strpos($haystack, $domain);
+		if ($pos === false && !empty($name) && mb_strlen($name) >= 3) $pos = mb_strpos($haystack, $name);
+		if ($pos === false) return 'neutral'; // __isMentioned() confirmed a match but re-locating it here failed - degrade to neutral rather than guessing
+
+		$window = mb_substr($haystack, max(0, $pos - 150), 300);
+
+		$positiveHits = 0;
+		foreach (self::SENTIMENT_POSITIVE_WORDS as $word) {
+			if (mb_strpos($window, $word) !== false) $positiveHits++;
+		}
+		$negativeHits = 0;
+		foreach (self::SENTIMENT_NEGATIVE_WORDS as $word) {
+			if (mb_strpos($window, $word) !== false) $negativeHits++;
+		}
+
+		if ($positiveHits > $negativeHits) return 'positive';
+		if ($negativeHits > $positiveHits) return 'negative';
+		return 'neutral';
 	}
 
 	/*
@@ -434,12 +483,14 @@ class AiPerceptionController extends Controller {
 				$checksRun++;
 
 				$mentioned = !empty($result['ok']) ? $this->__isMentioned($result['text'], $website) : false;
+				$sentiment = $mentioned ? $this->__classifySentiment($result['text'], $website) : null;
 				$this->dbHelper->insertRow('llm_perception_results', [
 					'prompt_id|int'   => intval($prompt['id']),
 					'provider'        => $provider,
 					'checked_date'    => date('Y-m-d'),
 					'response_text'   => !empty($result['ok']) ? $result['text'] : ('ERROR: ' . ($result['error'] ?? 'unknown')),
 					'mentioned|int'   => $mentioned ? 1 : 0,
+					'sentiment'       => $sentiment,
 					'created_at'      => 'NOW()',
 				]);
 
