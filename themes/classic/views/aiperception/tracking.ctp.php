@@ -193,8 +193,62 @@
 				<?php echo $spTextAIV['Add Prompt'] ?? 'Add Prompt'?>
 			</a>
 		</form>
+
+		<?php $trackingConfiguredProviders = array_column($providers, 'provider'); ?>
+		<?php if (!empty($trackingConfiguredProviders)) { ?>
+			<div style="margin-top:12px;">
+				<span style="font-size:12px; color:#8a8ea3;"><?php echo $spTextAIV["Not sure what to track? Let AI suggest prompts:"] ?? "Not sure what to track? Let AI suggest prompts:"?></span><br>
+				<?php
+				$trackingProviderLabels = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)'];
+				foreach ($trackingConfiguredProviders as $tp) {
+				?>
+					<button type="button" class="btn btn-secondary btn-sm" style="margin-top:6px;margin-right:6px;" onclick="aipSuggestPrompts('<?php echo $tp?>')">
+						<i class="fas fa-lightbulb"></i> <?php echo htmlspecialchars($trackingProviderLabels[$tp] ?? $tp)?>
+					</button>
+				<?php } ?>
+			</div>
+			<div id="aip_suggestions" style="margin-top:10px;"></div>
+		<?php } ?>
 	<?php } ?>
 </div>
+
+<script>
+function aipSuggestPrompts(provider) {
+	var websiteId = <?php echo intval($websiteId)?>;
+	var box = document.getElementById('aip_suggestions');
+	box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Asking...'] ?? 'Asking...'?>';
+
+	fetch('ai-perception.php?sec=suggest-prompts&website_id=' + encodeURIComponent(websiteId) + '&provider=' + encodeURIComponent(provider), { credentials: 'same-origin' })
+		.then(function(res) { return res.json(); })
+		.then(function(data) {
+			if (!data.ok) {
+				box.innerHTML = '<span class="text-danger">' + (data.error || 'Request failed') + '</span>';
+				return;
+			}
+			if (!data.suggestions || !data.suggestions.length) {
+				box.innerHTML = '<span class="text-muted"><?php echo $spTextAIV['No suggestions returned - try a different provider.'] ?? 'No suggestions returned - try a different provider.'?></span>';
+				return;
+			}
+			var html = '';
+			data.suggestions.forEach(function(s) {
+				html += '<div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; border:1px solid #eef0f5; border-radius:6px; margin-bottom:6px;">'
+					+ '<span style="font-size:13px;">' + s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>'
+					+ '<a href="javascript:void(0);" class="btn btn-primary btn-sm" onclick="aipAddSuggestedPrompt(this)" data-prompt="' + encodeURIComponent(s) + '"><i class="fas fa-plus"></i></a>'
+					+ '</div>';
+			});
+			box.innerHTML = html;
+		})
+		.catch(function() {
+			box.innerHTML = '<span class="text-danger"><?php echo $spTextAIV['Request failed'] ?? 'Request failed.'?></span>';
+		});
+}
+
+function aipAddSuggestedPrompt(el) {
+	var text = decodeURIComponent(el.getAttribute('data-prompt'));
+	document.querySelector('#aip_add_prompt_form input[name="prompt_text"]').value = text;
+	scriptDoLoadPost('ai-perception.php', 'aip_add_prompt_form', 'content');
+}
+</script>
 
 <?php if (empty($providers)) { ?>
 	<div class="aiv-note aiv-note-warn">

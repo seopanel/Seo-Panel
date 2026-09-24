@@ -47,6 +47,12 @@ class AiPerceptionController extends Controller {
 	const SENTIMENT_POSITIVE_WORDS = ['excellent', 'great', 'best', 'recommend', 'trusted', 'reliable', 'leading', 'popular', 'solid', 'impressive', 'reputable', 'effective', 'helpful', 'top-rated', 'high-quality', 'well-known', 'favorite', 'favourite', 'go-to', 'love', 'outstanding', 'praised'];
 	const SENTIMENT_NEGATIVE_WORDS = ['avoid', 'poor', 'bad', 'scam', 'complaint', 'unreliable', 'untrustworthy', 'issue', 'problem', 'concern', 'warning', 'risky', 'outdated', 'discontinued', 'defunct', 'disappointing', 'overpriced', 'clunky', 'buggy', 'unfortunately', 'criticized'];
 
+	// Prompt suggestions: how many candidate prompts to ask for per
+	// request - solves the "I don't know what to type" cold start for
+	// addPrompt(), which otherwise requires the customer to invent
+	// realistic buyer-intent prompts from scratch.
+	const PROMPT_SUGGESTIONS_PER_REQUEST = 8;
+
 	// func to list this user's configured providers (never returns the raw key)
 	function __getUserProviders($userId) {
 		$userId = intval($userId);
@@ -583,6 +589,107 @@ class AiPerceptionController extends Controller {
 
 		$result['provider'] = $provider;
 		echo json_encode($result);
+	}
+
+	/*
+	 * AJAX action: ask the caller's configured provider to suggest
+	 * realistic buyer-intent prompts worth tracking for one of the
+	 * caller's own websites - same ownership/rate-limit/provider-
+	 * allowlist shape as askAboutWebsite(), since this is also a real
+	 * third-party API call spending the customer's own money. Returns
+	 * candidate strings only; adding one is still a separate, explicit
+	 * addPrompt() call the caller already has - this endpoint never
+	 * mutates anything itself.
+	 */
+	function suggestPrompts($info) {
+		header('Content-Type: application/json');
+		$userId = isLoggedIn();
+		$websiteId = intval($info['website_id'] ?? 0);
+		$provider = trim($info['provider'] ?? '');
+
+		if (!in_array($provider, self::ALLOWED_PROVIDERS, true)) {
+			echo json_encode(['ok' => false, 'error' => 'Unknown provider']);
+			return;
+		}
+
+		$websiteController = new WebsiteController();
+		$ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+		if (empty($websiteId) || (!isAdmin() && !in_array($websiteId, $ownedIds))) {
+			echo json_encode(['ok' => false, 'error' => 'Access denied']);
+			return;
+		}
+
+		if (!$this->__checkPerceptionRateLimit($userId)) {
+			echo json_encode(['ok' => false, 'error' => 'Too many AI Perception checks - please wait a moment and try again.']);
+			return;
+		}
+
+		$apiKey = $this->__getApiKey($userId, $provider);
+		if (empty($apiKey)) {
+			echo json_encode(['ok' => false, 'error' => 'No API key configured for this provider']);
+			return;
+		}
+
+		$prompt = $this->__buildSuggestPromptsRequest($websiteId);
+
+		switch ($provider) {
+			case 'openai':
+				$result = $this->__callOpenAI($apiKey, $prompt);
+				break;
+			case 'anthropic':
+				$result = $this->__callAnthropic($apiKey, $prompt);
+				break;
+			case 'google':
+				$result = $this->__callGoogleGemini($apiKey, $prompt);
+				break;
+		}
+
+		if (empty($result['ok'])) {
+			echo json_encode(['ok' => false, 'error' => $result['error'] ?? 'Could not reach provider']);
+			return;
+		}
+
+		echo json_encode(['ok' => true, 'suggestions' => $this->__parsePromptSuggestions($result['text']), 'provider' => $provider]);
+	}
+
+	// func to build the prompt-suggestion request text, grounded in
+	// whatever the site already has (name/url/description, plus up to 10
+	// of its own already-tracked SEO keywords for extra relevance) - pure
+	// function apart from the two reads, no mutation, easy to unit test
+	function __buildSuggestPromptsRequest($websiteId) {
+		$websiteId = intval($websiteId);
+		$website = $this->dbHelper->getRow('websites', "id=$websiteId");
+		$domain = !empty($website['url']) ? preg_replace('#^https?://(www\.)?#i', '', rtrim($website['url'], '/')) : '';
+		$name = !empty($website['name']) ? $website['name'] : $domain;
+		$description = trim($website['description'] ?? '');
+
+		$keywordNames = array_column($this->db->select("SELECT name FROM keywords WHERE website_id=$websiteId AND status=1 ORDER BY id LIMIT 10"), 'name');
+
+		return "A business named \"$name\" ($domain)"
+			. (!empty($description) ? ", described as: \"" . mb_substr($description, 0, 300) . "\"" : '')
+			. (!empty($keywordNames) ? ". It tracks these SEO keywords: " . implode(', ', $keywordNames) : '')
+			. ". Generate " . self::PROMPT_SUGGESTIONS_PER_REQUEST . " realistic, specific questions or requests a potential customer might type into an AI assistant like ChatGPT, Claude, or Perplexity when looking for a product or service like this one - natural buyer-intent questions (for example: \"what's the best CRM for a 10-person sales team\"), not generic keyword phrases. "
+			. "Return ONLY the questions, one per line, no numbering, no quotes, no extra commentary.";
+	}
+
+	// func to parse a raw LLM completion into a clean list of candidate
+	// prompt strings - defensive against numbering ("1. ", "- ", "* "),
+	// wrapping quotes, and blank/commentary lines, since providers don't
+	// reliably honor "no numbering, no commentary" instructions. Pure
+	// function, no DB/session dependency, easy to unit test directly.
+	function __parsePromptSuggestions($text) {
+		$lines = preg_split('/\r?\n/', trim((string) $text));
+		$suggestions = [];
+		foreach ($lines as $line) {
+			$line = trim($line);
+			if ($line === '') continue;
+			$line = preg_replace('/^(\d+[.):]|[-*\x{2022}])\s*/u', '', $line);
+			$line = trim($line, "\"'\xe2\x80\x9c\xe2\x80\x9d ");
+			if ($line === '') continue;
+			$suggestions[] = mb_substr($line, 0, 500);
+			if (count($suggestions) >= self::PROMPT_SUGGESTIONS_PER_REQUEST) break;
+		}
+		return $suggestions;
 	}
 
 	// func to call OpenAI's Chat Completions API - never throws, every
