@@ -3419,3 +3419,28 @@ a.btn, a.btn:hover {
         display: none;
     }
 }
+
+/* === #main_dashboard_nav mobile: horizontal scroll instead of wrap ===
+   The 11-item dashboard section switcher (Overview/Reports/Website/
+   Keywords/Analytics/Search Console/Site Auditor/Social Media/Reviews/
+   Directory Submission/AI Insights, see user/userhome.ctp.php) is the
+   first thing a logged-in user sees - .nav-tabs wraps it to ~4 cramped
+   rows on a phone, eating a large chunk of the screen before any real
+   content appears. Same horizontal-scroll fix already used for the
+   dashboard's own keyword-distribution tabs, applied here too, so a
+   phone gets one swipeable row instead. */
+@media screen and (max-width: 767px) {
+    #main_dashboard_nav {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    #main_dashboard_nav .nav-item {
+        flex: 0 0 auto;
+    }
+    #main_dashboard_nav .nav-link {
+        padding: 8px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+}
