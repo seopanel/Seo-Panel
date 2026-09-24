@@ -117,6 +117,80 @@
 }
 
 .sp-dashboard .section-gap { margin-bottom: 1.75rem !important; }
+
+/* ============================================================
+   Mobile / PWA refinements - the sections above already collapse to
+   full-width single-column stacking below Bootstrap's md breakpoint
+   (its grid classes are md-and-up only), which works but wastes the
+   screen on a phone: up to 6 stat tiles become 6 huge full-width rows,
+   the Website/Period filter squeezes selects into cramped table cells,
+   and the 5-tab keyword distribution nav wraps to 2-3 lines. Fixes
+   below are mobile-only and touch no desktop layout.
+   ============================================================ */
+@media (max-width: 767px) {
+	/* 2-column stat tile grid instead of one full-width tile per row -
+	   .stat-tile-row marks specifically the 3 rows of renderStatTile()
+	   calls (Website/AI Visibility/Keyword Statistics), not every .row
+	   on the page (the pie-chart/table widget rows below are correctly
+	   left as full-width single-column stacks). */
+	.sp-dashboard .stat-tile-row { display: flex; flex-wrap: wrap; }
+	.sp-dashboard .stat-tile-row > div[class*="col-md-"] {
+		width: 50%;
+		flex: 0 0 50%;
+		max-width: 50%;
+		padding-left: 8px;
+		padding-right: 8px;
+		margin-bottom: 1.1rem;
+	}
+	/* a lone trailing tile in an odd-count row (5 tiles: 2+2+1) spans
+	   the full width instead of leaving empty space beside it */
+	.sp-dashboard .stat-tile-row > div[class*="col-md-"]:last-child:nth-child(odd) {
+		width: 100%;
+		flex-basis: 100%;
+		max-width: 100%;
+	}
+	.sp-dashboard .stat-tile-row .stat-value { font-size: 1.6rem; }
+
+	/* tighter card padding - desktop-sized 1.5rem eats a lot of a
+	   360-400px-wide screen */
+	.sp-dashboard .card-body { padding: 1rem; }
+	.sp-dashboard .card-header-gradient-blue { padding: 0.7rem 1rem !important; }
+	.sp-dashboard .card-header-gradient-blue h4 { font-size: 0.88rem !important; }
+
+	/* distribution tabs scroll horizontally instead of wrapping to
+	   2-3 cramped lines - a single swipeable row reads much cleaner */
+	.sp-dashboard .nav-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		white-space: nowrap;
+	}
+	.sp-dashboard .nav-tabs .nav-item { flex: 0 0 auto; }
+
+	/* Website/Period filter bar: a plain <table> squeezes selects into
+	   narrow table cells on a phone - stack it into a clean vertical
+	   form instead. Scoped to #dashboard_form specifically (table.search
+	   is used for filter bars across many other pages that aren't in
+	   scope here). */
+	#dashboard_form table.search,
+	#dashboard_form table.search tbody,
+	#dashboard_form table.search tr {
+		display: block;
+		width: 100%;
+	}
+	#dashboard_form table.search th,
+	#dashboard_form table.search td {
+		display: block;
+		width: 100%;
+		text-align: left;
+		padding: 4px 0;
+	}
+	#dashboard_form table.search th.pl-4 { padding-left: 0; margin-top: 6px; }
+	#dashboard_form table.search select,
+	#dashboard_form table.search .btn {
+		width: 100%;
+	}
+}
 </style>
 
 <form id='dashboard_form' method="post">
@@ -189,7 +263,7 @@ if (!function_exists('renderStatTile')) {
 					<h4><i class="fas fa-globe"></i> <?php echo $spTextHome['Website Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-tile-row">
 						<div class="col-md-2">
 							<?php
 							$da = floatval($websiteStats['domain_authority']);
@@ -270,7 +344,7 @@ if (!function_exists('renderStatTile')) {
 					</div>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-tile-row">
 						<div class="col-md-3">
 							<?php renderStatTile('AI Overview Keywords', 'Keywords with a recorded Google AI Overview check', $aioMeasured, 'secondary'); ?>
 						</div>
@@ -301,7 +375,7 @@ if (!function_exists('renderStatTile')) {
 					<h4><i class="fas fa-key"></i> <?php echo $spTextDashboard['Keyword Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-tile-row">
 						<div class="col-md-2">
 							<?php renderStatTile($spText['common']['Total'] . ' ' . $spText['common']['Keywords'], null, $keywordStats['total'], 'primary', null, $keywordComparison['total'] ?? null); ?>
 						</div>
