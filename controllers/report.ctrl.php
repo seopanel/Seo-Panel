@@ -1106,6 +1106,7 @@ class ReportController extends Controller {
 		    'social-media-reports' => $this->spTextTools['Social Media Report Summary'],
 		    'analytics-reports' => $this->spTextTools['Website Analytics Summary'],
 		    'review-reports' => $this->spTextTools['Review Report Summary'],
+		    'ai-visibility-reports' => $this->spTextTools['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary',
 		);
 		
 		$searchInfo['report_type'] = htmlentities($searchInfo['report_type'], ENT_QUOTES);
@@ -1409,7 +1410,7 @@ class ReportController extends Controller {
 		}
 		
 		# website search report section
-		if (empty($searchInfo['report_type']) || in_array($searchInfo['report_type'], array('review-reports', 'social-media-reports', 'website-search-reports', 'keyword-search-reports', 'sitemap-reports', 'analytics-reports')) ) {
+		if (empty($searchInfo['report_type']) || in_array($searchInfo['report_type'], array('review-reports', 'social-media-reports', 'website-search-reports', 'keyword-search-reports', 'sitemap-reports', 'analytics-reports', 'ai-visibility-reports')) ) {
 		    include_once(SP_CTRLPATH."/analytics.ctrl.php");
 			$webMasterCtrler = new WebMasterController();
 			$socialMediaCtrler = New SocialMediaController();
@@ -1474,13 +1475,30 @@ class ReportController extends Controller {
 				$reviewCtrler->spTextTools = $this->spTextTools;
 				$reviewReport = $reviewCtrler->viewReportSummary($filterList, true, $cronUserId);
 			}
-			
+
+			// if AI Visibility reports - previously AI Visibility data
+			// only ever appeared on its own dashboard, never in the
+			// branded/exportable report agencies already send clients
+			// for rank/backlink/analytics data
+			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'ai-visibility-reports')) {
+				include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+				$aivCtrler = new AIVisibilityController();
+				$aivCtrler->set('spTextTools', $this->spTextTools);
+				$aivCtrler->spTextTools = $this->spTextTools;
+				$aivCtrler->spTextAIV = $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']);
+				$aivCtrler->set('spTextAIV', $aivCtrler->spTextAIV);
+				$filterList['from_time'] = $fromTimeShort;
+				$filterList['to_time'] = $toTimeShort;
+				$aiVisibilityReport = $aivCtrler->viewReportSummary($filterList, true, $cronUserId);
+			}
+
 			if ($exportVersion) {
 				$exportContent .= $websiteSearchReport;
 				$exportContent .= $keywordSearchReport;
 				$exportContent .= $analyticsReport;
 				$exportContent .= $socialMediaReport;
 				$exportContent .= $reviewReport;
+				$exportContent .= $aiVisibilityReport;
 			} else {
 				$this->set('websiteSearchReport', $websiteSearchReport);
 				$this->set('keywordSearchReport', $keywordSearchReport);
@@ -1488,6 +1506,7 @@ class ReportController extends Controller {
 				$this->set('socialMediaReport', $socialMediaReport);
 				$this->set('reviewReport', $reviewReport);
 				$this->set('analyticsReport', $analyticsReport);
+				$this->set('aiVisibilityReport', $aiVisibilityReport);
 			}
 			
 		}

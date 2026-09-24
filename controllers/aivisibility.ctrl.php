@@ -150,6 +150,94 @@ class AIVisibilityController extends Controller {
 		$this->render('aivisibility/overview');
 	}
 
+	/*
+	 * Embeds AI Visibility (the score + its components, and AI Referral
+	 * ROI) into the existing white-label/branded Overall Report
+	 * (ReportController::showOverallReportSummary(), rendered at
+	 * archive.php) - same $searchInfo/$summaryPage/$cronUserId shape and
+	 * export/pdf/print branching every other section's own
+	 * viewReportSummary() already follows (see SocialMediaController's
+	 * for the canonical version). Previously AI Visibility data only
+	 * ever appeared on its own dashboard, never in the branded reports
+	 * agencies already send clients for rank/backlink/analytics data.
+	 */
+	function viewReportSummary($searchInfo=[], $summaryPage=false, $cronUserId=false) {
+		$userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
+		$this->set('summaryPage', $summaryPage);
+
+		$exportVersion = false;
+		switch ($searchInfo['doc_type'] ?? '') {
+			case "export":
+				$exportVersion = true;
+				$exportContent = "";
+				break;
+			case "pdf":
+				$this->set('pdfVersion', true);
+				break;
+			case "print":
+				$this->set('printVersion', true);
+				break;
+		}
+
+		$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+
+		$websiteController = new WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		$websiteId = intval($searchInfo['website_id'] ?? 0);
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = 0; // same "fall back to all of my websites" IDOR-safe pattern every other report section already uses
+		}
+		$this->set('websiteId', $websiteId);
+
+		$targetWebsites = !empty($websiteId)
+			? array_filter($websiteList, function($w) use ($websiteId) { return $w['id'] == $websiteId; })
+			: $websiteList;
+
+		$summaryByWebsite = [];
+		foreach ($targetWebsites as $w) {
+			$summaryByWebsite[$w['id']] = [
+				'name' => $w['name'],
+				'score' => $this->__getAiVisibilityScore($w['id'], $fromTime, $toTime),
+				'roi' => $this->__getAiReferralRoi($w['id'], $fromTime, $toTime),
+			];
+		}
+		$this->set('summaryByWebsite', $summaryByWebsite);
+
+		if ($exportVersion) {
+			$reportHeading = ($this->spTextAIV['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary') . "($fromTime - $toTime)";
+			$exportContent .= createExportContent(['', $reportHeading, '']);
+			$exportContent .= createExportContent([]);
+			$exportContent .= createExportContent(['Website', 'AI Visibility Score', 'AI Referral Sessions', 'AI Referral Conversions']);
+			foreach ($summaryByWebsite as $summary) {
+				$exportContent .= createExportContent([
+					$summary['name'],
+					$summary['score']['overall'] !== null ? $summary['score']['overall'] . '%' : 'n/a',
+					$summary['roi']['sessions'] !== null ? $summary['roi']['sessions'] : 'not connected',
+					$summary['roi']['conversions'] !== null ? $summary['roi']['conversions'] : 'not connected',
+				]);
+			}
+
+			if ($summaryPage) {
+				return $exportContent;
+			}
+			exportToCsv('ai_visibility_report_summary', $exportContent);
+		} else {
+			if ($summaryPage) {
+				return $this->getViewContent('aivisibility/report_summary');
+			}
+			if (($searchInfo['doc_type'] ?? '') == 'pdf') {
+				exportToPdf($this->getViewContent('aivisibility/report_summary'), "ai_visibility_report_summary_$fromTime-$toTime.pdf");
+			} else {
+				$this->render('aivisibility/report_summary');
+			}
+		}
+	}
+
 	// func to merge ai_referrals + ai_bot_hits totals per platform for one
 	// date range - shared by showOverview()'s on-screen table and
 	// exportOverviewCsv(), so the export always matches what's on screen.
