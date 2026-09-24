@@ -228,6 +228,15 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$controller->refreshAllLlmPerceptionTracking();
 	echo "Refreshed AI Perception tracking for websites with tracked prompts (at most once per " . AiPerceptionController::TRACKING_INTERVAL_DAYS . " days per prompt/provider)\n";
 
+	// AI Perception alerts (at most once/day): your own share-of-voice
+	// dropping since the previous tracking cycle, a tracked competitor's
+	// share now exceeding yours, and any prompt/provider whose mention
+	// sentiment flipped negative since its previous check
+	include_once(SP_CTRLPATH."/aiperception.ctrl.php");
+	$aipCtrler = new AiPerceptionController();
+	$aipCtrler->checkPerceptionAnomalies();
+	echo "Checked AI Perception tracking for share-of-voice/competitor/sentiment anomalies (once per day)\n";
+
 	$controller->finishRunLog('completed');
 	$controller->releaseSchedulerLock();
 }

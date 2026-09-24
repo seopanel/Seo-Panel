@@ -53,6 +53,14 @@ class AiPerceptionController extends Controller {
 	// realistic buyer-intent prompts from scratch.
 	const PROMPT_SUGGESTIONS_PER_REQUEST = 8;
 
+	// AI Perception alerts: minimum percentage-POINT drop in share of
+	// voice (a 0-100% ratio, not a raw count) between the current and
+	// previous tracking cycle to trigger an alert - a percentage-point
+	// swing is the natural, explainable unit for a ratio, unlike
+	// AIVisibilityController::ANOMALY_THRESHOLD_PCT's relative-percent-
+	// change (appropriate there because it compares raw hit counts).
+	const SOV_DROP_THRESHOLD_POINTS = 25;
+
 	// func to list this user's configured providers (never returns the raw key)
 	function __getUserProviders($userId) {
 		$userId = intval($userId);
@@ -371,6 +379,34 @@ class AiPerceptionController extends Controller {
 		return round(($mentioned / count($rows)) * 100);
 	}
 
+	// func to compute share of voice as of the PREVIOUS tracking cycle -
+	// same shape as __getShareOfVoice() but keyed to each (prompt,
+	// provider)'s second-most-recent checked_date instead of its latest,
+	// so the two can be compared to detect a drop. Returns null when
+	// there's no prior cycle yet (a website's very first tracking run),
+	// same honesty pattern as __getShareOfVoice() returning null instead
+	// of a fabricated 0.
+	function __getPreviousShareOfVoice($websiteId) {
+		$websiteId = intval($websiteId);
+		if (empty($websiteId)) return null;
+		$sql = "SELECT r.mentioned FROM llm_perception_results r
+				JOIN llm_perception_prompts p ON p.id = r.prompt_id
+				WHERE p.website_id=$websiteId AND p.status=1
+				AND r.checked_date = (
+					SELECT r2.checked_date FROM llm_perception_results r2
+					WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
+					AND r2.checked_date < (
+						SELECT MAX(r3.checked_date) FROM llm_perception_results r3
+						WHERE r3.prompt_id = r.prompt_id AND r3.provider = r.provider
+					)
+					ORDER BY r2.checked_date DESC LIMIT 1
+				)";
+		$rows = $this->db->select($sql);
+		if (empty($rows)) return null;
+		$mentioned = count(array_filter($rows, function($r) { return !empty($r['mentioned']); }));
+		return round(($mentioned / count($rows)) * 100);
+	}
+
 	// func to decide whether an LLM's free-text response counts as
 	// "mentioning" the tracked website - a simple, explainable heuristic
 	// (case-insensitive substring match on the bare domain or the site
@@ -517,6 +553,133 @@ class AiPerceptionController extends Controller {
 		}
 
 		return $checksRun;
+	}
+
+	/*
+	 * Daily-gated alert sweep for AI Perception Check - three checks that
+	 * didn't exist before this feature had any alerting at all: your own
+	 * share-of-voice dropping since the previous tracking cycle, a
+	 * tracked competitor's share now exceeding yours, and any (prompt,
+	 * provider) whose mention sentiment flipped negative since its
+	 * previous check. Mirrors AIVisibilityController::
+	 * checkTrafficAnomalies()'s exact shape: once/day via
+	 * InformationController's dedupe, one Throwable per website must
+	 * never abort the rest, createAlert() itself dedupes exact repeats
+	 * same-day. Called unconditionally from cron.php's tail.
+	 */
+	function checkPerceptionAnomalies() {
+		include_once(SP_CTRLPATH . "/information.ctrl.php");
+		$infoCtrler = new InformationController();
+		if (!empty($infoCtrler->__getTodayInformation('ai_perception_anomaly_check'))) {
+			return; // already checked today
+		}
+
+		$websiteIds = array_column($this->db->select("SELECT DISTINCT website_id FROM llm_perception_prompts WHERE status=1"), 'website_id');
+		foreach ($websiteIds as $websiteId) {
+			$websiteId = intval($websiteId);
+			try {
+				$this->__checkShareOfVoiceDrop($websiteId);
+				$this->__checkCompetitorOvertake($websiteId);
+				$this->__checkSentimentDecline($websiteId);
+			} catch (Throwable $e) {
+				error_log("SEO Panel: checkPerceptionAnomalies() failed for website $websiteId: " . $e->getMessage());
+				continue; // one website's check failing must not affect the rest
+			}
+		}
+
+		$infoCtrler->updateTodayInformation('1', 'ai_perception_anomaly_check');
+	}
+
+	// func to alert when this website's own share of voice dropped by at
+	// least SOV_DROP_THRESHOLD_POINTS percentage points since the
+	// previous tracking cycle - no-ops silently until there are at least
+	// two cycles of data to compare.
+	function __checkShareOfVoiceDrop($websiteId) {
+		$website = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		if (empty($website['user_id'])) return;
+
+		$current = $this->__getShareOfVoice($websiteId);
+		$previous = $this->__getPreviousShareOfVoice($websiteId);
+		if ($current === null || $previous === null) return;
+
+		$dropPoints = $previous - $current;
+		if ($dropPoints < self::SOV_DROP_THRESHOLD_POINTS) return;
+
+		include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+		$alertCtrl = new AlertController();
+		$alertCtrl->createAlert([
+			'alert_subject' => 'AI mention share of voice dropped',
+			'alert_message' => ($website['url'] ?? 'Your website') . " AI Perception share of voice dropped $dropPoints points this tracking cycle ($previous% -> $current%).",
+			'alert_category' => 'reports',
+			'alert_url' => SP_WEBPATH . "/ai-perception.php?sec=tracking&website_id=" . intval($websiteId),
+		], $website['user_id']);
+	}
+
+	// func to alert when a tracked competitor's CURRENT share of voice
+	// now exceeds this website's own - a snapshot check (not a
+	// transition), run once/day, so a persisting overtake alerts at most
+	// once per day rather than spamming.
+	function __checkCompetitorOvertake($websiteId) {
+		$website = $this->dbHelper->getRow('websites', "id=" . intval($websiteId));
+		if (empty($website['user_id'])) return;
+
+		$yourShare = $this->__getShareOfVoice($websiteId);
+		if ($yourShare === null) return;
+
+		$competitorShares = $this->__getCompetitorShareOfVoice($websiteId);
+		if (empty($competitorShares)) return;
+
+		include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+		$alertCtrl = new AlertController();
+		foreach ($competitorShares as $competitor) {
+			if ($competitor['share'] === null || $competitor['share'] <= $yourShare) continue;
+
+			$alertCtrl->createAlert([
+				'alert_subject' => 'A tracked competitor overtook you in AI mentions',
+				'alert_message' => htmlspecialchars($competitor['name']) . ' now has a higher AI Perception share of voice than ' . ($website['url'] ?? 'your website') . ' (' . $competitor['share'] . '% vs ' . $yourShare . '%).',
+				'alert_category' => 'reports',
+				'alert_url' => SP_WEBPATH . "/ai-perception.php?sec=tracking&website_id=" . intval($websiteId),
+			], $website['user_id']);
+		}
+	}
+
+	// func to alert on any (prompt, provider) whose mention sentiment is
+	// negative on the LATEST check where it was NOT negative (or had no
+	// prior check at all) - a targeted "what changed" signal rather than
+	// a vague aggregate percentage, since sample sizes here are typically
+	// small (at most MAX_PROMPTS_PER_WEBSITE prompts).
+	function __checkSentimentDecline($websiteId) {
+		$websiteId = intval($websiteId);
+		$website = $this->dbHelper->getRow('websites', "id=$websiteId");
+		if (empty($website['user_id'])) return;
+
+		$sql = "SELECT r.provider, r.prompt_id, p.prompt_text,
+					(SELECT r2.sentiment FROM llm_perception_results r2
+					 WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
+					 AND r2.checked_date < r.checked_date
+					 ORDER BY r2.checked_date DESC LIMIT 1) AS previous_sentiment
+				FROM llm_perception_results r
+				JOIN llm_perception_prompts p ON p.id = r.prompt_id
+				WHERE p.website_id=$websiteId AND p.status=1 AND r.sentiment='negative'
+				AND r.checked_date = (
+					SELECT MAX(r3.checked_date) FROM llm_perception_results r3
+					WHERE r3.prompt_id = r.prompt_id AND r3.provider = r.provider
+				)";
+		$rows = $this->db->select($sql);
+		if (empty($rows)) return;
+
+		include_once(SP_CTRLPATH . "/alerts.ctrl.php");
+		$alertCtrl = new AlertController();
+		foreach ($rows as $row) {
+			if ($row['previous_sentiment'] === 'negative') continue; // already negative last time - not a NEW decline
+
+			$alertCtrl->createAlert([
+				'alert_subject' => 'Negative AI sentiment detected',
+				'alert_message' => ($website['url'] ?? 'Your website') . ' - a ' . htmlspecialchars($row['provider']) . ' response about the prompt "' . htmlspecialchars(mb_substr($row['prompt_text'], 0, 100)) . '" turned negative.',
+				'alert_category' => 'reports',
+				'alert_url' => SP_WEBPATH . "/ai-perception.php?sec=tracking&website_id=$websiteId",
+			], $website['user_id']);
+		}
 	}
 
 	// func to check+increment this user's AI Perception call bucket, reusing
