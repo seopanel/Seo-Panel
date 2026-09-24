@@ -145,6 +145,7 @@ class AIVisibilityController extends Controller {
 
 		$this->set('aioSummary', $this->__getAioSummaryForWebsite($websiteId));
 		$this->set('aiVisibilityScore', $this->__getAiVisibilityScore($websiteId, $fromTime, $toTime));
+		$this->set('aiReferralRoi', $this->__getAiReferralRoi($websiteId, $fromTime, $toTime));
 
 		$this->render('aivisibility/overview');
 	}
@@ -1153,6 +1154,78 @@ PHP;
 		$overall = !empty($measuredScores) ? (int) round(array_sum($measuredScores) / count($measuredScores)) : null;
 
 		return ['overall' => $overall, 'components' => $components];
+	}
+
+	/*
+	 * AI Referral ROI: connects AI referral traffic to actual conversions,
+	 * so the customer can justify the investment with real numbers rather
+	 * than just "visits from AI platforms". Reuses 100% existing data -
+	 * no new API calls, no new tables: website_analytics/analytic_sources
+	 * already hold a daily local cache of every GA4 sourceMedium's
+	 * sessions/goalCompletionsAll (AnalyticsController::
+	 * storeWebsiteAnalytics(), cron-driven), and ai_platforms already
+	 * holds the canonical hostname list. Distinguishes "GA4 not connected"
+	 * (configured=false) from "GA4 connected, zero AI traffic this period"
+	 * (configured=true, sessions=0) - same measured-vs-unmeasured honesty
+	 * pattern as __getAiVisibilityScore()'s components.
+	 */
+	function __getAiReferralRoi($websiteId, $fromTime, $toTime) {
+		$websiteId = intval($websiteId);
+		$website = $this->dbHelper->getRow('websites', "id=$websiteId");
+		if (empty($website['analytics_view_id'])) {
+			return ['configured' => false, 'sessions' => null, 'conversions' => null, 'conversionRate' => null, 'byPlatform' => []];
+		}
+
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		$aiHostnames = array_column($this->db->select("SELECT DISTINCT hostname FROM ai_platforms WHERE is_referral_source=1 AND is_active=1"), 'hostname');
+
+		$rows = $this->db->select(
+			"SELECT s.source_name, SUM(wa.sessions) AS sessions, SUM(wa.goalCompletionsAll) AS conversions
+			 FROM website_analytics wa
+			 JOIN analytic_sources s ON s.id = wa.source_id
+			 WHERE wa.website_id=$websiteId AND wa.report_date >= '$fromTimeSql' AND wa.report_date <= '$toTimeSql'
+			 GROUP BY s.source_name"
+		);
+
+		$totalSessions = 0;
+		$totalConversions = 0;
+		$byPlatform = [];
+		foreach ($rows as $row) {
+			$matchedHostname = $this->__matchAiHostname($row['source_name'], $aiHostnames);
+			if ($matchedHostname === null) continue;
+
+			$sessions = intval($row['sessions']);
+			$conversions = intval($row['conversions']);
+			$totalSessions += $sessions;
+			$totalConversions += $conversions;
+			$byPlatform[] = ['source' => $row['source_name'], 'hostname' => $matchedHostname, 'sessions' => $sessions, 'conversions' => $conversions];
+		}
+
+		return [
+			'configured' => true,
+			'sessions' => $totalSessions,
+			'conversions' => $totalConversions,
+			'conversionRate' => $totalSessions > 0 ? round(($totalConversions / $totalSessions) * 100, 1) : null,
+			'byPlatform' => $byPlatform,
+		];
+	}
+
+	// func to decide whether a GA4 sourceMedium string (e.g. "chatgpt.com /
+	// referral", or occasionally the bare hostname alone) originates from
+	// a known AI platform hostname - exact match or "hostname / <medium>",
+	// case-insensitive. Returns the matched hostname, or null. Pure
+	// function, no DB dependency, easy to unit test directly.
+	function __matchAiHostname($sourceName, $aiHostnames) {
+		$sourceNameLower = mb_strtolower(trim((string) $sourceName));
+		foreach ($aiHostnames as $hostname) {
+			$hostnameLower = mb_strtolower($hostname);
+			if ($sourceNameLower === $hostnameLower || mb_strpos($sourceNameLower, $hostnameLower . ' / ') === 0) {
+				return $hostname;
+			}
+		}
+		return null;
 	}
 
 	function showAIOverviewReport($info=[]) {

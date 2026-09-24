@@ -134,6 +134,57 @@
 	</div>
 <?php } ?>
 
+<?php if (!$aiReferralRoi['configured']) { ?>
+	<div class="aiv-note">
+		<i class="fas fa-chart-pie"></i>
+		<span>
+			<?php echo $spTextAIV['Want to see conversions from AI platforms, not just visits?'] ?? 'Want to see conversions from AI platforms, not just visits?'?>
+			<a href="<?php echo SP_WEBPATH?>/admin-panel.php?sec=connections"><?php echo $spTextAIV['Connect Google Analytics'] ?? 'Connect Google Analytics'?></a>
+		</span>
+	</div>
+<?php } else if ($aiReferralRoi['sessions'] > 0) { ?>
+	<div class="aiv-card">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-chart-pie"></i></div>
+			<div>
+				<div class="aiv-card-title"><?php echo $spTextAIV['AI Referral ROI'] ?? 'AI Referral ROI'?></div>
+			</div>
+		</div>
+		<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-bottom:16px;">
+			<div style="text-align:center;">
+				<div style="font-size:26px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo number_format($aiReferralRoi['sessions'])?></div>
+				<div style="font-size:12px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Sessions from AI Platforms'] ?? 'Sessions from AI Platforms'?></div>
+			</div>
+			<div style="text-align:center;">
+				<div style="font-size:26px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo number_format($aiReferralRoi['conversions'])?></div>
+				<div style="font-size:12px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Conversions from AI Platforms'] ?? 'Conversions from AI Platforms'?></div>
+			</div>
+			<div style="text-align:center;">
+				<div style="font-size:26px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo $aiReferralRoi['conversionRate'] !== null ? $aiReferralRoi['conversionRate'] . '%' : '&mdash;'?></div>
+				<div style="font-size:12px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Conversion Rate'] ?? 'Conversion Rate'?></div>
+			</div>
+		</div>
+		<?php if (!empty($aiReferralRoi['byPlatform'])) { ?>
+			<div style="overflow-x:auto;">
+			<table class="aiv-table">
+				<tr>
+					<th><?php echo $spTextAIV['Source'] ?? 'Source'?></th>
+					<th class="aiv-num"><?php echo $spTextAIV['Sessions'] ?? 'Sessions'?></th>
+					<th class="aiv-num"><?php echo $spTextAIV['Conversions'] ?? 'Conversions'?></th>
+				</tr>
+				<?php foreach ($aiReferralRoi['byPlatform'] as $row) { ?>
+					<tr>
+						<td><?php echo htmlspecialchars($row['source'])?></td>
+						<td class="aiv-num"><?php echo number_format($row['sessions'])?></td>
+						<td class="aiv-num"><?php echo number_format($row['conversions'])?></td>
+					</tr>
+				<?php } ?>
+			</table>
+			</div>
+		<?php } ?>
+	</div>
+<?php } ?>
+
 <div class="aiv-note">
 	<i class="fas fa-chart-line"></i>
 	<span>
