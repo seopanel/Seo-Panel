@@ -401,17 +401,26 @@ if (!function_exists('renderStatTile')) {
 									['Not Ranked', <?php echo $keywordDistribution['not_ranked']['count']?>]
 								]);
 
+								var chartDiv = document.getElementById('keyword_dist_chart');
 								var options = {
 									title: '<?php echo $spTextDashboard['Keywords by Ranking Position']?>',
 									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
 									pieHole: 0.4,
+									// Google Charts never redraws itself when its container's
+									// size changes later (a well-known limitation) - passing
+									// the CURRENT offsetWidth explicitly, re-read on every
+									// call, is what makes drawKeywordDistChart() safe to
+									// re-invoke on resize/orientationchange below, and also
+									// what stops it drawing too wide for a narrow mobile card
+									// on the very first draw.
+									width: chartDiv.offsetWidth,
 									height: 350,
 									colors: ['#0369a1', '#b45309', '#7c3aed', '#b91c1c', '#94a3b8'],
 									legend: { position: 'bottom', textStyle: { color: '#475569' } },
 									chartArea: { width: '90%', height: '75%' }
 								};
 
-								var chart = new google.visualization.PieChart(document.getElementById('keyword_dist_chart'));
+								var chart = new google.visualization.PieChart(chartDiv);
 								chart.draw(data, options);
 							}
 						</script>
@@ -659,9 +668,14 @@ if (!function_exists('renderStatTile')) {
 									?>
 								]);
 
+								var volatilityChartDiv = document.getElementById('volatility_chart');
 								var options = {
 									title: '<?php echo $spTextDashboard['Top 10 Most Volatile Keywords']?>',
 									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
+									// see drawKeywordDistChart()'s comment above - Google
+									// Charts needs the current width passed explicitly on
+									// every draw, including redraws
+									width: volatilityChartDiv.offsetWidth,
 									height: 350,
 									legend: { position: 'none' },
 									chartArea: { width: '70%', height: '70%' },
@@ -683,7 +697,7 @@ if (!function_exists('renderStatTile')) {
 									tooltip: { isHtml: true }
 								};
 
-								var chart = new google.visualization.BarChart(document.getElementById('volatility_chart'));
+								var chart = new google.visualization.BarChart(volatilityChartDiv);
 								chart.draw(data, options);
 							}
 						</script>
@@ -807,11 +821,16 @@ if (!function_exists('renderStatTile')) {
 									?>
 								]);
 
+								var rankingTrendsChartDiv = document.getElementById('ranking_trends_chart');
 								var options = {
 									title: '<?php echo $spTextKeyword["Keyword Ranking Trends"]?>',
 									titleTextStyle: { color: '#334155', fontSize: 14, bold: false },
 									curveType: 'function',
 									legend: { position: 'bottom', textStyle: { color: '#475569' } },
+									// see drawKeywordDistChart()'s comment above - Google
+									// Charts needs the current width passed explicitly on
+									// every draw, including redraws
+									width: rankingTrendsChartDiv.offsetWidth,
 									height: 400,
 									series: {
 										0: { targetAxisIndex: 0, color: '#0369a1' },
@@ -827,7 +846,7 @@ if (!function_exists('renderStatTile')) {
 									}
 								};
 
-								var chart = new google.visualization.LineChart(document.getElementById('ranking_trends_chart'));
+								var chart = new google.visualization.LineChart(rankingTrendsChartDiv);
 								chart.draw(data, options);
 							}
 						</script>
@@ -952,4 +971,27 @@ $(document).ready(function() {
 		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
 	}
 });
+</script>
+
+<script type="text/javascript">
+// Redraw the Google Charts on this page whenever the viewport actually
+// changes size (window resize, or a phone rotating) - Google Charts
+// never does this on its own, and each chart's own draw function
+// already reads its container's CURRENT offsetWidth fresh every time
+// it runs (see each drawXxxChart()'s own comment), so simply
+// re-invoking them here is enough to keep the chart matching its card
+// instead of staying sized for whatever width existed at first draw.
+// typeof-guarded since each chart's function only exists when that
+// section actually rendered data (conditionally, per-website).
+(function() {
+	var spDashboardChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spDashboardChartResizeTimer);
+		spDashboardChartResizeTimer = setTimeout(function() {
+			if (typeof drawKeywordDistChart === 'function') drawKeywordDistChart();
+			if (typeof drawVolatilityChart === 'function') drawVolatilityChart();
+			if (typeof drawRankingTrendsChart === 'function') drawRankingTrendsChart();
+		}, 200);
+	});
+})();
 </script>
