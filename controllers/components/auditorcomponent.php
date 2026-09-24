@@ -26,7 +26,11 @@ class AuditorComponent extends Controller{
     var $commentInfo = array(); // to store the details about the score of each page
 
     // Maximum possible score for a page (sum of all positive scoring factors)
-    var $maxScore = 40;
+    // 40 from the original checks + 5 from the AI-readiness checks added
+    // in countReportPageScore() (heading_structure_ok:2, has_faq_content:1,
+    // word_count:2) - keep this in sync with the sum of every check's own
+    // maximum positive score below.
+    var $maxScore = 45;
     
     // function to save report info
     function saveReportInfo($reportInfo, $action='create') {
@@ -112,6 +116,9 @@ class AuditorComponent extends Controller{
             $reportInfo['has_twitter_cards'] = isset($pageInfo['has_twitter_cards']) ? intval($pageInfo['has_twitter_cards']) : 0;
             $reportInfo['has_structured_data'] = isset($pageInfo['has_structured_data']) ? intval($pageInfo['has_structured_data']) : 0;
             $reportInfo['blocked_by_robots'] = isset($pageInfo['blocked_by_robots']) ? intval($pageInfo['blocked_by_robots']) : 0;
+            $reportInfo['heading_structure_ok'] = isset($pageInfo['heading_structure_ok']) ? intval($pageInfo['heading_structure_ok']) : 1;
+            $reportInfo['has_faq_content'] = isset($pageInfo['has_faq_content']) ? intval($pageInfo['has_faq_content']) : 0;
+            $reportInfo['word_count'] = isset($pageInfo['word_count']) ? intval($pageInfo['word_count']) : 0;
             $reportInfo['crawled'] = 1;
         
             //  pagerank and backlink check
@@ -454,6 +461,44 @@ class AuditorComponent extends Controller{
             $scoreInfo['blocked_by_robots'] = -5; // High penalty for blocked pages
             $msg = $spTextSA["The page is blocked by robots.txt - search engines cannot crawl this page"];
             $this->commentInfo['blocked_by_robots'] = formatErrorMsg($msg, 'error', '');
+        }
+
+        // Check heading structure - a single H1 (the page's primary topic)
+        // with content organized under H2 sections helps both classic SEO
+        // and AI "chunking" of the page into extractable passages.
+        if ($reportInfo['heading_structure_ok']) {
+            $scoreInfo['heading_structure_ok'] = 2;
+            $msg = $spTextSA['The page has a clear heading structure (one H1, organized H2 sections)'] ?? 'The page has a clear heading structure (one H1, organized H2 sections)';
+            $this->commentInfo['heading_structure_ok'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['heading_structure_ok'] = -1;
+            $msg = $spTextSA['The page is missing a clear heading structure - it should have exactly one H1 and at least one H2'] ?? 'The page is missing a clear heading structure - it should have exactly one H1 and at least one H2';
+            $this->commentInfo['heading_structure_ok'] = formatErrorMsg($msg, 'warning', '');
+        }
+
+        // Check for FAQ-style content (question-phrased headings) - a
+        // bonus only, not a penalty, since not every page needs FAQ
+        // content to be good content.
+        if ($reportInfo['has_faq_content']) {
+            $scoreInfo['has_faq_content'] = 1;
+            $msg = $spTextSA['The page has FAQ-style content that AI answer engines can extract directly'] ?? 'The page has FAQ-style content that AI answer engines can extract directly';
+            $this->commentInfo['has_faq_content'] = formatSuccessMsg($msg);
+        }
+
+        // Check content depth (word count) - thin pages give AI answer
+        // engines and search engines both little to extract or cite.
+        if ($reportInfo['word_count'] >= 300) {
+            $scoreInfo['word_count'] = 2;
+            $msg = $spTextSA['The page has substantial content depth'] ?? 'The page has substantial content depth';
+            $this->commentInfo['word_count'] = formatSuccessMsg($msg);
+        } else if ($reportInfo['word_count'] >= 150) {
+            $scoreInfo['word_count'] = 0;
+            $msg = $spTextSA['The page has moderate content depth'] ?? 'The page has moderate content depth';
+            $this->commentInfo['word_count'] = formatSuccessMsg($msg);
+        } else {
+            $scoreInfo['word_count'] = -2;
+            $msg = $spTextSA['The page has thin content - AI answer engines and search engines both favor pages with more substance'] ?? 'The page has thin content - AI answer engines and search engines both favor pages with more substance';
+            $this->commentInfo['word_count'] = formatErrorMsg($msg, 'warning', '');
         }
 
         return $scoreInfo;

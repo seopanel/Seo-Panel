@@ -1151,3 +1151,9 @@ CREATE TABLE IF NOT EXISTS `schema_markup` (
 -- AI Perception Check: mention sentiment - see
 -- AiPerceptionController::__classifySentiment().
 ALTER TABLE `llm_perception_results` ADD COLUMN `sentiment` varchar(10) DEFAULT NULL COMMENT 'positive/neutral/negative; NULL when not mentioned or the check errored';
+
+-- Site Auditor: AI-readiness checks - see
+-- WebsiteController::crawlMetaData()/AuditorComponent::countReportPageScore().
+ALTER TABLE `auditorreports` ADD COLUMN `heading_structure_ok` tinyint(1) NOT NULL DEFAULT '1';
+ALTER TABLE `auditorreports` ADD COLUMN `has_faq_content` tinyint(1) NOT NULL DEFAULT '0';
+ALTER TABLE `auditorreports` ADD COLUMN `word_count` int(11) NOT NULL DEFAULT '0';

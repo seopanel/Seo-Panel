@@ -790,6 +790,41 @@ class WebsiteController extends Controller{
 				}
 			}
 
+			// Check heading structure - AI answer engines and modern SEO
+			// both favor a single H1 (the page's primary topic) with
+			// content organized under H2 sections, which makes it easier
+			// to "chunk" into extractable passages. Not an attempt at full
+			// semantic nesting validation, just the two most impactful
+			// signals.
+			preg_match_all('/<h1[^>]*>.*?<\/h1>/si', $ret['page'], $h1Matches);
+			preg_match_all('/<h2[^>]*>.*?<\/h2>/si', $ret['page'], $h2Matches);
+			$metaInfo['heading_structure_ok'] = (count($h1Matches[0]) === 1 && count($h2Matches[0]) >= 1) ? 1 : 0;
+
+			// Check for FAQ-style content - headings phrased as questions
+			// are a strong, explainable signal that a page has directly-
+			// answerable content AI answer engines can lift verbatim,
+			// distinct from the FAQPage JSON-LD check above (a page can
+			// have Q&A-style headings without ever marking them up as
+			// schema).
+			preg_match_all('/<h[2-4][^>]*>(.*?)<\/h[2-4]>/si', $ret['page'], $headingMatches);
+			$questionHeadingCount = 0;
+			foreach ($headingMatches[1] as $headingText) {
+				if (mb_substr(trim(strip_tags($headingText)), -1) === '?') {
+					$questionHeadingCount++;
+				}
+			}
+			$metaInfo['has_faq_content'] = ($questionHeadingCount >= 2) ? 1 : 0;
+
+			// Check content depth (word count) - thin pages give AI answer
+			// engines (and search engines) little to extract or cite.
+			// Strips scripts/styles/tags first so markup and inline JS/CSS
+			// don't inflate the count.
+			$bodyText = preg_replace('/<script\b[^>]*>.*?<\/script>/si', ' ', $ret['page']);
+			$bodyText = preg_replace('/<style\b[^>]*>.*?<\/style>/si', ' ', $bodyText);
+			$bodyText = html_entity_decode(strip_tags($bodyText), ENT_QUOTES);
+			$bodyText = trim(preg_replace('/\s+/u', ' ', $bodyText));
+			$metaInfo['word_count'] = empty($bodyText) ? 0 : count(preg_split('/\s+/u', $bodyText));
+
 			// Check if page is blocked by robots.txt
 			$metaInfo['blocked_by_robots'] = Spider::isBlockedByRobotsTxt($websiteUrl, $websiteUrl);
 		}

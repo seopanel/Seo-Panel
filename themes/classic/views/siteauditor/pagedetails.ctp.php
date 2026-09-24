@@ -180,6 +180,10 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	background: #f8d7da;
 	color: #721c24;
 }
+.status-badge.warning {
+	background: #fff3cd;
+	color: #856404;
+}
 /* Round Score Gauge */
 .score-circle-container {
 	display: flex;
@@ -660,6 +664,40 @@ $dofollowCount = $totalLinks - $nofollowCount;
 							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
 						<?php } else { ?>
 							<span class="status-badge danger"><i class="fas fa-times"></i> Missing</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-heading"></i> <?php echo $spTextSA['Heading Structure'] ?? 'Heading Structure'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['heading_structure_ok']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Good</span>
+						<?php } else { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Needs Work</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-question-circle"></i> <?php echo $spTextSA['FAQ-Style Content'] ?? 'FAQ-Style Content'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['has_faq_content']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
+						<?php } else { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> None Detected</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-align-justify"></i> <?php echo $spTextSA['Content Depth'] ?? 'Content Depth'?></div>
+					<div class="detail-value">
+						<?php $wordCount = intval($reportInfo['word_count'] ?? 0); ?>
+						<span class="metric-value"><?php echo number_format($wordCount)?></span>
+						<?php if ($wordCount < 150) { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Thin</span>
+						<?php } else if ($wordCount < 300) { ?>
+							<span class="status-badge warning"><i class="fas fa-exclamation"></i> Moderate</span>
+						<?php } else { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Substantial</span>
 						<?php } ?>
 					</div>
 				</div>
