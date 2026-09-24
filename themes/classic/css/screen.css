@@ -3480,13 +3480,29 @@ a.btn, a.btn:hover {
         flex-grow: 0;
         align-items: stretch;
     }
+    /* display:block (not flex-direction:column) - the utility row's
+       <a>Help</a><span class="pipe"> | </span> pairs are separate flex
+       item SIBLINGS, not nested together, so a column flex container
+       stacked each link and its pipe onto its own line ("Help" / "|" /
+       "Support" / "|"). Block flow lets them wrap inline as plain text
+       instead, same as their pipe separators were designed for. The
+       language <select> still lands on its own row below regardless,
+       since Bootstrap's .form-control is already display:block;
+       width:100% on its own. */
     .navbar.navbar-expand-md .navbar-collapse.show form.form-inline,
     .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
+        display: block;
         margin-top: 8px;
         padding-top: 8px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline a,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline a {
+        display: inline;
+        color: #d7dbe0;
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline select,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline select {
+        margin-top: 8px;
     }
 }
