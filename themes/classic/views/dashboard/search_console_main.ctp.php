@@ -428,6 +428,16 @@ function drawAllCharts() {
 	drawPositionTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spSearchConsoleChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spSearchConsoleChartResizeTimer);
+		spSearchConsoleChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw clicks vs impressions pie chart
 function drawClicksImpressionsChart() {
 	<?php
@@ -443,6 +453,7 @@ function drawClicksImpressionsChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Click Distribution'] ?? 'Click Distribution'?>',
+		width: spChartWidth('clicks_impressions_chart'),
 		height: 300,
 		colors: ['#4285F4', '#EA4335'],
 		chartArea: { width: '90%', height: '80%' },
@@ -462,7 +473,7 @@ function drawCTRGaugeChart() {
 	]);
 
 	var options = {
-		width: '100%',
+		width: spChartWidth('ctr_gauge_chart'),
 		height: 300,
 		redFrom: 0, redTo: 2,
 		yellowFrom: 2, yellowTo: 5,
@@ -491,6 +502,7 @@ function drawSourceClicksChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks by Search Engine'] ?? 'Clicks by Search Engine'?>',
+		width: spChartWidth('source_clicks_chart'),
 		height: 300,
 		colors: [<?php
 			$colors = [];
@@ -525,6 +537,7 @@ function drawPerformanceTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks & Impressions Over Time'] ?? 'Clicks & Impressions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('performance_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853'],
 		legend: { position: 'bottom' },
@@ -569,6 +582,7 @@ function drawCTRTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['CTR Over Time'] ?? 'CTR Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('ctr_trends_chart'),
 		height: 350,
 		colors: ['#34A853'],
 		legend: { position: 'bottom' },
@@ -605,6 +619,7 @@ function drawPositionTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Position Over Time'] ?? 'Position Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('position_trends_chart'),
 		height: 350,
 		colors: ['#FBBC05'],
 		legend: { position: 'bottom' },

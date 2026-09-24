@@ -512,19 +512,35 @@ function openTab(tabName, dialog = false) {
 	$(dialogId + '#' + tabName + "Link").addClass('active');
 }
 
-$(function() {	
+$(function() {
 	// Submenu click function
 	$("#subui a").click(function () {
 	    // Remove active classes first
 	    $("#subui a").removeClass("menu_active");
 	    $("#subui li").removeClass("menu_active");
-	    
+
 	    // Add class to clicked <a> and its parent <li>
 	    $(this).addClass("menu_active");
 	    $(this).parent("li").addClass("menu_active");
-	    
+
 	    // Collapse the navbar (for mobile)
 	    $(".navbar-collapse").collapse("hide");
-	});	
+	});
 });
+
+// func to get a Google Chart container's current pixel width, for
+// passing as that chart's own explicit `width` option. Google Charts
+// never redraws itself when its container's size changes later (a
+// well-known limitation) and, left unset, its own auto-detected width
+// isn't reliable on every layout - passing this explicitly, re-read on
+// every draw call (including resize-triggered redraws), is what keeps
+// a chart correctly sized for its actual container instead of
+// overflowing it (which a card's own overflow:hidden then clips
+// instead of visibly shrinking). Returns undefined if the container
+// isn't in the DOM (e.g. its section didn't render for lack of data),
+// same as omitting the option entirely.
+function spChartWidth(containerId) {
+	var el = document.getElementById(containerId);
+	return el ? el.offsetWidth : undefined;
+}
 

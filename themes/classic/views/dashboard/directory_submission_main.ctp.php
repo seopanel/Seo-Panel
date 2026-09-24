@@ -334,6 +334,16 @@ function drawAllCharts() {
 	drawSubmissionTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spDirSubmissionChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spDirSubmissionChartResizeTimer);
+		spDirSubmissionChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw submission status pie chart (Approved vs Pending)
 function drawSubmissionStatusChart() {
 	var data = google.visualization.arrayToDataTable([
@@ -344,6 +354,7 @@ function drawSubmissionStatusChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Approved vs Pending'] ?? 'Approved vs Pending'?>',
+		width: spChartWidth('submission_status_chart'),
 		height: 300,
 		colors: ['#28a745', '#ffc107'],
 		chartArea: { width: '90%', height: '80%' },
@@ -363,7 +374,7 @@ function drawSuccessRateGauge() {
 	]);
 
 	var options = {
-		width: '100%',
+		width: spChartWidth('success_rate_gauge'),
 		height: 300,
 		redFrom: 0, redTo: 25,
 		yellowFrom: 25, yellowTo: 50,
@@ -386,6 +397,7 @@ function drawAllTimeStatusChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['All Time Status'] ?? 'All Time Status'?>',
+		width: spChartWidth('alltime_status_chart'),
 		height: 300,
 		colors: ['#28a745', '#ffc107'],
 		chartArea: { width: '90%', height: '80%' },
@@ -413,6 +425,7 @@ function drawSubmissionTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Submissions Over Time'] ?? 'Submissions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('submission_trends_chart'),
 		height: 400,
 		colors: ['#007bff', '#28a745', '#ffc107'],
 		legend: { position: 'bottom' },

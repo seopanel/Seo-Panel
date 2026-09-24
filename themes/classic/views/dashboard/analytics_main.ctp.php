@@ -487,6 +487,20 @@ function drawAllCharts() {
 	drawSourceDistributionChart();
 }
 
+// redraw on resize/orientationchange - Google Charts never does this on
+// its own, and each chart above now reads its container's CURRENT width
+// fresh via spChartWidth() every time it runs (see common.js), so simply
+// re-invoking drawAllCharts() here is enough to keep every chart on this
+// page matching its card instead of staying sized for whatever width
+// existed at first draw.
+(function() {
+	var spAnalyticsChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spAnalyticsChartResizeTimer);
+		spAnalyticsChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw user types pie chart (New vs Returning)
 function drawUserTypesChart() {
 	<?php
@@ -502,6 +516,7 @@ function drawUserTypesChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['New vs Returning Users'] ?? 'New vs Returning Users'?>',
+		width: spChartWidth('user_types_chart'),
 		height: 300,
 		colors: ['#34A853', '#4285F4'],
 		chartArea: { width: '90%', height: '80%' },
@@ -527,6 +542,7 @@ function drawEngagementChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Session Engagement'] ?? 'Session Engagement'?>',
+		width: spChartWidth('engagement_chart'),
 		height: 300,
 		colors: ['#34A853', '#EA4335'],
 		chartArea: { width: '90%', height: '80%' },
@@ -554,6 +570,7 @@ function drawSessionOverviewChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Goal Conversions'] ?? 'Goal Conversions'?>',
+		width: spChartWidth('session_overview_chart'),
 		height: 300,
 		colors: ['#FBBC05', '#4285F4'],
 		chartArea: { width: '90%', height: '80%' },
@@ -581,6 +598,7 @@ function drawTrafficTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Users & Sessions Over Time'] ?? 'Users & Sessions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('traffic_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853', '#17a2b8'],
 		legend: { position: 'bottom' },
@@ -617,6 +635,7 @@ function drawBounceRateChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Bounce Rate Over Time'] ?? 'Bounce Rate Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('bounce_rate_chart'),
 		height: 350,
 		colors: ['#ffc107'],
 		legend: { position: 'bottom' },
@@ -654,6 +673,7 @@ function drawSessionDurationChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Session Duration Over Time'] ?? 'Session Duration Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('session_duration_chart'),
 		height: 350,
 		colors: ['#6c757d'],
 		legend: { position: 'bottom' },
@@ -689,6 +709,7 @@ function drawSourceDistributionChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Traffic by Source'] ?? 'Traffic by Source'?>',
+		width: spChartWidth('source_distribution_chart'),
 		height: 350,
 		chartArea: { width: '90%', height: '80%' },
 		legend: { position: 'right' },
