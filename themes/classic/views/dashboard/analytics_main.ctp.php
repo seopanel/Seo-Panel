@@ -43,7 +43,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Website Analytics Overview'] ?? 'Website Analytics Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-users text-primary"></i> <?php echo $spTextHome['Users'] ?? 'Users'?>

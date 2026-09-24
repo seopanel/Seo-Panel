@@ -79,7 +79,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Website Analytics'] ?? 'Website Analytics'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<?php echo $spText['common']['Domain Authority']?>

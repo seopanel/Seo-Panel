@@ -58,7 +58,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextReview['Review Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-4 text-center">
 							<h6 class="mb-3"><?php echo $spTextReview['Total Review Links']?></h6>
 							<h3>

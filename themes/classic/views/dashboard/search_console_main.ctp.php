@@ -43,7 +43,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Search Console Overview'] ?? 'Search Console Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-3 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-mouse-pointer text-primary"></i> <?php echo $spTextHome['Total Clicks'] ?? 'Total Clicks'?>

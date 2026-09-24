@@ -203,6 +203,7 @@
                 <?php echo $meta['label'] ?>
                 <span class="rec-count-badge"><?php echo $count ?></span>
             </div>
+            <div class="table-responsive">
             <table class="rec-table">
                 <thead>
                     <tr>
@@ -269,6 +270,7 @@
                     <?php } ?>
                 </tbody>
             </table>
+            </div>
         </div>
         <?php } ?>
 

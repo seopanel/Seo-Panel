@@ -3506,3 +3506,41 @@ a.btn, a.btn:hover {
         margin-top: 8px;
     }
 }
+
+/* === .stat-row: 2-column stat grid on mobile (sitewide) ===
+   The "Overview Stats" card on 6 dashboard tabs (Analytics, Social
+   Media, Search Console, Reviews, Directory Submission, Website
+   Analytics) all share the same pattern: a .row of col-md-X cells,
+   each an <h6> label + a big colored badge number - identical problem
+   to the main dashboard's stat-tile-row (fixed earlier), just a
+   different visual style (badge numbers instead of stat-tile
+   typography) and not scoped to .sp-dashboard since these 6 pages
+   don't use that class. Same fix: 2 tiles per row instead of one
+   full-width tile per row, with a lone odd tile spanning full width. */
+@media screen and (max-width: 767px) {
+    .stat-row { display: flex; flex-wrap: wrap; }
+    .stat-row > div[class*="col-md-"] {
+        width: 50%;
+        flex: 0 0 50%;
+        max-width: 50%;
+        padding-left: 8px;
+        padding-right: 8px;
+        margin-bottom: 1.1rem;
+    }
+    .stat-row > div[class*="col-md-"]:last-child:nth-child(odd) {
+        width: 100%;
+        flex-basis: 100%;
+        max-width: 100%;
+    }
+    /* the badge numbers use an inline style="font-size: 1.5rem" (or
+       1.4rem), which otherwise always wins over an external stylesheet
+       regardless of selector specificity - !important is the only way
+       to shrink them to fit a 50%-width tile on a phone */
+    .stat-row h3 .badge {
+        font-size: 1.15rem !important;
+        padding: 0.35rem 0.7rem !important;
+    }
+    .stat-row h6 {
+        font-size: 0.8rem;
+    }
+}
