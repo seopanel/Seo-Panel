@@ -207,10 +207,18 @@
     	</div>
     </div>
     
-    <div class="container-fluid fixed-bottom <?php echo $siteNavFontClass?> <?php echo $siteFooterBgClass;?> center footer-sp">
+    <div class="container-fluid fixed-bottom <?php echo $siteNavFontClass?> <?php echo $siteFooterBgClass;?> center footer-sp d-none d-md-block">
     	<?php include_once(SP_VIEWPATH."/common/footer.ctp.php"); ?>
     </div>
-    
+
+    <?php
+    // mobile/PWA bottom tab bar - replaces the plain-text footer above on
+    // small viewports (see pwa_bottom_nav.ctp.php) - same $this->menu
+    // active-state switch main_menu.ctp.php above already relies on
+    // unconditionally, so no extra guard needed here either
+    include_once(SP_VIEWPATH."/menu/pwa_bottom_nav.ctp.php");
+    ?>
+
     <div id="tmp"><form name="tmp" id="tmp"></form></div>
     <div id="dialogContent" style="display:none;"></div>
     <?php
