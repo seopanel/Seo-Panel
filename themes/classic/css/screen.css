@@ -3420,28 +3420,59 @@ a.btn, a.btn:hover {
     }
 }
 
-/* === #main_dashboard_nav mobile: horizontal scroll instead of wrap ===
+/* === #main_dashboard_nav mobile: compact 3-column grid, not scroll ===
    The 11-item dashboard section switcher (Overview/Reports/Website/
    Keywords/Analytics/Search Console/Site Auditor/Social Media/Reviews/
    Directory Submission/AI Insights, see user/userhome.ctp.php) is the
-   first thing a logged-in user sees - .nav-tabs wraps it to ~4 cramped
-   rows on a phone, eating a large chunk of the screen before any real
-   content appears. Same horizontal-scroll fix already used for the
-   dashboard's own keyword-distribution tabs, applied here too, so a
-   phone gets one swipeable row instead. */
+   first thing a logged-in user sees. A horizontal-scroll row was tried
+   first (like the dashboard's own keyword-distribution tabs) but the
+   user found it looked bad in practice - swiping to discover items
+   isn't obvious, and it hides most of the tab bar behind the fold.
+   Replaced with a fixed 4-column grid instead: every item visible at
+   once as a small icon-over-label chip, 3 short rows total, no
+   scrolling or swiping needed. Each .nav-link's markup is
+   `<i class="fas ..."></i> <span class="nav-label">Label</span>` -
+   the label is wrapped in its own element (added in userhome.ctp.php)
+   so flex-direction:column can reliably stack icon above label;
+   relying on flex to lay out a bare icon element plus a raw sibling
+   text node is not consistent across browsers. */
 @media screen and (max-width: 767px) {
     #main_dashboard_nav {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        border-bottom: none;
     }
     #main_dashboard_nav .nav-item {
-        flex: 0 0 auto;
+        margin: 0;
     }
     #main_dashboard_nav .nav-link {
-        padding: 8px 14px;
-        font-size: 13px;
-        white-space: nowrap;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 100%;
+        padding: 8px 2px;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 8px;
+        background: rgba(0,0,0,0.02);
+        text-align: center;
+    }
+    #main_dashboard_nav .nav-link i {
+        font-size: 15px;
+        margin-right: 0;
+    }
+    #main_dashboard_nav .nav-link .nav-label {
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+    }
+    #main_dashboard_nav .nav-link.active {
+        background: #4a8fc7;
+        border-color: #4a8fc7;
+        color: #fff;
     }
 }
 
