@@ -171,6 +171,29 @@
 	   table.search mobile rule in screen.css (originally added here
 	   dashboard-local, then generalized since the same cramped-cell
 	   problem exists on the ~80 other pages using table.search). */
+
+	/* Card headers that pair a title with action buttons (e.g. the AI
+	   Visibility card's "Connect via MCP"/"Add to SEO Diary" buttons) -
+	   d-flex + justify-content-between crams both into one row with no
+	   wrap, so on a narrow phone the title wraps to 2 lines while the
+	   button group stays vertically centered against the whole header's
+	   new height, visually overlapping it. Stack title above buttons
+	   instead, full width, so nothing overlaps or gets cut off. */
+	.sp-dashboard .card-header.d-flex {
+		flex-direction: column;
+		align-items: flex-start !important;
+		gap: 10px;
+	}
+	.sp-dashboard .card-header.d-flex > div {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		width: 100%;
+	}
+	.sp-dashboard .card-header.d-flex > div .btn {
+		flex: 1 1 auto;
+		text-align: center;
+	}
 }
 </style>
 
