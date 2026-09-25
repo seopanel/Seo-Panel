@@ -10,7 +10,7 @@
     		<div class="home-hero-eyebrow"><?php echo $spTextGuest['Hero eyebrow'] ?? 'Open source &middot; Self-hosted &middot; Built for the AI search era'?></div>
     		<h1 class="hero-title"><?php echo $spTextGuest['Hero title'] ?? 'The SEO &amp; AEO control room you actually own'?></h1>
     		<p class="hero-subtitle">
-    			<?php echo $spTextGuest['Hero subtitle v2'] ?? 'Twelve tools in one panel &mdash; rank tracking, site audits, backlinks, and a dedicated AI Visibility suite that tracks how you show up in Google AI Overviews, ChatGPT and other AI engines. All running on your own server, for as many websites as you manage.'?>
+    			<?php echo $spTextGuest['Hero subtitle v2'] ?? 'Twelve tools in one panel: rank tracking, site audits, backlinks, and a dedicated AI Visibility suite that tracks how you show up in Google AI Overviews, ChatGPT and other AI engines. All running on your own server, for as many websites as you manage.'?>
     		</p>
     		<div class="hero-actions">
     			<a href="login.php" class="btn btn-primary btn-lg">

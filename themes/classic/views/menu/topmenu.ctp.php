@@ -1,11 +1,20 @@
 <?php if ($userType == "guest") {?>
+	<!-- Twitter/Facebook widgets are third-party embeds (Twitter's JS
+	     replaces the <a> below with its own iframe at runtime, so this
+	     can only be hidden by class on a wrapper that survives that
+	     swap, never by styling the <a>/<iframe> themselves) - hidden on
+	     the mobile floating dropdown, where a wide, differently-styled
+	     pill button has no room to sit cleanly next to plain text links;
+	     still shown inline in the desktop navbar as before. -->
+	<span class="d-none d-md-inline-block">
 	<a href="<?php echo !empty($custSiteInfo['twitter_page_url']) ? $custSiteInfo['twitter_page_url'] : "https://twitter.com/seopanel"?>" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @seopanel</a>
 	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0];if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src="//platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
 	<!-- facebook like button -->
 	&nbsp;
 	<?php $fbPage = !empty($custSiteInfo['fb_page_url']) ? $custSiteInfo['fb_page_url'] : "https://www.facebook.com/seopanel/"?>
-	<iframe src="//www.facebook.com/plugins/like.php?href=<?php echo $fbPage?>&amp;send=false&amp;layout=button_count&amp;width=450&amp;show_faces=false&amp;action=like&amp;colorscheme=light&amp;font&amp;height=21&amp;appId=260885620597614" 
+	<iframe src="//www.facebook.com/plugins/like.php?href=<?php echo $fbPage?>&amp;send=false&amp;layout=button_count&amp;width=450&amp;show_faces=false&amp;action=like&amp;colorscheme=light&amp;font&amp;height=21&amp;appId=260885620597614"
 		scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:90px; height:21px;" allowTransparency="true"></iframe>
+	</span>
 <?php }?>
 <?php
 $menuInfo = getCustomizerMenu("top");
@@ -33,7 +42,7 @@ if (!empty($menuInfo['item_list'])) {
 	</a><span class="pipe"> | </span>
 	<a href="<?php echo !empty($custSiteInfo['support_url']) ? $custSiteInfo['support_url'] : SP_SUPPORT_LINK?>" target="_blank" rel="nofollow">
 		<?php echo $spText['common']['Support']?>
-	</a><span class="pipe"> | </span> 
+	</a>
 	<?php
 }
 ?>
