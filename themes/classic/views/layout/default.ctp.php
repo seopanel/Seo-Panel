@@ -120,17 +120,21 @@
     	</div>
     </nav>
 
-    <!-- PWA install prompt - Chrome/Edge/Android only (beforeinstallprompt
-         has no Safari/iOS equivalent, so this simply never shows there).
-         Hidden by default; JS below reveals it only when the browser
-         actually offers an install, the user hasn't dismissed it before,
-         and the app isn't already running installed (standalone). -->
+    <!-- PWA install prompt. Chrome/Edge/Android show this via
+         beforeinstallprompt, which has no Safari/iOS equivalent - iOS
+         Safari has no programmatic install API at all, so for that
+         platform the JS below instead swaps in manual "tap Share, then
+         Add to Home Screen" instructions and hides the Install button
+         (there's nothing to trigger). Hidden by default either way; JS
+         reveals it only when installable/iOS-Safari, not dismissed
+         before, and not already running installed (standalone). -->
     <div id="sp-pwa-install-banner">
         <div class="sp-pwa-install-content">
             <img src="<?php echo SP_IMGPATH?>/pwa-icon-192.png" alt="" class="sp-pwa-install-icon">
             <div class="sp-pwa-install-text">
                 <strong>Install SEO Panel</strong>
-                <p>Add it to your home screen for quick, full-screen access.</p>
+                <p id="sp-pwa-install-text-default">Add it to your home screen for quick, full-screen access.</p>
+                <p id="sp-pwa-install-text-ios" style="display:none;">Tap <i class="fas fa-share-square"></i> <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</p>
             </div>
             <div class="sp-pwa-install-buttons">
                 <button type="button" class="btn btn-sm btn-light" id="sp-pwa-install-btn">Install</button>
@@ -177,6 +181,30 @@
         window.addEventListener('appinstalled', function() {
             if (banner) banner.style.display = 'none';
         });
+
+        // iOS Safari has no beforeinstallprompt (or any programmatic
+        // install API) - the only way to install is the user manually
+        // tapping Share > Add to Home Screen, so show instructions for
+        // that instead of an Install button. Excludes Chrome/Firefox/Edge
+        // for iOS (CriOS/FxiOS/EdgiOS) since their share sheets differ
+        // from Safari's and don't offer this in the same way.
+        var ua = window.navigator.userAgent;
+        var isIos = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+        var isIosSafari = isIos && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+        if (isIosSafari && banner) {
+            var dismissed = false;
+            try { dismissed = localStorage.getItem('sp_pwa_install_dismissed') === '1'; } catch (err) {}
+            var standalone = window.navigator.standalone === true ||
+                (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+            if (!dismissed && !standalone) {
+                var defaultText = document.getElementById('sp-pwa-install-text-default');
+                var iosText = document.getElementById('sp-pwa-install-text-ios');
+                if (defaultText) defaultText.style.display = 'none';
+                if (iosText) iosText.style.display = 'block';
+                if (installBtn) installBtn.style.display = 'none';
+                banner.style.display = 'block';
+            }
+        }
     })();
     </script>
 
