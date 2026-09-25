@@ -2,7 +2,7 @@
 <?php echo showSectionHead($spTextAIV['AI Overview'] ?? 'AI Overview'); ?>
 
 <form id='search_form'>
-<table class="search" style="width: 60%">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
@@ -18,7 +18,7 @@
 
 <div id='subcontent'>
 
-<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;margin-bottom:24px;">
+<div class="aiv-stat-grid aiv-stat-grid-3">
 	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
 		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($summary['measured'])?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Measured Keywords'] ?? 'Measured Keywords'?></div>

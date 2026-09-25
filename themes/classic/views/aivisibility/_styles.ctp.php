@@ -250,4 +250,23 @@
 	background: #e05353;
 }
 .aiv-tab-panel[hidden] { display: none; }
+
+/* Stat-tile grids (score/summary numbers across overview.ctp.php and
+   aioverview.ctp.php) - was a hardcoded inline grid-template-columns:
+   repeat(3 or 4, 1fr) with no mobile handling at all, squeezing 3-4
+   tiles with 30px bold numbers into ~80-100px-wide columns on a phone.
+   Collapses to 2 columns under 768px - the same 2-per-row treatment
+   already used for the dashboard's own stat tiles elsewhere. */
+.aiv-stat-grid { display: grid; gap: 20px; margin-bottom: 24px; }
+.aiv-stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+.aiv-stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media screen and (max-width: 767px) {
+	.aiv-card { padding: 18px 16px; }
+	.aiv-stat-grid-3,
+	.aiv-stat-grid-4 {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 10px;
+	}
+}
 </style>

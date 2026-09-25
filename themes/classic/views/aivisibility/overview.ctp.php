@@ -61,7 +61,7 @@
 	</div>
 <?php } ?>
 
-<div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:20px;margin-bottom:24px;">
+<div class="aiv-stat-grid aiv-stat-grid-4">
 	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
 		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($referralTotal)?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Referral Clicks'] ?? 'AI Referral Clicks'?></div>
@@ -150,7 +150,7 @@
 				<div class="aiv-card-title"><?php echo $spTextAIV['AI Referral ROI'] ?? 'AI Referral ROI'?></div>
 			</div>
 		</div>
-		<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:16px;margin-bottom:16px;">
+		<div class="aiv-stat-grid aiv-stat-grid-3" style="gap:16px;margin-bottom:16px;">
 			<div style="text-align:center;">
 				<div style="font-size:26px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo number_format($aiReferralRoi['sessions'])?></div>
 				<div style="font-size:12px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Sessions from AI Platforms'] ?? 'Sessions from AI Platforms'?></div>

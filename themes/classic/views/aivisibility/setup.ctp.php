@@ -2,7 +2,7 @@
 <?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
 
 <form id='search_form'>
-<table class="search" style="width: 60%">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>

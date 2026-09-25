@@ -50,6 +50,7 @@
 			<div class="aiv-card-icon"><i class="fas fa-chart-pie"></i></div>
 			<div class="aiv-card-title"><?php echo $spTextAIV['Platform breakdown'] ?? 'Platform breakdown'?></div>
 		</div>
+		<div style="overflow-x:auto;">
 		<table class="aiv-table">
 			<tr>
 				<th><?php echo $spTextAIV['Platform'] ?? 'Platform'?></th>
@@ -68,6 +69,7 @@
 				<?php echo showNoRecordsList(0); ?>
 			<?php } ?>
 		</table>
+		</div>
 	</div>
 
 	<div class="aiv-card">
@@ -75,6 +77,7 @@
 			<div class="aiv-card-icon"><i class="fas fa-file-alt"></i></div>
 			<div class="aiv-card-title"><?php echo $spTextAIV['Top crawled pages'] ?? 'Top crawled pages'?></div>
 		</div>
+		<div style="overflow-x:auto;">
 		<table class="aiv-table">
 			<tr>
 				<th><?php echo $spTextAIV['Page'] ?? 'Page'?></th>
@@ -91,5 +94,6 @@
 				<?php echo showNoRecordsList(0); ?>
 			<?php } ?>
 		</table>
+		</div>
 	</div>
 </div>
