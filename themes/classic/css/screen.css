@@ -1091,6 +1091,7 @@ div.tab button.active {	background-color: #ccc;}
     border-top: 3px solid #4a8fc7;
     box-shadow: 0 -3px 16px rgba(0, 0, 0, 0.45);
     padding: 14px 20px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
 
 .sp-gdpr-content {
@@ -3267,6 +3268,22 @@ a.btn, a.btn:hover {
     margin-bottom: 10px;
 }
 
+/* === Safe-area insets (notch / Dynamic Island / status bar / home
+   indicator) - sitewide, unscoped ===
+   The viewport meta tag now includes viewport-fit=cover, so the page
+   extends edge-to-edge under the notch/status bar and home indicator
+   on notched phones (iOS Safari and standalone) instead of Safari's
+   default auto-inset layout. env(safe-area-inset-*) only resolves to
+   a non-zero value on a device that actually reports one - on every
+   other browser (desktop, non-notched phones) this is a harmless
+   no-op, so it needs no media-query scoping. The top navbar is in
+   normal document flow (not fixed), so it's the first thing that
+   would render under the notch/status bar without this - pushing the
+   whole page down by the inset clears it. */
+body {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
 /* === PWA mobile bottom tab bar (see menu/pwa_bottom_nav.ctp.php) ===
    Native-app-style navigation for small viewports / installed PWA use -
    hidden at md and up via the .d-md-none utility class on the <nav>
@@ -3318,7 +3335,7 @@ a.btn, a.btn:hover {
 
 @media screen and (max-width: 767px) {
     body {
-        padding-bottom: 64px;
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -3560,7 +3577,7 @@ a.btn, a.btn:hover {
 @media screen and (max-width: 767px) {
     #alert_noti_sec .dropdown-menu {
         position: fixed;
-        top: 62px;
+        top: calc(62px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
         width: auto;
