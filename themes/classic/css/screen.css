@@ -3330,13 +3330,19 @@ a.btn, a.btn:hover {
    instead, the same fix already applied dashboard-locally before this
    generalized it. Unscoped (not per-page) since the markup shape
    (<tr><th>label</th><td>field</td>...</tr>) is consistent everywhere
-   it is used. */
+   it is used.
+   width: 100% is !important because ~20 views (quick checkers, "generate
+   report" forms, etc.) set an inline style="width: 60%" or "80%" on this
+   same table to keep a short desktop form from stretching full-width -
+   an inline style always beats an external stylesheet rule regardless of
+   selector specificity, so without !important those forms stayed pinned
+   to 60/80% width on a phone too, cramping every stacked field inside. */
 @media screen and (max-width: 767px) {
     table.search,
     table.search tbody,
     table.search tr {
         display: block;
-        width: 100%;
+        width: 100% !important;
     }
     table.search th,
     table.search td {
