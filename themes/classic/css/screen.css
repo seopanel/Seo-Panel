@@ -2833,7 +2833,7 @@ a.btn, a.btn:hover {
 
 /* Hero Section */
 .home-hero {
-	background: linear-gradient(180deg, #1a1310 0%, #241a15 100%);
+	background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 50%, #4a8fc7 100%);
 	padding: 72px 40px 64px;
 	border-radius: 12px;
 	margin-bottom: 0;
@@ -2844,19 +2844,20 @@ a.btn, a.btn:hover {
 	font-weight: 700;
 	letter-spacing: 0.06em;
 	text-transform: uppercase;
-	color: #e8a87c;
+	color: #d6e4f5;
 	margin-bottom: 16px;
 }
 .hero-title {
-	color: #fbf5f0;
+	color: #ffffff;
 	font-size: 44px;
 	font-weight: 800;
 	line-height: 1.15;
 	margin: 0 auto 20px;
 	max-width: 780px;
+	text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 .hero-subtitle {
-	color: #cbbdb3;
+	color: #d6e4f5;
 	font-size: 17px;
 	line-height: 1.6;
 	max-width: 640px;
@@ -2880,21 +2881,21 @@ a.btn, a.btn:hover {
 .hero-actions .btn-primary {
 	background: #9a0000;
 	border-color: #9a0000;
-	box-shadow: 0 8px 20px rgba(154, 0, 0, 0.3);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 .hero-actions .btn-primary:hover {
 	background: #7a0000;
 	border-color: #7a0000;
 }
 .hero-actions .btn-outline-primary {
-	color: #f4ece7;
-	border-color: rgba(244, 236, 231, 0.35);
+	color: #ffffff;
+	border-color: rgba(255, 255, 255, 0.4);
 	background: transparent;
 }
 .hero-actions .btn-outline-primary:hover {
-	background: rgba(244, 236, 231, 0.1);
+	background: rgba(255, 255, 255, 0.15);
 	color: #ffffff;
-	border-color: rgba(244, 236, 231, 0.5);
+	border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* Trust stats strip */
@@ -2906,18 +2907,18 @@ a.btn, a.btn:hover {
 	max-width: 740px;
 	margin: 48px auto 0;
 	padding-top: 32px;
-	border-top: 1px solid rgba(244, 236, 231, 0.14);
+	border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 .home-stat-value {
 	display: block;
-	color: #fbf5f0;
+	color: #ffffff;
 	font-size: 28px;
 	font-weight: 800;
 	font-family: inherit;
 }
 .home-stat-label {
 	display: block;
-	color: #a3927f;
+	color: #b8d0e8;
 	font-size: 13px;
 	margin-top: 4px;
 }
@@ -3011,17 +3012,17 @@ a.btn, a.btn:hover {
 
 /* Why Choose Section */
 .why-choose-section {
-	background: #1a1310;
+	background: #1e3a5f;
 	padding: 64px 20px;
 	border-radius: 12px;
 	margin-bottom: 40px;
 	text-align: center;
 }
 .why-choose-section .section-title {
-	color: #fbf5f0;
+	color: #ffffff;
 }
 .why-choose-section .section-eyebrow {
-	color: #e8a87c;
+	color: #d6e4f5;
 }
 .why-grid {
 	display: grid;
@@ -3038,17 +3039,17 @@ a.btn, a.btn:hover {
 }
 .why-icon i {
 	font-size: 26px;
-	color: #e8a87c;
+	color: #4a8fc7;
 }
 .why-card h3 {
 	font-size: 16px;
 	font-weight: 700;
-	color: #fbf5f0;
+	color: #ffffff;
 	margin: 0 0 8px;
 }
 .why-card p {
 	font-size: 14px;
-	color: #a3927f;
+	color: #b8d0e8;
 	line-height: 1.55;
 	margin: 0;
 }
