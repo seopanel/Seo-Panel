@@ -19,6 +19,23 @@ $(document).ready(function(){
     	$('#alert_noti_sec .dropdown-toggle').attr('aria-label', label);
     }
 
+    // mirrors the same unread count onto the installed PWA's home
+    // screen / taskbar icon via the Badging API, where supported -
+    // feature-detected and purely additive, so it's a silent no-op on
+    // browsers/platforms that don't implement it (support is currently
+    // desktop Chrome/Edge only; not Android Chrome, and iOS Safari
+    // support is inconsistent enough not to rely on)
+    function update_app_badge(count) {
+    	if (!('setAppBadge' in navigator)) return;
+    	try {
+    		if (count > 0) {
+    			navigator.setAppBadge(count);
+    		} else {
+    			navigator.clearAppBadge();
+    		}
+    	} catch (e) {}
+    }
+
     // updating the view with notifications using ajax
     function load_unseen_notification(view = '') {
     	$.ajax({
@@ -36,6 +53,7 @@ $(document).ready(function(){
     				$('.count').html(data.unseen_notification);
        			}
        			update_notification_aria_label(data.unseen_notification);
+       			update_app_badge(data.unseen_notification);
       		}
     	});
     }
@@ -46,6 +64,7 @@ $(document).ready(function(){
     	$('.count').html('');
     	$('.count').hide();
     	update_notification_aria_label(0);
+    	update_app_badge(0);
     	load_unseen_notification('yes');
     })
     
