@@ -7,53 +7,76 @@
     	?>
     	<!-- Hero Section -->
     	<div class="home-hero">
-    		<div class="hero-content">
-    			<h1 class="hero-title">
-    				<i class="fas fa-chart-line"></i> <?php echo $spTextGuest['Welcome to SEO Panel']?>
-    			</h1>
-    			<p class="hero-subtitle"><?php echo $spTextGuest['Hero subtitle']?></p>
-    			<p class="hero-description">
-    				<?php echo $spTextGuest['Hero description']?>
-    			</p>
-    			<div class="hero-actions">
-    				<a href="login.php" class="btn btn-primary btn-lg">
-    					<i class="fas fa-sign-in-alt"></i> <?php echo $spTextGuest['Login to Get Started']?>
-    				</a>
-    				<a href="<?php echo SP_DEMO_LINK?>" target="_blank" class="btn btn-outline-primary btn-lg" rel="nofollow">
-    					<i class="fas fa-desktop"></i> <?php echo $spTextGuest['View Demo']?>
-    				</a>
+    		<div class="home-hero-eyebrow"><?php echo $spTextGuest['Hero eyebrow'] ?? 'Open source &middot; Self-hosted &middot; Built for the AI search era'?></div>
+    		<h1 class="hero-title"><?php echo $spTextGuest['Hero title'] ?? 'The SEO &amp; AEO control room you actually own'?></h1>
+    		<p class="hero-subtitle">
+    			<?php echo $spTextGuest['Hero subtitle v2'] ?? 'Twelve tools in one panel &mdash; rank tracking, site audits, backlinks, and a dedicated AI Visibility suite that tracks how you show up in Google AI Overviews, ChatGPT and other AI engines. All running on your own server, for as many websites as you manage.'?>
+    		</p>
+    		<div class="hero-actions">
+    			<a href="login.php" class="btn btn-primary btn-lg">
+    				<i class="fas fa-sign-in-alt"></i> <?php echo $spTextGuest['Login to Get Started']?>
+    			</a>
+    			<a href="<?php echo SP_DEMO_LINK?>" target="_blank" class="btn btn-outline-primary btn-lg" rel="nofollow">
+    				<i class="fas fa-desktop"></i> <?php echo $spTextGuest['View Demo']?>
+    			</a>
+    		</div>
+
+    		<div class="home-stats">
+    			<div>
+    				<span class="home-stat-value">12</span>
+    				<span class="home-stat-label"><?php echo $spTextGuest['stat-tools-label'] ?? 'SEO tools included'?></span>
+    			</div>
+    			<div>
+    				<span class="home-stat-value">2010</span>
+    				<span class="home-stat-label"><?php echo $spTextGuest['stat-since-label'] ?? 'Building in the open'?></span>
+    			</div>
+    			<div>
+    				<span class="home-stat-value">&infin;</span>
+    				<span class="home-stat-label"><?php echo $spTextGuest['stat-sites-label'] ?? 'Websites per install'?></span>
+    			</div>
+    			<div>
+    				<span class="home-stat-value">100%</span>
+    				<span class="home-stat-label"><?php echo $spTextGuest['stat-oss-label'] ?? 'Open source (GPL)'?></span>
     			</div>
     		</div>
     	</div>
 
     	<!-- Features Grid -->
     	<div class="features-section">
-    		<h2 class="section-title">
-    			<i class="fas fa-rocket"></i> <?php echo $spTextGuest['Powerful SEO Features']?>
-    		</h2>
+    		<div class="section-eyebrow"><?php echo $spTextGuest['toolkit-eyebrow'] ?? 'The toolkit'?></div>
+    		<h2 class="section-title"><?php echo $spTextGuest['Powerful SEO Features']?></h2>
+    		<p class="section-desc"><?php echo $spTextGuest['toolkit-desc'] ?? 'From daily rank tracking to how your pages show up inside AI answer engines - no separate subscriptions, no exporting between tools.'?></p>
 
     		<div class="features-grid">
     			<div class="feature-card">
     				<div class="feature-icon">
+    					<i class="fas fa-robot"></i>
+    				</div>
+    				<h3><?php echo $spTextTools['ai-visibility']?></h3>
+    				<p><?php echo $spTextGuest['AI Visibility desc'] ?? 'See how you show up in Google AI Overviews, ChatGPT and other AI engines - referral traffic, bot crawls, and citation rate in one score.'?></p>
+    			</div>
+
+    			<div class="feature-card">
+    				<div class="feature-icon">
     					<i class="fas fa-search-location"></i>
     				</div>
-    				<h3><?php echo $spText['seotools']['keyword-position-checker']?></h3>
+    				<h3><?php echo $spTextTools['keyword-position-checker']?></h3>
     				<p><?php echo $spTextGuest['Keyword Position Checker desc']?></p>
     			</div>
 
     			<div class="feature-card">
     				<div class="feature-icon">
-    					<i class="fas fa-link"></i>
+    					<i class="fas fa-tools"></i>
     				</div>
-    				<h3><?php echo $spText['seotools']['backlink-checker']?></h3>
-    				<p><?php echo $spTextGuest['Backlinks Checker desc']?></p>
+    				<h3><?php echo $spTextTools['webmaster-tools']?></h3>
+    				<p><?php echo $spTextGuest['Webmaster Tools desc'] ?? 'Pull real Google Search Console clicks, impressions and average position straight into your reports.'?></p>
     			</div>
 
     			<div class="feature-card">
     				<div class="feature-icon">
     					<i class="fas fa-tasks"></i>
     				</div>
-    				<h3><?php echo $spText['seotools']['site-auditor']?></h3>
+    				<h3><?php echo $spTextTools['site-auditor']?></h3>
     				<p><?php echo $spTextGuest['Site Auditor desc']?></p>
     			</div>
 
@@ -61,49 +84,72 @@
     				<div class="feature-icon">
     					<i class="fas fa-chart-bar"></i>
     				</div>
-    				<h3><?php echo $spText['seotools']['rank-checker']?></h3>
-    				<p><?php echo $spTextGuest['Rank Checker desc']?></p>
+    				<h3><?php echo $spTextTools['rank-checker']?></h3>
+    				<p><?php echo $spTextGuest['Rank Checker desc v2'] ?? 'Check Domain Authority, Page Authority and Spam Score via Moz, with history tracked for every website.'?></p>
     			</div>
 
     			<div class="feature-card">
     				<div class="feature-icon">
-    					<i class="fas fa-server"></i>
+    					<i class="fas fa-link"></i>
     				</div>
-    				<h3><?php echo $spText['seotools']['saturation-checker']?></h3>
-    				<p><?php echo $spTextGuest['Search Engine Saturation desc']?></p>
-    			</div>
-
-    			<div class="feature-card">
-    				<div class="feature-icon">
-    					<i class="fas fa-puzzle-piece"></i>
-    				</div>
-    				<h3><?php echo $spTextGuest['Plugin Architecture']?></h3>
-    				<p><?php echo $spTextGuest['Plugin Architecture desc']?></p>
+    				<h3><?php echo $spTextTools['backlink-checker']?></h3>
+    				<p><?php echo $spTextGuest['Backlinks Checker desc']?></p>
     			</div>
 
     			<div class="feature-card">
     				<div class="feature-icon">
     					<i class="fas fa-folder-open"></i>
     				</div>
-    				<h3><?php echo $spText['home']['Directory Submission']?></h3>
+    				<h3><?php echo $spTextTools['directory-submission']?></h3>
     				<p><?php echo $spTextGuest['Directory Submission desc']?></p>
+    			</div>
+
+    			<div class="feature-card">
+    				<div class="feature-icon">
+    					<i class="fas fa-server"></i>
+    				</div>
+    				<h3><?php echo $spTextTools['saturation-checker']?></h3>
+    				<p><?php echo $spTextGuest['Search Engine Saturation desc']?></p>
+    			</div>
+
+    			<div class="feature-card">
+    				<div class="feature-icon">
+    					<i class="fas fa-tachometer-alt"></i>
+    				</div>
+    				<h3><?php echo $spTextTools['pagespeed']?></h3>
+    				<p><?php echo $spTextGuest['PageSpeed Insights desc'] ?? 'Measure real Google PageSpeed scores for desktop and mobile, and track performance changes over time.'?></p>
     			</div>
 
     			<div class="feature-card">
     				<div class="feature-icon">
     					<i class="fas fa-share-alt"></i>
     				</div>
-    				<h3><?php echo $spTextGuest['Social Media Integration']?></h3>
-    				<p><?php echo $spTextGuest['Social Media Integration desc']?></p>
+    				<h3><?php echo $spTextTools['sm-checker']?></h3>
+    				<p><?php echo $spTextGuest['Social Media Checker desc'] ?? 'Track followers, shares and engagement across your social profiles from a single dashboard.'?></p>
+    			</div>
+
+    			<div class="feature-card">
+    				<div class="feature-icon">
+    					<i class="fas fa-chart-area"></i>
+    				</div>
+    				<h3><?php echo $spTextTools['web-analytics']?></h3>
+    				<p><?php echo $spTextGuest['Website Analytics desc'] ?? 'Connect Google Analytics to see traffic sources, sessions and conversions next to your SEO data.'?></p>
+    			</div>
+
+    			<div class="feature-card">
+    				<div class="feature-icon">
+    					<i class="fas fa-star"></i>
+    				</div>
+    				<h3><?php echo $spTextTools['review-manager']?></h3>
+    				<p><?php echo $spTextGuest['Review Manager desc'] ?? 'Monitor reviews and ratings across Google, Yelp, Trustpilot and other platforms from a single view.'?></p>
     			</div>
     		</div>
     	</div>
 
     	<!-- Why Choose Section -->
     	<div class="why-choose-section">
-    		<h2 class="section-title">
-    			<i class="fas fa-star"></i> <?php echo $spTextGuest['Why Choose SEO Panel?']?>
-    		</h2>
+    		<div class="section-eyebrow"><?php echo $spTextGuest['why-eyebrow'] ?? 'Why teams run it themselves'?></div>
+    		<h2 class="section-title"><?php echo $spTextGuest['Why Choose SEO Panel?']?></h2>
 
     		<div class="why-grid">
     			<div class="why-card">
@@ -142,9 +188,7 @@
 
     	<!-- Resources Section -->
     	<div class="resources-section">
-    		<h2 class="section-title">
-    			<i class="fas fa-book"></i> <?php echo $spTextGuest['Resources & Support']?>
-    		</h2>
+    		<h2 class="section-title"><?php echo $spTextGuest['Resources & Support']?></h2>
 
     		<div class="resources-grid">
     			<a href="<?php echo SP_DOWNLOAD_LINK?>" target="_blank" class="resource-link" rel="nofollow">
@@ -182,6 +226,15 @@
     				<span><?php echo $spTextGuest['Support Development']?></span>
     			</a>
     		</div>
+    	</div>
+
+    	<!-- Closing CTA -->
+    	<div class="home-final-cta">
+    		<h2><?php echo $spTextGuest['final-cta-title'] ?? 'Run your own SEO stack, starting today'?></h2>
+    		<p><?php echo $spTextGuest['final-cta-desc'] ?? 'Free to install, free to extend, and it stays on your own server.'?></p>
+    		<a href="login.php" class="btn">
+    			<?php echo $spTextGuest['Login to Get Started']?> <i class="fas fa-arrow-right"></i>
+    		</a>
     	</div>
     	<?php
     }?>
