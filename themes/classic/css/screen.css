@@ -3544,6 +3544,33 @@ a.btn, a.btn:hover {
     }
 }
 
+/* === Notification bell dropdown: fixed viewport-relative panel on
+   mobile, not a nested Bootstrap dropdown ===
+   #alert_noti_sec (the bell icon) sits inside the floating hamburger
+   menu above - only 250px wide on a phone - but its own .dropdown-menu
+   has a desktop-only min-width: 32rem (512px), wider than any phone
+   screen and far wider than the 250px-wide parent it's nested inside.
+   Opening it on mobile would force either a badly overflowing panel or
+   a cramped horizontal scroll within an already-scrolling vertical
+   menu. Detaches it from that narrow nested context entirely via
+   position:fixed, sized and positioned relative to the viewport
+   instead, so it renders as a normal full-width panel regardless of
+   how deep it's nested. 62px clears the 54px-tall navbar (see
+   .navbar.navbar-expand-md min-height above) plus a small gap. */
+@media screen and (max-width: 767px) {
+    #alert_noti_sec .dropdown-menu {
+        position: fixed;
+        top: 62px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        max-height: calc(100vh - 80px);
+        margin-top: 0;
+    }
+}
+
 /* === .stat-row: 2-column stat grid on mobile (sitewide) ===
    The "Overview Stats" card on 6 dashboard tabs (Analytics, Social
    Media, Search Console, Reviews, Directory Submission, Website
