@@ -58,13 +58,53 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 
 	# debug settings
 	if (SP_DEBUG){
-		@ini_set("display_erros", "On");
+		@ini_set("display_errors", "On");
 		@ini_set("display_startup_errors", "On");
 		error_reporting(E_ALL ^ E_NOTICE);
 	} else {
-		@ini_set("display_erros", "Off");
+		// "display_erros" (misspelled) previously here meant this call
+		// silently no-oped on an unknown ini key, so display_errors was
+		// NEVER actually turned off by SP_DEBUG=0 - only error_reporting()
+		// was. An uncaught fatal error/exception bypasses error_reporting()
+		// entirely and is printed whenever display_errors is On, so on any
+		// host whose php.ini ships it On by default (common on shared/
+		// budget hosting, which this self-hosted app explicitly targets),
+		// a real fatal error could leak a full stack trace and file paths
+		// to an unauthenticated visitor even with SP_DEBUG=0.
+		@ini_set("display_errors", "Off");
 		@ini_set("display_startup_errors", "Off");
 		error_reporting(0);
+	}
+
+	// security headers - previously never set anywhere (checked: no
+	// .htaccess rule, no header() call in any entry point), so every
+	// page - including the login page and every authenticated admin
+	// page - could be framed by any external site, enabling classic
+	// clickjacking/UI-redress attacks (e.g. an invisible iframe over a
+	// fake "claim your prize" button, positioned so a real click lands
+	// on this app's own "Delete"/"Activate" button instead). Set here so
+	// every entry point gets it for free, rather than requiring each of
+	// the ~100 top-level PHP files to set it individually. Only two,
+	// deliberately conservative headers - not a full CSP: this codebase
+	// has inline <script> blocks throughout (checked extensively this
+	// session), so a real Content-Security-Policy would need
+	// 'unsafe-inline' anyway (minimal real protection) or a large,
+	// separate refactor to nonce/hash every inline script - out of scope
+	// here. Not Strict-Transport-Security either - this is a self-hosted
+	// app not guaranteed to always be served over HTTPS; forcing HSTS on
+	// an HTTP-only install would break it, the same reasoning already
+	// applied to the Secure cookie flag in Session::startSession().
+	if (!headers_sent()) {
+		// SAMEORIGIN (not DENY) - this app is never meant to be framed
+		// by a THIRD-PARTY site, but same-origin framing is left
+		// available in case any current or future feature relies on it
+		header('X-Frame-Options: SAMEORIGIN');
+		// blocks a browser from MIME-sniffing a response into an
+		// executable type (e.g. treating an uploaded/served file as
+		// text/html) against the Content-Type it was actually served
+		// with - cheap, zero-risk hardening, no legitimate behavior here
+		// depends on sniffing being allowed
+		header('X-Content-Type-Options: nosniff');
 	}
 
 	# system settings

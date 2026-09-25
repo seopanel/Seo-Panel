@@ -155,23 +155,48 @@ class GoogleAPIController extends Controller{
 	function getAPIAuthUrl($userId) {
 		$ret = array('auth_url' => false);
 		$client = $this->createAuthAPIClient();
-		
+
 		// if client created successfully
 		if (is_object($client)) {
-			
+
 			try {
+				// CSRF: without a state param tying this specific
+				// authorization request to the session that started it,
+				// an attacker could start their own OAuth flow, capture
+				// the resulting authorization code (never letting it
+				// reach their own callback), then trick a logged-in
+				// victim into visiting the callback URL with THAT code -
+				// silently linking the victim's SEO Panel account to the
+				// attacker's Google account (classic OAuth login/
+				// account-linkage CSRF, RFC 6819 §4.4.1.8). Verified and
+				// consumed by verifyOAuthState() below on the callback.
+				$state = bin2hex(random_bytes(16));
+				Session::setSession('google_oauth_state', $state);
+				$client->setState($state);
 				$authUrl = $client->createAuthUrl();
 				$ret['auth_url'] = $authUrl;
 			} catch (Exception $e) {
 				$err = $e->getMessage();
-				$ret['msg'] = "Error: Create token - $err";								
+				$ret['msg'] = "Error: Create token - $err";
 			}
-				
+
 		} else {
 			$ret['msg'] = $client;
 		}
-		
-		return $ret;		
+
+		return $ret;
+	}
+
+	/*
+	 * verifies the OAuth callback's state param against the one this
+	 * session's own getAPIAuthUrl() call generated, and consumes it
+	 * (single-use) regardless of outcome so a captured/replayed callback
+	 * URL can't be reused
+	 */
+	function verifyOAuthState($state) {
+		$expected = $_SESSION['google_oauth_state'] ?? '';
+		unset($_SESSION['google_oauth_state']);
+		return !empty($expected) && !empty($state) && hash_equals($expected, (string) $state);
 	}
 	
 	/*
@@ -232,40 +257,60 @@ class GoogleAPIController extends Controller{
 	}
 	
 	function getanalyticWebsitesPropertyIds($userId) {
+	    $debug = [];
+	    $debug[] = "-- getanalyticWebsitesPropertyIds START (userId=$userId) --";
+
 	    $websites = array();
 	    $client = $this->getAuthClient($userId);
-	    
+
 	    // if error occured
 	    if (!is_object($client)) {
-	        return [FALSE, $websites, $client];
+	        $debug[] = "getAuthClient FAILED. Error: $client";
+	        return [FALSE, $websites, $client, $debug];
 	    }
-	    
+	    $debug[] = "getAuthClient OK";
+
 	    // GA4 Admin API: list accounts + properties in ONE call (UA analytics/v3 was decommissioned 2024-07)
 	    $accessToken = $this->__getAccessToken($client);
 	    $apiUrl = "https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200";
+	    $debug[] = "  Calling API: $apiUrl";
 	    $ret = $this->plainAPICall($apiUrl, $accessToken);
+
 	    if (!empty($ret['error'])) {
-	        return [FALSE, $websites, $ret['errmsg']];
+	        $debug[] = "  API error: HTTP " . $ret['error'] . " - " . ($ret['errmsg'] ?? 'no message');
+	        return [FALSE, $websites, $ret['errmsg'] ?? 'API Error', $debug];
 	    }
+
 	    if (!empty($ret['page']['accountSummaries'])) {
+	        $debug[] = "Total GA accounts found: " . count($ret['page']['accountSummaries']);
 	        foreach ($ret['page']['accountSummaries'] as $acc) {
 	            $accountId = str_replace("accounts/", "", $acc['account']);
 	            $accountName = $acc['displayName'];
+	            $debug[] = "Account: $accountName (ID: $accountId)";
+
 	            if (!empty($acc['propertySummaries'])) {
+	                $debug[] = "  Properties found: " . count($acc['propertySummaries']);
 	                foreach ($acc['propertySummaries'] as $prop) {
 	                    $propertyId = str_replace("properties/", "", $prop['property']);
+	                    $propertyName = $prop['displayName'];
+	                    $debug[] = "    Property: $propertyName (ID: $propertyId)";
 	                    $websites[] = array(
 	                        'account_name' => $accountName,
 	                        'account_id' => $accountId,
-	                        'property_name' => $prop['displayName'],
+	                        'property_name' => $propertyName,
 	                        'property_id' => $propertyId,
 	                    );
 	                }
+	            } else {
+	                $debug[] = "  No properties found for account $accountId";
 	            }
 	        }
+	    } else {
+	        $debug[] = "No GA accounts found";
 	    }
-	    
-	    return [TRUE, $websites, "success"];
+
+	    $debug[] = "-- getanalyticWebsitesPropertyIds END, total websites: " . count($websites) . " --";
+	    return [TRUE, $websites, "success", $debug];
 	}
 	
 	// Function to get GA4 properties

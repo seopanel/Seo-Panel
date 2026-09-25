@@ -25,43 +25,43 @@ if ($logInfo['crawl_type'] == 'keyword') {
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Report Type']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_type']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_type'])?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Reference']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['ref_id']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['ref_id'])?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Subject']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['subject']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['subject'])?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['common']['Url']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_link']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_link'])?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Referer']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_referer']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_referer'])?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Cookie']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_cookie']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_cookie'])?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spTextLog['Post Fields']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_post_fields']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_post_fields'])?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['User agent']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['crawl_useragent']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['crawl_useragent'])?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['label']['Proxy']?>:</strong></td>
-		<td class="td_right_col"><?php echo !empty($logInfo['proxy_id']) ? $logInfo['proxy_id'] : ""?></td>
+		<td class="td_right_col"><?php echo !empty($logInfo['proxy_id']) ? intval($logInfo['proxy_id']) : ""?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><strong><?php echo $spText['common']['Details']?>:</strong></td>
-		<td class="td_right_col"><?php echo $logInfo['log_message']?></td>
+		<td class="td_right_col"><?php echo htmlspecialchars($logInfo['log_message'])?></td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><strong><?php echo $spText['common']['Status']?>:</strong></td>

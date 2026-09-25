@@ -1,3 +1,13 @@
+function openSerpModalSP(url) {
+	$('#serpModalSPBody').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+	$('#serpModalSP').modal('show');
+	$.get(url, function(response) {
+		$('#serpModalSPBody').html(response);
+	}).fail(function() {
+		$('#serpModalSPBody').html('<div class="alert alert-danger">Failed to load SERP results.</div>');
+	});
+}
+
 function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVal) {
 	var screenWidth, screenHeight;
     screenWidth = $(window).width();
@@ -41,6 +51,7 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -97,6 +108,7 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -132,6 +144,7 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }
@@ -157,6 +170,7 @@ function scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading) {
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }

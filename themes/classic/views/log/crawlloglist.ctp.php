@@ -130,10 +130,10 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td><?php echo $logLink?></td>
-				<td><?php echo $listInfo['crawl_type']?></td>
-				<td><?php echo $listInfo['ref_id']?></td>
-				<td><?php echo $listInfo['subject']?></td>
-				<td><?php echo stripslashes($listInfo['log_message'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['crawl_type'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['ref_id'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['subject'])?></td>
+				<td><?php echo htmlspecialchars(stripslashes($listInfo['log_message']))?></td>
 				<td class="text-center">
 					<?php
 					if ($listInfo['crawl_status']) {

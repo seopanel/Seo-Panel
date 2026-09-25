@@ -6,7 +6,7 @@
 	foreach($linkList as $linkInfo){
         $selectedVal = ($linkInfo['id'] == $linkId) ? "selected" : "";
         ?>
-	    <option value="<?php echo $linkInfo['id']?>" <?php echo $selectedVal;?> ><?php echo $linkInfo['name']?></option>
+	    <option value="<?php echo $linkInfo['id']?>" <?php echo $selectedVal;?> ><?php echo htmlspecialchars($linkInfo['name'])?></option>
 		<?php
 	}
 	?>

@@ -485,6 +485,12 @@ function saToolsUrl($args) {
 @media (max-width: 576px) {
 	.summary-item, .summary-item-quarter {
 		flex: 0 0 100%;
+		/* the base rule's min-width: 250px/220px (set higher up for the
+		   3/4-per-row desktop layouts) isn't needed once an item is
+		   already full width, and can force horizontal overflow on a
+		   narrow phone (320-360px) once .summary-body's own padding is
+		   subtracted from the available width */
+		min-width: 0;
 	}
 	.summary-body {
 		padding: 20px;

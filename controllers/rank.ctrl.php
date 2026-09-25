@@ -47,158 +47,12 @@ class RankController extends Controller{
 		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($list);
-		
-		/*mozRankList = $this->__getMozRank($list);*/
 		$this->set('mozRankList', $mozRankList);
 
 		$this->set('list', $list);
 		$this->render('rank/findquickrank');
 	}
 
-	function printMOZRank($url){
-		$pageRank = $this->__getMozRank($url);
-		if($pageRank >= 0){
-			$imageUrl = SP_IMGPATH."/pr/pr".$pageRank.".gif";
-		}else{
-			$imageUrl = SP_IMGPATH."/pr/pr.gif";
-		}
-
-		print "<img src='$imageUrl'>";
-	}
-	
-	// function to get moz rank
-	function __getMozRank ($urlList = array(), $accessID = "", $secretKey = "", $returnLog = false) {
-		$mozRankList = array();
-		
-		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return $mozRankList;
-		
-		if (empty($urlList)) return $mozRankList;
-		
-		// Get your access id and secret key here: https://moz.com/products/api/keys
-		$accessID = !empty($accessID) ? $accessID : SP_MOZ_API_ACCESS_ID;
-		$secretKey = !empty($secretKey) ? $secretKey : SP_MOZ_API_SECRET;
-		
-		// if empty no need to crawl
-		if (empty($accessID) || empty($secretKey)) return $mozRankList;
-		
-		// Set your expires times for several minutes into the future.
-		// An expires time excessively far in the future will not be honored by the Mozscape API.
-		$expires = time() + 300;
-		
-		// Put each parameter on a new line.
-		$stringToSign = $accessID."\n".$expires;
-		
-		// Get the "raw" or binary output of the hmac hash.
-		$binarySignature = hash_hmac('sha1', $stringToSign, $secretKey, true);
-		
-		// Base64-encode it and then url-encode that.
-		$urlSafeSignature = urlencode(base64_encode($binarySignature));
-		
-		// Add up all the bit flags you want returned.
-		// Learn more here: https://moz.com/help/guides/moz-api/mozscape/api-reference/url-metrics
-		$cols = "16384";
-		
-		// Put it all together and you get your request URL.
-		$requestUrl = SP_MOZ_API_LINK . "/url-metrics/?Cols=".$cols."&AccessID=".$accessID."&Expires=".$expires."&Signature=".$urlSafeSignature;
-		
-		// Put your URLS into an array and json_encode them.
-		$encodedDomains = json_encode($urlList);
-		
-		$spider = new Spider();
-		$spider->_CURLOPT_POSTFIELDS = $encodedDomains;
-		$ret = $spider->getContent($requestUrl);
-		
-		// parse rank from the page
-		if (!empty($ret['page'])) {
-			$rankList = json_decode($ret['page']);
-			
-			// if no errors occured
-			if (empty($rankList->error_message)) {
-			
-				// loop through rank list
-				foreach ($rankList as $rankInfo) {
-					$mozRankList[] = round($rankInfo->umrp, 2);
-				}
-				
-			} else {
-				$crawlInfo['crawl_status'] = 0;
-				$crawlInfo['log_message'] = $rankList->error_message;
-			}
-			
-		} else {
-			$crawlInfo['crawl_status'] = 0;
-			$crawlInfo['log_message'] = $ret['errmsg'];
-		}
-	
-		// update crawl log
-		$crawlLogCtrl = new CrawlLogController();
-		$crawlInfo['crawl_type'] = 'rank';
-		$crawlInfo['ref_id'] = $encodedDomains;
-		$crawlInfo['subject'] = "moz";
-		$crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
-	
-		return $returnLog ? array($mozRankList, $crawlInfo) : $mozRankList;
-	}
-	
-
-	function strToNum($Str, $Check, $Magic) {
-		$Int32Unit = 4294967296;
-		$length = strlen($Str);
-		for ($i = 0; $i < $length; $i++) {
-			$Check *= $Magic;
-			if ($Check >= $Int32Unit) {
-				$Check = ($Check - $Int32Unit * (int) ($Check / $Int32Unit));
-				$Check = ($Check < -2147483648)? ($Check + $Int32Unit) : $Check;
-			}
-			$Check += ord($Str[$i]);
-		}
-		return $Check;
-	}
-
-	function hashURL($String) {
-		$Check1 = $this->strToNum($String, 0x1505, 0x21);
-		$Check2 = $this->strToNum($String, 0, 0x1003F);
-
-		$Check1 >>= 2;
-		$Check1 = (($Check1 >> 4) & 0x3FFFFC0 ) | ($Check1 & 0x3F);
-		$Check1 = (($Check1 >> 4) & 0x3FFC00 ) | ($Check1 & 0x3FF);
-		$Check1 = (($Check1 >> 4) & 0x3C000 ) | ($Check1 & 0x3FFF);
-
-		$T1 = (((($Check1 & 0x3C0) << 4) | ($Check1 & 0x3C)) <<2 ) | ($Check2 & 0xF0F );
-		$T2 = (((($Check1 & 0xFFFFC000) << 4) | ($Check1 & 0x3C00)) << 0xA) | ($Check2 & 0xF0F0000 );
-
-		return ($T1 | $T2);
-	}
-
-	function checkHash($Hashnum) {
-		$CheckByte = 0;
-		$Flag = 0;
-
-		$HashStr = sprintf('%u', $Hashnum) ;
-		$length = strlen($HashStr);
-
-		for ($i = $length - 1; $i >= 0; $i --) {
-			$Re = $HashStr[$i];
-			if (1 === ($Flag % 2)) {
-				$Re += $Re;
-				$Re = (int)($Re / 10) + ($Re % 10);
-			}
-			$CheckByte += $Re;
-			$Flag ++;
-		}
-
-		$CheckByte %= 10;
-		if (0!== $CheckByte) {
-			$CheckByte = 10 - $CheckByte;
-			if (1 === ($Flag % 2) ) {
-				if (1 === ($CheckByte % 2)) {$CheckByte += 9;}
-				$CheckByte >>= 1;
-			}
-		}
-
-		return '7'.$CheckByte.$HashStr;
-	}
-	
 	# func to show genearte reports interface
 	function showGenerateReports($searchInfo=[]) {		
 		$userId = isLoggedIn();
@@ -230,8 +84,6 @@ class RankController extends Controller{
 		}
 		
 		// get moz ranks
-		/*$mozRankList = $this->__getMozRank($urlList);*/
-		
 		$mozCtrler = new MozController();
 		$mozRankList = $mozCtrler->__getMozRankInfo($urlList);
 				
@@ -301,37 +153,42 @@ class RankController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a caller-supplied website_id must belong to one of the caller's
+		// own (already-scoped) websites for a non-admin - otherwise fall
+		// back to their own first website, same as when none is given at
+		// all. Previously this was never checked, so any non-admin could
+		// view ANY other user's domain/page authority history just by
+		// passing an arbitrary website_id.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
-		$sql = "select s.* ,w.name from rankresults s,websites w  where s.website_id=w.id 
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
+		$sql = "select s.* ,w.name from rankresults s,websites w  where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-		
+
 		$i = 0;
 		$colList = $this->colList;
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
-					$signVal = -1;
+					// lower is better for spam_score, so its sign is inverted
+					$signVal = ($col == 'spam_score') ? 1 : -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					// For Alexa and spam_score, lower is better, so invert the sign
-					if($col == 'alexa' || $col == 'spam_score'){
-						$signVal = 1;
-						$greaterClass = 'green';
-						$lessClass = 'red';
-					}
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * $signVal;
 					if ($rankDiff[$col] > 0) {
 						$rankDiff[$col] = "<font class='$greaterClass'>(" . round($rankDiff[$col], 2) . ")</font>";
@@ -341,16 +198,38 @@ class RankController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
 
 		$this->set('list', array_reverse($reportList, true));
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('rank/rankreport');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) plain-language summary of
+	 * this website's domain/page authority + spam score trend over the
+	 * selected date range - see LocalAIController::
+	 * summarizeAuthorityTrend(). Never auto-fired; returns JSON for the
+	 * "Summarize with AI" button in rankreport.ctp.php. Ownership is
+	 * enforced by summarizeAuthorityTrend() itself, not re-checked here.
+	 */
+	function summarizeTrend($info) {
+		$userId = isLoggedIn();
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->summarizeAuthorityTrend($info['website_id'], $userId, $fromTime, $toTime);
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	// func to show reports for a particular website
@@ -383,15 +262,10 @@ class RankController extends Controller{
 			foreach ($colList as $col => $dbCol) {
 				
 				if ($i > 0) {
-					$signVal = -1;
+					// lower is better for spam_score, so its sign is inverted
+					$signVal = ($col == 'spam_score') ? 1 : -1;
 					$greaterClass = 'green';
 					$lessClass = 'red';
-					// For Alexa and spam_score, lower is better, so invert the sign
-					if($col == 'alexa' || $col == 'spam_score'){
-						$signVal = 1;
-						$greaterClass = 'green';
-						$lessClass = 'red';
-					}
 
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * $signVal;
 
@@ -427,9 +301,15 @@ class RankController extends Controller{
         $websiteController = New WebsiteController();
         $websiteList = $websiteController->__getAllWebsites($userId, true);
         $this->set('websiteList', $websiteList);
-        $websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+        $websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+        // same ownership check as showReports() above - a non-admin's
+        // caller-supplied website_id must be one of their own websites
+        if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = '';
+        }
+        if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
         $this->set('websiteId', $websiteId);
-        
+
         $searchEngine = !empty($searchInfo['search_engine']) ? $searchInfo['search_engine'] : "spam_score";
         $this->set('searchEngine', $searchEngine);
         
@@ -472,8 +352,8 @@ class RankController extends Controller{
 	            $dataArr .= ", ['{$dataInfo['result_date']}' $valStr]";
 	        }
 	       
-	        // if alexa or spam_score, use reverse ranking (lower is better)
-	        if ($searchEngine == 'alexa' || $searchEngine == 'spam_score') {
+	        // spam_score uses reverse ranking (lower is better)
+	        if ($searchEngine == 'spam_score') {
 	        	$this->set('reverseDir', true);
 	        }
 	        

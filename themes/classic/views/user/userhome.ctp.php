@@ -12,6 +12,7 @@
         $anTabView = "";
         $scTabView = "";
         $dsTabView = "";
+        $rcTabView = "";
 
         if (!empty($custSubMenu)) {
             $ovTabView = "active";
@@ -49,6 +50,10 @@
                     $dsTabView = "active";
                     break;
 
+                case "recommendations":
+                    $rcTabView = "active";
+                    break;
+
                 default:
                     $mainTabClass = "active";
                     break;
@@ -58,52 +63,57 @@
 		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
             	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/" onclick="return navigateDashboardTab(this, '');">
-            		<i class="fas fa-tachometer-alt"></i> <?php echo $spText['label']['Overview']?>
+            		<i class="fas fa-tachometer-alt"></i> <span class="nav-label"><?php echo $spText['label']['Overview']?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $dbTabClass?>" href="<?php echo SP_WEBPATH?>/?dashboard=reports" onclick="return navigateDashboardTab(this, 'reports');">
-            		<i class="fas fa-chart-line"></i> <?php echo $spText['common']['Reports']?>
+            		<i class="fas fa-chart-line"></i> <span class="nav-label"><?php echo $spText['common']['Reports']?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $waTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=website_analytics" onclick="return navigateDashboardTab(this, 'website_analytics');">
-            		<i class="fas fa-globe"></i> <?php echo $spText['label']['Website'] ?? 'Website'?>
+            		<i class="fas fa-globe"></i> <span class="nav-label"><?php echo $spText['label']['Website'] ?? 'Website'?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $ovTabView?>" href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');">
-            		<i class="fas fa-key"></i> <?php echo $spText['common']['Keywords']?>
+            		<i class="fas fa-key"></i> <span class="nav-label"><?php echo $spText['common']['Keywords']?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $anTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=analytics" onclick="return navigateDashboardTab(this, 'analytics');">
-            		<i class="fas fa-chart-area"></i> <?php echo $spText['label']['Analytics'] ?? 'Analytics'?>
+            		<i class="fas fa-chart-area"></i> <span class="nav-label"><?php echo $spText['label']['Analytics'] ?? 'Analytics'?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $scTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=search_console" onclick="return navigateDashboardTab(this, 'search_console');">
-            		<i class="fas fa-search-plus"></i> <?php echo $spText['label']['Search Console'] ?? 'Search Console'?>
+            		<i class="fas fa-search-plus"></i> <span class="nav-label"><?php echo $spText['label']['Search Console'] ?? 'Search Console'?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $saTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=site_auditor" onclick="return navigateDashboardTab(this, 'site_auditor');">
-            		<i class="fas fa-search"></i> <?php echo $spTextTools['Site Auditor'] ?? 'Site Auditor'?>
+            		<i class="fas fa-search"></i> <span class="nav-label"><?php echo $spTextTools['Site Auditor'] ?? 'Site Auditor'?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $smTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=social_media" onclick="return navigateDashboardTab(this, 'social_media');">
-            		<i class="fas fa-share-alt"></i> <?php echo $spText['label']['Social Media']?>
+            		<i class="fas fa-share-alt"></i> <span class="nav-label"><?php echo $spText['label']['Social Media']?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $rvTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=reviews" onclick="return navigateDashboardTab(this, 'reviews');">
-            		<i class="fas fa-star"></i> <?php echo $spText['label']['Reviews']?>
+            		<i class="fas fa-star"></i> <span class="nav-label"><?php echo $spText['label']['Reviews']?></span>
             	</a>
             </li>
             <li class="nav-item">
             	<a class="nav-link <?php echo $dsTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=directory_submission" onclick="return navigateDashboardTab(this, 'directory_submission');">
-            		<i class="fas fa-folder-open"></i> <?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?>
+            		<i class="fas fa-folder-open"></i> <span class="nav-label"><?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?></span>
+            	</a>
+            </li>
+            <li class="nav-item">
+            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
+            		<i class="fas fa-lightbulb"></i> <span class="nav-label">AI Insights</span>
             	</a>
             </li>
         </ul>
@@ -135,6 +145,8 @@
                		scriptDoLoad('search_console_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } elseif ($dsTabView == "active") {?>
                		scriptDoLoad('directory_submission_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
+           		<?php } elseif ($rcTabView == "active") {?>
+               		scriptDoLoad('recommendations_dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php } else {?>
                		scriptDoLoad('dashboard.php', 'content', '<?php echo getRequestParamStr("GET"); ?>');
            		<?php }?>
@@ -186,6 +198,10 @@ function getCurrentWebsiteId() {
     // Try to get from directory submission dashboard form
     else if ($('#directory_submission_dashboard_form select[name="website_id"]').length) {
         websiteId = $('#directory_submission_dashboard_form select[name="website_id"]').val();
+    }
+    // Try to get from recommendations dashboard form
+    else if ($('#recommendations_dashboard_form select[name="website_id"]').length) {
+        websiteId = $('#recommendations_dashboard_form select[name="website_id"]').val();
     }
     // Try to get from URL parameter
     else {

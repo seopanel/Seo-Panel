@@ -23,6 +23,8 @@
 # class defines all keyword controller functions
 class KeywordController extends Controller{
 
+	var $sessionCats = array('common', 'login', 'button', 'label', 'keyword');
+
 	# func to show keywords
 	function listKeywords($info=[]){		
 		
@@ -60,7 +62,14 @@ class KeywordController extends Controller{
 		}		
 		$this->set('keyword', $info['keyword']);
 		
-		$sql = "select k.*,w.name website,w.status webstatus from keywords k,websites w where k.website_id=w.id and w.status=1";
+		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
+		$this->set('showSearchVolume', $showSearchVolume);
+
+		$svJoin = $showSearchVolume ? " LEFT JOIN keyword_search_volume sv ON sv.keyword_id = k.id AND sv.source = 'google'" : "";
+		$svCols = $showSearchVolume ? ", sv.search_volume, sv.last_crawl_status sv_status" : "";
+		$sql = "select k.*, w.name website, w.status webstatus$svCols from keywords k INNER JOIN websites w ON k.website_id = w.id AND w.status = 1$svJoin where 1=1";
 		$sql .= isAdmin() ? "" : " and w.user_id=$userId";
 		$sql .= " $conditions order by k.name";
 		
@@ -75,13 +84,26 @@ class KeywordController extends Controller{
 		# set keywords list
 		$keywordList = $this->db->select($sql);
 		$this->set('pageNo', $info['pageno']);
+		// perf fix: this used to run a fresh SELECT per row (2 queries x
+		// ~50 rows/page = ~100 extra single-row queries on every keyword
+		// list view - one of the most-visited pages in the app) to look
+		// up each keyword's language/country name. languages/country are
+		// small, near-static reference tables (~50/~250 rows) - loading
+		// each ONCE into a lookup map, outside the loop, does the exact
+		// same job in 2 queries total regardless of page size.
 		$langCtrler = New LanguageController();
 		$countryCtrler = New CountryController();
+		$langMap = array();
+		foreach ($langCtrler->__getAllLanguages() as $langInfo) {
+			$langMap[$langInfo['lang_code']] = $langInfo['lang_name'];
+		}
+		$countryMap = array();
+		foreach ($countryCtrler->__getAllCountries() as $countryInfo) {
+			$countryMap[$countryInfo['country_code']] = $countryInfo['country_name'];
+		}
 		foreach ($keywordList as $i => $keyInfo) {
-			$info = $langCtrler->__getLanguageInfo($keyInfo['lang_code']);
-			$keywordList[$i]['lang_name'] = $info['lang_name'];
-			$info = $countryCtrler->__getCountryInfo($keyInfo['country_code']); 
-			$keywordList[$i]['country_name'] = $info['country_name'];
+			$keywordList[$i]['lang_name'] = $langMap[$keyInfo['lang_code']] ?? '';
+			$keywordList[$i]['country_name'] = $countryMap[$keyInfo['country_code']] ?? '';
 		}
 		$this->set('list', $keywordList);
 		$this->render('keyword/list');
@@ -94,23 +116,52 @@ class KeywordController extends Controller{
 		$this->render('keyword/keywordselectbox');
 	}
 	
+	/*
+	 * func to verify the logged-in caller owns (or is admin over) the
+	 * website a keyword belongs to - shared by __changeStatus()/
+	 * __deleteKeyword()/updateKeyword()/editKeyword(), none of which
+	 * checked this before: any logged-in non-admin could activate/
+	 * deactivate, delete, rename/reassign, or view the edit form of ANY
+	 * other user's keyword just by supplying its id, via the normal web
+	 * UI (keywords.php), no API key or admin session needed.
+	 *
+	 * Returns a bool rather than calling showErrorMsg() itself, same
+	 * reasoning as WebsiteController::__verifyWebsiteOwnership() (bulk
+	 * loop callers must be able to skip what they don't own rather than
+	 * exit() and abort the rest of a legitimate batch).
+	 */
+	function __verifyKeywordOwnership($keywordId) {
+		if (isAdmin()) return true;
+		$userId = isLoggedIn();
+		$keywordInfo = $this->dbHelper->getRow('keywords', "id=" . intval($keywordId));
+		if (empty($keywordInfo['website_id'])) return false;
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=" . intval($keywordInfo['website_id']));
+		return !empty($websiteInfo) && intval($websiteInfo['user_id']) === intval($userId);
+	}
+
 	# func to change status
 	function __changeStatus($keywordId, $status){
-		
+		if (!$this->__verifyKeywordOwnership($keywordId)) {
+			return;
+		}
+
 		$keywordId = intval($keywordId);
 		$sql = "update keywords set status=$status where id=$keywordId";
 		$this->db->query($sql);
 	}
-	
+
 	# func to change crawled status of keyword
 	function __changeCrawledStatus($status, $whereCond = '1=1') {
 		$sql = "update keywords set crawled=$status where $whereCond";
-		$this->db->query($sql);		
+		$this->db->query($sql);
 	}
 
 	# func to change status
 	function __deleteKeyword($keywordId){
-		
+		if (!$this->__verifyKeywordOwnership($keywordId)) {
+			return;
+		}
+
 		$keywordId = intval($keywordId);
 		$sql = "delete from keywords where id=$keywordId";
 		$this->db->query($sql);
@@ -147,9 +198,20 @@ class KeywordController extends Controller{
 		
 		$userId = isLoggedIn();
 		$this->set('post', $listInfo);
+
+		// the web-UI path (not the REST API, which is admin-equivalent by
+		// design - see api.ctrl.php) previously never verified the caller
+		// owned the website_id a new keyword was being created under -
+		// only the caller's OWN keyword-count limit was checked, not
+		// whose website it actually landed on
+		if (!$apiCall && !isAdmin() && !empty($listInfo['website_id']) && !(new WebsiteController())->__verifyWebsiteOwnership($listInfo['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
 		$errMsg['website_id'] = formatErrorMsg($this->validate->checkBlank($listInfo['website_id']));
-		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array(); 		
+		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array();
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$statusVal = isset($listInfo['status']) ? intval($listInfo['status']) : 1;
 		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];		
@@ -381,8 +443,12 @@ class KeywordController extends Controller{
 	    return $this->dbHelper->getAllRows('keywords', $cond);
 	}
 
-	function editKeyword($keywordId, $listInfo=''){	
-					
+	function editKeyword($keywordId, $listInfo=''){
+		if (!empty($keywordId) && !$this->__verifyKeywordOwnership($keywordId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
@@ -410,10 +476,20 @@ class KeywordController extends Controller{
 	function updateKeyword($listInfo, $apiCall = false){
 		$userId = isLoggedIn();
 		$this->set('post', $listInfo);
+		$websiteCtrler = new WebsiteController();
+
+		// the web-UI path (not the REST API, which is admin-equivalent by
+		// design - see api.ctrl.php) previously never verified the caller
+		// owned either the keyword being edited or the website_id it's
+		// being reassigned to - a non-admin could hijack a foreign
+		// keyword into their own website, or vice versa
+		if (!$apiCall && (!$this->__verifyKeywordOwnership($listInfo['id']) || !$websiteCtrler->__verifyWebsiteOwnership($listInfo['website_id']))) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 
 		// Check the user website count for validation
 		if (isAdmin()) {
-			$websiteCtrler = new WebsiteController();
 			$websiteInfo = $websiteCtrler->__getWebsiteInfo($listInfo['website_id']);
 			$webUserId = $websiteInfo['user_id'];
 		} else {

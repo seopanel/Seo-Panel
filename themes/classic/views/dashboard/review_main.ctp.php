@@ -58,7 +58,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextReview['Review Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-4 text-center">
 							<h6 class="mb-3"><?php echo $spTextReview['Total Review Links']?></h6>
 							<h3>
@@ -254,6 +254,16 @@ function drawAllCharts() {
 	drawReviewComparisonChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spReviewChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spReviewChartResizeTimer);
+		spReviewChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw review count distribution pie chart
 function drawReviewCountChart() {
 	<?php if (!empty($reviewDistribution)) { ?>
@@ -269,6 +279,7 @@ function drawReviewCountChart() {
 	var options = {
 		title: 'Reviews Distribution by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('review_count_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -301,6 +312,7 @@ function drawReviewRatingChart() {
 	var options = {
 		title: 'Average Rating by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('review_rating_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -333,6 +345,7 @@ function drawReviewTrendsChart() {
 
 	var options = {
 		title: 'Review Growth Over Time',
+		width: spChartWidth('review_trends_chart'),
 		height: 400,
 		colors: ['#17a2b8', '#ffc107'],
 		legend: { position: 'bottom' },
@@ -374,6 +387,7 @@ function drawReviewComparisonChart() {
 
 	var options = {
 		title: 'Top 10 Review Links by Review Count',
+		width: spChartWidth('review_comparison_chart'),
 		height: 400,
 		legend: { position: 'none' },
 		chartArea: { width: '70%', height: '80%' },

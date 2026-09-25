@@ -24,10 +24,7 @@ if (!empty($menuInfo['item_list'])) {
 	}
 	
 } else {
-	?> 
-	<a href="<?php echo !empty($custSiteInfo['contact_url']) ? $custSiteInfo['contact_url'] : SP_CONTACT_LINK?>" target="_blank" rel="nofollow">
-		<?php echo $spText['common']['contact']?>
-	</a><span class="pipe"> | </span>
+	?>
 	<a href="<?php echo !empty($custSiteInfo['help_url']) ? $custSiteInfo['help_url'] : SP_HELP_LINK?>" target="_blank" rel="nofollow">
 		<?php echo $spText['common']['help']?>
 	</a><span class="pipe"> | </span>

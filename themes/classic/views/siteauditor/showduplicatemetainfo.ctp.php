@@ -168,7 +168,7 @@
 <div class="report-info-card">
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-globe"></i> <?php echo $spTextSA['Project Url']?>:</span>
-		<a href="<?php echo $projectInfo['url']?>" target="_blank" class="report-info-value report-info-url"><?php echo $projectInfo['url']?></a>
+		<a href="<?php echo htmlspecialchars($projectInfo['url'], ENT_QUOTES)?>" target="_blank" class="report-info-value report-info-url"><?php echo htmlspecialchars($projectInfo['url'])?></a>
 	</div>
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-clock"></i> <?php echo $spText['label']['Updated']?>:</span>
@@ -256,7 +256,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							<div class="page-url-list">
 								<?php foreach($listInfo['page_urls'] as $urlInfo) { ?>
 									<div class="page-url-item">
-										<a target='_blank' href='<?php echo $urlInfo['page_url']?>'><?php echo $urlInfo['page_url']?></a>
+										<a target='_blank' href='<?php echo htmlspecialchars($urlInfo['page_url'], ENT_QUOTES)?>'><?php echo htmlspecialchars($urlInfo['page_url'])?></a>
 									</div>
 								<?php } ?>
 							</div>

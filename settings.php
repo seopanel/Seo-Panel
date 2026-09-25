@@ -58,8 +58,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "resetSpApiToken":
 			$controller->resetSpApiToken();
 			break;
+
+		case "onlineupgradeproceed":
+			if (!SP_DEMO) {
+				$controller->proceedOnlineUpgrade();
+			}
+			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 		
@@ -74,6 +80,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "proxysettings":
 			$controller->showSystemSettings('proxy');
 			break;
+
+		case "auditlog":
+			$controller->showAuditLog($_GET);
+			break;
 		
 		case "aboutus":
 			$controller->showAboutUs($_GET);
@@ -86,7 +96,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "checkversion":
 			$controller->checkVersion();
 			break;
-		
+
+		case "onlineupgradecheck":
+			$controller->checkOnlineUpgrade();
+			break;
+
 		case "test_email":
 			$controller->showTestEmailSettings();
 			break;
@@ -150,6 +164,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    
 		    break;
 
+		case "checkOllamaAPI":
+		    if (empty($_GET['base_url'])) {
+		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+		    } else {
+		        include_once(SP_CTRLPATH."/localai.ctrl.php");
+		        $localAiCtrler = new LocalAIController();
+		        $connResult = $localAiCtrler->__checkOllamaConnection($_GET['base_url']);
+
+		        if ($connResult['status']) {
+		            print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
+		        } else {
+		            print "<span class='error'>{$connResult['message']}</span>";
+		        }
+		    }
+
+		    break;
+
 		case "checkSpApiCon":
 			if (empty($_GET['api_key'])) {
 			    showErrorMsg($_SESSION['text']['common']["Invalid value"]);
@@ -194,6 +225,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 		case "spapi_upgrade_skip":
 			$controller->skipSpApiUpgrade();
+			break;
+
+		case "version_upgrade_skip":
+			$controller->skipVersionUpgradePopup();
 			break;
 
 		default:

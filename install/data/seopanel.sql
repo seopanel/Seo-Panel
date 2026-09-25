@@ -24,6 +24,32 @@ CREATE TABLE IF NOT EXISTS `analytic_sources` (
   UNIQUE KEY `source_name` (`source_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+-- Security/trust feature: a durable, append-only record of security-
+-- relevant admin actions (user create/delete/activate/role-change/
+-- password-reset, website delete, settings changes, 2FA enable/
+-- disable) for later review - see Controller::logAuditEvent() (libs/
+-- controller.class.php) for the single write path every caller uses,
+-- and controllers/settings.ctrl.php's showAuditLog() for the admin-only
+-- browse page. actor_username/target_label are deliberately
+-- denormalized (not just the ids) so an entry stays readable even after
+-- the user/website/etc. it refers to is itself later deleted.
+CREATE TABLE IF NOT EXISTS `audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `actor_user_id` int unsigned DEFAULT NULL,
+  `actor_username` varchar(64) DEFAULT NULL,
+  `action` varchar(100) NOT NULL,
+  `target_type` varchar(50) DEFAULT NULL,
+  `target_id` int unsigned DEFAULT NULL,
+  `target_label` varchar(255) DEFAULT NULL,
+  `details` text,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `actor_user_id` (`actor_user_id`),
+  KEY `action_created_at` (`action`,`created_at`),
+  KEY `target_type_id` (`target_type`,`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS `auditorpagelinks` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `report_id` bigint(20) NOT NULL,
@@ -83,7 +109,11 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `https_secure` tinyint(1) NOT NULL DEFAULT '0',
   `has_og_tags` tinyint(1) NOT NULL DEFAULT '0',
   `has_twitter_cards` tinyint(1) NOT NULL DEFAULT '0',
+  `has_structured_data` tinyint(1) NOT NULL DEFAULT '0',
   `blocked_by_robots` tinyint(1) NOT NULL DEFAULT '0',
+  `heading_structure_ok` tinyint(1) NOT NULL DEFAULT '1',
+  `has_faq_content` tinyint(1) NOT NULL DEFAULT '0',
+  `word_count` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `project_id_2` (`project_id`,`page_url`),
   KEY `project_id` (`project_id`)
@@ -111,8 +141,10 @@ CREATE TABLE IF NOT EXISTS `backlinkresults` (
   `external_pages_to_root_domain` int(11) NOT NULL DEFAULT '0',
   `result_time` int(11) NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
+  `broken_backlinks` int(11) DEFAULT NULL COMMENT 'DataForSEO-only; NULL means this row was measured via Moz',
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `country` (
@@ -656,7 +688,8 @@ CREATE TABLE IF NOT EXISTS `dirsubmitinfo` (
   `status` tinyint(1) NOT NULL DEFAULT '0',
   `active` tinyint(1) NOT NULL DEFAULT '0',
   `submit_time` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `website_id_directory_id` (`website_id`,`directory_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `di_directory_meta` (
@@ -808,7 +841,8 @@ CREATE TABLE IF NOT EXISTS `rankresults` (
   `page_authority` float NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `reports_settings` (
@@ -816,13 +850,16 @@ CREATE TABLE IF NOT EXISTS `reports_settings` (
   `user_id` int(11) NOT NULL,
   `report_interval` int(11) NOT NULL DEFAULT '1',
   `email_notification` tinyint(1) NOT NULL DEFAULT '0',
+  `ai_insights_email_notification` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_visibility_email_notification` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_visibility_last_digest_sent` date DEFAULT NULL,
   `last_generated` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `reports_settings` (`id`, `user_id`, `report_interval`, `email_notification`, `last_generated`) VALUES
-(1, 1, 1, 1, 1481760000);
+INSERT INTO `reports_settings` (`id`, `user_id`, `report_interval`, `email_notification`, `ai_insights_email_notification`, `last_generated`) VALUES
+(1, 1, 1, 1, 1, 1481760000);
 
 CREATE TABLE IF NOT EXISTS `review_links` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -843,7 +880,8 @@ CREATE TABLE IF NOT EXISTS `review_link_results` (
   `rating` float NOT NULL DEFAULT '0',
   `report_date` date NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `review_link_rel` (`review_link_id`)
+  KEY `review_link_rel` (`review_link_id`),
+  KEY `review_link_id_report_date` (`review_link_id`,`report_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `dfs_tasks` (
@@ -866,6 +904,398 @@ CREATE TABLE IF NOT EXISTS `dfs_tasks` (
   KEY `ref_id_category` (`ref_id`, `category`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `aio_references` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` int unsigned NOT NULL,
+  `result_id` bigint unsigned DEFAULT NULL COMMENT 'FK to searchresults.id, if one exists',
+  `checked_date` date NOT NULL,
+  `ref_position` smallint unsigned NOT NULL COMMENT '1-based order in references array',
+  `domain` varchar(255) NOT NULL,
+  `url` varchar(2048) NOT NULL,
+  `title` varchar(512) DEFAULT NULL,
+  `source_name` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `keyword_date` (`keyword_id`, `checked_date`),
+  KEY `domain_date` (`domain`, `checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_visibility_sites` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `last_seen_at` datetime DEFAULT NULL,
+  `bot_last_seen_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_bot_hits` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `verified` tinyint(1) NOT NULL DEFAULT 0,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_verified_url` (`website_id`,`hit_date`,`platform`,`verified`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_referrals` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `hit_date` date NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `url_path` varchar(2048) NOT NULL,
+  `url_hash` binary(16) NOT NULL,
+  `hits` int unsigned NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `site_date_platform_url` (`website_id`,`hit_date`,`platform`,`url_hash`),
+  KEY `site_date` (`website_id`,`hit_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `ai_platforms` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `platform` varchar(64) NOT NULL,
+  `hostname` varchar(255) NOT NULL,
+  `display_name` varchar(64) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `is_referral_source` tinyint(1) NOT NULL DEFAULT 1,
+  `bot_ua_pattern` varchar(255) DEFAULT NULL,
+  `robots_user_agent_token` varchar(100) DEFAULT NULL,
+  `verify_suffix` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `hostname` (`hostname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
+-- robots_user_agent_token is the EXACT literal token a crawler's own
+-- robots.txt spec documents for its User-agent line (e.g. "Google-Extended"),
+-- kept deliberately separate from bot_ua_pattern (a case-insensitive
+-- substring used to classify a raw User-Agent HTTP header for hit-tracking,
+-- e.g. "googleother"). The two are often the same string, but nothing
+-- guarantees that for every future platform - NULL falls back to
+-- bot_ua_pattern in __writeRobotsTxt() for full backward compatibility.
+
+-- verify_suffix (reverse-DNS verification suffix) is left NULL except where
+-- a scheme is well established (Google's) - not an assertion about other
+-- vendors' policies, admin-maintainable as they publish/change their own.
+--
+-- is_referral_source distinguishes hostnames real visitors click through
+-- from (surfaced by aivisibility.js.php for the browser-side referral
+-- snippet) from bot-only entries whose hostname is a vendor's corporate
+-- domain, not a place traffic ever comes from - e.g. 'google.com' here
+-- means Google-Extended (AI-training crawler opt-out), not Google Search;
+-- treating it as a referral source would misclassify ordinary organic
+-- Google Search clicks (referrer host google.com/www.google.com) as AI
+-- referrals. is_active alone still gates both ingest paths (referral
+-- token lookup and bot UA classification).
+INSERT INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_active`,`is_referral_source`,`bot_ua_pattern`,`verify_suffix`) VALUES
+('chatgpt','chatgpt.com','ChatGPT',1,1,'GPTBot',NULL),
+('chatgpt','chat.openai.com','ChatGPT',1,1,'GPTBot',NULL),
+('perplexity','perplexity.ai','Perplexity',1,1,'PerplexityBot',NULL),
+('claude','claude.ai','Claude',1,1,'ClaudeBot',NULL),
+('gemini','gemini.google.com','Gemini',1,1,NULL,NULL),
+('copilot','copilot.microsoft.com','Copilot',1,1,NULL,NULL),
+('you','you.com','You.com',1,1,NULL,NULL),
+('poe','poe.com','Poe',1,1,NULL,NULL),
+('grok','grok.com','Grok',1,1,NULL,NULL),
+('mistral','mistral.ai','Mistral',1,1,NULL,NULL),
+('google-extended','google.com','Google-Extended (AI training)',1,0,'Google-Extended','.googlebot.com'),
+('bytespider','bytedance.com','Bytespider',1,0,'Bytespider',NULL),
+('ccbot','commoncrawl.org','CCBot',1,0,'CCBot',NULL),
+('applebot-extended','apple.com','Applebot-Extended',1,0,'Applebot-Extended',NULL),
+('meta-externalagent','meta.com','Meta AI',1,0,'meta-externalagent',NULL),
+-- OpenAI ships 3 distinct crawler/agent tokens under the ChatGPT brand -
+-- GPTBot (training crawl, seeded above), OAI-SearchBot (SearchGPT indexing)
+-- and ChatGPT-User (on-demand fetch when a live user asks ChatGPT to browse
+-- a page). Same 'chatgpt' platform grouping (so toggling the platform
+-- blocks/allows all three together) and same display_name (MIN() in the
+-- Setup page's platform-list query assumes it's identical across a
+-- platform's rows) - only bot_ua_pattern differs, since each is a
+-- distinct real User-agent token robots.txt/access logs actually see.
+('chatgpt','oai-searchbot.openai.com','ChatGPT',1,0,'OAI-SearchBot',NULL),
+('chatgpt','chatgpt-user.openai.com','ChatGPT',1,0,'ChatGPT-User',NULL),
+('amazon','amazon.com','Amazonbot',1,0,'Amazonbot',NULL),
+('duckassist','duckduckgo.com','DuckAssistBot',1,0,'DuckAssistBot',NULL),
+-- Anthropic ships the same 3-token split under the Claude brand -
+-- Claude-User (on-demand fetch when a live user asks Claude to browse a
+-- page) and Claude-SearchBot (search-index crawling), alongside ClaudeBot
+-- (training crawl, seeded above). Same 'claude' grouping + display_name.
+('claude','claude-user.anthropic.com','Claude',1,0,'Claude-User',NULL),
+('claude','claude-searchbot.anthropic.com','Claude',1,0,'Claude-SearchBot',NULL);
+
+CREATE TABLE IF NOT EXISTS `ai_visibility_rate_limit` (
+  `bucket_key` varchar(100) NOT NULL,
+  `window_start` int unsigned NOT NULL,
+  `hit_count` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`bucket_key`,`window_start`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
+-- Admin-configured local server access for a website (docroot for
+-- robots.txt/llms.txt management, access log path for log-based AI bot
+-- detection) - see AIVisibilityController::__validateDocrootPath()/
+-- __validateAccessLogPath(). Only an admin can set these (real filesystem
+-- read/write with the web server's OS permissions); a website's own owner
+-- can then self-serve the day-to-day robots.txt toggles/llms.txt
+-- regeneration once an admin has authorized the path. No cached
+-- "is writable" flag - always re-derived live (TOCTOU: permissions/symlinks
+-- can change after save).
+CREATE TABLE IF NOT EXISTS `ai_visibility_site_access` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `docroot_path` varchar(500) DEFAULT NULL,
+  `access_log_path` varchar(500) DEFAULT NULL,
+  `log_offset` bigint unsigned NOT NULL DEFAULT 0,
+  `log_inode` bigint unsigned DEFAULT NULL,
+  `log_last_run_at` datetime DEFAULT NULL,
+  `htaccess_ai_headers_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `htaccess_extensions` varchar(255) DEFAULT NULL,
+  `htaccess_last_written_at` datetime DEFAULT NULL,
+  `htaccess_last_error` varchar(500) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Durable trail of every .htaccess AI-crawler-header write/rollback - not
+-- just nice-to-have here, unlike the robots.txt audit log, given a
+-- malformed .htaccess can 500 an entire live site (see
+-- AIVisibilityController::__writeHtaccessRules()).
+CREATE TABLE IF NOT EXISTS `ai_visibility_htaccess_audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `action` enum('write','rollback') NOT NULL,
+  `extensions` varchar(255) DEFAULT NULL,
+  `self_test_http_code` int DEFAULT NULL,
+  `self_test_ok` tinyint(1) NOT NULL DEFAULT 0,
+  `changed_by` int unsigned DEFAULT NULL,
+  `changed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- MCP (Model Context Protocol) server tokens - lets a website owner point
+-- their own Claude Desktop/agent at their own SEO Panel data, fully self-
+-- hosted. Per-user (NOT global like api/api.php's SP_API_KEY/API_SECRET,
+-- which has no per-user scoping at all - see MCPController). A user
+-- generates/revokes their own tokens from mcp-access.php; every MCP tool
+-- call resolves user_id from the token, never trusts a client-supplied one.
+CREATE TABLE IF NOT EXISTS `mcp_tokens` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `label` varchar(100) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `expires_at` datetime DEFAULT NULL,
+  `last_used_at` datetime DEFAULT NULL,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Opt-in TOTP two-factor authentication, per user. secret is encrypted at
+-- rest via UserController's __encryptTotpSecret()/__decryptTotpSecret()
+-- (sodium_crypto_secretbox, same "sbx:"-prefixed pattern already used for
+-- OAuth tokens - see UserTokenController) - a DB leak alone must not be
+-- enough to derive a user's live 2FA codes. enabled only flips to 1 once
+-- the user has proven they actually scanned/entered the secret correctly
+-- (confirmed_at set) - a row can exist mid-setup with enabled=0 if they
+-- never finish confirming.
+CREATE TABLE IF NOT EXISTS `user_totp` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `secret` text NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `confirmed_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Single-use backup codes, generated once when 2FA is confirmed enabled -
+-- lets a user log in if they lose their authenticator device. code_hash
+-- uses the same bcrypt helper as the password hash (UserController::
+-- __hashPassword()) - never stored plaintext or reversibly, since a code
+-- only ever needs to be checked, never displayed again after generation.
+CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `code_hash` varchar(255) NOT NULL,
+  `used_at` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `user_id` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Per-user, per-provider hosted-LLM API keys for the AI Perception Check
+-- feature (controllers/aiperception.ctrl.php) - the customer's own key,
+-- used only when they explicitly click "Ask". One row per user+provider.
+CREATE TABLE IF NOT EXISTS `llm_api_keys` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `api_key` varchar(255) NOT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `user_provider` (`user_id`,`provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Scheduled AI Perception tracking: a customer-defined prompt set,
+-- checked on a weekly cron cycle against their own configured providers
+-- (llm_api_keys), with a historical "were we mentioned" result per
+-- prompt+provider+week. Presence of an active prompt IS the opt-in - no
+-- separate enable/disable flag.
+CREATE TABLE IF NOT EXISTS `llm_perception_prompts` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `user_id` int unsigned NOT NULL,
+  `prompt_text` varchar(500) NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `llm_perception_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `response_text` text,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `sentiment` varchar(10) DEFAULT NULL COMMENT 'positive/neutral/negative; NULL when not mentioned or the check errored',
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Competitive AI share-of-voice: named competitors to check for a
+-- mention alongside the tracked website itself, in the SAME LLM
+-- response - see AiPerceptionController::refreshTrackingForWebsite().
+-- domain is optional (a well-known brand may not need one for
+-- __isMentioned()'s name-matching to work).
+CREATE TABLE IF NOT EXISTS `llm_perception_competitors` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `domain` varchar(255) DEFAULT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- One row per (competitor, prompt, provider, checked_date) - mirrors
+-- llm_perception_results' own shape, but for a competitor instead of
+-- the tracked website. Checked against the SAME response_text already
+-- captured for the site's own mention check, so tracking a competitor
+-- costs no extra API calls.
+CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `competitor_id` int unsigned NOT NULL,
+  `prompt_id` int unsigned NOT NULL,
+  `provider` enum('openai','anthropic','google') NOT NULL,
+  `checked_date` date NOT NULL,
+  `mentioned` tinyint(1) NOT NULL DEFAULT 0,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `competitor_provider_date` (`competitor_id`,`provider`,`checked_date`),
+  KEY `prompt_id` (`prompt_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Per-website-per-platform desired robots.txt state - absence of a row
+-- means "allowed" (not additionally blocked by SEO Panel). Written into the
+-- website's own robots.txt only inside a clearly delimited managed block
+-- (see AIVisibilityController::__writeRobotsTxt()) - everything else in the
+-- file is preserved untouched.
+CREATE TABLE IF NOT EXISTS `ai_visibility_robots_rules` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `is_blocked` tinyint(1) NOT NULL DEFAULT 1,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_platform` (`website_id`,`platform`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Append-only history of every robots.txt AI-crawler-rule change - never
+-- updated or deleted, unlike ai_visibility_robots_rules above which only
+-- holds current state. Exported as a compliance/audit-trail report (see
+-- AIVisibilityController::exportRobotsAuditLog()) - proof of when a given
+-- AI crawler was allowed/blocked and by whom, for legal/compliance use.
+CREATE TABLE IF NOT EXISTS `ai_visibility_robots_audit_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `platform` varchar(64) NOT NULL,
+  `is_blocked` tinyint(1) NOT NULL,
+  `changed_by` int unsigned DEFAULT NULL,
+  `changed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `cron_run_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `trigger_source` varchar(20) NOT NULL DEFAULT 'cli',
+  `started_at` datetime NOT NULL,
+  `finished_at` datetime DEFAULT NULL,
+  `duration_ms` int unsigned DEFAULT NULL,
+  `status` enum('running','completed','incomplete') NOT NULL DEFAULT 'running',
+  `websites_processed` int unsigned NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `started_at` (`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
+CREATE TABLE IF NOT EXISTS `cron_job_timing` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `run_id` bigint unsigned NOT NULL,
+  `website_id` int unsigned NOT NULL,
+  `url_section` varchar(100) NOT NULL,
+  `started_at` datetime NOT NULL,
+  `duration_ms` int unsigned NOT NULL,
+  `status` enum('success','failed') NOT NULL DEFAULT 'success',
+  `error_message` text,
+  PRIMARY KEY (`id`),
+  KEY `run_id` (`run_id`),
+  KEY `url_section_started` (`url_section`,`started_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
+CREATE TABLE IF NOT EXISTS `job_queue` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `url_section` varchar(100) NOT NULL,
+  `chunk_key` varchar(191) NOT NULL,
+  `payload` text,
+  `status` enum('pending','running','completed','failed') NOT NULL DEFAULT 'pending',
+  `attempts` tinyint unsigned NOT NULL DEFAULT 0,
+  `max_attempts` tinyint unsigned NOT NULL DEFAULT 4,
+  `available_at` datetime NOT NULL,
+  `claimed_at` datetime DEFAULT NULL,
+  `claimed_by_run_id` bigint unsigned DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `last_error` text,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_chunk` (`website_id`,`url_section`,`chunk_key`),
+  KEY `claim_lookup` (`website_id`,`url_section`,`status`,`available_at`),
+  KEY `run_id` (`claimed_by_run_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
+
 CREATE TABLE IF NOT EXISTS `saturationresults` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `website_id` int(11) NOT NULL,
@@ -874,8 +1304,25 @@ CREATE TABLE IF NOT EXISTS `saturationresults` (
   `result_time` int(11) NOT NULL DEFAULT '0',
   `result_date` date DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+-- AI-era feature: one saved schema.org (JSON-LD) config per
+-- (website, schema type) - see controllers/schemagenerator.ctrl.php.
+-- field_data is the raw form field values (JSON-encoded), re-editable
+-- on a later visit; the actual JSON-LD markup is always regenerated
+-- from field_data on demand rather than stored redundantly, so there's
+-- a single source of truth.
+CREATE TABLE IF NOT EXISTS `schema_markup` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `schema_type` varchar(50) NOT NULL,
+  `field_data` text NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_schema_type` (`website_id`,`schema_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `searchengines` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -909,7 +1356,8 @@ CREATE TABLE IF NOT EXISTS `searchresultdetails` (
   `url` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `title` varchar(160) COLLATE utf8_unicode_ci DEFAULT NULL,
   `description` text COLLATE utf8_unicode_ci,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `searchresult_id` (`searchresult_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `searchresults` (
@@ -919,9 +1367,45 @@ CREATE TABLE IF NOT EXISTS `searchresults` (
   `rank` int(8) DEFAULT NULL,
   `time` int(11) DEFAULT NULL,
   `result_date` date DEFAULT NULL,
+  `serp_results` mediumtext COLLATE utf8_unicode_ci DEFAULT NULL,
+  `provider` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'dataforseo, spapi; NULL for direct-crawl/legacy rows',
+  `aio_present` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_cited` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_async` tinyint(1) NOT NULL DEFAULT 0,
+  `aio_reference_count` smallint(5) unsigned NOT NULL DEFAULT 0,
+  `aio_cited_position` smallint(5) unsigned DEFAULT NULL,
+  `aio_supported` tinyint(1) DEFAULT NULL COMMENT 'NULL=not measured, 0=provider cannot answer, 1=provider checked',
+  `aio_checked_at` datetime DEFAULT NULL COMMENT 'NULL means this row predates AI Overview tracking',
+  `aio_data_date` date DEFAULT NULL COMMENT 'freshness date of the AI Overview observation itself',
   PRIMARY KEY (`id`),
-  KEY `result_date` (`result_date`)
+  KEY `result_date` (`result_date`),
+  KEY `keyword_id_result_date` (`keyword_id`,`result_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+-- Search volume results table (populated via SP API /v1/search-volume).
+-- Was previously added only in upgrade.sql (existing installs), never here
+-- - a fresh install was silently missing this table entirely, breaking the
+-- Search Volume Checker cron/report for every fresh 7.0.0 install.
+CREATE TABLE IF NOT EXISTS `keyword_search_volume` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `keyword_id` bigint unsigned NOT NULL,
+  `source` varchar(20) NOT NULL DEFAULT 'google',
+  `sv_mapping_id` int DEFAULT NULL,
+  `search_volume` int DEFAULT NULL,
+  `cpc` decimal(10,2) DEFAULT NULL,
+  `competition` float DEFAULT NULL,
+  `keyword_difficulty` float DEFAULT NULL,
+  `monthly_searches` text DEFAULT NULL,
+  `crawled_result` text DEFAULT NULL,
+  `last_crawl_status` varchar(20) DEFAULT 'pending',
+  `crawled_time` datetime DEFAULT NULL,
+  `result_date` date DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_keyword_source` (`keyword_id`, `source`),
+  KEY `idx_keyword_id` (`keyword_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `seoplugins` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -952,7 +1436,7 @@ CREATE TABLE IF NOT EXISTS `seotools` (
   `priority` int(11) NOT NULL DEFAULT '100',
   `status` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=12 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=13 ;
 
 INSERT INTO `seotools` (`id`, `name`, `url_section`, `user_access`, `reportgen`, `cron`, `priority`, `status`) VALUES
 (1, 'Keyword Position Checker', 'keyword-position-checker', 1, 1, 1, 10, 1),
@@ -965,7 +1449,8 @@ INSERT INTO `seotools` (`id`, `name`, `url_section`, `user_access`, `reportgen`,
 (8, 'Webmaster Tools', 'webmaster-tools', 1, 1, 1, 20, 1),
 (9, 'Social Media Checker', 'sm-checker', 1, 1, 1, 100, 1),
 (10, 'Website Analytics', 'web-analytics', 1, 1, 1, 100, 1),
-(11, 'Review Manager', 'review-manager', 1, 1, 1, 100, 1);
+(11, 'Review Manager', 'review-manager', 1, 1, 1, 100, 1),
+(12, 'AI Visibility', 'ai-visibility', 1, 0, 0, 5, 1);
 
 CREATE TABLE IF NOT EXISTS `settings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -991,7 +1476,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (9, 'Enable Proxy', 'SP_ENABLE_PROXY', '0', 'proxy', 'bool', 1),
 (10, 'Default Language', 'SP_DEFAULTLANG', 'en', 'system', 'small', 1),
 (11, 'User agent', 'SP_USER_AGENT', 'Mozilla/5.0 (Windows; U; MSIE 9.0; WIndows NT 9.0; en-US))', 'report', 'large', 1),
-(12, 'Seo Panel API Key', 'SP_API_KEY', '11a9b9070c7d7633831f603f0454ef5b', 'api', 'large', 1),
+(12, 'Seo Panel API Key', 'SP_API_KEY', '', 'api', 'large', 1),
 (13, 'Maximum number of pages allowed per website', 'SA_MAX_NO_PAGES', '500', 'siteauditor', 'small', 1),
 (14, 'Site auditor crawl delay', 'SA_CRAWL_DELAY_TIME', '10', 'siteauditor', 'small', 1),
 (15, 'Maximum length of page title', 'SA_TITLE_MAX_LENGTH', '80', 'siteauditor', 'small', 0),
@@ -1022,7 +1507,7 @@ INSERT INTO `settings` (`id`, `set_label`, `set_name`, `set_val`, `set_category`
 (40, 'API Secret', 'API_SECRET', '', 'api', 'medium', 1),
 (41, 'Company Name', 'SP_COMPANY_NAME', 'Seo Panel', 'system', 'medium', 1),
 (42, 'Currency', 'SP_PAYMENT_CURRENCY', 'USD', 'system', 'medium', 1),
-(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '6.0.0', 'system', 'medium', 0),
+(43, 'Seo Panel version', 'SP_VERSION_NUMBER', '7.0.0', 'system', 'medium', 0),
 (44, 'Moz API Link', 'SP_MOZ_API_LINK', 'http://lsapi.seomoz.com/linkscape', 'moz', 'medium', 0),
 (45, 'Moz API Link', 'SP_MOZ_API_ACCESS_ID', '', 'moz', 'large', 1),
 (46, 'Moz API Link', 'SP_MOZ_API_SECRET', '', 'moz', 'large', 1),
@@ -1064,7 +1549,22 @@ CREATE TABLE IF NOT EXISTS `social_media_link_results` (
   `followers` int(11) NOT NULL DEFAULT '0',
   `report_date` date NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `social_media_link_rel` (`sm_link_id`)
+  KEY `social_media_link_rel` (`sm_link_id`),
+  KEY `sm_link_id_report_date` (`sm_link_id`,`report_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
+
+CREATE TABLE IF NOT EXISTS `sp_recommendations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `website_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `type` enum('error','warning','todo') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'todo',
+  `category` varchar(100) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `title` varchar(500) COLLATE utf8_unicode_ci NOT NULL DEFAULT '',
+  `description` text COLLATE utf8_unicode_ci,
+  `meta` text COLLATE utf8_unicode_ci,
+  `refreshed_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_user` (`website_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `testplugin` (
@@ -1208,11 +1708,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `confirm` tinyint(1) NOT NULL DEFAULT '0',
   `spapi_skip` tinyint(1) NOT NULL DEFAULT 0,
   `spapi_upgrade_skip_date` date DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0,
+  `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0,
+  `version_upgrade_skip_date` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL);
+INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`, `version_upgrade_skip_date`) VALUES
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, 0, 0, NULL);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
@@ -1242,7 +1747,7 @@ CREATE TABLE IF NOT EXISTS `user_specs` (
   `spec_category` varchar(32) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'system',
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_type_id` (`user_type_id`,`spec_column`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=19 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=23 ;
 
 INSERT INTO `user_specs` (`id`, `user_type_id`, `spec_column`, `spec_value`, `spec_category`) VALUES
 (1, 2, 'keywordcount', '50', 'system'),
@@ -1262,13 +1767,21 @@ INSERT INTO `user_specs` (`id`, `user_type_id`, `spec_column`, `spec_value`, `sp
 (15, 2, 'seotool_5', '1', 'system'),
 (16, 2, 'seotool_6', '1', 'system'),
 (17, 2, 'seotool_7', '1', 'system'),
-(18, 2, 'seotool_8', '1', 'system');
+(18, 2, 'seotool_8', '1', 'system'),
+-- seotool_9..12 (Social Media Checker, Website Analytics, Review
+-- Manager, AI Visibility) were never granted to the default "user" type
+-- here, unlike every earlier tool above - meaning a brand-new non-admin
+-- account could not see or use any of these 4 tools on a fresh install.
+(19, 2, 'seotool_9', '1', 'system'),
+(20, 2, 'seotool_10', '1', 'system'),
+(21, 2, 'seotool_11', '1', 'system'),
+(22, 2, 'seotool_12', '1', 'system');
 
 CREATE TABLE IF NOT EXISTS `user_tokens` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `access_token` text COLLATE utf8_unicode_ci NOT NULL,
-  `refresh_token` varchar(255) COLLATE utf8_unicode_ci NOT NULL,
+  `refresh_token` text COLLATE utf8_unicode_ci NOT NULL,
   `token_type` varchar(120) COLLATE utf8_unicode_ci NOT NULL,
   `expires_in` int(11) NOT NULL DEFAULT '3600' COMMENT 'seconds',
   `created` datetime NOT NULL,
@@ -1334,7 +1847,8 @@ CREATE TABLE IF NOT EXISTS `websites` (
   `status` tinyint(1) NOT NULL,
   `crawled` tinyint(1) NOT NULL DEFAULT '0',
   `analytics_view_id` varchar(120) COLLATE utf8_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `url` (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 CREATE TABLE IF NOT EXISTS `website_analytics` (
@@ -1363,7 +1877,8 @@ CREATE TABLE IF NOT EXISTS `website_search_analytics` (
   `report_date` date NOT NULL,
   `source` enum('google','yahoo','bing','baidu','yandex') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'google',
   PRIMARY KEY (`id`),
-  KEY `website_id` (`website_id`)
+  KEY `website_id` (`website_id`),
+  KEY `website_id_report_date` (`website_id`,`report_date`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
 
@@ -1460,13 +1975,16 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 ('Enable for Backlink and Saturation Checker', 'SP_ENABLE_DFS_BACK_SATU', '0', 'dataforseo', 'bool', 1),
 ('Enable for Review Checker', 'SP_ENABLE_DFS_REVIEW', '1', 'dataforseo', 'bool', 1),
 ('Enable for SERP Checker', 'SP_ENABLE_DFS_SERP', '1', 'dataforseo', 'bool', 1),
+('Enable for Search Volume', 'SP_ENABLE_DFS_SEARCH_VOLUME', '1', 'dataforseo', 'bool', 1),
 ('Enable Sandbox', 'SP_ENABLE_DFS_SANDBOX', '0', 'dataforseo', 'bool', 1),
 ('Seo Panel API URL', 'SP_SPAPI_URL', 'https://api.seopanel.org/api/v1', 'seopanel_api', 'large', 0),
 ('Seo Panel API Registered', 'SP_SPAPI_REGISTERED', '0', 'seopanel_api', 'bool', 0),
 ('API Key', 'SP_SPAPI_KEY', '', 'seopanel_api', 'large', 1),
 ('Email', 'SP_SPAPI_EMAIL', '', 'seopanel_api', 'large', 1),
 ('Name', 'SP_SPAPI_NAME', '', 'seopanel_api', 'large', 1),
-('Enable for SERP Checker', 'SP_ENABLE_SPAPI_SERP', '1', 'seopanel_api', 'bool', 1);
+('Enable for SERP Checker', 'SP_ENABLE_SPAPI_SERP', '1', 'seopanel_api', 'bool', 1),
+('Enable for Search Volume', 'SP_ENABLE_SPAPI_SEARCH_VOLUME', '1', 'seopanel_api', 'bool', 1),
+('Enable DataForSEO for Backlink Checker', 'SP_ENABLE_DFS_BACKLINK', '0', 'dataforseo', 'bool', 1);
 
 --
 -- Seo Panel 4.9.0 changes
@@ -1592,6 +2110,86 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Enable GDPR/RGPD Cookie Consent Banner', 'SP_GDPR_COOKIE_BANNER', '0', 'system', 'bool', 1);
 
+-- Initial setup wizard
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Initial Setup Wizard', 'SP_SETUP_WIZARD', '0', 'system', 'bool', 0);
+
+-- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI referral data retention (days)','AIV_REFERRAL_RETENTION_DAYS','365','aivisibility','small',1),
+('Rate limit per site token (requests/min)','AIV_RATE_LIMIT_PER_TOKEN','120','aivisibility','small',1),
+('Rate limit per source IP (requests/min)','AIV_RATE_LIMIT_PER_IP','60','aivisibility','small',1);
+
+-- AI Visibility: AI Bot Crawler Tracking (collector script + FCrDNS)
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('AI bot hit data retention (days)','AIB_BOT_RETENTION_DAYS','365','aivisibility','small',1);
+
+-- AI Visibility: access-log-based AI bot detection (co-located sites only,
+-- see ai_visibility_site_access) - two independent per-cron-run budgets,
+-- since log I/O (bytes) and DNS verification (unique IPs) are different
+-- bottlenecks.
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Access log bytes read per cron run','AIB_LOG_BYTES_PER_CRON_RUN','5242880','aivisibility','small',1),
+('Access log unique IPs verified per cron run','AIB_LOG_MAX_IPS_PER_CRON_RUN','500','aivisibility','small',1);
+
+-- Local AI: optional on-server LLM (e.g. Ollama) for AI Insights summaries
+-- and meta-description suggestions - content never sent to a third party,
+-- unlike a cloud AI feature. See LocalAIController, SettingsController::isLocalAIEnabled().
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable Local AI', 'SP_ENABLE_LOCAL_AI', '0', 'local_ai', 'bool', 1),
+('Ollama Base URL', 'SP_LOCAL_AI_URL', 'http://localhost:11434', 'local_ai', 'large', 1),
+('Ollama Model', 'SP_LOCAL_AI_MODEL', 'llama3.2:3b', 'local_ai', 'large', 1);
+-- text labels for these seeded in textlang.sql (the `texts` table itself
+-- isn't created until that separate file runs - a direct INSERT INTO texts
+-- here breaks every fresh install partway through, since textlang.sql runs
+-- as its own later install step, not inline with this file)
+
+-- AI Overview tracking settings
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('AI Overview reference retention (days)', 'SP_AIO_RETENTION_DAYS', '90', 'report', 'medium', 1),
+('AI Overview rolling window (observations)', 'SP_AIO_ROLLING_WINDOW', '7', 'report', 'medium', 1),
+('AI Overview data considered stale after (days)', 'SP_AIO_STALE_DAYS', '7', 'report', 'medium', 1),
+('AI Overview subdomain match policy (registrable or exact)', 'SP_AIO_SUBDOMAIN_MATCH', 'registrable', 'report', 'medium', 1);
+
+-- Zero-Setup Scheduler, Phase 1: resumable job queue rollout flag. On by
+-- default for fresh installs; existing installs default to 0 via upgrade.sql
+-- until confirmed clean, then this flag (and the old *Cron() bodies it
+-- selects between) gets removed in a follow-up cleanup commit.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable resumable job queue for cron execution', 'SP_JOB_QUEUE_ENABLED', '1', 'report', 'small', 0);
+
+-- Zero-Setup Scheduler, Phase 2: secret-protected external ping trigger.
+-- Disabled and unkeyed by default even on a fresh install - an admin must
+-- visit the Scheduler Health page and generate a secret before this
+-- endpoint will do anything (it fails closed with no secret set).
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Enable external ping trigger for cron', 'SP_CRON_PING_ENABLED', '0', 'report', 'bool', 0),
+('Ping trigger secret key', 'SP_CRON_PING_SECRET', '', 'report', 'medium', 0),
+('Ping-triggered run budget (seconds)', 'SP_JOB_QUEUE_BUDGET_SECONDS', '20', 'report', 'small', 0);
+
+-- Scheduler operational-table retention (job_queue completed/failed rows,
+-- cron_run_log, cron_job_timing) - previously never pruned at all.
+-- Editable via the generic Report Settings page, same as
+-- SP_AIO_RETENTION_DAYS.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Job queue finished-row retention (days)', 'SP_JOB_QUEUE_RETENTION_DAYS', '7', 'report', 'small', 1),
+('Cron run log retention (days)', 'SP_CRON_RUN_LOG_RETENTION_DAYS', '30', 'report', 'small', 1),
+('Cron job timing retention (days)', 'SP_CRON_JOB_TIMING_RETENTION_DAYS', '14', 'report', 'small', 1);
+
+-- AI Insights email digest: opt-out email when a website has genuinely new
+-- AI Insights (not the same unresolved issue re-appearing with a different
+-- count). Reuses the existing per-user reports_settings row/UI.
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Insights email notification','SP_AI_INSIGHTS_EMAIL_NOTIFICATION','1','report','bool',1);
+
+-- AI Visibility weekly digest: opt-out email summarizing the week's AI
+-- referral/bot-crawl totals and AI Overview citation rate per website -
+-- same numbers the Overview dashboard shows. Sent at most once per 7 days
+-- per user (ai_visibility_last_digest_sent), independent of the main
+-- report scheduler's configurable interval, and skipped entirely for a
+-- user with zero AI traffic that week (no point emailing all-zeros).
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Visibility email notification','SP_AI_VISIBILITY_EMAIL_NOTIFICATION','1','report','bool',1);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

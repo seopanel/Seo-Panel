@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -134,7 +134,7 @@ class Google_Http_MediaFileUpload
         'PUT',
         $resumeUri,
         $headers,
-        Psr7\stream_for($chunk)
+        Utils::streamFor($chunk)
     );
 
     return $this->makePutRequest($request);
@@ -245,7 +245,7 @@ class Google_Http_MediaFileUpload
       $postBody = $related;
     }
 
-    $request = $request->withBody(Psr7\stream_for($postBody));
+    $request = $request->withBody(Utils::streamFor($postBody));
 
     if (isset($contentType) && $contentType) {
       $request = $request->withHeader('content-type', $contentType);

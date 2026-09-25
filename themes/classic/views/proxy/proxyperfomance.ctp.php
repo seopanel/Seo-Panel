@@ -53,7 +53,7 @@ $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 	if (count($list) > 0) {
 		foreach ($list as $i => $listInfo) {
 
-            $logLink = scriptAJAXLinkHrefDialog('proxy.php', 'content', "sec=edit&proxyId=".$listInfo['proxy_id'], $listInfo['proxy'].":".$listInfo['port']);
+            $logLink = scriptAJAXLinkHrefDialog('proxy.php', 'content', "sec=edit&proxyId=".$listInfo['proxy_id'], htmlspecialchars($listInfo['proxy'].":".$listInfo['port']));
             $countLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log"."$urlParams&status=&proxy_id=".$listInfo['proxy_id'], $listInfo['count'], '', 'OnClick', 1000);
 			$successLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log"."$urlParams&status=success&proxy_id=".$listInfo['proxy_id'], $listInfo['success'], '', 'OnClick', 1000);
 			$failLink = scriptAJAXLinkHrefDialog('log.php', 'content', "sec=crawl_log"."$urlParams&status=fail&proxy_id=".$listInfo['proxy_id'], $listInfo['fail'], '', 'OnClick', 1000);

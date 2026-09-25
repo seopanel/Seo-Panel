@@ -898,6 +898,32 @@ div.tab button.active {	background-color: #ccc;}
     text-decoration: underline;
 }
 
+/* Mobile responsive fix: .list and #cust_tab are the app's shared
+   list/report table hooks, used by over 100 views throughout the app
+   between them (grep confirmed) - 87% had no responsive wrapper at
+   all, so on a phone they either overflowed the whole page layout or
+   got clipped depending on the ancestor's own overflow handling, with
+   no way to see the rest of the row. Rather than adding a wrapper div
+   to every one of those view files individually (the HTML-side fix,
+   .table-responsive), the same effect is achieved here in one place:
+   `display: block` turns the table itself into the horizontally-
+   scrolling container - the exact mechanism Bootstrap's own
+   .table-responsive class uses internally (.table-responsive {
+   display: block; overflow-x: auto; }), just applied directly to the
+   existing table elements via a media query instead of requiring a
+   wrapper in the markup. #cust_tab is an id reused as a shared styling
+   hook across many separate view templates (same convention as .list,
+   just historically built as an id instead of a class), not a single
+   unique element - same fix applies to it for the same reason. */
+@media screen and (max-width: 768px) {
+    .list, #cust_tab {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 #cust_tab th a {
     color: #282222;
     text-decoration: none;
@@ -1065,6 +1091,7 @@ div.tab button.active {	background-color: #ccc;}
     border-top: 3px solid #4a8fc7;
     box-shadow: 0 -3px 16px rgba(0, 0, 0, 0.45);
     padding: 14px 20px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
 }
 
 .sp-gdpr-content {
@@ -3124,5 +3151,477 @@ a.btn, a.btn:hover {
 
     .section-title {
         font-size: 22px;
+    }
+}
+
+/* ===== Setup Wizard ===== */
+.sp-wizard-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.55);
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+.sp-wizard-box {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+    width: 600px;
+    max-width: 96vw;
+    z-index: 10000;
+    animation: slideDown 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    max-height: 92vh;
+}
+.sp-wizard-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d5db5 100%);
+    color: #fff;
+    padding: 18px 24px 14px;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+}
+.sp-wizard-header h4 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    font-weight: 700;
+}
+.sp-wizard-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+.sp-wizard-step-item {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+.sp-wizard-step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 2px solid rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.sp-wizard-step-dot.active {
+    background: #fff;
+    border-color: #fff;
+    color: #1a73e8;
+}
+.sp-wizard-step-dot.done {
+    background: rgba(255,255,255,0.6);
+    border-color: rgba(255,255,255,0.8);
+    color: #0d5db5;
+}
+.sp-wizard-step-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.25);
+    margin: 0 3px;
+}
+.sp-wizard-step-line.done {
+    background: rgba(255,255,255,0.7);
+}
+.sp-wizard-body {
+    padding: 24px 24px 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+.sp-wizard-panel { display: none; }
+.sp-wizard-panel.active { display: block; }
+.sp-wizard-panel h5 {
+    font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #1a73e8;
+}
+.sp-wizard-panel p { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+.sp-wizard-info-box {
+    background: #f0f7ff;
+    border-left: 4px solid #1a73e8;
+    padding: 12px 14px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #333;
+}
+.sp-wizard-footer {
+    padding: 14px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
+}
+.sp-wizard-footer-left { display: flex; gap: 8px; }
+.sp-wizard-footer-right { display: flex; gap: 8px; }
+.sp-wizard-success-icon {
+    text-align: center;
+    font-size: 52px;
+    color: #34a853;
+    margin-bottom: 10px;
+}
+
+/* === Safe-area insets (notch / Dynamic Island / status bar / home
+   indicator) - sitewide, unscoped ===
+   The viewport meta tag now includes viewport-fit=cover, so the page
+   extends edge-to-edge under the notch/status bar and home indicator
+   on notched phones (iOS Safari and standalone) instead of Safari's
+   default auto-inset layout. env(safe-area-inset-*) only resolves to
+   a non-zero value on a device that actually reports one - on every
+   other browser (desktop, non-notched phones) this is a harmless
+   no-op, so it needs no media-query scoping. The top navbar is in
+   normal document flow (not fixed), so it's the first thing that
+   would render under the notch/status bar without this - pushing the
+   whole page down by the inset clears it. */
+body {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* === PWA mobile bottom tab bar (see menu/pwa_bottom_nav.ctp.php) ===
+   Native-app-style navigation for small viewports / installed PWA use -
+   hidden at md and up via the .d-md-none utility class on the <nav>
+   itself, where the existing top navbar already covers navigation. */
+.sp-pwa-bottomnav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1030;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+.sp-pwa-bottomnav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 2px 6px;
+    color: #8a8ea3;
+    text-decoration: none;
+    font-size: 10.5px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+}
+.sp-pwa-bottomnav-item i {
+    font-size: 18px;
+}
+.sp-pwa-bottomnav-item span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sp-pwa-bottomnav-item:hover,
+.sp-pwa-bottomnav-item:focus {
+    color: #9a0000;
+    text-decoration: none;
+}
+.sp-pwa-bottomnav-item.active {
+    color: #9a0000;
+}
+
+@media screen and (max-width: 767px) {
+    body {
+        padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* === Mobile filter bars (table.search) - sitewide ===
+   table.search is the standard filter-row pattern used across the app
+   (website/keyword/rank lists, reports, AI Visibility, etc. - ~80+
+   views) - a plain <table> squeezes each <select>/<input> into a
+   narrow table cell on a phone. Stacks it into a clean vertical form
+   instead, the same fix already applied dashboard-locally before this
+   generalized it. Unscoped (not per-page) since the markup shape
+   (<tr><th>label</th><td>field</td>...</tr>) is consistent everywhere
+   it is used.
+   width: 100% is !important because ~20 views (quick checkers, "generate
+   report" forms, etc.) set an inline style="width: 60%" or "80%" on this
+   same table to keep a short desktop form from stretching full-width -
+   an inline style always beats an external stylesheet rule regardless of
+   selector specificity, so without !important those forms stayed pinned
+   to 60/80% width on a phone too, cramping every stacked field inside. */
+@media screen and (max-width: 767px) {
+    table.search,
+    table.search tbody,
+    table.search tr {
+        display: block;
+        width: 100% !important;
+    }
+    table.search th,
+    table.search td {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 4px 0;
+    }
+    table.search th.pl-4 {
+        padding-left: 0;
+        margin-top: 6px;
+    }
+    table.search select,
+    table.search input[type="text"],
+    table.search .btn {
+        width: 100%;
+    }
+}
+
+/* === PWA install prompt banner (see layout/default.ctp.php) ===
+   Chrome/Edge/Android only - the beforeinstallprompt event this relies
+   on has no Safari/iOS equivalent, so the banner simply never appears
+   there (no separate iOS instructional variant is built here). Sits
+   below the top navbar, not the bottom PWA tab bar, so it never
+   competes for space with sp-pwa-bottomnav on a phone. */
+#sp-pwa-install-banner {
+    display: none;
+    background: #9a0000;
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    padding: 10px 20px;
+}
+.sp-pwa-install-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.sp-pwa-install-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.sp-pwa-install-text {
+    flex: 1;
+    min-width: 0;
+}
+.sp-pwa-install-text strong {
+    display: block;
+    font-size: 14px;
+}
+.sp-pwa-install-text p {
+    margin: 0;
+    font-size: 12.5px;
+    opacity: 0.9;
+}
+.sp-pwa-install-buttons {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.sp-pwa-install-dismiss {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    opacity: 0.8;
+    font-size: 16px;
+    line-height: 1;
+    padding: 4px 8px;
+}
+.sp-pwa-install-dismiss:hover {
+    opacity: 1;
+}
+@media screen and (max-width: 576px) {
+    .sp-pwa-install-text p {
+        display: none;
+    }
+}
+
+/* === #main_dashboard_nav mobile: compact 3-column grid, not scroll ===
+   The 11-item dashboard section switcher (Overview/Reports/Website/
+   Keywords/Analytics/Search Console/Site Auditor/Social Media/Reviews/
+   Directory Submission/AI Insights, see user/userhome.ctp.php) is the
+   first thing a logged-in user sees. A horizontal-scroll row was tried
+   first (like the dashboard's own keyword-distribution tabs) but the
+   user found it looked bad in practice - swiping to discover items
+   isn't obvious, and it hides most of the tab bar behind the fold.
+   Replaced with a fixed 4-column grid instead: every item visible at
+   once as a small icon-over-label chip, 3 short rows total, no
+   scrolling or swiping needed. Each .nav-link's markup is
+   `<i class="fas ..."></i> <span class="nav-label">Label</span>` -
+   the label is wrapped in its own element (added in userhome.ctp.php)
+   so flex-direction:column can reliably stack icon above label;
+   relying on flex to lay out a bare icon element plus a raw sibling
+   text node is not consistent across browsers. */
+@media screen and (max-width: 767px) {
+    #main_dashboard_nav {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+        border-bottom: none;
+    }
+    #main_dashboard_nav .nav-item {
+        margin: 0;
+    }
+    #main_dashboard_nav .nav-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 100%;
+        padding: 8px 2px;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 8px;
+        background: rgba(0,0,0,0.02);
+        text-align: center;
+    }
+    #main_dashboard_nav .nav-link i {
+        font-size: 15px;
+        margin-right: 0;
+    }
+    #main_dashboard_nav .nav-link .nav-label {
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: normal;
+        word-break: break-word;
+    }
+    #main_dashboard_nav .nav-link.active {
+        background: #4a8fc7;
+        border-color: #4a8fc7;
+        color: #fff;
+    }
+}
+
+/* === Top navbar hamburger menu: floating dropdown on mobile, not an
+   expanding panel that pushes content down ===
+   Bootstrap's default .navbar-collapse expands in normal document flow
+   (block-level, pushes everything below it further down the page) -
+   on a phone that meant tapping the hamburger shoved the #main_dashboard_nav
+   tabs and all page content down by the height of the whole menu. Anchors
+   it instead as a small floating card in the top-right corner (under the
+   hamburger button itself), overlaying the page instead of displacing it -
+   the standard mobile "kebab menu" pattern. Targets both .collapsing (the
+   mid-animation state) and .show (fully open) so the whole open/close
+   transition happens in the floating position, not a page-push that then
+   snaps into a corner once the animation finishes. */
+@media screen and (max-width: 767px) {
+    .navbar.navbar-expand-md {
+        position: relative;
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing {
+        position: absolute;
+        top: 100%;
+        right: 12px;
+        left: auto;
+        width: 250px;
+        max-width: calc(100vw - 24px);
+        max-height: 80vh;
+        overflow-y: auto;
+        background: #1a1e24;
+        border-radius: 10px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        padding: 10px 14px 14px;
+        z-index: 1050;
+        flex-basis: auto;
+        flex-grow: 0;
+        align-items: stretch;
+    }
+    /* display:block (not flex-direction:column) - the utility row's
+       <a>Help</a><span class="pipe"> | </span> pairs are separate flex
+       item SIBLINGS, not nested together, so a column flex container
+       stacked each link and its pipe onto its own line ("Help" / "|" /
+       "Support" / "|"). Block flow lets them wrap inline as plain text
+       instead, same as their pipe separators were designed for. The
+       language <select> still lands on its own row below regardless,
+       since Bootstrap's .form-control is already display:block;
+       width:100% on its own. */
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline {
+        display: block;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline a,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline a {
+        display: inline;
+        color: #d7dbe0;
+    }
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline select,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline select {
+        margin-top: 8px;
+    }
+}
+
+/* === Notification bell dropdown: fixed viewport-relative panel on
+   mobile, not a nested Bootstrap dropdown ===
+   #alert_noti_sec (the bell icon) sits inside the floating hamburger
+   menu above - only 250px wide on a phone - but its own .dropdown-menu
+   has a desktop-only min-width: 32rem (512px), wider than any phone
+   screen and far wider than the 250px-wide parent it's nested inside.
+   Opening it on mobile would force either a badly overflowing panel or
+   a cramped horizontal scroll within an already-scrolling vertical
+   menu. Detaches it from that narrow nested context entirely via
+   position:fixed, sized and positioned relative to the viewport
+   instead, so it renders as a normal full-width panel regardless of
+   how deep it's nested. 62px clears the 54px-tall navbar (see
+   .navbar.navbar-expand-md min-height above) plus a small gap. */
+@media screen and (max-width: 767px) {
+    #alert_noti_sec .dropdown-menu {
+        position: fixed;
+        top: calc(62px + env(safe-area-inset-top, 0px));
+        left: 12px;
+        right: 12px;
+        width: auto;
+        min-width: 0;
+        max-width: none;
+        max-height: calc(100vh - 80px);
+        margin-top: 0;
+    }
+}
+
+/* === .stat-row: 2-column stat grid on mobile (sitewide) ===
+   The "Overview Stats" card on 6 dashboard tabs (Analytics, Social
+   Media, Search Console, Reviews, Directory Submission, Website
+   Analytics) all share the same pattern: a .row of col-md-X cells,
+   each an <h6> label + a big colored badge number - identical problem
+   to the main dashboard's stat-tile-row (fixed earlier), just a
+   different visual style (badge numbers instead of stat-tile
+   typography) and not scoped to .sp-dashboard since these 6 pages
+   don't use that class. Same fix: 2 tiles per row instead of one
+   full-width tile per row, with a lone odd tile spanning full width. */
+@media screen and (max-width: 767px) {
+    .stat-row { display: flex; flex-wrap: wrap; }
+    .stat-row > div[class*="col-md-"] {
+        width: 50%;
+        flex: 0 0 50%;
+        max-width: 50%;
+        padding-left: 8px;
+        padding-right: 8px;
+        margin-bottom: 1.1rem;
+    }
+    .stat-row > div[class*="col-md-"]:last-child:nth-child(odd) {
+        width: 100%;
+        flex-basis: 100%;
+        max-width: 100%;
+    }
+    /* the badge numbers use an inline style="font-size: 1.5rem" (or
+       1.4rem), which otherwise always wins over an external stylesheet
+       regardless of selector specificity - !important is the only way
+       to shrink them to fit a 50%-width tile on a phone */
+    .stat-row h3 .badge {
+        font-size: 1.15rem !important;
+        padding: 0.35rem 0.7rem !important;
+    }
+    .stat-row h6 {
+        font-size: 0.8rem;
     }
 }

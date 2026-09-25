@@ -36,26 +36,117 @@ class UserController extends Controller{
 	
 	# function to set login session items
 	function setLoginSession($userInfo) {
+		// session fixation: without this, an attacker who gets a victim to
+		// visit the app first (planting a known, pre-auth session id via
+		// the cookie or a session-id-in-URL trick) would have that same
+		// session id become a fully authenticated one the moment the
+		// victim logs in - regenerating here discards the pre-login id and
+		// its session file, so a session id observed/set before
+		// authentication is never valid after it
+		session_regenerate_id(true);
 		@Session::setSession('userInfo', $userInfo);
 		@Session::setSession('lang_code', $userInfo['lang_code']);
 		@Session::setSession('text', '');
 		// clear SP API check cache so a fresh check runs on the next page load
 		$this->db->query("DELETE FROM information_list WHERE info_type='spapi_check'");
 	}
-	
+
+	// generates a salted, adaptive-cost hash (bcrypt via PASSWORD_DEFAULT)
+	// for storing a new/changed password - replaces the legacy plain md5()
+	// used everywhere in this file, which has no salt (identical passwords
+	// across users produce identical hashes) and is fast enough to brute
+	// force billions of guesses/sec on commodity hardware if the users
+	// table is ever exposed
+	function __hashPassword($password) {
+		return password_hash($password, PASSWORD_DEFAULT);
+	}
+
+	// a legacy md5 hash is exactly 32 lowercase hex chars - password_hash()
+	// output always starts with an algorithm tag like "$2y$" and is never
+	// valid hex, so this can't collide with a real bcrypt/argon2 hash
+	function __isLegacyMd5Hash($hash) {
+		return (bool) preg_match('/^[a-f0-9]{32}$/', (string) $hash);
+	}
+
+	// verifies a password against either hash format so existing users'
+	// stored md5 hashes keep working without a forced mass password reset -
+	// login() upgrades a legacy hash to bcrypt in place the moment it sees
+	// one verify successfully, so accounts migrate transparently over time
+	// as their owners log in
+	function __verifyPassword($password, $hash) {
+		if ($this->__isLegacyMd5Hash($hash)) {
+			return hash_equals($hash, md5($password));
+		}
+		return password_verify($password, (string) $hash);
+	}
+
+	// throttles login attempts to blunt online brute-force/credential-
+	// stuffing, which login() previously had zero protection against - a
+	// tight per-username bucket stops repeatedly guessing one account's
+	// password regardless of source IP, and a looser per-IP bucket stops
+	// one source spraying many usernames. Reuses the same fixed-window
+	// limiter every other rate-limited endpoint in the app already goes
+	// through (see AIVisibilityController::__checkRateLimit()).
+	function __checkLoginRateLimit($userName) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$userKey = 'login-user:' . strtolower(trim((string) $userName));
+		$ipKey = 'login-ip:' . $ip;
+		// both calls must run even if the first fails, so each bucket's
+		// hit count still reflects this attempt
+		$userOk = $aivCtrler->__checkRateLimit($userKey, 8);
+		$ipOk = $aivCtrler->__checkRateLimit($ipKey, 20);
+		return $userOk && $ipOk;
+	}
+
+	// generates a temporary password for requestPassword()'s reset email -
+	// extracted to its own method so it can be tested directly for
+	// strength. random_bytes() is a cryptographically secure source,
+	// unlike the rand()-based generator this replaces
+	function __generateRandomPassword($byteLength = 12) {
+		return bin2hex(random_bytes($byteLength));
+	}
+
+	// finishes a successful login (real setLoginSession() + the same
+	// redirect logic login() has always used) - extracted so both the
+	// direct (no 2FA) path and verifyTwoFactorLogin()'s post-2FA path
+	// share the exact same completion code, rather than risking the two
+	// drifting apart
+	function __completeLogin($uInfo, $postInfo) {
+		$this->setLoginSession($uInfo);
+
+		if ($referer = isValidReferer($postInfo['red_referer'] ?? '')) {
+			redirectUrl($referer);
+		} else if (!empty($postInfo['source']) && $postInfo['source'] == 'install') {
+			redirectUrl(SP_WEBPATH."/admin-panel.php");
+		} else {
+			$extArgs = !empty($postInfo['source']) ? "?source=" . $postInfo['source'] : "";
+			redirectUrl(SP_WEBPATH."/" . $extArgs);
+		}
+	}
+
 	# login function
-	function login(){	    
+	function login(){
 	    
 	    $_POST['userName'] = sanitizeData($_POST['userName']);
 		$this->set('post', $_POST);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkBlank($_POST['userName']));
 		$errMsg['password'] = formatErrorMsg($this->validate->checkBlank($_POST['password']));
 		if(!$this->validate->flagErr){
+		    if ($this->__checkLoginRateLimit($_POST['userName'])) {
 			$sql = "select u.*,ut.user_type from users u,usertypes ut where u.utype_id=ut.id and u.username='".addslashes($_POST['userName'])."'";
 			$userInfo = $this->db->select($sql, true);
 			if(!empty($userInfo['id'])){
-				if($userInfo['password'] == md5($_POST['password'])){
-					
+				if($this->__verifyPassword($_POST['password'], $userInfo['password'])){
+					// transparently upgrade a legacy md5 hash to bcrypt now
+					// that we have the plaintext password in hand - the
+					// only point in the app where that's ever true
+					if ($this->__isLegacyMd5Hash($userInfo['password'])) {
+						$newHash = addslashes($this->__hashPassword($_POST['password']));
+						$this->db->query("update users set password='$newHash' where id=".intval($userInfo['id']));
+					}
+
 					// get user type spec details and verify whether to check activation or not
 					$activationStatus = true;
 					$userTypeCtrler = new UserTypeController();
@@ -90,15 +181,27 @@ class UserController extends Controller{
 						$uInfo['userType'] = $userInfo['user_type'];
 						$uInfo['userTypeId'] = $userInfo['utype_id'];
 						$uInfo['lang_code'] = $userInfo['lang_code'];
-						$this->setLoginSession($uInfo);
-						
-						if ($referer = isValidReferer($_POST['red_referer'])) {
-							redirectUrl($referer);
-						} else if (!empty($_POST['source']) && $_POST['source'] == 'install') {
-							redirectUrl(SP_WEBPATH."/admin-panel.php");
+
+						// opt-in TOTP 2FA: a user who has confirmed setup
+						// (user_totp.enabled=1) does NOT get setLoginSession()
+						// called yet - the session stays unauthenticated
+						// (isLoggedIn() still false) until they also prove
+						// possession of their authenticator app/a backup code
+						// on the separate verifyTwoFactorLogin() step below.
+						// $pending2faInfo intentionally holds only what's
+						// needed to complete login afterwards - never the
+						// password or anything else from this request.
+						if ($this->__isTwoFactorEnabled($userInfo['id'])) {
+							Session::setSession('pending_2fa', [
+								'uInfo' => $uInfo,
+								'redirectPost' => [
+									'red_referer' => $_POST['red_referer'] ?? '',
+									'source' => $_POST['source'] ?? '',
+								],
+							]);
+							redirectUrl(SP_WEBPATH . "/login.php?sec=twofactor");
 						} else {
-						    $extArgs = !empty($_POST['source']) ? "?source=" . $_POST['source'] : "";
-							redirectUrl(SP_WEBPATH."/" . $extArgs);
+							$this->__completeLogin($uInfo, $_POST);
 						}
 												
 					}else{
@@ -111,11 +214,306 @@ class UserController extends Controller{
 			}else{
 				$errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']["Login incorrect"]);
 			}
+		    } else {
+		        // per-username AND per-IP fixed-window caps blunt both a
+		        // focused brute-force against one account and a
+		        // credential-stuffing spray across many - deliberately
+		        // generic wording so a rate-limited response looks the
+		        // same as any other failed attempt to an attacker
+		        $errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']['Too many login attempts']);
+		    }
 		}
 		$this->set('errMsg', $errMsg);
 		$this->index($_POST);
 	}
-	
+
+	/* =====================================================================
+	 * Opt-in TOTP two-factor authentication (RFC 6238, libs/totp.class.php)
+	 * ===================================================================== */
+
+	// resolves (generating + persisting on first use) the symmetric key
+	// used to encrypt user_totp.secret at rest - same lazy-generation-into-
+	// settings pattern as UserTokenController's OAuth token encryption key,
+	// but a SEPARATE key (SP_TOTP_ENCRYPTION_KEY) for proper key
+	// separation between the two secret types
+	function __getTotpEncryptionKey() {
+		$keyInfo = $this->db->select("select set_val from settings where set_name='SP_TOTP_ENCRYPTION_KEY'", true);
+		if (!empty($keyInfo['set_val'])) {
+			return base64_decode($keyInfo['set_val']);
+		}
+
+		$key = random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES);
+		$encoded = addslashes(base64_encode($key));
+		if (!empty($keyInfo['id']) || $this->db->select("select id from settings where set_name='SP_TOTP_ENCRYPTION_KEY'", true)) {
+			$this->db->query("update settings set set_val='$encoded' where set_name='SP_TOTP_ENCRYPTION_KEY'");
+		} else {
+			$this->db->query("insert into settings(set_label,set_name,set_val,set_type) values('TOTP Encryption Key','SP_TOTP_ENCRYPTION_KEY','$encoded','large')");
+		}
+		return $key;
+	}
+
+	// every user_totp.secret this app ever writes is encrypted from day
+	// one (unlike OAuth tokens, there's no pre-existing plaintext format
+	// to stay backward compatible with)
+	function __encryptTotpSecret($plaintext) {
+		$key = $this->__getTotpEncryptionKey();
+		$nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$cipher = sodium_crypto_secretbox($plaintext, $nonce, $key);
+		return base64_encode($nonce . $cipher);
+	}
+
+	function __decryptTotpSecret($stored) {
+		$raw = base64_decode((string) $stored);
+		if (strlen($raw) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES) {
+			return false;
+		}
+		$nonce = substr($raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$cipher = substr($raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+		$key = $this->__getTotpEncryptionKey();
+		return sodium_crypto_secretbox_open($cipher, $nonce, $key);
+	}
+
+	function __getUserTotpInfo($userId) {
+		return $this->db->select("select * from user_totp where user_id=" . intval($userId), true);
+	}
+
+	function __isTwoFactorEnabled($userId) {
+		$info = $this->__getUserTotpInfo($userId);
+		return !empty($info['enabled']);
+	}
+
+	// generates $count fresh backup codes, fully replacing any existing
+	// set (a regenerate never appends - avoids an ever-growing list of
+	// half-used old codes). Only the bcrypt hash is ever stored - same
+	// helper as password hashing - the plaintext codes returned here are
+	// the only time they're ever available; the caller must show them to
+	// the user now, they can't be recovered later, only regenerated
+	function __generateBackupCodes($userId, $count = 8) {
+		$userId = intval($userId);
+		$this->db->query("delete from user_totp_backup_codes where user_id=$userId");
+		$now = date('Y-m-d H:i:s');
+		$plainCodes = [];
+		for ($i = 0; $i < $count; $i++) {
+			$raw = strtoupper(bin2hex(random_bytes(5))); // 40 bits - not brute-forceable at any real rate, backed by its own bcrypt hash
+			$formatted = substr($raw, 0, 4) . '-' . substr($raw, 4, 4) . '-' . substr($raw, 8, 2);
+			$plainCodes[] = $formatted;
+			$hash = addslashes($this->__hashPassword($formatted));
+			$this->db->query("insert into user_totp_backup_codes (user_id, code_hash, created_at) values ($userId, '$hash', '$now')");
+		}
+		return $plainCodes;
+	}
+
+	// checks $code against every unused backup code for this user
+	// (bcrypt hashes can't be looked up by value, only verified one at a
+	// time - negligible cost, at most a handful of rows per user) and
+	// marks the matching one used (single-use) on success
+	function __verifyBackupCode($userId, $code) {
+		$code = trim((string) $code);
+		if ($code === '') {
+			return false;
+		}
+		$rows = $this->db->select("select id, code_hash from user_totp_backup_codes where user_id=" . intval($userId) . " and used_at is null");
+		foreach ($rows as $row) {
+			if (password_verify($code, $row['code_hash'])) {
+				$now = date('Y-m-d H:i:s');
+				$this->db->query("update user_totp_backup_codes set used_at='$now' where id=" . intval($row['id']));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// throttles the 2FA code-verification steps (both the login-time
+	// check and setup confirmation) - without this, a 6-digit TOTP code
+	// (1,000,000 possibilities) would be a realistic online brute-force
+	// target. Same per-user + per-IP fixed-window limiter already used
+	// for login itself.
+	function __checkTwoFactorRateLimit($userId) {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		$userKey = 'twofactor-user:' . intval($userId);
+		$ipKey = 'twofactor-ip:' . $ip;
+		$userOk = $aivCtrler->__checkRateLimit($userKey, 10);
+		$ipOk = $aivCtrler->__checkRateLimit($ipKey, 20);
+		return $userOk && $ipOk;
+	}
+
+	// GET users.php?sec=two-factor - self-service, any logged-in user
+	// (not admin-only - see users.php's $userIncludeList). Shows current
+	// status; if not yet enabled, (re)uses a pending secret so repeated
+	// visits/failed confirmation attempts don't force a re-scan.
+	function showTwoFactorSetup() {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		include_once(SP_LIBPATH . "/totp.class.php");
+		$totpInfo = $this->__getUserTotpInfo($userId);
+
+		if (!empty($totpInfo['enabled'])) {
+			$this->set('twoFactorEnabled', true);
+			$this->set('confirmedAt', $totpInfo['confirmed_at']);
+		} else {
+			$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+			if ($secretBytes === false) {
+				$secretBytes = Totp::generateSecret();
+				$now = date('Y-m-d H:i:s');
+				$encrypted = addslashes($this->__encryptTotpSecret($secretBytes));
+				if (empty($totpInfo['id'])) {
+					$this->db->query("insert into user_totp (user_id, secret, enabled, created_at, updated_at) values ($userId, '$encrypted', 0, '$now', '$now')");
+				} else {
+					$this->db->query("update user_totp set secret='$encrypted', updated_at='$now' where user_id=$userId");
+				}
+			}
+
+			$userInfo = $this->__getUserInfo($userId);
+			$custSiteInfo = getCustomizerDetails();
+			$siteName = !empty($custSiteInfo['site_name']) ? $custSiteInfo['site_name'] : "Seo Panel";
+
+			$this->set('twoFactorEnabled', false);
+			$this->set('secretBase32', Totp::base32Encode($secretBytes));
+			$this->set('otpAuthUri', Totp::buildOtpAuthUri($secretBytes, $userInfo['username'], $siteName));
+		}
+
+		$this->render('user/twofactor_setup', 'ajax');
+		exit;
+	}
+
+	// POST users.php?sec=confirm-two-factor - verifies the code against
+	// the pending secret; on success marks 2FA enabled and generates
+	// backup codes (shown once, right here)
+	function confirmTwoFactorSetup($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		include_once(SP_LIBPATH . "/totp.class.php");
+
+		if (!$this->__checkTwoFactorRateLimit($userId)) {
+			$this->set('errMsg', ['code' => formatErrorMsg('Too many attempts - please wait a minute and try again.')]);
+			$this->showTwoFactorSetup();
+			return;
+		}
+
+		$totpInfo = $this->__getUserTotpInfo($userId);
+		$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+
+		if ($secretBytes !== false && Totp::verifyCode($secretBytes, $info['code'] ?? '')) {
+			$now = date('Y-m-d H:i:s');
+			$this->db->query("update user_totp set enabled=1, confirmed_at='$now', updated_at='$now' where user_id=" . intval($userId));
+			$backupCodes = $this->__generateBackupCodes($userId);
+			$this->set('backupCodes', $backupCodes);
+			$this->set('justEnabled', true);
+			$this->set('twoFactorEnabled', true);
+			$userInfo = $this->__getUserInfo($userId);
+			$this->logAuditEvent('twofactor.enable', 'user', $userId, $userInfo['username'] ?? null);
+			$this->render('user/twofactor_setup', 'ajax');
+			exit;
+		}
+
+		$this->set('errMsg', ['code' => formatErrorMsg('Incorrect code - please try again.')]);
+		$this->showTwoFactorSetup();
+	}
+
+	// POST users.php?sec=disable-two-factor - requires re-entering the
+	// current password (not just being logged in) before disabling, so a
+	// hijacked/left-open session alone isn't enough to strip 2FA protection
+	function disableTwoFactor($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		$userInfo = $this->__getUserInfo($userId);
+		if ($this->__verifyPassword($info['password'] ?? '', $userInfo['password'])) {
+			$this->db->query("delete from user_totp where user_id=" . intval($userId));
+			$this->db->query("delete from user_totp_backup_codes where user_id=" . intval($userId));
+			$this->logAuditEvent('twofactor.disable', 'user', $userId, $userInfo['username'] ?? null);
+			$this->set('msg', 'Two-factor authentication has been disabled.');
+		} else {
+			$this->set('errMsg', ['password' => formatErrorMsg('Incorrect password.')]);
+		}
+
+		$this->showTwoFactorSetup();
+	}
+
+	// POST users.php?sec=regenerate-backup-codes - requires 2FA already
+	// enabled; fully replaces the set, old codes stop working
+	function regenerateBackupCodes($info=[]) {
+		$userId = isLoggedIn();
+		if (empty($userId)) {
+			return;
+		}
+
+		if ($this->__isTwoFactorEnabled($userId)) {
+			$backupCodes = $this->__generateBackupCodes($userId);
+			$this->set('backupCodes', $backupCodes);
+			$this->set('justRegenerated', true);
+		}
+
+		$this->showTwoFactorSetup();
+	}
+
+	// GET login.php?sec=twofactor - the code-entry step after a correct
+	// username/password for a user with 2FA enabled. Requires the pending
+	// state login() set - reachable only via a real, just-completed
+	// primary login, never bookmarkable/replayable on its own.
+	function showTwoFactorLoginForm() {
+		$pending = Session::readSession('pending_2fa');
+		if (empty($pending['uInfo']['userId'])) {
+			redirectUrl(SP_WEBPATH . "/login.php");
+			return;
+		}
+		$this->render('common/twofactor_login');
+		exit;
+	}
+
+	// POST login.php?sec=verify_2fa
+	function verifyTwoFactorLogin($info=[]) {
+		$pending = Session::readSession('pending_2fa');
+		if (empty($pending['uInfo']['userId'])) {
+			redirectUrl(SP_WEBPATH . "/login.php");
+			return;
+		}
+
+		$userId = $pending['uInfo']['userId'];
+		$errMsg = [];
+
+		if (!$this->__checkTwoFactorRateLimit($userId)) {
+			$errMsg['code'] = formatErrorMsg('Too many attempts - please wait a minute and try again.');
+		} else {
+			include_once(SP_LIBPATH . "/totp.class.php");
+			$totpInfo = $this->__getUserTotpInfo($userId);
+			$secretBytes = !empty($totpInfo['secret']) ? $this->__decryptTotpSecret($totpInfo['secret']) : false;
+			$code = $info['code'] ?? '';
+
+			$verified = ($secretBytes !== false && Totp::verifyCode($secretBytes, $code))
+				|| $this->__verifyBackupCode($userId, $code);
+
+			if ($verified) {
+				Session::setSession('pending_2fa', '');
+				$this->__completeLogin($pending['uInfo'], $pending['redirectPost'] ?? []);
+				return;
+			}
+
+			$errMsg['code'] = formatErrorMsg('Incorrect code - please try again.');
+		}
+
+		$this->set('errMsg', $errMsg);
+		$this->showTwoFactorLoginForm();
+	}
+
+	// GET login.php?sec=cancel_2fa - abandons a pending 2FA login (e.g.
+	// "wrong account, let me sign in as someone else") without waiting
+	// for the code step to naturally expire with the session
+	function cancelTwoFactorLogin() {
+		Session::setSession('pending_2fa', '');
+		redirectUrl(SP_WEBPATH . "/login.php");
+	}
+
 	# func to confirm the user registration
 	function confirmUser($confirmCode) {
 		$confirmCode = addslashes($confirmCode);
@@ -273,7 +671,7 @@ class UserController extends Controller{
 		$userStatus = 1;
 		
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
-		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
 		$errMsg['email'] = formatErrorMsg($this->validate->checkEmail($userInfo['email']));
@@ -301,7 +699,7 @@ class UserController extends Controller{
 					$utypeId = intval($userInfo['utype_id']);
 					$sql = "insert into users
 					(utype_id,username,password,first_name,last_name,email,created,status) 
-					values ($utypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."',
+					values ($utypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."',
 					'".addslashes($userInfo['firstName'])."','".addslashes($userInfo['lastName'])."',
 					'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus)";
 					$this->db->query($sql);
@@ -355,7 +753,8 @@ class UserController extends Controller{
 						if(!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)){
 							$error = showErrorMsg(
 								'An internal error occured while sending confirmation mail! Please <a href="'.SP_CONTACT_LINK.'">contact</a> seo panel team.',
-								false
+								false,
+								true
 							);
 						}						
 					}
@@ -452,7 +851,10 @@ class UserController extends Controller{
 		$confirmStr = !empty($status) ? ",confirm=1" : "";
 		$sql = "update users set status=$status $confirmStr where id=$userId";
 		$this->db->query($sql);
-		
+
+		$targetUsername = $this->db->select("select username from users where id=$userId", true)['username'] ?? null;
+		$this->logAuditEvent(!empty($status) ? 'user.activate' : 'user.deactivate', 'user', $userId, $targetUsername);
+
 		# deaactivate all websites under this user
 		if(empty($status)){
 			$websiteCtrler = New WebsiteController();
@@ -462,14 +864,20 @@ class UserController extends Controller{
 			}
 		}
 	}
-	
+
 	# func to change status
 	function __deleteUser($userId){
-		
+
 		$userId = intval($userId);
+		// fetched BEFORE the delete - the audit log needs a readable label
+		// that survives independently of the row it describes being gone
+		$targetUsername = $this->db->select("select username from users where id=$userId", true)['username'] ?? null;
+
 		$sql = "delete from users where id=$userId";
 		$this->db->query($sql);
-		
+
+		$this->logAuditEvent('user.delete', 'user', $userId, $targetUsername);
+
 		$sql = "select id from websites where user_id=$userId";
 		$webisteList = $this->db->select($sql);
 		$webisteCtrler = New WebsiteController();
@@ -547,7 +955,7 @@ class UserController extends Controller{
 	    $userInfo = sanitizeData($userInfo);
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
-		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
+		$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
 		$errMsg['email'] = formatErrorMsg($this->validate->checkEmail($userInfo['email']));
@@ -567,13 +975,27 @@ class UserController extends Controller{
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
 					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm) 
-						values($userTypeId,'".addslashes($userInfo['userName'])."','".md5($userInfo['password'])."'
+						values($userTypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
 						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
-					$this->db->query($sql);
-					
-					// if render results
-					if ($renderResults) {					
+					$insertOk = $this->db->query($sql);
+
+					if ($insertOk) {
+						$this->logAuditEvent('user.create', 'user', $this->db->lastInsertId, $userInfo['userName']);
+					}
+
+					// bug fix: a second request racing this same
+					// __checkUserName()/__checkEmail() check (TOCTOU) can still
+					// hit the DB-level UNIQUE constraint on users.username/email
+					// and fail here - the insert's result was never checked
+					// before, so this reported success with nothing actually
+					// persisted. Only the actual duplicate-key error (1062) is
+					// treated as the same "already exists" case; any other
+					// insert failure falls through to the generic error path
+					// below instead of being mislabeled as a duplicate.
+					if (!$insertOk && mysqli_errno($this->db->connectionId) == 1062) {
+						$errMsg['userName'] = formatErrorMsg($_SESSION['text']['login']['usernameexist']);
+					} else if ($renderResults) {
 						$this->listUsers();
 						exit;
 					} else {
@@ -629,6 +1051,16 @@ class UserController extends Controller{
 		$userInfo['id'] = intval($userInfo['id']);
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
+
+		// bug fix: this used to interpolate $userInfo['userType']
+		// straight into the SQL with no default - a caller that omitted
+		// it produced a syntactically invalid UPDATE ("utype_id = " with
+		// nothing before "where"), which failed silently (the query's
+		// return value was never checked) while still reporting success
+		// and persisting nothing. Defaults to 2 ("user") when missing,
+		// matching createUser()'s own already-established fallback for
+		// the exact same field, for consistency between the two.
+		$userTypeId = empty($userInfo['userType']) ? 2 : intval($userInfo['userType']);
 		
 		// if expiry date is not empty
 		if (!empty($userInfo['expiry_date'])) {
@@ -640,8 +1072,8 @@ class UserController extends Controller{
 
 		// if password needs to be reset
 		if(!empty($userInfo['password'])){
-			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		
 		// if change status of user
@@ -670,6 +1102,13 @@ class UserController extends Controller{
 			
 			// if no error to inputs
 			if (!$this->validate->flagErr) {
+				// captured BEFORE the update, purely to tell the audit log
+				// whether the role actually changed (vs. was just
+				// resubmitted unchanged) - the old value on its own is
+				// worth recording too, since "who had this role before"
+				// is exactly the kind of thing an audit trail is for
+				$oldUtypeId = $this->db->select("select utype_id from users where id={$userInfo['id']}", true)['utype_id'] ?? null;
+
 				$sql = "update users set
 						username = '".addslashes($userInfo['userName'])."',
 						first_name = '".addslashes($userInfo['firstName'])."',
@@ -678,18 +1117,34 @@ class UserController extends Controller{
 						$activeStr
 						$expiryStr
 						email = '".addslashes($userInfo['email'])."',
-						utype_id = ".addslashes($userInfo['userType'])."
+						utype_id = $userTypeId
 						where id={$userInfo['id']}";
-				$this->db->query($sql);
-				
-				// if render results
-				if ($renderResults) {
-					$this->listUsers();
-					exit;
+				$queryResult = $this->db->query($sql);
+
+				// bug fix: the query's result was never checked - a
+				// failed UPDATE (e.g. a transient DB error) still
+				// reported success with nothing actually persisted
+				if (!$queryResult) {
+					$errMsg['userName'] = formatErrorMsg('An internal error occurred while updating the user. Please try again.');
 				} else {
-					return array('success', 'Successfully updated user');
+					// logged regardless of $renderResults - a role change
+					// or password reset matters the same whether it came
+					// through the web UI or an API-style call
+					if ($oldUtypeId !== null && intval($oldUtypeId) !== $userTypeId) {
+						$this->logAuditEvent('user.role_change', 'user', $userInfo['id'], $userInfo['userName'], "utype_id $oldUtypeId -> $userTypeId");
+					}
+					if (!empty($userInfo['password'])) {
+						$this->logAuditEvent('user.password_reset_by_admin', 'user', $userInfo['id'], $userInfo['userName']);
+					}
+
+					if ($renderResults) {
+						$this->listUsers();
+						exit;
+					} else {
+						return array('success', 'Successfully updated user');
+					}
 				}
-				
+
 			}
 		}
 		
@@ -840,8 +1295,8 @@ class UserController extends Controller{
 		$this->set('post', $userInfo);
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
 		if(!empty($userInfo['password'])){
-			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword']));
-			$passStr = "password = '".md5($userInfo['password'])."',";
+			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
+			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
 		$errMsg['lastName'] = formatErrorMsg($this->validate->checkBlank($userInfo['lastName']));
@@ -896,7 +1351,12 @@ class UserController extends Controller{
 	        $userId = $this->__checkEmail($userEmail);
 	        if(!empty($userId)){
 	            $userInfo = $this->__getUserInfo($userId);
-	        	$rand = str_shuffle(rand().$userInfo['username']);
+	        	// the old rand()-based generator (str_shuffle(rand().username))
+	        	// was not cryptographically secure - rand()'s output range and
+	        	// internal state are small enough to be guessable/brute-
+	        	// forceable, and shuffling in the username (public knowledge)
+	        	// added no real entropy
+	        	$rand = $this->__generateRandomPassword();
 
 	            // get admin details
 	            $adminInfo = $this->__getAdminInfo();
@@ -915,7 +1375,7 @@ class UserController extends Controller{
 	           	} else {
 	           		
 	           		// update password in DB
-	           		$sql = "update users set password=md5('$rand') where id={$userInfo['id']}";
+	           		$sql = "update users set password='".addslashes($this->__hashPassword($rand))."' where id={$userInfo['id']}";
 	           		$this->db->query($sql);
 	           		
 	           	}

@@ -23,7 +23,7 @@
 include_once("includes/sp-load.php");
 
 // check the sections can accessed by user
-$userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription");
+$userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription", "two-factor", "confirm-two-factor", "disable-two-factor", "regenerate-backup-codes");
 if ( in_array($_GET['sec'], $userIncludeList) || in_array($_POST['sec'], $userIncludeList) ) {
 	isLoggedIn();
 } else {
@@ -61,7 +61,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "update-subscription":
 			$controller->updateSubscription($_POST);
 			break;
-			
+
+		case "confirm-two-factor":
+			$controller->confirmTwoFactorSetup($_POST);
+			break;
+
+		case "disable-two-factor":
+			$controller->disableTwoFactor($_POST);
+			break;
+
+		case "regenerate-backup-codes":
+			$controller->regenerateBackupCodes($_POST);
+			break;
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -93,29 +105,31 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    $controller->manageWebsiteAccessManager($_POST);
 		    break;
 
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['userId'], 1);
+			$controller->listUsers($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['userId'], 0);
+			$controller->listUsers($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteUser($_POST['userId']);
+			$controller->listUsers($_POST);
+			break;
+
 		default:
 			$controller->listUsers($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['userId'], 1);			
-			$controller->listUsers($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['userId'], 0);
-			$controller->listUsers($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteUser($_GET['userId']);
-			$controller->listUsers($_GET);
-			break;
-		
+
 		case "edit":
 			$controller->editUser($_GET['userId']);
 			break;		
@@ -136,7 +150,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "renew-profile":
 			$controller->renewMyProfile();
 			break;
-			
+
+		case "two-factor":
+			$controller->showTwoFactorSetup();
+			break;
+
 		case "website-access-manager":
 			$controller->manageWebsiteAccessManager($_GET);
 			break;

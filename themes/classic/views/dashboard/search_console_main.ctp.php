@@ -43,7 +43,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Search Console Overview'] ?? 'Search Console Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-3 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-mouse-pointer text-primary"></i> <?php echo $spTextHome['Total Clicks'] ?? 'Total Clicks'?>
@@ -117,6 +117,65 @@ if (!empty($noWebsites)) {
 			</div>
 		</div>
 	</div>
+
+	<!-- AI Traffic & Search Insights -->
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><i class="fas fa-robot"></i> AI Traffic &amp; Search Insights</h4>
+				</div>
+				<div class="card-body">
+					<div class="row mb-3">
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-mouse-pointer text-primary"></i> AI Referral Clicks</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo number_format($aiVisibilityStats['referralHits'] ?? 0)?></span></h3>
+							<small class="text-muted">visits from an AI platform link</small>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-eye text-info"></i> AI Overview Impressions</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo intval($aiVisibilityStats['aioPresent'] ?? 0)?></span></h3>
+							<small class="text-muted">of <?php echo intval($aiVisibilityStats['aioMeasured'] ?? 0)?> measured keywords</small>
+						</div>
+						<div class="col-md-6">
+							<p class="text-muted mb-2">Combines this Search Console data with Google Analytics data for the same period into one plain-language summary.</p>
+							<?php if (!empty($localAiAvailable)) { ?>
+							<button type="button" class="btn btn-outline-secondary btn-sm" onclick="searchConsoleSummarizeTrafficSearch()">
+								<i class="fa fa-magic"></i> Summarize with AI
+							</button>
+							<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+							<?php } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php if (!empty($localAiAvailable)) { ?>
+	<script type="text/javascript">
+	function searchConsoleSummarizeTrafficSearch() {
+		var box = document.getElementById('trafficSearchSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/search_console_dashboard.php',
+			data: {
+				sec: 'summarizetrafficsearch',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+	<?php } ?>
 
 	<!-- Pie Charts Row -->
 	<div class="row mb-4">
@@ -369,6 +428,16 @@ function drawAllCharts() {
 	drawPositionTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spSearchConsoleChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spSearchConsoleChartResizeTimer);
+		spSearchConsoleChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw clicks vs impressions pie chart
 function drawClicksImpressionsChart() {
 	<?php
@@ -384,6 +453,7 @@ function drawClicksImpressionsChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Click Distribution'] ?? 'Click Distribution'?>',
+		width: spChartWidth('clicks_impressions_chart'),
 		height: 300,
 		colors: ['#4285F4', '#EA4335'],
 		chartArea: { width: '90%', height: '80%' },
@@ -403,7 +473,7 @@ function drawCTRGaugeChart() {
 	]);
 
 	var options = {
-		width: '100%',
+		width: spChartWidth('ctr_gauge_chart'),
 		height: 300,
 		redFrom: 0, redTo: 2,
 		yellowFrom: 2, yellowTo: 5,
@@ -432,6 +502,7 @@ function drawSourceClicksChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks by Search Engine'] ?? 'Clicks by Search Engine'?>',
+		width: spChartWidth('source_clicks_chart'),
 		height: 300,
 		colors: [<?php
 			$colors = [];
@@ -466,6 +537,7 @@ function drawPerformanceTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks & Impressions Over Time'] ?? 'Clicks & Impressions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('performance_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853'],
 		legend: { position: 'bottom' },
@@ -510,6 +582,7 @@ function drawCTRTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['CTR Over Time'] ?? 'CTR Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('ctr_trends_chart'),
 		height: 350,
 		colors: ['#34A853'],
 		legend: { position: 'bottom' },
@@ -546,6 +619,7 @@ function drawPositionTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Position Over Time'] ?? 'Position Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('position_trends_chart'),
 		height: 350,
 		colors: ['#FBBC05'],
 		legend: { position: 'bottom' },

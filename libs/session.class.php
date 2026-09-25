@@ -28,6 +28,30 @@ class Session extends Seopanel{
 		ini_set("session.gc_probability", 100);
 		ini_set("session.gc_divisor", 100);
 		ini_set("session.gc_maxlifetime", SP_TIMEOUT);
+
+		// harden the session cookie - previously left entirely to the
+		// server's php.ini defaults, which are httponly=0/samesite=""
+		// out of the box on most distros. HttpOnly blocks JS
+		// (document.cookie) from ever reading the session id, closing
+		// off token theft via any XSS that might slip through; SameSite=
+		// Lax stops the cookie being sent on a cross-site POST, blunting
+		// CSRF further on top of the token-based defenses already in
+		// place. Secure is only set when this request actually arrived
+		// over HTTPS - forcing it unconditionally would silently break
+		// every login on an install still served over plain HTTP.
+		if (!headers_sent()) {
+			$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+				|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+			session_set_cookie_params([
+				'lifetime' => 0,
+				'path' => '/',
+				'domain' => '',
+				'secure' => $isHttps,
+				'httponly' => true,
+				'samesite' => 'Lax',
+			]);
+		}
+
 		session_start();
 	}
 	
