@@ -858,6 +858,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 
 		<!-- Links Table -->
 		<div class="links-table-container">
+			<div style="overflow-x:auto;">
 			<table class="links-table" id="linksTable">
 				<thead>
 					<tr>
@@ -902,6 +903,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 					<?php } ?>
 				</tbody>
 			</table>
+			</div>
 		</div>
 		<?php } else { ?>
 		<div class="empty-state">

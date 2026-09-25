@@ -634,6 +634,14 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 @media (max-width: 576px) {
 	.summary-item, .summary-item-quarter {
 		flex: 0 0 100%;
+		/* the base rule's min-width: 250px/220px (for the 3/4-per-row
+		   desktop layouts) is never cleared otherwise - on a phone
+		   narrower than ~340px (after summary-body's own padding is
+		   subtracted) that minimum alone can force this item wider
+		   than the available width, same bug already fixed for this
+		   same summary-item/-quarter pattern on the dashboard tab's
+		   own copy of this page (dashboard/siteauditor_main.ctp.php) */
+		min-width: 0;
 	}
 	.summary-body {
 		padding: 20px;

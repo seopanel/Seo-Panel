@@ -310,6 +310,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	<div class="link-report-header">
 		<i class="fas fa-link"></i> <?php echo $spTextSA["Link Reports"]?>
 	</div>
+	<div style="overflow-x:auto;">
 	<table class="link-report-table">
 		<thead>
 			<tr>
@@ -417,6 +418,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	?>
 		</tbody>
 	</table>
+	</div>
 </div>
     <table class="actionSec mt-2">
     	<tr>
