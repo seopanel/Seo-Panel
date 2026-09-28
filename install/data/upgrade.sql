@@ -1157,3 +1157,64 @@ ALTER TABLE `llm_perception_results` ADD COLUMN `sentiment` varchar(10) DEFAULT 
 ALTER TABLE `auditorreports` ADD COLUMN `heading_structure_ok` tinyint(1) NOT NULL DEFAULT '1';
 ALTER TABLE `auditorreports` ADD COLUMN `has_faq_content` tinyint(1) NOT NULL DEFAULT '0';
 ALTER TABLE `auditorreports` ADD COLUMN `word_count` int(11) NOT NULL DEFAULT '0';
+
+-- Convert every remaining MyISAM table to InnoDB, including the ones
+-- every cron run writes to most often (rankresults, backlinkresults,
+-- keywords, crawl_log, searchresults/searchresultdetails,
+-- keyword_analytics, pagespeeddetails/pagespeedresults,
+-- saturationresults, webmaster_keywords/webmaster_sitemaps,
+-- website_search_analytics). MyISAM locks the whole table per write, so
+-- a cron job writing new results could block a user's own report page
+-- from reading that same table at the same time; it's also not
+-- crash-safe, unlike InnoDB. No FULLTEXT indexes exist on any of these
+-- tables, so the conversion needs no other schema change.
+ALTER TABLE `auditorpagelinks` ENGINE=InnoDB;
+ALTER TABLE `auditorprojects` ENGINE=InnoDB;
+ALTER TABLE `auditorreports` ENGINE=InnoDB;
+ALTER TABLE `auditorsitemaps` ENGINE=InnoDB;
+ALTER TABLE `backlinkresults` ENGINE=InnoDB;
+ALTER TABLE `country` ENGINE=InnoDB;
+ALTER TABLE `crawl_log` ENGINE=InnoDB;
+ALTER TABLE `currency` ENGINE=InnoDB;
+ALTER TABLE `directories` ENGINE=InnoDB;
+ALTER TABLE `dirsubmitinfo` ENGINE=InnoDB;
+ALTER TABLE `di_directory_meta` ENGINE=InnoDB;
+ALTER TABLE `featured_directories` ENGINE=InnoDB;
+ALTER TABLE `information_list` ENGINE=InnoDB;
+ALTER TABLE `keywordcrontracker` ENGINE=InnoDB;
+ALTER TABLE `keywords` ENGINE=InnoDB;
+ALTER TABLE `keyword_analytics` ENGINE=InnoDB;
+ALTER TABLE `pagespeeddetails` ENGINE=InnoDB;
+ALTER TABLE `pagespeedresults` ENGINE=InnoDB;
+ALTER TABLE `proxylist` ENGINE=InnoDB;
+ALTER TABLE `qwp_settings` ENGINE=InnoDB;
+ALTER TABLE `rankresults` ENGINE=InnoDB;
+ALTER TABLE `reports_settings` ENGINE=InnoDB;
+ALTER TABLE `saturationresults` ENGINE=InnoDB;
+ALTER TABLE `searchengines` ENGINE=InnoDB;
+ALTER TABLE `searchresultdetails` ENGINE=InnoDB;
+ALTER TABLE `searchresults` ENGINE=InnoDB;
+ALTER TABLE `seoplugins` ENGINE=InnoDB;
+ALTER TABLE `seotools` ENGINE=InnoDB;
+ALTER TABLE `settings` ENGINE=InnoDB;
+ALTER TABLE `skipdirectories` ENGINE=InnoDB;
+ALTER TABLE `testplugin` ENGINE=InnoDB;
+ALTER TABLE `themes` ENGINE=InnoDB;
+ALTER TABLE `timezone` ENGINE=InnoDB;
+ALTER TABLE `usertypes` ENGINE=InnoDB;
+ALTER TABLE `user_report_logs` ENGINE=InnoDB;
+ALTER TABLE `user_specs` ENGINE=InnoDB;
+ALTER TABLE `user_tokens` ENGINE=InnoDB;
+ALTER TABLE `webmaster_keywords` ENGINE=InnoDB;
+ALTER TABLE `webmaster_sitemaps` ENGINE=InnoDB;
+ALTER TABLE `website_search_analytics` ENGINE=InnoDB;
+
+-- these four live in textlang.sql/plugin database.sql rather than
+-- seopanel.sql, so a first pass over just seopanel.sql's table list
+-- missed them - `texts` in particular is read on effectively every page
+-- load (all UI copy comes from it) and written on every language-pack
+-- update or Customizer text edit.
+ALTER TABLE `languages` ENGINE=InnoDB;
+ALTER TABLE `texts` ENGINE=InnoDB;
+ALTER TABLE `translators` ENGINE=InnoDB;
+ALTER TABLE `sd_settings` ENGINE=InnoDB;

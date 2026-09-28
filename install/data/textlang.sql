@@ -11,7 +11,7 @@ CREATE TABLE `languages` (
   `lang_show` varchar(32) COLLATE utf8_unicode_ci DEFAULT NULL,
   `RTL` tinyint(1) NOT NULL DEFAULT '0',
   `translated` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 INSERT INTO `languages` (`lang_code`, `lang_name`, `lang_show`, `RTL`, `translated`) VALUES
 ('en', 'English', 'English', 0, 1),
@@ -68,7 +68,7 @@ CREATE TABLE `texts` (
   `label` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `content` text COLLATE utf8_unicode_ci,
   `changed` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed`) VALUES
 (1, 'en', 'common', 'lang', 'Language', '2019-08-06 06:09:56'),
@@ -28524,7 +28524,7 @@ CREATE TABLE `translators` (
   `trans_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `trans_company` varchar(64) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL,
   `trans_website` varchar(200) CHARACTER SET utf8 COLLATE utf8_unicode_ci NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 INSERT INTO `translators` (`id`, `lang_code`, `trans_name`, `trans_company`, `trans_website`) VALUES
 (1, 'de', 'Christopher Hüneke', 'ChriSEO', 'https://www.chriseo.de/'),
