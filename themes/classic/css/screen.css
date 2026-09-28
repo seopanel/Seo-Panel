@@ -1031,9 +1031,11 @@ div.tab button.active {	background-color: #ccc;}
     font-size: 13px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    gap: 10px;
+    overflow-x: auto;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1041,6 +1043,11 @@ div.tab button.active {	background-color: #ccc;}
     display: flex;
     align-items: center;
     gap: 8px;
+    white-space: nowrap;
+}
+
+.footer-sep {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .footer-sp A {
@@ -1071,10 +1078,17 @@ div.tab button.active {	background-color: #ccc;}
         text-align: center;
         padding: 10px 15px;
         gap: 8px;
+        white-space: normal;
+        overflow-x: visible;
     }
 
     .footer-sp > div {
         justify-content: center;
+        white-space: normal;
+    }
+
+    .footer-sep {
+        display: none;
     }
 }
 
