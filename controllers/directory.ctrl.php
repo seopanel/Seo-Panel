@@ -965,12 +965,31 @@ class DirectoryController extends Controller{
 	
 	# function to log submission data
 	function logSubmissionResult($content, $dirId, $websiteId) {
-		
+
 		$filename = SP_TMPPATH."/subres_web".$websiteId."_dir".$dirId.".html";
 		$fp = fopen($filename, 'w');
 		fwrite($fp, $content);
 		fclose($fp);
-		
+
+	}
+
+	/**
+	 * these are write-only debugging snapshots - logSubmissionResult()
+	 * is the only place that ever touches this filename pattern, nothing
+	 * in the app reads them back - so with the Directory Submission
+	 * cron resubmitting every active website to every active directory
+	 * on a schedule, one file per (website, directory) pair accumulates
+	 * in tmp/ forever with no cap. Swept on the same cron cycle as
+	 * clearCrawlLog(), same $daysBefore convention.
+	 * @param int $daysBefore The days before the submission log files to be deleted
+	 */
+	function clearSubmissionLogFiles($daysBefore) {
+		$dateBefore = mktime(0, 0, 0, date('m'), date('d') - $daysBefore, date('y'));
+		foreach (glob(SP_TMPPATH . "/subres_web*_dir*.html") ?: [] as $file) {
+			if (filemtime($file) < $dateBefore) {
+				@unlink($file);
+			}
+		}
 	}
 	
 	# function to get directory script type meta info

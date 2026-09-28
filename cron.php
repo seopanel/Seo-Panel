@@ -168,6 +168,13 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$crawlLog->clearMaillLog(SP_CRAWL_LOG_CLEAR_TIME);
 	echo "Clearing mail logs before " . SP_CRAWL_LOG_CLEAR_TIME . " days\n";
 
+	// delete orphaned directory-submission debug snapshots (tmp/subres_web*_dir*.html) -
+	// write-only, never read back anywhere in the app
+	include_once(SP_CTRLPATH."/directory.ctrl.php");
+	$dirCtrler = new DirectoryController();
+	$dirCtrler->clearSubmissionLogFiles(SP_SUBMISSION_LOG_CLEAR_TIME);
+	echo "Clearing directory submission log files before " . SP_SUBMISSION_LOG_CLEAR_TIME . " days\n";
+
 	// Process pending DataForSEO tasks
 	if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
 		echo "\n=== Processing pending DataForSEO tasks ===\n";

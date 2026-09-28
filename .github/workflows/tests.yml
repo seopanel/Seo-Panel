@@ -1,0 +1,110 @@
+name: PHP backend tests
+
+# Runs the spTests backend integration suite (tests/php/*_test.php)
+# against a fresh install of this checkout - the same suite that's been
+# run by hand via spTests/bin/run-php-tests-against-sp.sh for the whole
+# life of this project so far. Neither this repo nor spTests had any CI
+# at all before this workflow: every verification depended on someone
+# remembering to run the suite manually, so a regression could sit
+# unnoticed indefinitely.
+#
+# The seed sequence matters: a fresh install only ever runs
+# install/data/seopanel.sql + install/data/textlang.sql (both already
+# carry the full current schema). install/data/upgrade.sql is NOT part
+# of a fresh install - it's the incremental migration path for installs
+# that predate the current schema, and several of its ALTER/ADD COLUMN
+# statements now conflict with columns seopanel.sql already creates
+# directly (confirmed: importing it after seopanel.sql on a from-scratch
+# DB fails with "Duplicate column name"). Verified this exact sequence
+# end to end (fresh DB -> seopanel.sql -> textlang.sql -> app boots ->
+# spTests passes) before writing this workflow.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  spTests:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: seopanel
+          MYSQL_USER: seopanel
+          MYSQL_PASSWORD: seopanelpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out sp
+        uses: actions/checkout@v4
+        with:
+          path: sp
+
+      - name: Check out spTests
+        uses: actions/checkout@v4
+        with:
+          repository: seopanel/Seo-Panel-Tests
+          path: spTests
+
+      # matches the PHP version actually running in this project's own
+      # dev/prod docker image (seopanel/seopanel:6.0.0) - checked via
+      # `php -v` there rather than assumed, so this represents real
+      # production behavior, not whatever's newest
+      - name: Set up PHP 7.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mysqli, curl, gd, mbstring, xml, dom, simplexml, zip, json, fileinfo, sodium, openssl
+          coverage: none
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            mysqladmin ping -h 127.0.0.1 -u root -prootpass --silent && break
+            sleep 2
+          done
+
+      - name: Seed the database (fresh-install sequence only)
+        run: |
+          mysql -h 127.0.0.1 -u seopanel -pseopanelpass seopanel < sp/install/data/seopanel.sql
+          mysql -h 127.0.0.1 -u seopanel -pseopanelpass seopanel < sp/install/data/textlang.sql
+
+      - name: Write config/sp-config.php
+        run: |
+          cat > sp/config/sp-config.php <<'EOF'
+          <?php
+          define('SP_WEBPATH', 'http://localhost/sp');
+          define('DB_NAME', 'seopanel');
+          define('DB_USER', 'seopanel');
+          define('DB_PASSWORD', 'seopanelpass');
+          define('DB_HOST', '127.0.0.1');
+          define('DB_ENGINE', 'mysql');
+          define('SP_INSTALLED', '7.0.0');
+          define('SP_DEBUG', 0);
+          define('SP_TIMEOUT', 18000);
+          EOF
+
+      - name: Run spTests
+        working-directory: spTests
+        env:
+          SEOPANEL_PATH: ${{ github.workspace }}/sp
+        run: |
+          status=0
+          for test_file in tests/php/*_test.php; do
+            echo "=== $test_file ==="
+            if ! php "$test_file"; then
+              status=1
+            fi
+            echo
+          done
+          exit $status

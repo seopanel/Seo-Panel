@@ -192,7 +192,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 <div class="report-info-card">
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-globe"></i> <?php echo $spTextSA['Project Url']?>:</span>
-		<a href="<?php echo $projectInfo['url']?>" target="_blank" class="report-info-value report-info-url"><?php echo $projectInfo['url']?></a>
+		<a href="<?php echo htmlspecialchars($projectInfo['url'])?>" target="_blank" class="report-info-value report-info-url"><?php echo htmlspecialchars($projectInfo['url'])?></a>
 	</div>
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-clock"></i> <?php echo $spText['label']['Updated']?>:</span>
@@ -235,7 +235,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; margin-bottom: 15px;">
 	<tr style="background: #f5f5f5;">
 		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; font-weight: bold; padding: 10px;">
-			<?php echo $spTextSA['Project Url']?>: <?php echo $projectInfo['url']?>
+			<?php echo $spTextSA['Project Url']?>: <?php echo htmlspecialchars($projectInfo['url'])?>
 		</td>
 		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
 			<?php echo $spText['label']['Updated']?>: <?php echo $projectInfo['last_updated']?>

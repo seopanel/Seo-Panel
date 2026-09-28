@@ -72,6 +72,11 @@ define('SP_API_FILE', 'api/api.php');
 # The crawl log clear interval in days
 define('SP_CRAWL_LOG_CLEAR_TIME', 90);
 
+# Directory submission debug snapshot (tmp/subres_web{id}_dir{id}.html)
+# clear interval in days - these are write-only debugging artifacts,
+# never read back anywhere in the app, so a short retention is fine
+define('SP_SUBMISSION_LOG_CLEAR_TIME', 7);
+
 # The api language code
 define('SP_API_LANG_CODE', 'en');
 

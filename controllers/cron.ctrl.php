@@ -2078,6 +2078,10 @@ class CronController extends Controller {
 		$crawlLog->clearCrawlLog(SP_CRAWL_LOG_CLEAR_TIME);
 		$crawlLog->clearMaillLog(SP_CRAWL_LOG_CLEAR_TIME);
 
+		include_once(SP_CTRLPATH . "/directory.ctrl.php");
+		$dirCtrler = new DirectoryController();
+		$dirCtrler->clearSubmissionLogFiles(SP_SUBMISSION_LOG_CLEAR_TIME);
+
 		if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
 			include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
 			$dfsCtrler = new DataForSEOController();
