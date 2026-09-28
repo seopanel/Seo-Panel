@@ -1847,6 +1847,17 @@ div.tab button.active {	background-color: #ccc;}
     z-index: 1;
 }
 
+.login-tools-hint {
+    color: #a8c4e6;
+    font-size: 12.5px;
+    margin: 10px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    position: relative;
+    z-index: 1;
+    line-height: 1.5;
+}
+
 .login-body {
     padding: 40px 30px 30px;
 }
