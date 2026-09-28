@@ -7,7 +7,7 @@
     	?>
     	<!-- Hero Section -->
     	<div class="home-hero">
-    		<div class="home-hero-eyebrow"><?php echo $spTextGuest['Hero eyebrow'] ?? 'Open source &middot; Self-hosted &middot; Built for the AI search era'?></div>
+    		<div class="home-hero-eyebrow"><?php echo $spTextGuest['Hero eyebrow'] ?? 'Open source &middot; Self-hosted &middot; SEO, AEO &amp; GEO in one panel'?></div>
     		<h1 class="hero-title"><?php echo $spTextGuest['Hero title'] ?? 'The SEO &amp; AEO control room you actually own'?></h1>
     		<p class="hero-subtitle">
     			<?php echo $spTextGuest['Hero subtitle v2'] ?? 'Twelve tools in one panel: rank tracking, site audits, backlinks, and a dedicated AI Visibility suite that tracks how you show up in Google AI Overviews, ChatGPT and other AI engines. All running on your own server, for as many websites as you manage.'?>
@@ -53,7 +53,7 @@
     					<i class="fas fa-robot"></i>
     				</div>
     				<h3><?php echo $spTextTools['ai-visibility']?></h3>
-    				<p><?php echo $spTextGuest['AI Visibility desc'] ?? 'See how you show up in Google AI Overviews, ChatGPT and other AI engines - referral traffic, bot crawls, and citation rate in one score.'?></p>
+    				<p><?php echo $spTextGuest['AI Visibility desc'] ?? 'AEO &amp; GEO tracking: see how you show up in Google AI Overviews, ChatGPT and other AI engines - referral traffic, bot crawls, and citation rate in one score.'?></p>
     			</div>
 
     			<div class="feature-card">
