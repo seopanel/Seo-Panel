@@ -438,12 +438,27 @@ function getCurrentUrl() {
 
 # function to check whether refferer is from same site
 function isValidReferer($referer) {
-	
-	if(stristr($referer, SP_WEBPATH)) {
-		if (!stristr($referer, 'install') && !stristr($referer, 'login.php')) {
-			$referer = str_ireplace("&lang_code=", "&", $referer);
-			return $referer;
-		}		
+	$referer = (string) $referer;
+	if ($referer === '') return '';
+
+	// used to be a plain stristr() substring check, which an attacker's
+	// OWN page could pass just by putting SP_WEBPATH anywhere in its own
+	// url (e.g. "https://evil.com/?x=".SP_WEBPATH) - get a victim to
+	// click through from that page to a real login here, and the
+	// browser's real Referer header (that attacker url) would validate
+	// as "safe", sending the victim straight back to the attacker's page
+	// the moment they log in with their real credentials (open redirect /
+	// phishing amplification, CWE-601). Now requires the referer to
+	// actually START with this site's own scheme+host+path at a proper
+	// boundary, not just contain it as a substring anywhere.
+	$webpath = SP_WEBPATH;
+	if (stripos($referer, $webpath) !== 0) return '';
+	$boundary = substr($referer, strlen($webpath), 1);
+	if ($boundary !== '' && $boundary !== '/' && $boundary !== '?') return '';
+
+	if (!stristr($referer, 'install') && !stristr($referer, 'login.php')) {
+		$referer = str_ireplace("&lang_code=", "&", $referer);
+		return $referer;
 	}
 	return '';
 }
