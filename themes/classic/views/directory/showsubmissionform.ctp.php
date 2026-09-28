@@ -73,7 +73,7 @@
                         <?php if(!empty($imageHash)){?>
                             <input type="hidden" name="<?php echo $dirInfo['imagehash_col']?>" value="<?php echo $imageHash?>">
                         <?php }?>
-                        <img src='<?php echo $captchaUrl?>' class="mb-2 d-block border rounded">
+                        <img src='<?php echo $captchaUrl?>' class="mb-2 d-block border rounded" alt="<?php echo htmlspecialchars($spTextDir['Enter the code shown'])?>">
                         <?php
                         $captchaCodeError = "";
                         if (stristr($captchaCode, 'Error:')) {
