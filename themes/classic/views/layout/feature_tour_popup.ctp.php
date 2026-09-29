@@ -3,10 +3,10 @@
 
         <!-- Header with step progress -->
         <div class="sp-wizard-header">
-            <h4>
-                <i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour
-                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="Refresh connection status - in case you just saved something in another tab">
-                    <i class="fas fa-sync-alt"></i>
+            <h4 class="sp-tour-header-row">
+                <span><i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour</span>
+                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="Just saved something in another tab? Refresh to update the connection badges below">
+                    <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </h4>
             <div class="sp-wizard-steps" id="sp_tour_steps">

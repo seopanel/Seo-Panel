@@ -3493,22 +3493,34 @@ a.btn, a.btn:hover {
 
 /* Refresh button (tour header) - re-checks live connection status in
    case the user just saved credentials in another tab, without needing
-   to close/reopen the tour or wait for next login. */
+   to close/reopen the tour or wait for next login. Given its own
+   visible pill (border + background), not a bare icon easily mistaken
+   for decoration next to the title - that was the original design and
+   it went unnoticed in practice. */
+.sp-tour-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
 .sp-tour-refresh-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.85);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: #ffffff;
     cursor: pointer;
-    padding: 2px 6px;
-    margin-left: 4px;
-    font-size: 13px;
-    border-radius: 4px;
-    transition: background 0.15s ease, color 0.15s ease;
-    vertical-align: middle;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 20px;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 .sp-tour-refresh-btn:hover {
-    background: rgba(255,255,255,0.15);
-    color: #ffffff;
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.6);
 }
 .sp-tour-refresh-btn.sp-tour-refreshing i {
     animation: sp-tour-spin 0.7s linear infinite;
