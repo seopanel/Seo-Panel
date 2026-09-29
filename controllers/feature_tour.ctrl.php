@@ -55,7 +55,11 @@ class FeatureTourController extends Controller {
         $status = array(
             'seopanel_api' => defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED,
             'dataforseo'   => defined('SP_DFS_API_LOGIN') && SP_DFS_API_LOGIN !== '' && defined('SP_DFS_API_PASSWORD') && SP_DFS_API_PASSWORD !== '',
-            'moz'          => defined('SP_MOZ_API_ACCESS_ID') && SP_MOZ_API_ACCESS_ID !== '' && defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '',
+            // SP_MOZ_API_ACCESS_ID is a legacy field, hidden from the
+            // settings UI (display=0) - a real user can never fill it in,
+            // and MozController itself only ever reads SP_MOZ_API_SECRET
+            // ("API Token" in the UI) for real API calls.
+            'moz'          => defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '',
             'google'       => defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '',
             'mail'         => defined('SP_SMTP_MAIL') && SP_SMTP_MAIL && defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '',
             'local_ai'     => SettingsController::isLocalAIEnabled(),

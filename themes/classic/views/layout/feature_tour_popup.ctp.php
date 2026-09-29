@@ -64,7 +64,13 @@
             // a cheap defined()/non-empty check, no live API calls.
             $tourSpApiConnected = defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED;
             $tourDfsConnected = defined('SP_DFS_API_LOGIN') && SP_DFS_API_LOGIN !== '' && defined('SP_DFS_API_PASSWORD') && SP_DFS_API_PASSWORD !== '';
-            $tourMozConnected = defined('SP_MOZ_API_ACCESS_ID') && SP_MOZ_API_ACCESS_ID !== '' && defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '';
+            // SP_MOZ_API_ACCESS_ID is a legacy field, hidden from the
+            // settings UI (display=0) - a real user can never fill it in,
+            // and MozController itself only ever reads SP_MOZ_API_SECRET
+            // ("API Token" in the UI) for real API calls. Requiring both
+            // meant this badge could never show Connected even with a
+            // correctly saved token - confirmed live via a screenshot.
+            $tourMozConnected = defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '';
             $tourGoogleConnected = defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '';
             $tourMailConnected = defined('SP_SMTP_MAIL') && SP_SMTP_MAIL && defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
             $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
