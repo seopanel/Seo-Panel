@@ -3265,6 +3265,14 @@ a.btn, a.btn:hover {
     flex-direction: column;
     max-height: 92vh;
 }
+/* Feature Tour reuses .sp-wizard-box (same popup chrome as the Setup
+   Wizard), but its steps carry a lot more content per panel - Settings
+   category rows, SEO Tools chip grid, badges - than the wizard's short
+   panels were sized for, so it gets its own wider cap here rather than
+   widening .sp-wizard-box itself (which the wizard still uses as-is). */
+#sp_tour_overlay .sp-wizard-box {
+    width: 760px;
+}
 .sp-wizard-header {
     background: linear-gradient(135deg, #1a73e8 0%, #0d5db5 100%);
     color: #fff;
