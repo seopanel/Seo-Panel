@@ -41,6 +41,7 @@
             include_once(SP_CTRLPATH . "/searchengine.ctrl.php");
             include_once(SP_CTRLPATH . "/language.ctrl.php");
             include_once(SP_CTRLPATH . "/country.ctrl.php");
+            include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
 
             // admin-panel.php is Settings' own shell page (full navbar +
             // left menu, same as seo-tools.php is for the Tools menu
@@ -110,9 +111,46 @@
 
             $tourUserId = isLoggedIn();
             $tourWebsiteCount = 0;
+            $tourFirstWebsite = null;
+            $tourFirstWebsiteKeywordCount = 0;
             if ($tourUserId) {
                 $tourWebsiteCountRow = (new WebsiteController())->db->select("SELECT COUNT(*) as c FROM websites WHERE user_id=" . intval($tourUserId), true);
                 $tourWebsiteCount = intval($tourWebsiteCountRow['c'] ?? 0);
+                if ($tourWebsiteCount > 0) {
+                    $tourFirstWebsite = (new WebsiteController())->db->select("SELECT id, name, url FROM websites WHERE user_id=" . intval($tourUserId) . " ORDER BY id ASC LIMIT 1", true);
+                    if ($tourFirstWebsite) {
+                        $tourFirstWebsiteKeywordCount = intval((new WebsiteController())->db->select("SELECT COUNT(*) as c FROM keywords WHERE website_id=" . intval($tourFirstWebsite['id']), true)['c'] ?? 0);
+                    }
+                }
+            }
+
+            // Plugins step: the real, active+installed plugin list (same
+            // "status=1 and installed=1" query SeoPluginsController::
+            // showSeoPlugins() itself uses), filtered by this user's own
+            // plugin access permissions for non-admins - the exact same
+            // check showSeoPlugins() applies, so a card is never shown
+            // for a plugin this user would actually be denied.
+            $tourPluginList = (new SeoPluginsController())->__getAllSeoPlugins("status=1 and installed=1");
+            if (!isAdmin() && !empty($tourPluginList)) {
+                include_once(SP_CTRLPATH . "/user-type.ctrl.php");
+                $tourUserSessInfo = Session::readSession('userInfo');
+                $tourPluginAccessList = (new UserTypeController())->getPluginAccessSettings($tourUserSessInfo['userTypeId']);
+                $tourPluginList = array_values(array_filter($tourPluginList, function($pluginInfo) use ($tourPluginAccessList) {
+                    if (!isset($tourPluginAccessList[$pluginInfo['id']]['value'])) {
+                        return true;
+                    }
+                    return !empty($tourPluginAccessList[$pluginInfo['id']]['value']);
+                }));
+            }
+            $tourPluginIcons = array(
+                'MetaTagGenerator' => 'fa-tags',
+                'QuickWebProxy' => 'fa-exchange-alt',
+                'SeoDiary' => 'fa-book',
+                'ArticleSubmitter' => 'fa-file-alt',
+            );
+            function tourPluginIcon($pluginName) {
+                global $tourPluginIcons;
+                return $tourPluginIcons[$pluginName] ?? 'fa-puzzle-piece';
             }
             $tourSearchEngines = (new SearchEngineController())->__getAllSearchEngines();
             $tourLanguages = (new LanguageController())->__getAllLanguages();
@@ -130,8 +168,21 @@
                 <?php if ($tourWebsiteCount > 0) { ?>
                     <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
                         <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
-                        You already have <?php echo $tourWebsiteCount ?> website<?php echo $tourWebsiteCount == 1 ? '' : 's' ?> set up - nothing to do here.
+                        You're all set - nothing to do here.
                     </div>
+                    <?php if ($tourFirstWebsite) { ?>
+                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/websites.php" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-globe"></i></span>
+                            <span class="sp-tour-link-text"><strong><?php echo htmlspecialchars($tourFirstWebsite['name']) ?></strong><small><?php echo htmlspecialchars($tourFirstWebsite['url']) ?></small></span>
+                            <?php if ($tourFirstWebsiteKeywordCount > 0) { ?>
+                                <span class="sp-tour-badge sp-tour-badge-connected"><?php echo $tourFirstWebsiteKeywordCount ?> keyword<?php echo $tourFirstWebsiteKeywordCount == 1 ? '' : 's' ?></span>
+                            <?php } ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <?php if ($tourWebsiteCount > 1) { ?>
+                            <div class="sp-tour-form-hint">+ <?php echo $tourWebsiteCount - 1 ?> more website<?php echo ($tourWebsiteCount - 1) == 1 ? '' : 's' ?> - click above to manage all of them</div>
+                        <?php } ?>
+                    <?php } ?>
                 <?php } else { ?>
                     <p>Everything below - the dashboard, rank tracking, audits - needs at least one website to work with. Takes a few seconds:</p>
                     <div id="tour_web_general_err"></div>
@@ -227,66 +278,89 @@
             <!-- Step 3: Seo Panel API - its own step, called out separately
                  from the general Settings list below since it's the main
                  source of rank/SERP data for accounts without their own
-                 DataForSEO or MOZ keys -->
+                 DataForSEO or MOZ keys. settings.php requires
+                 checkAdminLoggedIn() for every category (only sec=aboutus
+                 is exempt) - a non-admin clicking this would get bounced
+                 to login.php, so they get the live badge without a
+                 broken link, same treatment as the Cron step below. -->
             <div class="sp-wizard-panel" id="sp_tpanel_3">
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Seo Panel API</h5>
                 <p>The fastest way to get real rank and SERP data flowing without hunting down your own DataForSEO or MOZ keys - free to register, no credit card.</p>
-                <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                    <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
-                    <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Rank tracking and SERP data, ready in a couple of minutes</small></span>
-                    <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
-                    <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                </a>
+                <?php if (isAdmin()) { ?>
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
+                        <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Rank tracking and SERP data, ready in a couple of minutes</small></span>
+                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                <?php } else { ?>
+                    <div class="sp-wizard-info-box">
+                        <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                        This is an account-wide setting, so only an admin on your account can register it. Current status:
+                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
+                    </div>
+                <?php } ?>
             </div>
 
-            <!-- Step 4: Settings - where your integrations live -->
+            <!-- Step 4: Settings - where your integrations live.
+                 settings.php requires checkAdminLoggedIn() for every
+                 category, so this whole step is admin-only for the same
+                 reason step 3 is - a non-admin sees the live badges
+                 without the broken links. -->
             <div class="sp-wizard-panel" id="sp_tpanel_4">
                 <h5><i class="fas fa-cog" style="margin-right:6px;"></i>Settings: Where Your Integrations Live</h5>
-                <p>Worth doing before the Tools menu next: without these connected, several tools won't have any real data to show yet. Click any row to go straight there in a new tab:</p>
-                <div class="sp-tour-link-list">
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
-                        <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
-                        <?php echo tourBadges('system', false) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
-                        <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
-                        <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
-                        <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
-                        <?php echo tourBadges('moz', true, $tourMozConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
-                        <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
-                        <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
-                        <span class="sp-tour-link-text"><strong>Mail</strong><small>Scheduled reports, password resets, and registration emails all go through here</small></span>
-                        <?php echo tourBadges('mail', true, $tourMailConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
-                        <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
-                        <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
-                        <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
-                        <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
-                </div>
+                <?php if (isAdmin()) { ?>
+                    <p>Worth doing before the Tools menu next: without these connected, several tools won't have any real data to show yet. Click any row to go straight there in a new tab:</p>
+                    <div class="sp-tour-link-list">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
+                            <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
+                            <?php echo tourBadges('system', false) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
+                            <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
+                            <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
+                            <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
+                            <?php echo tourBadges('moz', true, $tourMozConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
+                            <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
+                            <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
+                            <span class="sp-tour-link-text"><strong>Mail</strong><small>Scheduled reports, password resets, and registration emails all go through here</small></span>
+                            <?php echo tourBadges('mail', true, $tourMailConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
+                            <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
+                            <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
+                            <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
+                            <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                    </div>
+                <?php } else { ?>
+                    <div class="sp-wizard-info-box">
+                        <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                        These are account-wide settings, so only an admin on your account can change them - nothing to do here.
+                    </div>
+                <?php } ?>
             </div>
 
             <!-- Step 5: Cron Job - nothing scheduled (rank checks, audits,
@@ -317,7 +391,12 @@
             <!-- Step 6: Dashboard -->
             <div class="sp-wizard-panel" id="sp_tpanel_6">
                 <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
-                <p>This is the screen you land on after logging in. Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
+                <p>Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
+                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                    <span class="sp-tour-link-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="sp-tour-link-text"><strong>Dashboard</strong><small>The screen you land on after logging in</small></span>
+                    <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                </a>
                 <div class="sp-wizard-info-box">
                     <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
                     Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.
@@ -327,32 +406,44 @@
             <!-- Step 7: SEO Tools -->
             <div class="sp-wizard-panel" id="sp_tpanel_7">
                 <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
-                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any of these to open it in a new tab:</p>
-                <div class="sp-tour-chip-list">
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-robot"></i> AI Visibility</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-key"></i> Keyword Position Checker</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-tasks"></i> Site Auditor</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-link"></i> Backlinks Checker</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-globe"></i> Webmaster Tools</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-search-location"></i> Rank Checker</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-folder-open"></i> Directory Submission</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-server"></i> Search Engine Saturation</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-share-alt"></i> Social Media Checker</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-chart-area"></i> Website Analytics</a>
-                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-star"></i> Review Manager</a>
+                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any card to open it in a new tab:</p>
+                <div class="sp-tour-tool-grid">
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label">AI Visibility</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-key"></i></span><span class="sp-tour-tool-label">Keyword Position Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tasks"></i></span><span class="sp-tour-tool-label">Site Auditor</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-link"></i></span><span class="sp-tour-tool-label">Backlinks Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-globe"></i></span><span class="sp-tour-tool-label">Webmaster Tools</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-search-location"></i></span><span class="sp-tour-tool-label">Rank Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-folder-open"></i></span><span class="sp-tour-tool-label">Directory Submission</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-server"></i></span><span class="sp-tour-tool-label">Search Engine Saturation</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tachometer-alt"></i></span><span class="sp-tour-tool-label">PageSpeed Insights</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-share-alt"></i></span><span class="sp-tour-tool-label">Social Media Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-chart-area"></i></span><span class="sp-tour-tool-label">Website Analytics</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-star"></i></span><span class="sp-tour-tool-label">Review Manager</span></a>
                 </div>
             </div>
 
-            <!-- Step 8: Plugins -->
+            <!-- Step 8: Plugins - lists the real, active plugins (same
+                 "status=1 and installed=1" set showSeoPlugins() itself
+                 uses), not just a generic link - the old link actually
+                 pointed at the About Us/sponsors page, not a plugin
+                 browser at all. -->
             <div class="sp-wizard-panel" id="sp_tpanel_8">
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
-                <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools - things like article submission/spinning, a quick web proxy, and an SEO diary for notes.</p>
-                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH . '/admin-panel.php?menu_selected=about-us&start_script=' . urlencode('settings.php?sec=aboutus') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
-                    <span class="sp-tour-link-icon"><i class="fas fa-th-large"></i></span>
-                    <span class="sp-tour-link-text"><strong>Browse Plugins</strong><small>See what's installed, and find more to add</small></span>
-                    <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                </a>
+                <?php if (!empty($tourPluginList)) { ?>
+                    <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools. Click any card to open it in a new tab:</p>
+                    <div class="sp-tour-tool-grid">
+                        <?php foreach ($tourPluginList as $pluginInfo) { ?>
+                            <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-plugins.php?sec=show&menu_selected=<?php echo intval($pluginInfo['id']) ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                                <span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span>
+                                <span class="sp-tour-tool-icon"><i class="fas <?php echo tourPluginIcon($pluginInfo['name']) ?>"></i></span>
+                                <span class="sp-tour-tool-label"><?php echo htmlspecialchars($pluginInfo['label']) ?></span>
+                            </a>
+                        <?php } ?>
+                    </div>
+                <?php } else { ?>
+                    <p>No plugins are available to use on your account right now.</p>
+                <?php } ?>
             </div>
 
             <!-- Step 9: Done -->
@@ -361,7 +452,7 @@
                 <p>That's the layout. Everything above will make a lot more sense once real data starts coming in.</p>
                 <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
                     <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
-                    Want to see this again? Look for <strong>Take a tour</strong> in the Help menu.
+                    Want to see this again? Look for <strong>Setup Tour</strong> in the top menu bar.
                 </div>
             </div>
         </div>
