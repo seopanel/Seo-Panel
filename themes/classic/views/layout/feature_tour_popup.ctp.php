@@ -1,12 +1,47 @@
+<?php
+// Translatable via the standard texts-table mechanism (category
+// 'featuretour', same getLanguageTexts()/fallback-to-English pattern
+// every other category in the app uses) - tourText() falls back to
+// the given English default whenever a key isn't seeded/translated
+// yet, so the tour always renders correctly even before any
+// translator has touched this category.
+//
+// Reuses existing categories wherever the exact same English string is
+// already translated elsewhere in the app, rather than seeding a
+// duplicate under 'featuretour' - checked directly against the live
+// texts table before writing anything: all 12 SEO Tools card labels
+// already exist verbatim under 'seotools' (keyed by the very url_section
+// slugs this file already links with), several Settings row labels
+// exist under 'panel' as "X Settings", and Dashboard/Plugins/Country/
+// Search Engine/Language/Seo Tools already exist under 'common'
+// (already loaded as $spText - see libs/controller.class.php's
+// $sessionCats). Only genuinely new tour-specific copy gets a new key.
+// Written directly to $GLOBALS, not a plain assignment - this file is
+// include_once'd from inside default.ctp.php, which is itself rendered
+// via View::render()'s own include() call. A top-level "$spTextTour ="
+// here would only be local to THAT render() invocation's function
+// scope, not the true global scope - tourText()'s "global $spTextTour"
+// would then see nothing and silently fall back to the English default
+// every time, regardless of the active language. Confirmed live: a
+// seeded German translation never rendered until this was fixed.
+$GLOBALS['spTextTour'] = (new Controller())->getLanguageTexts('featuretour', $_SESSION['lang_code']);
+$spTextPanel = (new Controller())->getLanguageTexts('panel', $_SESSION['lang_code']);
+$spTextSeoTools = (new Controller())->getLanguageTexts('seotools', $_SESSION['lang_code']);
+$spTextDirectory = (new Controller())->getLanguageTexts('directory', $_SESSION['lang_code']);
+function tourText($key, $default) {
+    global $spTextTour;
+    return $spTextTour[$key] ?? $default;
+}
+?>
 <div class="sp-wizard-overlay" id="sp_tour_overlay">
     <div class="sp-wizard-box">
 
         <!-- Header with step progress -->
         <div class="sp-wizard-header">
             <h4 class="sp-tour-header-row">
-                <span><i class="fas fa-compass" style="margin-right:8px;"></i>Setup Tour</span>
-                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="Just saved something in another tab? Refresh to update the connection badges below">
-                    <i class="fas fa-sync-alt"></i> Refresh
+                <span><i class="fas fa-compass" style="margin-right:8px;"></i><?php echo $spText['common']['Setup Tour'] ?? 'Setup Tour' ?></span>
+                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="<?php echo htmlspecialchars(tourText('tour_refresh_tooltip', 'Just saved something in another tab? Refresh to update the connection badges below')) ?>">
+                    <i class="fas fa-sync-alt"></i> <?php echo tourText('tour_refresh', 'Refresh') ?>
                 </button>
             </h4>
             <div class="sp-wizard-steps" id="sp_tour_steps">
@@ -24,11 +59,11 @@
 
             <!-- Step 1: Welcome -->
             <div class="sp-wizard-panel" id="sp_tpanel_1">
-                <h5><i class="fas fa-hand-sparkles" style="margin-right:6px;"></i>Welcome to SEO Panel</h5>
-                <p>SEO Panel tracks rankings, audits your sites, checks backlinks, and monitors how you show up in AI answer engines - all from one self-hosted control room.</p>
+                <h5><i class="fas fa-hand-sparkles" style="margin-right:6px;"></i><?php echo tourText('tour_step1_heading', 'Welcome to SEO Panel') ?></h5>
+                <p><?php echo tourText('tour_step1_body', 'SEO Panel tracks rankings, audits your sites, checks backlinks, and monitors how you show up in AI answer engines - all from one self-hosted control room.') ?></p>
                 <div class="sp-wizard-info-box">
                     <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    This is a short tour of where everything lives, and gets your first website set up along the way. Skip it anytime, or take it again later from the <strong>Help</strong> menu.
+                    <?php echo tourText('tour_step1_info', 'This is a short tour of where everything lives, and gets your first website set up along the way. Skip it anytime, or take it again later from the <strong>Setup Tour</strong> link in the top menu.') ?>
                 </div>
             </div>
 
@@ -80,7 +115,7 @@
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
             $tourCronConnected = (new FeatureTourController())->__isCronDetected();
 
-            function tourConnectionBadgeHtml($isConnected, $connectedLabel = 'Connected', $pendingLabel = 'Not set up') {
+            function tourConnectionBadgeHtml($isConnected, $connectedLabel, $pendingLabel) {
                 if ($isConnected) {
                     return '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' . $connectedLabel . '</span>';
                 }
@@ -91,15 +126,17 @@
             // blocked if it's skipped for now.
             function tourImportanceBadge($isImportant) {
                 if ($isImportant) {
-                    return '<span class="sp-tour-badge sp-tour-badge-important">Important</span>';
+                    return '<span class="sp-tour-badge sp-tour-badge-important">' . tourText('tour_important', 'Important') . '</span>';
                 }
-                return '<span class="sp-tour-badge sp-tour-badge-optional">Optional</span>';
+                return '<span class="sp-tour-badge sp-tour-badge-optional">' . tourText('tour_optional_badge', 'Optional') . '</span>';
             }
             // wraps both badges together, tagged with data-service so the
             // Refresh button (see the <script> below) can find and update
             // just the connection half in place, without touching the
             // importance badge or re-rendering the row
-            function tourBadges($service, $isImportant, $isConnected = null, $connectedLabel = 'Connected', $pendingLabel = 'Not set up') {
+            function tourBadges($service, $isImportant, $isConnected = null, $connectedLabel = null, $pendingLabel = null) {
+                $connectedLabel = $connectedLabel ?? tourText('tour_connected', 'Connected');
+                $pendingLabel = $pendingLabel ?? tourText('tour_not_set_up', 'Not set up');
                 $html = '<span class="sp-tour-badges" data-service="' . $service . '">';
                 $html .= tourImportanceBadge($isImportant);
                 if ($isConnected !== null) {
@@ -142,7 +179,11 @@
                     return !empty($tourPluginAccessList[$pluginInfo['id']]['value']);
                 }));
             }
-            $tourPluginIcons = array(
+            // $GLOBALS, not a plain assignment - same reasoning as
+            // $GLOBALS['spTextTour'] above: a bare "global" inside
+            // tourPluginIcon() below can't see a variable that was only
+            // ever local to View::render()'s own include() scope.
+            $GLOBALS['tourPluginIcons'] = array(
                 'MetaTagGenerator' => 'fa-tags',
                 'QuickWebProxy' => 'fa-exchange-alt',
                 'SeoDiary' => 'fa-book',
@@ -164,45 +205,45 @@
                  real data without at least one of each); social/review
                  links are optional extras. -->
             <div class="sp-wizard-panel" id="sp_tpanel_2">
-                <h5><i class="fas fa-globe" style="margin-right:6px;"></i>Add Your First Website</h5>
+                <h5><i class="fas fa-globe" style="margin-right:6px;"></i><?php echo tourText('tour_step2_heading', 'Add Your First Website') ?></h5>
                 <?php if ($tourWebsiteCount > 0) { ?>
                     <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
                         <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
-                        You're all set - nothing to do here.
+                        <?php echo tourText('tour_step2_already_set', "You're all set - nothing to do here.") ?>
                     </div>
                     <?php if ($tourFirstWebsite) { ?>
                         <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/websites.php" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-globe"></i></span>
                             <span class="sp-tour-link-text"><strong><?php echo htmlspecialchars($tourFirstWebsite['name']) ?></strong><small><?php echo htmlspecialchars($tourFirstWebsite['url']) ?></small></span>
                             <?php if ($tourFirstWebsiteKeywordCount > 0) { ?>
-                                <span class="sp-tour-badge sp-tour-badge-connected"><?php echo $tourFirstWebsiteKeywordCount ?> keyword<?php echo $tourFirstWebsiteKeywordCount == 1 ? '' : 's' ?></span>
+                                <span class="sp-tour-badge sp-tour-badge-connected"><?php echo $tourFirstWebsiteKeywordCount ?> <?php echo tourText($tourFirstWebsiteKeywordCount == 1 ? 'tour_keyword_singular' : 'tour_keyword_plural', $tourFirstWebsiteKeywordCount == 1 ? 'keyword' : 'keywords') ?></span>
                             <?php } ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <?php if ($tourWebsiteCount > 1) { ?>
-                            <div class="sp-tour-form-hint">+ <?php echo $tourWebsiteCount - 1 ?> more website<?php echo ($tourWebsiteCount - 1) == 1 ? '' : 's' ?> - click above to manage all of them</div>
+                            <div class="sp-tour-form-hint"><?php echo sprintf(tourText('tour_more_websites', '+ %d more %s - click above to manage all of them'), $tourWebsiteCount - 1, tourText(($tourWebsiteCount - 1) == 1 ? 'tour_website_singular' : 'tour_website_plural', ($tourWebsiteCount - 1) == 1 ? 'website' : 'websites')) ?></div>
                         <?php } ?>
                     <?php } ?>
                 <?php } else { ?>
-                    <p>Everything below - the dashboard, rank tracking, audits - needs at least one website to work with. Takes a few seconds:</p>
+                    <p><?php echo tourText('tour_step2_intro', 'Everything below - the dashboard, rank tracking, audits - needs at least one website to work with. Takes a few seconds:') ?></p>
                     <div id="tour_web_general_err"></div>
                     <div class="sp-tour-form-row">
-                        <label for="tour_web_name">Website Name <span class="sp-tour-required">*</span></label>
-                        <input type="text" id="tour_web_name" class="form-control" placeholder="e.g. My Company Website">
+                        <label for="tour_web_name"><?php echo tourText('tour_field_website_name', 'Website Name') ?> <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_name" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_website_name', 'e.g. My Company Website')) ?>">
                         <div class="sp-tour-field-err" id="tour_web_err_name"></div>
                     </div>
                     <div class="sp-tour-form-row">
-                        <label for="tour_web_url">Website URL <span class="sp-tour-required">*</span></label>
-                        <input type="text" id="tour_web_url" class="form-control" placeholder="https://example.com">
+                        <label for="tour_web_url"><?php echo $spTextDirectory['Website Url'] ?? 'Website Url' ?> <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_url" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_website_url', 'https://example.com')) ?>">
                         <div class="sp-tour-field-err" id="tour_web_err_url"></div>
                     </div>
                     <div class="sp-tour-form-row">
-                        <label for="tour_web_keyword">Primary Keyword <span class="sp-tour-required">*</span></label>
-                        <input type="text" id="tour_web_keyword" class="form-control" placeholder="e.g. seo software">
+                        <label for="tour_web_keyword"><?php echo tourText('tour_field_keyword', 'Primary Keyword') ?> <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_keyword" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_keyword', 'e.g. seo software')) ?>">
                         <div class="sp-tour-field-err" id="tour_web_err_keyword"></div>
                     </div>
                     <div class="sp-tour-form-row">
-                        <label for="tour_web_se">Search Engine <span class="sp-tour-required">*</span></label>
+                        <label for="tour_web_se"><?php echo $spText['common']['Search Engine'] ?? 'Search Engine' ?> <span class="sp-tour-required">*</span></label>
                         <select id="tour_web_se" class="form-control custom-select">
                             <?php foreach ($tourSearchEngines as $seInfo) { ?>
                                 <option value="<?php echo $seInfo['id'] ?>"><?php echo $seInfo['domain'] ?></option>
@@ -212,30 +253,30 @@
                     </div>
                     <div class="sp-tour-form-row-pair">
                         <div class="sp-tour-form-row">
-                            <label for="tour_web_lang">Language</label>
+                            <label for="tour_web_lang"><?php echo $spText['common']['lang'] ?? 'Language' ?></label>
                             <select id="tour_web_lang" class="form-control custom-select">
-                                <option value="">-- optional --</option>
+                                <option value=""><?php echo tourText('tour_optional_option', '-- optional --') ?></option>
                                 <?php foreach ($tourLanguages as $langInfo) { ?>
                                     <option value="<?php echo $langInfo['lang_code'] ?>"><?php echo $langInfo['lang_name'] ?></option>
                                 <?php } ?>
                             </select>
                         </div>
                         <div class="sp-tour-form-row">
-                            <label for="tour_web_country">Country</label>
+                            <label for="tour_web_country"><?php echo $spText['common']['Country'] ?? 'Country' ?></label>
                             <select id="tour_web_country" class="form-control custom-select">
-                                <option value="">-- optional --</option>
+                                <option value=""><?php echo tourText('tour_optional_option', '-- optional --') ?></option>
                                 <?php foreach ($tourCountries as $countryCode => $countryName) { ?>
                                     <option value="<?php echo $countryCode ?>"><?php echo $countryName ?></option>
                                 <?php } ?>
                             </select>
                         </div>
                     </div>
-                    <div class="sp-tour-form-divider">Optional extras</div>
+                    <div class="sp-tour-form-divider"><?php echo tourText('tour_optional_extras', 'Optional extras') ?></div>
                     <div class="sp-tour-form-row-pair">
                         <div class="sp-tour-form-row">
-                            <label for="tour_web_social_type">Social Media</label>
+                            <label for="tour_web_social_type"><?php echo tourText('tour_field_social', 'Social Media') ?></label>
                             <select id="tour_web_social_type" class="form-control custom-select">
-                                <option value="">-- none --</option>
+                                <option value=""><?php echo tourText('tour_none_option', '-- none --') ?></option>
                                 <option value="facebook">Facebook</option>
                                 <option value="twitter">Twitter</option>
                                 <option value="instagram">Instagram</option>
@@ -246,15 +287,15 @@
                         </div>
                         <div class="sp-tour-form-row">
                             <label for="tour_web_social_url">&nbsp;</label>
-                            <input type="text" id="tour_web_social_url" class="form-control" placeholder="Profile URL">
+                            <input type="text" id="tour_web_social_url" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_profile_url', 'Profile URL')) ?>">
                         </div>
                     </div>
                     <div class="sp-tour-field-err" id="tour_web_err_social"></div>
                     <div class="sp-tour-form-row-pair">
                         <div class="sp-tour-form-row">
-                            <label for="tour_web_review_type">Review Link</label>
+                            <label for="tour_web_review_type"><?php echo tourText('tour_field_review', 'Review Link') ?></label>
                             <select id="tour_web_review_type" class="form-control custom-select" onchange="window._tourUpdateReviewHint()">
-                                <option value="">-- none --</option>
+                                <option value=""><?php echo tourText('tour_none_option', '-- none --') ?></option>
                                 <option value="google">Google My Business</option>
                                 <option value="yelp">Yelp</option>
                                 <option value="trustpilot">Trustpilot</option>
@@ -263,14 +304,14 @@
                         </div>
                         <div class="sp-tour-form-row">
                             <label for="tour_web_review_url">&nbsp;</label>
-                            <input type="text" id="tour_web_review_url" class="form-control" placeholder="Review page URL">
+                            <input type="text" id="tour_web_review_url" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_review_url', 'Review page URL')) ?>">
                         </div>
                     </div>
-                    <div class="sp-tour-form-hint" id="tour_web_review_hint">The URL must contain the platform's name, e.g. a Yelp link should include "yelp".</div>
+                    <div class="sp-tour-form-hint" id="tour_web_review_hint"><?php echo tourText('tour_review_hint', 'The URL must contain the platform\'s name, e.g. a Yelp link should include "yelp".') ?></div>
                     <div class="sp-tour-field-err" id="tour_web_err_review"></div>
 
                     <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="tour_web_submit_btn" onclick="window._tourSubmitWebsite()" style="margin-top:10px;">
-                        <i class="fas fa-plus" style="margin-right:5px;"></i>Add Website
+                        <i class="fas fa-plus" style="margin-right:5px;"></i><?php echo tourText('tour_add_website_btn', 'Add Website') ?>
                     </button>
                 <?php } ?>
             </div>
@@ -284,19 +325,19 @@
                  to login.php, so they get the live badge without a
                  broken link, same treatment as the Cron step below. -->
             <div class="sp-wizard-panel" id="sp_tpanel_3">
-                <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Seo Panel API</h5>
-                <p>The fastest way to get real rank and SERP data flowing without hunting down your own DataForSEO or MOZ keys - free to register, no credit card.</p>
+                <h5><i class="fas fa-plug" style="margin-right:6px;"></i><?php echo tourText('tour_step3_heading', 'Seo Panel API') ?></h5>
+                <p><?php echo tourText('tour_step3_body', 'The fastest way to get real rank and SERP data flowing without hunting down your own DataForSEO or MOZ keys - free to register, no credit card.') ?></p>
                 <?php if (isAdmin()) { ?>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                         <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
-                        <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Rank tracking and SERP data, ready in a couple of minutes</small></span>
+                        <span class="sp-tour-link-text"><strong><?php echo tourText('tour_seopanel_api_label', 'Seo Panel API') ?></strong><small><?php echo tourText('tour_seopanel_api_desc', 'Rank tracking and SERP data, ready in a couple of minutes') ?></small></span>
                         <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                 <?php } else { ?>
                     <div class="sp-wizard-info-box">
                         <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                        This is an account-wide setting, so only an admin on your account can register it. Current status:
+                        <?php echo tourText('tour_admin_only_spapi', 'This is an account-wide setting, so only an admin on your account can register it. Current status:') ?>
                         <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
                     </div>
                 <?php } ?>
@@ -308,49 +349,49 @@
                  reason step 3 is - a non-admin sees the live badges
                  without the broken links. -->
             <div class="sp-wizard-panel" id="sp_tpanel_4">
-                <h5><i class="fas fa-cog" style="margin-right:6px;"></i>Settings: Where Your Integrations Live</h5>
+                <h5><i class="fas fa-cog" style="margin-right:6px;"></i><?php echo tourText('tour_step4_heading', 'Settings: Where Your Integrations Live') ?></h5>
                 <?php if (isAdmin()) { ?>
-                    <p>Worth doing before the Tools menu next: without these connected, several tools won't have any real data to show yet. Click any row to go straight there in a new tab:</p>
+                    <p><?php echo tourText('tour_step4_body', "Worth doing before the Tools menu next: without these connected, several tools won't have any real data to show yet. Click any row to go straight there in a new tab:") ?></p>
                     <div class="sp-tour-link-list">
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
-                            <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['System Settings'] ?? 'System Settings' ?></strong><small><?php echo tourText('tour_system_desc', 'Language, timezone, pagination, and other app-wide defaults') ?></small></span>
                             <?php echo tourBadges('system', false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
-                            <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['DataForSEO Settings'] ?? 'DataForSEO Settings' ?></strong><small><?php echo tourText('tour_dfs_desc', 'The data provider behind rank checking and SERP data') ?></small></span>
                             <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
-                            <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['MOZ Settings'] ?? 'MOZ Settings' ?></strong><small><?php echo tourText('tour_moz_desc', 'Domain Authority, Page Authority, and Spam Score') ?></small></span>
                             <?php echo tourBadges('moz', true, $tourMozConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
-                            <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Google Settings'] ?? 'Google Settings' ?></strong><small><?php echo tourText('tour_google_desc', 'Connect Analytics and Search Console') ?></small></span>
                             <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
-                            <span class="sp-tour-link-text"><strong>Mail</strong><small>Scheduled reports, password resets, and registration emails all go through here</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Mail Settings'] ?? 'Mail Settings' ?></strong><small><?php echo tourText('tour_mail_desc', 'Scheduled reports, password resets, and registration emails all go through here') ?></small></span>
                             <?php echo tourBadges('mail', true, $tourMailConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
-                            <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Local AI Settings'] ?? 'Local AI Settings' ?></strong><small><?php echo tourText('tour_localai_desc', 'Point AI-powered features at your own Ollama server') ?></small></span>
                             <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
-                            <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Proxy Settings'] ?? 'Proxy Settings' ?></strong><small><?php echo tourText('tour_proxy_desc', 'Proxies used for crawling and directory submission') ?></small></span>
                             <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
@@ -358,7 +399,7 @@
                 <?php } else { ?>
                     <div class="sp-wizard-info-box">
                         <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                        These are account-wide settings, so only an admin on your account can change them - nothing to do here.
+                        <?php echo tourText('tour_admin_only_settings', 'These are account-wide settings, so only an admin on your account can change them - nothing to do here.') ?>
                     </div>
                 <?php } ?>
             </div>
@@ -370,56 +411,56 @@
                  can't reach that page at all, so they get an explanatory
                  note instead of a link they'd just be denied on. -->
             <div class="sp-wizard-panel" id="sp_tpanel_5">
-                <h5><i class="fas fa-clock" style="margin-right:6px;"></i>Set Up the Cron Job</h5>
-                <p>SEO Panel checks rankings, runs audits, and generates reports on a schedule - but only once your server is actually calling <code>cron.php</code>. Nothing above matters if this isn't running.</p>
+                <h5><i class="fas fa-clock" style="margin-right:6px;"></i><?php echo tourText('tour_step5_heading', 'Set Up the Cron Job') ?></h5>
+                <p><?php echo tourText('tour_step5_body', "SEO Panel checks rankings, runs audits, and generates reports on a schedule - but only once your server is actually calling <code>cron.php</code>. Nothing above matters if this isn't running.") ?></p>
                 <?php if (isAdmin()) { ?>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                         <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
-                        <span class="sp-tour-link-text"><strong>Cron Command</strong><small>The exact command to add to your server's crontab</small></span>
-                        <?php echo tourBadges('cron', true, $tourCronConnected, 'Detected', 'Not detected yet') ?>
+                        <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Cron Command'] ?? 'Cron Command' ?></strong><small><?php echo tourText('tour_cron_desc', "The exact command to add to your server's crontab") ?></small></span>
+                        <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet')) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                 <?php } else { ?>
                     <div class="sp-wizard-info-box">
                         <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                        This is a server setting, so only an admin on your account can set it up. Current status:
-                        <?php echo tourBadges('cron', true, $tourCronConnected, 'Detected', 'Not detected yet') ?>
+                        <?php echo tourText('tour_admin_only_cron', 'This is a server setting, so only an admin on your account can set it up. Current status:') ?>
+                        <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet')) ?>
                     </div>
                 <?php } ?>
             </div>
 
             <!-- Step 6: Dashboard -->
             <div class="sp-wizard-panel" id="sp_tpanel_6">
-                <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
-                <p>Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
+                <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i><?php echo tourText('tour_step6_heading', 'Your Dashboard') ?></h5>
+                <p><?php echo tourText('tour_step6_body', 'Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.') ?></p>
                 <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                     <span class="sp-tour-link-icon"><i class="fas fa-chart-line"></i></span>
-                    <span class="sp-tour-link-text"><strong>Dashboard</strong><small>The screen you land on after logging in</small></span>
+                    <span class="sp-tour-link-text"><strong><?php echo $spText['common']['Dashboard'] ?? 'Dashboard' ?></strong><small><?php echo tourText('tour_dashboard_desc', 'The screen you land on after logging in') ?></small></span>
                     <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                 </a>
                 <div class="sp-wizard-info-box">
                     <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.
+                    <?php echo tourText('tour_step6_info', 'Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.') ?>
                 </div>
             </div>
 
             <!-- Step 7: SEO Tools -->
             <div class="sp-wizard-panel" id="sp_tpanel_7">
-                <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
-                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any card to open it in a new tab:</p>
+                <h5><i class="fas fa-tools" style="margin-right:6px;"></i><?php echo $spText['common']['Seo Tools'] ?? 'Seo Tools' ?></h5>
+                <p><?php echo tourText('tour_step7_body', 'The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any card to open it in a new tab:') ?></p>
                 <div class="sp-tour-tool-grid">
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label">AI Visibility</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-key"></i></span><span class="sp-tour-tool-label">Keyword Position Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tasks"></i></span><span class="sp-tour-tool-label">Site Auditor</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-link"></i></span><span class="sp-tour-tool-label">Backlinks Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-globe"></i></span><span class="sp-tour-tool-label">Webmaster Tools</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-search-location"></i></span><span class="sp-tour-tool-label">Rank Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-folder-open"></i></span><span class="sp-tour-tool-label">Directory Submission</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-server"></i></span><span class="sp-tour-tool-label">Search Engine Saturation</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tachometer-alt"></i></span><span class="sp-tour-tool-label">PageSpeed Insights</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-share-alt"></i></span><span class="sp-tour-tool-label">Social Media Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-chart-area"></i></span><span class="sp-tour-tool-label">Website Analytics</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-star"></i></span><span class="sp-tour-tool-label">Review Manager</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['ai-visibility'] ?? 'AI Visibility' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-key"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['keyword-position-checker'] ?? 'Keyword Position Checker' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tasks"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['site-auditor'] ?? 'Site Auditor' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-link"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['backlink-checker'] ?? 'Backlinks Checker' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-globe"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['webmaster-tools'] ?? 'Webmaster Tools' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-search-location"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['rank-checker'] ?? 'Rank Checker' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-folder-open"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['directory-submission'] ?? 'Directory Submission' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-server"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['saturation-checker'] ?? 'Search Engine Saturation' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tachometer-alt"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['pagespeed'] ?? 'PageSpeed Insights' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-share-alt"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['sm-checker'] ?? 'Social Media Checker' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-chart-area"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['web-analytics'] ?? 'Website Analytics' ?></span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-star"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['review-manager'] ?? 'Review Manager' ?></span></a>
                 </div>
             </div>
 
@@ -429,9 +470,9 @@
                  pointed at the About Us/sponsors page, not a plugin
                  browser at all. -->
             <div class="sp-wizard-panel" id="sp_tpanel_8">
-                <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
+                <h5><i class="fas fa-plug" style="margin-right:6px;"></i><?php echo $spText['common']['Plugins'] ?? 'Plugins' ?></h5>
                 <?php if (!empty($tourPluginList)) { ?>
-                    <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools. Click any card to open it in a new tab:</p>
+                    <p><?php echo tourText('tour_step8_body', 'The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools. Click any card to open it in a new tab:') ?></p>
                     <div class="sp-tour-tool-grid">
                         <?php foreach ($tourPluginList as $pluginInfo) { ?>
                             <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-plugins.php?sec=show&menu_selected=<?php echo intval($pluginInfo['id']) ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
@@ -442,17 +483,17 @@
                         <?php } ?>
                     </div>
                 <?php } else { ?>
-                    <p>No plugins are available to use on your account right now.</p>
+                    <p><?php echo tourText('tour_no_plugins', 'No plugins are available to use on your account right now.') ?></p>
                 <?php } ?>
             </div>
 
             <!-- Step 9: Done -->
             <div class="sp-wizard-panel" id="sp_tpanel_9">
-                <h5><i class="fas fa-flag-checkered" style="margin-right:6px;"></i>You're All Set</h5>
-                <p>That's the layout. Everything above will make a lot more sense once real data starts coming in.</p>
+                <h5><i class="fas fa-flag-checkered" style="margin-right:6px;"></i><?php echo tourText('tour_step9_heading', "You're All Set") ?></h5>
+                <p><?php echo tourText('tour_step9_body', "That's the layout. Everything above will make a lot more sense once real data starts coming in.") ?></p>
                 <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
                     <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
-                    Want to see this again? Look for <strong>Setup Tour</strong> in the top menu bar.
+                    <?php echo tourText('tour_step9_info', 'Want to see this again? Look for <strong>Setup Tour</strong> in the top menu bar.') ?>
                 </div>
             </div>
         </div>
@@ -461,18 +502,18 @@
         <div class="sp-wizard-footer">
             <div class="sp-wizard-footer-left">
                 <button type="button" class="sp-confirm-btn sp-confirm-btn-skip" id="sp_tbtn_skip"
-                    onclick="window.featureTourSkip()" title="Skip this tour">
-                    <i class="fas fa-forward" style="margin-right:5px;"></i>Skip
+                    onclick="window.featureTourSkip()" title="<?php echo htmlspecialchars(tourText('tour_skip_tooltip', 'Skip this tour')) ?>">
+                    <i class="fas fa-forward" style="margin-right:5px;"></i><?php echo $spText['button']['Skip'] ?? tourText('tour_skip', 'Skip') ?>
                 </button>
             </div>
             <div class="sp-wizard-footer-right">
                 <button type="button" class="sp-confirm-btn sp-confirm-btn-cancel" id="sp_tbtn_back"
                     onclick="window.featureTourBack()" style="display:none;">
-                    <i class="fas fa-arrow-left" style="margin-right:5px;"></i>Back
+                    <i class="fas fa-arrow-left" style="margin-right:5px;"></i><?php echo tourText('tour_back', 'Back') ?>
                 </button>
                 <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="sp_tbtn_next"
                     onclick="window.featureTourNext()">
-                    <i class="fas fa-arrow-right" style="margin-right:5px;"></i>Next
+                    <i class="fas fa-arrow-right" style="margin-right:5px;"></i><?php echo tourText('tour_next', 'Next') ?>
                 </button>
             </div>
         </div>
@@ -489,11 +530,32 @@
     // instead of re-submitting the website fields
     var tourCreatedWebsiteId = null;
 
+    // strings the JS needs at runtime (button labels swapped in place,
+    // badge text, dynamic hints/messages) - translated server-side same
+    // as everything else in this view, injected here rather than
+    // hardcoded so the whole tour (not just the initial HTML) follows
+    // the active language
+    var TOUR_I18N = {
+        next: <?php echo json_encode(tourText('tour_next', 'Next')) ?>,
+        getStarted: <?php echo json_encode(tourText('tour_get_started', 'Get Started')) ?>,
+        connected: <?php echo json_encode(tourText('tour_connected', 'Connected')) ?>,
+        notSetUp: <?php echo json_encode(tourText('tour_not_set_up', 'Not set up')) ?>,
+        detected: <?php echo json_encode(tourText('tour_detected', 'Detected')) ?>,
+        notDetected: <?php echo json_encode(tourText('tour_not_detected', 'Not detected yet')) ?>,
+        websiteAdded: <?php echo json_encode(tourText('tour_website_added', 'Website and primary keyword added.')) ?>,
+        socialNotAdded: <?php echo json_encode(tourText('tour_social_not_added', 'Social media link')) ?>,
+        reviewNotAdded: <?php echo json_encode(tourText('tour_review_not_added', 'Review link')) ?>,
+        notAddedSuffix: <?php echo json_encode(tourText('tour_not_added_suffix', 'not added: %s')) ?>,
+        genericError: <?php echo json_encode(tourText('tour_generic_error', 'Something went wrong. Please try again.')) ?>,
+        reviewHintDynamic: <?php echo json_encode(tourText('tour_review_hint_dynamic', 'The URL must contain "%s" (e.g. a %s link should include that word).')) ?>,
+        addWebsiteHeading: <?php echo json_encode(tourText('tour_step2_heading', 'Add Your First Website')) ?>
+    };
+
     // shown on auto-trigger (new user, tour not yet seen) AND when the
-    // "Take a tour" link is clicked manually later. startStep resumes a
-    // new user where they left off (feature_tour_step); the manual
-    // reopen always passes 1 (see featureTourShow && featureTourShow()
-    // below with no argument, which defaults to step 1).
+    // "Setup Tour" link is clicked manually later. startStep resumes a
+    // user where they left off (feature_tour_step) - see topmenu.ctp.php,
+    // which now computes and passes the same resume step for the manual
+    // reopen link too, not just the auto-show script.
     window.featureTourShow = function(startStep) {
         currentStep = (startStep && startStep >= 1 && startStep <= TOTAL_STEPS) ? startStep : 1;
         _tourRender();
@@ -610,15 +672,18 @@
                     if (res.warnings) {
                         $.each(res.warnings, function(kind, errs) {
                             $.each(errs, function(field, html) {
-                                if (html) warningHtml += '<div class="sp-tour-form-hint">' + (kind === 'social' ? 'Social media link' : 'Review link') + ' not added: ' + $('<div>').html(html).text() + '</div>';
+                                if (html) {
+                                    var label = (kind === 'social') ? TOUR_I18N.socialNotAdded : TOUR_I18N.reviewNotAdded;
+                                    warningHtml += '<div class="sp-tour-form-hint">' + label + ' ' + TOUR_I18N.notAddedSuffix.replace('%s', $('<div>').html(html).text()) + '</div>';
+                                }
                             });
                         });
                     }
                     $('#sp_tpanel_2').html(
-                        '<h5><i class="fas fa-globe" style="margin-right:6px;"></i>Add Your First Website</h5>' +
+                        '<h5><i class="fas fa-globe" style="margin-right:6px;"></i>' + TOUR_I18N.addWebsiteHeading + '</h5>' +
                         '<div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">' +
                         '<i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>' +
-                        'Website and primary keyword added.</div>' + warningHtml
+                        TOUR_I18N.websiteAdded + '</div>' + warningHtml
                     );
                 } else if (res.stage === 'website') {
                     _tourShowFieldErrors({ name: 'tour_web_err_name', url: 'tour_web_err_url' }, res.errors);
@@ -628,12 +693,12 @@
                     _tourShowFieldErrors({ name: 'tour_web_err_keyword', searchengines: 'tour_web_err_searchengines' }, res.errors);
                     $btn.prop('disabled', false);
                 } else {
-                    $('#tour_web_general_err').text('Something went wrong. Please try again.');
+                    $('#tour_web_general_err').text(TOUR_I18N.genericError);
                     $btn.prop('disabled', false);
                 }
             },
             error: function() {
-                $('#tour_web_general_err').text('Something went wrong. Please try again.');
+                $('#tour_web_general_err').text(TOUR_I18N.genericError);
                 $btn.prop('disabled', false);
             }
         });
@@ -658,7 +723,7 @@
         if (!type) {
             $hint.hide();
         } else {
-            $hint.show().text('The URL must contain "' + type + '" (e.g. a ' + type + ' link should include that word).');
+            $hint.show().text(TOUR_I18N.reviewHintDynamic.replace('%s', type).replace('%s', type));
         }
     };
 
@@ -683,8 +748,8 @@
                 $.each(status, function(service, isConnected) {
                     var $slot = $('.sp-tour-badges[data-service="' + service + '"] .sp-tour-connection-badge');
                     if (!$slot.length) return;
-                    var connectedLabel = (service === 'cron') ? 'Detected' : 'Connected';
-                    var pendingLabel = (service === 'cron') ? 'Not detected yet' : 'Not set up';
+                    var connectedLabel = (service === 'cron') ? TOUR_I18N.detected : TOUR_I18N.connected;
+                    var pendingLabel = (service === 'cron') ? TOUR_I18N.notDetected : TOUR_I18N.notSetUp;
                     $slot.html(isConnected
                         ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' + connectedLabel + '</span>'
                         : '<span class="sp-tour-badge sp-tour-badge-pending">' + pendingLabel + '</span>');
@@ -720,9 +785,9 @@
 
         var $next = $('#sp_tbtn_next');
         if (currentStep === TOTAL_STEPS) {
-            $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>Get Started');
+            $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>' + TOUR_I18N.getStarted);
         } else {
-            $next.html('<i class="fas fa-arrow-right" style="margin-right:5px;"></i>Next');
+            $next.html('<i class="fas fa-arrow-right" style="margin-right:5px;"></i>' + TOUR_I18N.next);
         }
     }
 })();
