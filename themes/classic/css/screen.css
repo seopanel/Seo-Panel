@@ -3328,6 +3328,13 @@ a.btn, a.btn:hover {
     padding: 24px 24px 16px;
     overflow-y: auto;
     flex: 1;
+    /* keeps the box a near-constant height across steps instead of
+       visibly resizing on every Next/Back - short steps (Welcome, Done)
+       just leave blank space below, the tallest step (Add Your First
+       Website) fits without scrolling on a normal screen, and anything
+       that still overflows on a short viewport scrolls via overflow-y
+       above rather than being clipped. */
+    min-height: 420px;
 }
 .sp-wizard-panel { display: none; }
 .sp-wizard-panel.active { display: block; }
