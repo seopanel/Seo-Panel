@@ -249,7 +249,17 @@
         include_once(SP_CTRLPATH."/settings.ctrl.php");
         $spApiCtrl = new SettingsController();
         if (defined('SP_SPAPI_REGISTERED') && !SP_SPAPI_REGISTERED) {
-            if ($spApiCtrl->showSpApiRegistrationPopup()) {
+            // Deferred while the Feature Tour is still showing (unlike
+            // the wizard/tour pair above, this popup renders itself
+            // already visible - display:block inline, no JS show()
+            // call - so it would otherwise appear at the same time as
+            // the tour on a brand-new install's first login, both
+            // full-screen overlays racing for the same admin. The
+            // tour's own step 3 already introduces Seo Panel API with
+            // a link to register, so it takes priority; this popup
+            // picks up on the next page load once the tour is
+            // dismissed/finished ($spTourState['show'] goes false).
+            if (empty($spTourState['show']) && $spApiCtrl->showSpApiRegistrationPopup()) {
                 include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
             }
         } else {
