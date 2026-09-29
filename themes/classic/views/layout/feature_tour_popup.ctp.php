@@ -3,7 +3,12 @@
 
         <!-- Header with step progress -->
         <div class="sp-wizard-header">
-            <h4><i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour</h4>
+            <h4>
+                <i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour
+                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="Refresh connection status - in case you just saved something in another tab">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </h4>
             <div class="sp-wizard-steps" id="sp_tour_steps">
                 <?php for ($i = 1; $i <= 7; $i++) { ?>
                 <div class="sp-wizard-step-item">
@@ -65,11 +70,33 @@
             $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
 
-            function tourConnectedBadge($isConnected) {
+            function tourConnectionBadgeHtml($isConnected) {
                 if ($isConnected) {
                     return '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> Connected</span>';
                 }
                 return '<span class="sp-tour-badge sp-tour-badge-pending">Not set up</span>';
+            }
+            // Important = the tools you'll see next have no real data
+            // without this connected; Optional = nice-to-have, nothing is
+            // blocked if it's skipped for now.
+            function tourImportanceBadge($isImportant) {
+                if ($isImportant) {
+                    return '<span class="sp-tour-badge sp-tour-badge-important">Important</span>';
+                }
+                return '<span class="sp-tour-badge sp-tour-badge-optional">Optional</span>';
+            }
+            // wraps both badges together, tagged with data-service so the
+            // Refresh button (see the <script> below) can find and update
+            // just the connection half in place, without touching the
+            // importance badge or re-rendering the row
+            function tourBadges($service, $isImportant, $isConnected = null) {
+                $html = '<span class="sp-tour-badges" data-service="' . $service . '">';
+                $html .= tourImportanceBadge($isImportant);
+                if ($isConnected !== null) {
+                    $html .= '<span class="sp-tour-connection-badge">' . tourConnectionBadgeHtml($isConnected) . '</span>';
+                }
+                $html .= '</span>';
+                return $html;
             }
             ?>
 
@@ -83,7 +110,7 @@
                 <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                     <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
                     <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Rank tracking and SERP data, ready in a couple of minutes</small></span>
-                    <?php echo tourConnectedBadge($tourSpApiConnected) ?>
+                    <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
                     <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                 </a>
             </div>
@@ -96,42 +123,43 @@
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
                         <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
+                        <?php echo tourBadges('system', false) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
                         <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
-                        <?php echo tourConnectedBadge($tourDfsConnected) ?>
+                        <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
                         <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
-                        <?php echo tourConnectedBadge($tourMozConnected) ?>
+                        <?php echo tourBadges('moz', true, $tourMozConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
                         <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
-                        <?php echo tourConnectedBadge($tourGoogleConnected) ?>
+                        <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
                         <span class="sp-tour-link-text"><strong>Mail</strong><small>SMTP/SendGrid, so scheduled reports actually get delivered</small></span>
-                        <?php echo tourConnectedBadge($tourMailConnected) ?>
+                        <?php echo tourBadges('mail', false, $tourMailConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
                         <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
-                        <?php echo tourConnectedBadge($tourLocalAiConnected) ?>
+                        <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
                         <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
-                        <?php echo tourConnectedBadge($tourProxyConnected) ?>
+                        <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                 </div>
@@ -267,6 +295,38 @@
             }
         });
     }
+
+    // the connection badges are computed server-side when the tour first
+    // renders - if the user saves DataForSEO/Google/etc. credentials in
+    // another tab and comes back here without reloading, those badges
+    // would otherwise stay stale until their next login. This re-checks
+    // the live settings (a fresh request re-runs sp-load.php, so the
+    // constants it reads are never stale) and updates just the
+    // connection half of each badge in place, leaving the Important/
+    // Optional badge and the rest of the row untouched.
+    window.featureTourRefreshConnections = function() {
+        var $btn = $('#sp_tour_refresh_btn');
+        if ($btn.hasClass('sp-tour-refreshing')) return;
+        $btn.addClass('sp-tour-refreshing');
+        $.ajax({
+            url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
+            type: 'GET',
+            data: { sec: 'connection_status' },
+            dataType: 'json',
+            success: function(status) {
+                $.each(status, function(service, isConnected) {
+                    var $slot = $('.sp-tour-badges[data-service="' + service + '"] .sp-tour-connection-badge');
+                    if (!$slot.length) return;
+                    $slot.html(isConnected
+                        ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> Connected</span>'
+                        : '<span class="sp-tour-badge sp-tour-badge-pending">Not set up</span>');
+                });
+            },
+            complete: function() {
+                $btn.removeClass('sp-tour-refreshing');
+            }
+        });
+    };
 
     function _tourRender() {
         $('.sp-wizard-panel').removeClass('active');

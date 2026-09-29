@@ -41,4 +41,28 @@ class FeatureTourController extends Controller {
         echo json_encode(array('status' => 'ok'));
         exit;
     }
+
+    /*
+     * Live "Connected"/"Not set up" status per integration, for the
+     * Refresh button in the tour popup - a fresh GET request re-runs
+     * sp-load.php from scratch, so these constants already reflect
+     * whatever was just saved in another tab; no caching to bust here.
+     * Read-only (no state changes), so no POST/CSRF requirement, unlike
+     * dismissTour() above.
+     */
+    function getConnectionStatus() {
+        include_once(SP_CTRLPATH . "/settings.ctrl.php");
+        $status = array(
+            'seopanel_api' => defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED,
+            'dataforseo'   => defined('SP_DFS_API_LOGIN') && SP_DFS_API_LOGIN !== '' && defined('SP_DFS_API_PASSWORD') && SP_DFS_API_PASSWORD !== '',
+            'moz'          => defined('SP_MOZ_API_ACCESS_ID') && SP_MOZ_API_ACCESS_ID !== '' && defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '',
+            'google'       => defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '',
+            'mail'         => defined('SP_SMTP_MAIL') && SP_SMTP_MAIL && defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '',
+            'local_ai'     => SettingsController::isLocalAIEnabled(),
+            'proxy'        => defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY,
+        );
+        header('Content-Type: application/json');
+        echo json_encode($status);
+        exit;
+    }
 }

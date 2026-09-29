@@ -1024,6 +1024,43 @@ div.tab button.active {	background-color: #ccc;}
 #navbarSupportedContent .form-inline span {color: white;}
 #newsalert{font-size: 15px;}
 
+/* "Take a tour" link (topmenu.ctp.php) - a small standout pill rather
+   than a plain text link like Contact/Help/Support next to it, so a
+   new user actually notices it is there to click, not just something
+   that happened to auto-show once. A slow, subtle pulse draws the eye
+   without being distracting - stops on hover/focus so it never fights
+   with an active interaction. */
+.sp-tour-menu-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: linear-gradient(135deg, #1a73e8 0%, #0d5db5 100%);
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-left: 4px;
+    box-shadow: 0 0 0 rgba(26,115,232,0.5);
+    animation: sp-tour-menu-pulse 2.5s ease-in-out infinite;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.sp-tour-menu-link:hover,
+.sp-tour-menu-link:focus {
+    color: #ffffff !important;
+    text-decoration: none;
+    transform: translateY(-1px);
+    animation: none;
+    box-shadow: 0 3px 10px rgba(26,115,232,0.5);
+}
+.sp-tour-menu-link i {
+    font-size: 12px;
+}
+@keyframes sp-tour-menu-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(26,115,232,0.5); }
+    50% { box-shadow: 0 0 0 5px rgba(26,115,232,0); }
+}
+
 /* === FOOTER STYLES === */
 .footer-sp {
     padding: 8px 20px;
@@ -3435,6 +3472,50 @@ a.btn, a.btn:hover {
 .sp-tour-badge-pending {
     background: #f2f3f8;
     color: #8a8ea3;
+}
+.sp-tour-badge-important {
+    background: #fdeeee;
+    color: #c0392b;
+}
+.sp-tour-badge-optional {
+    background: #f2f3f8;
+    color: #8a8ea3;
+}
+.sp-tour-badges {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.sp-tour-connection-badge {
+    display: inline-flex;
+}
+
+/* Refresh button (tour header) - re-checks live connection status in
+   case the user just saved credentials in another tab, without needing
+   to close/reopen the tour or wait for next login. */
+.sp-tour-refresh-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    padding: 2px 6px;
+    margin-left: 4px;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: background 0.15s ease, color 0.15s ease;
+    vertical-align: middle;
+}
+.sp-tour-refresh-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: #ffffff;
+}
+.sp-tour-refresh-btn.sp-tour-refreshing i {
+    animation: sp-tour-spin 0.7s linear infinite;
+}
+@keyframes sp-tour-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 /* === Safe-area insets (notch / Dynamic Island / status bar / home

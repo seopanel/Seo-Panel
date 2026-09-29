@@ -25,5 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $controller->dismissTour();
             break;
     }
+} else {
+    // read-only status check - no state change, so GET is fine here
+    switch ($_GET['sec']) {
+        case 'connection_status':
+            $controller->getConnectionStatus();
+            break;
+    }
 }
 ?>

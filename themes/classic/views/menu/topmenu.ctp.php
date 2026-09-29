@@ -44,9 +44,8 @@ if (!empty($menuInfo['item_list'])) {
 		<?php echo $spText['common']['Support']?>
 	</a>
 	<?php if (isLoggedIn() && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) { ?>
-	<span class="pipe"> | </span>
-	<a href="javascript:void(0);" onclick="window.featureTourShow && window.featureTourShow()">
-		<?php echo $spText['common']['Take a tour'] ?? 'Take a tour'?>
+	<a href="javascript:void(0);" class="sp-tour-menu-link" onclick="window.featureTourShow && window.featureTourShow()" title="A 30-second tour of where everything lives">
+		<i class="fas fa-compass"></i> <?php echo $spText['common']['Take a tour'] ?? 'Take a tour'?>
 	</a>
 	<?php } ?>
 	<?php
