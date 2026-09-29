@@ -46,16 +46,19 @@ if (!empty($menuInfo['item_list'])) {
 	<?php if (isLoggedIn() && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) { ?>
 	<?php
 	// Manual reopen should resume where the user paused, same as the
-	// auto-show script does - not always restart at step 1. Only a
-	// user who is still mid-tour (feature_tour_seen=0, i.e. paused via
-	// a link click, never Skip/finished) has a meaningful step to
-	// resume; getTourState() already encodes exactly that distinction,
-	// so it's reused here rather than re-deriving it. Self-contained
-	// lookup since topmenu.ctp.php renders before default.ctp.php's
-	// own tour block further down the page computes $spTourState.
-	include_once(SP_CTRLPATH . "/feature_tour.ctrl.php");
-	$tourMenuResumeState = (new FeatureTourController())->getTourState(isLoggedIn());
-	$tourMenuResumeStep = !empty($tourMenuResumeState['show']) ? intval($tourMenuResumeState['step']) : 0;
+	// auto-show script does - not always restart at step 1. Reads
+	// feature_tour_step directly, NOT via getTourState()'s 'show' flag -
+	// that flag means "should this auto-popup on page load", which is
+	// permanently false for a pre-existing user (feature_tour_seen
+	// defaults to 1 and never resets), even though pausing mid-tour via
+	// a link click still correctly saves their step. Gating the resume
+	// step on 'show' meant a pre-existing user's manual reopen could
+	// never resume at all - confirmed live via an admin account paused
+	// at step 6, whose reopen link still passed step 0 (restart).
+	// Self-contained lookup since topmenu.ctp.php renders before
+	// default.ctp.php's own tour block further down the page.
+	$tourMenuResumeRow = (new Controller())->db->select("SELECT feature_tour_step FROM users WHERE id=" . intval(isLoggedIn()), true);
+	$tourMenuResumeStep = intval($tourMenuResumeRow['feature_tour_step'] ?? 0);
 	?>
 	<a href="javascript:void(0);" class="sp-tour-menu-link" onclick="window.featureTourShow && window.featureTourShow(<?php echo $tourMenuResumeStep ?>)" title="A quick tour that also sets up your first website">
 		<i class="fas fa-compass"></i> <?php echo $spText['common']['Setup Tour'] ?? 'Setup Tour'?>

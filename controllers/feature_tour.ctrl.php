@@ -46,11 +46,17 @@ class FeatureTourController extends Controller {
 
     /*
      * Mark the tour as seen for this user (called via AJAX, on both
-     * Skip and Finish - either way, don't auto-show it again).
+     * Skip and Finish - either way, don't auto-show it again). Also
+     * resets feature_tour_step to 0 - a link-click pause deliberately
+     * leaves the step in place so a manual reopen resumes there (see
+     * topmenu.ctp.php), but an explicit Skip/Finish means the user is
+     * genuinely done, and "Setup Tour" reopening later should start
+     * fresh from Welcome, not jump straight back to wherever they
+     * finished (e.g. the Done screen).
      */
     function dismissTour() {
         $userId = isLoggedIn();
-        $this->db->query("UPDATE users SET feature_tour_seen=1 WHERE id=" . intval($userId));
+        $this->db->query("UPDATE users SET feature_tour_seen=1, feature_tour_step=0 WHERE id=" . intval($userId));
         echo json_encode(array('status' => 'ok'));
         exit;
     }
