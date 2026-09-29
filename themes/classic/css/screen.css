@@ -3821,6 +3821,18 @@ body {
     .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline select {
         margin-top: 8px;
     }
+    /* .sp-tour-menu-link is normally display:inline-flex (its pill
+       shape) - the generic "a" rule above forces plain-text links to
+       display:inline so Help/Support wrap inline with their pipes, but
+       that same reset also hit this pill, breaking it into two
+       fragments across the line wrap (a stray rounded sliver after
+       "Support", the rest of the pill orphaned below). Restoring
+       inline-flex here makes it wrap as one atomic unit instead. */
+    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline a.sp-tour-menu-link,
+    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline a.sp-tour-menu-link {
+        display: inline-flex;
+        margin-top: 8px;
+    }
 }
 
 /* === Notification bell dropdown: fixed viewport-relative panel on

@@ -72,7 +72,11 @@
             // correctly saved token - confirmed live via a screenshot.
             $tourMozConnected = defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '';
             $tourGoogleConnected = defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '';
-            $tourMailConnected = defined('SP_SMTP_MAIL') && SP_SMTP_MAIL && defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
+            // Not gated on SP_SMTP_MAIL ("Enable SMTP") - per the app's
+            // author, mail is sometimes sent through an API-based
+            // provider rather than that toggle, so a filled-in host is
+            // enough to call this configured.
+            $tourMailConnected = defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
             $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
 

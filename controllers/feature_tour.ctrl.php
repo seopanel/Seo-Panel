@@ -61,7 +61,11 @@ class FeatureTourController extends Controller {
             // ("API Token" in the UI) for real API calls.
             'moz'          => defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '',
             'google'       => defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '',
-            'mail'         => defined('SP_SMTP_MAIL') && SP_SMTP_MAIL && defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '',
+            // Not gated on SP_SMTP_MAIL ("Enable SMTP") - per the app's
+            // author, mail is sometimes sent through an API-based
+            // provider rather than that toggle, so a filled-in host is
+            // enough to call this configured.
+            'mail'         => defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '',
             'local_ai'     => SettingsController::isLocalAIEnabled(),
             'proxy'        => defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY,
         );
