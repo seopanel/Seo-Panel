@@ -3415,6 +3415,27 @@ a.btn, a.btn:hover {
     color: #1a73e8;
     transform: translateX(3px);
 }
+.sp-tour-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.sp-tour-badge-connected {
+    background: #e7f8ee;
+    color: #1f9d55;
+}
+.sp-tour-badge-pending {
+    background: #f2f3f8;
+    color: #8a8ea3;
+}
 
 /* === Safe-area insets (notch / Dynamic Island / status bar / home
    indicator) - sitewide, unscoped ===
