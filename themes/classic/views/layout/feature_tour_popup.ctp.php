@@ -146,8 +146,8 @@
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
-                        <span class="sp-tour-link-text"><strong>Mail</strong><small>SMTP/SendGrid, so scheduled reports actually get delivered</small></span>
-                        <?php echo tourBadges('mail', false, $tourMailConnected) ?>
+                        <span class="sp-tour-link-text"><strong>Mail</strong><small>Scheduled reports, password resets, and registration emails all go through here</small></span>
+                        <?php echo tourBadges('mail', true, $tourMailConnected) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
