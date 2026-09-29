@@ -3318,8 +3318,9 @@ a.btn, a.btn:hover {
 }
 
 /* ===== Feature Tour (educational tour, separate from the Setup
-   Wizard above - shown once to brand-new users; reuses all of the
-   wizard overlay/box/header/footer/info-box classes as-is) ===== */
+   Wizard above - shown once to brand-new users; reuses the wizard's
+   overlay/box/header/footer/info-box classes as-is, with its own
+   richer, clickable content styling below) ===== */
 .sp-tour-chip-list {
     display: flex;
     flex-wrap: wrap;
@@ -3334,18 +3335,85 @@ a.btn, a.btn:hover {
     color: #0d5db5;
     border: 1px solid #d6e6fb;
     border-radius: 20px;
-    padding: 5px 12px;
+    padding: 6px 14px;
     font-size: 12.5px;
     font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s ease;
 }
-.sp-tour-settings-list {
-    margin: 0 0 14px;
-    padding-left: 20px;
+.sp-tour-chip:hover {
+    background: #1a73e8;
+    border-color: #1a73e8;
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(26,115,232,0.3);
+}
+.sp-tour-chip i {
+    font-size: 11px;
+}
+
+/* clickable "go there" rows - used by the Settings and Plugins steps */
+.sp-tour-link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+.sp-tour-link-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #e8edf5;
+    background: #fafbfd;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+.sp-tour-link-row:hover {
+    background: #f0f7ff;
+    border-color: #bcd8f9;
+    text-decoration: none;
+    transform: translateX(2px);
+}
+.sp-tour-link-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #1a73e8 0%, #0d5db5 100%);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 13px;
-    color: #333;
 }
-.sp-tour-settings-list li {
-    margin-bottom: 6px;
+.sp-tour-link-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.sp-tour-link-text strong {
+    font-size: 13.5px;
+    color: #1a1a2e;
+}
+.sp-tour-link-text small {
+    font-size: 11.5px;
+    color: #7a7f8c;
+    line-height: 1.3;
+}
+.sp-tour-link-arrow {
+    flex-shrink: 0;
+    font-size: 12px;
+    color: #b0b8c9;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+.sp-tour-link-row:hover .sp-tour-link-arrow {
+    color: #1a73e8;
+    transform: translateX(3px);
 }
 
 /* === Safe-area insets (notch / Dynamic Island / status bar / home

@@ -40,39 +40,68 @@
             <!-- Step 3: SEO Tools -->
             <div class="sp-wizard-panel" id="sp_tpanel_3">
                 <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
-                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place:</p>
+                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any of these to open it:</p>
                 <div class="sp-tour-chip-list">
-                    <span class="sp-tour-chip"><i class="fas fa-robot"></i> AI Visibility</span>
-                    <span class="sp-tour-chip"><i class="fas fa-search-location"></i> Rank Checker</span>
-                    <span class="sp-tour-chip"><i class="fas fa-tasks"></i> Site Auditor</span>
-                    <span class="sp-tour-chip"><i class="fas fa-link"></i> Backlinks Checker</span>
-                    <span class="sp-tour-chip"><i class="fas fa-tools"></i> Webmaster Tools</span>
-                    <span class="sp-tour-chip"><i class="fas fa-folder-open"></i> Directory Submission</span>
-                    <span class="sp-tour-chip"><i class="fas fa-server"></i> Search Engine Saturation</span>
-                    <span class="sp-tour-chip"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</span>
-                    <span class="sp-tour-chip"><i class="fas fa-share-alt"></i> Social Media Checker</span>
-                    <span class="sp-tour-chip"><i class="fas fa-chart-area"></i> Website Analytics</span>
-                    <span class="sp-tour-chip"><i class="fas fa-star"></i> Review Manager</span>
-                    <span class="sp-tour-chip"><i class="fas fa-key"></i> Keyword Position Checker</span>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/aivisibility.php" target="_blank"><i class="fas fa-robot"></i> AI Visibility</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/rank.php" target="_blank"><i class="fas fa-key"></i> Keyword Position Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/siteauditor.php" target="_blank"><i class="fas fa-tasks"></i> Site Auditor</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/backlinks.php" target="_blank"><i class="fas fa-link"></i> Backlinks Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/webmaster-tools.php" target="_blank"><i class="fas fa-globe"></i> Webmaster Tools</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/moz.php" target="_blank"><i class="fas fa-search-location"></i> Rank Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/directories.php" target="_blank"><i class="fas fa-folder-open"></i> Directory Submission</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/saturationchecker.php" target="_blank"><i class="fas fa-server"></i> Search Engine Saturation</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/pagespeed.php" target="_blank"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/social_media.php" target="_blank"><i class="fas fa-share-alt"></i> Social Media Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/analytics.php" target="_blank"><i class="fas fa-chart-area"></i> Website Analytics</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/review.php" target="_blank"><i class="fas fa-star"></i> Review Manager</a>
                 </div>
             </div>
 
             <!-- Step 4: Settings - where your integrations live -->
             <div class="sp-wizard-panel" id="sp_tpanel_4">
                 <h5><i class="fas fa-cog" style="margin-right:6px;"></i>Settings: Where Your Integrations Live</h5>
-                <p>SEO Panel has a lot of settings because it connects to a lot of services - here's the map so you don't have to hunt for it later:</p>
-                <ul class="sp-tour-settings-list">
-                    <li><strong>System</strong> &mdash; language, timezone, pagination, and other app-wide defaults</li>
-                    <li><strong>DataForSEO / MOZ</strong> &mdash; the data providers behind rank checking and domain metrics</li>
-                    <li><strong>Google</strong> &mdash; connect Analytics and Search Console</li>
-                    <li><strong>Mail</strong> &mdash; SMTP/SendGrid, so scheduled reports actually get delivered</li>
-                    <li><strong>Local AI</strong> &mdash; point AI-powered features at your own Ollama server</li>
-                    <li><strong>Seo Panel API</strong> &mdash; unlocks additional rank/SERP data services</li>
-                    <li><strong>Proxy</strong> &mdash; proxies used for crawling and directory submission</li>
-                </ul>
-                <div class="sp-wizard-info-box">
-                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    All of these live under <strong>Settings</strong> in the top menu - nothing here needs to be set up right now.
+                <p>SEO Panel has a lot of settings because it connects to a lot of services - here's the map so you don't have to hunt for it later. Click any row to go straight there:</p>
+                <div class="sp-tour-link-list">
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
+                        <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=dataforseo" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
+                        <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=moz" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
+                        <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=google" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
+                        <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=mail" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
+                        <span class="sp-tour-link-text"><strong>Mail</strong><small>SMTP/SendGrid, so scheduled reports actually get delivered</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=local_ai" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
+                        <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?category=seopanel_api" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
+                        <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Unlocks additional rank/SERP data services</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?sec=proxysettings" target="_blank">
+                        <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
+                        <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
                 </div>
             </div>
 
@@ -80,10 +109,11 @@
             <div class="sp-wizard-panel" id="sp_tpanel_5">
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
                 <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools - things like article submission/spinning, a quick web proxy, and an SEO diary for notes.</p>
-                <div class="sp-wizard-info-box">
-                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    Browse and install more from <strong>Settings &rarr; About Us</strong>.
-                </div>
+                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/settings.php?sec=aboutus" target="_blank">
+                    <span class="sp-tour-link-icon"><i class="fas fa-th-large"></i></span>
+                    <span class="sp-tour-link-text"><strong>Browse Plugins</strong><small>See what's installed, and find more to add</small></span>
+                    <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                </a>
             </div>
 
             <!-- Step 6: Done -->
