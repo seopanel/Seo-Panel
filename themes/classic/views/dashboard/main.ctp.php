@@ -836,10 +836,15 @@ if (!function_exists('renderStatTile')) {
 									['Date', 'Top 10 Keywords', 'Top 3 Keywords', 'Average Rank'],
 									<?php
 									foreach ($rankingTrends as $trend) {
+										// avg_rank is a SQL AVG() and comes back NULL for any
+										// date where no keyword ranked > 0 - echoing null omits
+										// the value entirely, leaving the row with only 3
+										// columns instead of 4 (Google Charts: "Row N has 3
+										// columns, but must have 4").
 										echo "['" . date('M d', strtotime($trend['date'])) . "', " .
 										     $trend['top10_count'] . ", " .
 										     $trend['top3_count'] . ", " .
-										     $trend['avg_rank'] . "],\n";
+										     ($trend['avg_rank'] !== null ? $trend['avg_rank'] : 0) . "],\n";
 									}
 									?>
 								]);
