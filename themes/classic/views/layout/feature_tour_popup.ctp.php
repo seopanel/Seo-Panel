@@ -40,64 +40,76 @@
             <!-- Step 3: SEO Tools -->
             <div class="sp-wizard-panel" id="sp_tpanel_3">
                 <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
-                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any of these to open it:</p>
+                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any of these to open it in a new tab:</p>
                 <div class="sp-tour-chip-list">
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('aivisibility.php')"><i class="fas fa-robot"></i> AI Visibility</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('rank.php')"><i class="fas fa-key"></i> Keyword Position Checker</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('siteauditor.php')"><i class="fas fa-tasks"></i> Site Auditor</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('backlinks.php')"><i class="fas fa-link"></i> Backlinks Checker</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('webmaster-tools.php')"><i class="fas fa-globe"></i> Webmaster Tools</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('moz.php')"><i class="fas fa-search-location"></i> Rank Checker</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('directories.php')"><i class="fas fa-folder-open"></i> Directory Submission</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('saturationchecker.php')"><i class="fas fa-server"></i> Search Engine Saturation</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('pagespeed.php')"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('social_media.php')"><i class="fas fa-share-alt"></i> Social Media Checker</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('analytics.php')"><i class="fas fa-chart-area"></i> Website Analytics</a>
-                    <a class="sp-tour-chip" href="javascript:void(0);" onclick="window.featureTourGoTo('review.php')"><i class="fas fa-star"></i> Review Manager</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-robot"></i> AI Visibility</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-key"></i> Keyword Position Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-tasks"></i> Site Auditor</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-link"></i> Backlinks Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-globe"></i> Webmaster Tools</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-search-location"></i> Rank Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-folder-open"></i> Directory Submission</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-server"></i> Search Engine Saturation</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-share-alt"></i> Social Media Checker</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-chart-area"></i> Website Analytics</a>
+                    <a class="sp-tour-chip" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourNotifyDismiss()"><i class="fas fa-star"></i> Review Manager</a>
                 </div>
             </div>
 
             <!-- Step 4: Settings - where your integrations live -->
             <div class="sp-wizard-panel" id="sp_tpanel_4">
                 <h5><i class="fas fa-cog" style="margin-right:6px;"></i>Settings: Where Your Integrations Live</h5>
-                <p>SEO Panel has a lot of settings because it connects to a lot of services - here's the map so you don't have to hunt for it later. Click any row to go straight there:</p>
+                <p>SEO Panel has a lot of settings because it connects to a lot of services - here's the map so you don't have to hunt for it later. Click any row to go straight there in a new tab:</p>
+                <?php
+                // admin-panel.php is Settings' own shell page (full navbar
+                // + left menu, same as seo-tools.php is for the Tools menu
+                // above) - it reads menu_selected (which left-menu item to
+                // highlight) and start_script (which inner settings.php
+                // view to auto-load into it) as plain query params, so any
+                // settings.php URL can be reached this way, not just the
+                // handful admin-panel.php's own sec= shortcuts cover
+                function tourSettingsLink($startScript) {
+                    return SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=' . urlencode($startScript);
+                }
+                ?>
                 <div class="sp-tour-link-list">
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
                         <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=dataforseo')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
                         <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=moz')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
                         <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=google')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
                         <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=mail')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
                         <span class="sp-tour-link-text"><strong>Mail</strong><small>SMTP/SendGrid, so scheduled reports actually get delivered</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=local_ai')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
                         <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?category=seopanel_api')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
                         <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Unlocks additional rank/SERP data services</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
-                    <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?sec=proxysettings')">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                         <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
                         <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
@@ -109,7 +121,7 @@
             <div class="sp-wizard-panel" id="sp_tpanel_5">
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
                 <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools - things like article submission/spinning, a quick web proxy, and an SEO diary for notes.</p>
-                <a class="sp-tour-link-row" href="javascript:void(0);" onclick="window.featureTourGoTo('settings.php?sec=aboutus')">
+                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH . '/admin-panel.php?menu_selected=about-us&start_script=' . urlencode('settings.php?sec=aboutus') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
                     <span class="sp-tour-link-icon"><i class="fas fa-th-large"></i></span>
                     <span class="sp-tour-link-text"><strong>Browse Plugins</strong><small>See what's installed, and find more to add</small></span>
                     <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
@@ -190,26 +202,19 @@
         });
     };
 
-    // Tools/Settings/Plugins steps link to real pages, but every one of
-    // them (aivisibility.php, settings.php, rank.php, ...) hardcodes
-    // $controller->layout = 'ajax' - they only ever render correctly
-    // when loaded via this same scriptDoLoad() AJAX-into-#content
-    // mechanism every other menu link in the app already uses. A plain
-    // <a href> (even with target="_blank") hits that file directly and
-    // gets back a bare content fragment with no navbar/sidebar, since
-    // the layout is skipped entirely for that request - confirmed live.
-    window.featureTourGoTo = function(url) {
+    // Tools/Settings/Plugins steps link to real, directly-navigable
+    // pages that open in a new tab (seo-tools.php?menu_sec=... and
+    // admin-panel.php?menu_selected=...&start_script=... - each is a
+    // full page with its own navbar/sidebar that auto-loads the right
+    // tool/settings view, unlike linking straight to e.g. aivisibility.php
+    // or settings.php on their own, which render as a bare fragment with
+    // no chrome at all since those controllers hardcode layout='ajax' -
+    // confirmed live). The href does the actual navigation; this just
+    // marks the tour seen in the background so it won't auto-show again,
+    // without blocking the new tab from opening.
+    window.featureTourNotifyDismiss = function() {
         _tourDismiss();
         $('#sp_tour_overlay').fadeOut(200);
-        if (document.getElementById('content') && typeof scriptDoLoad === 'function') {
-            scriptDoLoad(url, 'content');
-        } else {
-            // no #content on the current page to inject into (shouldn't
-            // happen in normal use - every page reachable while logged
-            // in is itself loaded into that same div) - falls back to a
-            // real navigation rather than doing nothing
-            window.location.href = '<?php echo SP_WEBPATH ?>/' + url;
-        }
     };
 
     function _tourDismiss(callback) {
