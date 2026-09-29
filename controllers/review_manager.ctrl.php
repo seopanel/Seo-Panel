@@ -183,11 +183,11 @@ class ReviewManagerController extends ReviewBase{
         $this->render( 'review/edit_review_link');   
     }
     
-    function createReviewLink($listInfo = '') {
+    function createReviewLink($listInfo = '', $apiCall=false) {
         $listInfo['name'] = trim($listInfo['name']);
         $listInfo['url'] = trim($listInfo['url']);
         $errMsg = $this->validateReviewLink($listInfo);
-        
+
         // if no error occured
         if (!$this->validate->flagErr) {
             $dataList = [
@@ -197,10 +197,16 @@ class ReviewManagerController extends ReviewBase{
                 'website_id|int' => $listInfo['website_id'],
             ];
             $this->dbHelper->insertRow($this->linkTable, $dataList);
+            if ($apiCall) {
+                return array('success', 'Successfully created review link');
+            }
             $this->showReviewLinks(['name' => $listInfo['name']]);
             exit;
         }
-        
+
+        if ($apiCall) {
+            return array('error', $errMsg);
+        }
         $this->set('errMsg', $errMsg);
         $this->newReviewLink($listInfo);
     }

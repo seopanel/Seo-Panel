@@ -1233,3 +1233,19 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 ('Show feature tour to new users', 'SP_FEATURE_TOUR', '1', 'system', 'bool', 1);
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_FEATURE_TOUR', 'Show feature tour to new users');
+
+-- Setup Tour: absorbs the old Setup Wizard's one genuinely useful piece
+-- (creating a website inline) as its own step 2, plus a new Cron Job
+-- step, so the wizard has no remaining reason to exist. Retired
+-- entirely - files, columns, and setting - rather than left dormant, to
+-- avoid the two ever confusing each other again if SP_SETUP_WIZARD were
+-- flipped back on by accident.
+ALTER TABLE `users` DROP COLUMN `setup_wizard_step`;
+ALTER TABLE `users` DROP COLUMN `setup_wizard_dismissed`;
+DELETE FROM `settings` WHERE `set_name`='SP_SETUP_WIZARD';
+DELETE FROM `texts` WHERE `label`='SP_SETUP_WIZARD';
+
+-- Setup Tour step persistence: mirrors the just-removed
+-- setup_wizard_step - a user who closes the tab mid-tour resumes at
+-- this step on reload instead of replaying Welcome.
+ALTER TABLE `users` ADD COLUMN `feature_tour_step` tinyint(1) NOT NULL DEFAULT 0;

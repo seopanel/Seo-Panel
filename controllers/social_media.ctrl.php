@@ -244,11 +244,11 @@ class SocialMediaController extends Controller{
         $this->render( 'socialmedia/edit_social_media_link');   
     }
     
-    function createSocialMediaLink($listInfo=[]) {
+    function createSocialMediaLink($listInfo=[], $apiCall=false) {
         $listInfo['name'] = trim($listInfo['name']);
-        $listInfo['url'] = trim($listInfo['url']);        
+        $listInfo['url'] = trim($listInfo['url']);
         $errMsg = $this->validateSocialMediaLink($listInfo);
-        
+
         // if no error occured
         if (!$this->validate->flagErr) {
             $dataList = [
@@ -258,12 +258,18 @@ class SocialMediaController extends Controller{
                 'website_id|int' => $listInfo['website_id'],
             ];
             $this->dbHelper->insertRow($this->linkTable, $dataList);
+            if ($apiCall) {
+                return array('success', 'Successfully created social media link');
+            }
             $this->showSocialMediaLinks(['name' => $listInfo['name']]);
             exit;
         }
-        
+
+        if ($apiCall) {
+            return array('error', $errMsg);
+        }
         $this->set('errMsg', $errMsg);
-        $this->newSocialMediaLink($listInfo);        
+        $this->newSocialMediaLink($listInfo);
     }
     
     function editSocialMediaLink($linkId, $listInfo=[]) {        

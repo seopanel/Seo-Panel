@@ -211,35 +211,24 @@
 
     <?php include_once(SP_VIEWPATH."/common/top_notification.ctp.php");?>
     <?php
-    // show initial setup wizard for logged-in users who haven't completed or dismissed it
-    if (isLoggedIn() && defined('SP_SETUP_WIZARD') && SP_SETUP_WIZARD) {
-        include_once(SP_CTRLPATH . "/setup_wizard.ctrl.php");
-        $spWizardCtrl = new SetupWizardController();
-        $spWizardState = $spWizardCtrl->getWizardState(isLoggedIn());
-        if (!empty($spWizardState['show'])) {
-            $wizardStep = intval($spWizardState['step']);
-            include_once(SP_VIEWPATH . "/layout/setup_wizard_popup.ctp.php");
-            echo '<script>$(document).ready(function(){ window.setupWizardShow(' . $wizardStep . '); });</script>';
-        }
-    }
-    ?>
-    <?php
-    // Feature tour: a short, skippable educational walkthrough (dashboard,
-    // tools, settings, plugins) shown once to brand-new users - separate
-    // from the Setup Wizard above, which drives specific setup ACTIONS
-    // rather than orienting a new user to the app's layout. The popup
-    // markup itself is rendered for every logged-in user whenever the
-    // feature is on (not just new users) so the "Take a tour" link in the
-    // top menu can reopen it manually at any time; only the auto-show
-    // script is gated on getTourState(). Skipped entirely while the Setup
-    // Wizard is currently showing, so the two overlays never stack.
-    if (isLoggedIn() && empty($spWizardState['show']) && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) {
+    // Setup Tour: a short, skippable walkthrough shown once to brand-new
+    // users - adding a first website, the cron job, settings, SEO tools,
+    // and plugins. Replaces the old Setup Wizard entirely (its one
+    // useful piece, creating a website inline, is now this tour's own
+    // step 2), which has been removed. The popup markup itself is
+    // rendered for every logged-in user whenever the feature is on (not
+    // just new users) so the "Take a tour" link in the top menu can
+    // reopen it manually at any time; only the auto-show script is
+    // gated on getTourState(). Resumes at the user's last step
+    // (feature_tour_step) rather than always restarting from Welcome.
+    if (isLoggedIn() && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) {
         include_once(SP_CTRLPATH . "/feature_tour.ctrl.php");
         $spTourCtrl = new FeatureTourController();
         $spTourState = $spTourCtrl->getTourState(isLoggedIn());
         include_once(SP_VIEWPATH . "/layout/feature_tour_popup.ctp.php");
         if (!empty($spTourState['show'])) {
-            echo '<script>$(document).ready(function(){ window.featureTourShow(); });</script>';
+            $tourStep = intval($spTourState['step']);
+            echo '<script>$(document).ready(function(){ window.featureTourShow(' . $tourStep . '); });</script>';
         }
     }
     ?>

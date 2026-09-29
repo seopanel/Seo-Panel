@@ -24,6 +24,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'dismiss':
             $controller->dismissTour();
             break;
+        case 'save_step':
+            $controller->saveTourStep($_POST);
+            break;
+        case 'create_website_setup':
+            $controller->createWebsiteSetup($_POST);
+            break;
     }
 } else {
     // read-only status check - no state change, so GET is fine here

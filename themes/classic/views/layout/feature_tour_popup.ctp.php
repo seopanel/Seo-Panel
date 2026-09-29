@@ -4,16 +4,16 @@
         <!-- Header with step progress -->
         <div class="sp-wizard-header">
             <h4 class="sp-tour-header-row">
-                <span><i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour</span>
+                <span><i class="fas fa-compass" style="margin-right:8px;"></i>Setup Tour</span>
                 <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="Just saved something in another tab? Refresh to update the connection badges below">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
             </h4>
             <div class="sp-wizard-steps" id="sp_tour_steps">
-                <?php for ($i = 1; $i <= 7; $i++) { ?>
+                <?php for ($i = 1; $i <= 9; $i++) { ?>
                 <div class="sp-wizard-step-item">
                     <div class="sp-wizard-step-dot" id="sp_tdot_<?php echo $i ?>"><?php echo $i ?></div>
-                    <?php if ($i < 7) { ?><div class="sp-wizard-step-line" id="sp_tline_<?php echo $i ?>"></div><?php } ?>
+                    <?php if ($i < 9) { ?><div class="sp-wizard-step-line" id="sp_tline_<?php echo $i ?>"></div><?php } ?>
                 </div>
                 <?php } ?>
             </div>
@@ -28,17 +28,7 @@
                 <p>SEO Panel tracks rankings, audits your sites, checks backlinks, and monitors how you show up in AI answer engines - all from one self-hosted control room.</p>
                 <div class="sp-wizard-info-box">
                     <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    This is a 30-second tour of where everything lives. Skip it anytime, or take it again later from the <strong>Help</strong> menu.
-                </div>
-            </div>
-
-            <!-- Step 2: Dashboard -->
-            <div class="sp-wizard-panel" id="sp_tpanel_2">
-                <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
-                <p>This is the screen you're looking at right now. Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
-                <div class="sp-wizard-info-box">
-                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
-                    Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.
+                    This is a short tour of where everything lives, and gets your first website set up along the way. Skip it anytime, or take it again later from the <strong>Help</strong> menu.
                 </div>
             </div>
 
@@ -47,15 +37,23 @@
             // loaded yet for a non-admin user (default.ctp.php's own
             // include_once for it is gated behind isAdmin(), further down)
             include_once(SP_CTRLPATH . "/settings.ctrl.php");
+            include_once(SP_CTRLPATH . "/website.ctrl.php");
+            include_once(SP_CTRLPATH . "/searchengine.ctrl.php");
+            include_once(SP_CTRLPATH . "/language.ctrl.php");
+            include_once(SP_CTRLPATH . "/country.ctrl.php");
+
             // admin-panel.php is Settings' own shell page (full navbar +
             // left menu, same as seo-tools.php is for the Tools menu
             // below) - it reads menu_selected (which left-menu item to
             // highlight) and start_script (which inner settings.php view
             // to auto-load into it) as plain query params, so any
             // settings.php URL can be reached this way, not just the
-            // handful admin-panel.php's own sec= shortcuts cover.
-            function tourSettingsLink($startScript) {
-                return SP_WEBPATH . '/admin-panel.php?menu_selected=settings&start_script=' . urlencode($startScript);
+            // handful admin-panel.php's own sec= shortcuts cover. Most
+            // callers are Settings rows ($menuSelected defaults to that),
+            // but Cron Command actually lives under the left menu's
+            // Report Manager section (adminleftmenu.ctp.php), not Settings.
+            function tourSettingsLink($startScript, $menuSelected = 'settings') {
+                return SP_WEBPATH . '/admin-panel.php?menu_selected=' . urlencode($menuSelected) . '&start_script=' . urlencode($startScript);
             }
             // "already configured" per category - the same constants the
             // app itself gates real functionality on (SettingsController::
@@ -79,12 +77,13 @@
             $tourMailConnected = defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
             $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
+            $tourCronConnected = (new FeatureTourController())->__isCronDetected();
 
-            function tourConnectionBadgeHtml($isConnected) {
+            function tourConnectionBadgeHtml($isConnected, $connectedLabel = 'Connected', $pendingLabel = 'Not set up') {
                 if ($isConnected) {
-                    return '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> Connected</span>';
+                    return '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' . $connectedLabel . '</span>';
                 }
-                return '<span class="sp-tour-badge sp-tour-badge-pending">Not set up</span>';
+                return '<span class="sp-tour-badge sp-tour-badge-pending">' . $pendingLabel . '</span>';
             }
             // Important = the tools you'll see next have no real data
             // without this connected; Optional = nice-to-have, nothing is
@@ -99,16 +98,131 @@
             // Refresh button (see the <script> below) can find and update
             // just the connection half in place, without touching the
             // importance badge or re-rendering the row
-            function tourBadges($service, $isImportant, $isConnected = null) {
+            function tourBadges($service, $isImportant, $isConnected = null, $connectedLabel = 'Connected', $pendingLabel = 'Not set up') {
                 $html = '<span class="sp-tour-badges" data-service="' . $service . '">';
                 $html .= tourImportanceBadge($isImportant);
                 if ($isConnected !== null) {
-                    $html .= '<span class="sp-tour-connection-badge">' . tourConnectionBadgeHtml($isConnected) . '</span>';
+                    $html .= '<span class="sp-tour-connection-badge">' . tourConnectionBadgeHtml($isConnected, $connectedLabel, $pendingLabel) . '</span>';
                 }
                 $html .= '</span>';
                 return $html;
             }
+
+            $tourUserId = isLoggedIn();
+            $tourWebsiteCount = 0;
+            if ($tourUserId) {
+                $tourWebsiteCountRow = (new WebsiteController())->db->select("SELECT COUNT(*) as c FROM websites WHERE user_id=" . intval($tourUserId), true);
+                $tourWebsiteCount = intval($tourWebsiteCountRow['c'] ?? 0);
+            }
+            $tourSearchEngines = (new SearchEngineController())->__getAllSearchEngines();
+            $tourLanguages = (new LanguageController())->__getAllLanguages();
+            $tourCountries = (new CountryController())->__getAllCountryAsList();
             ?>
+
+            <!-- Step 2: Add Your First Website - the one genuinely useful
+                 piece of the old Setup Wizard (now retired), absorbed here
+                 as this tour's own action step. Website + primary keyword
+                 are mandatory (nothing else the tour points at next has
+                 real data without at least one of each); social/review
+                 links are optional extras. -->
+            <div class="sp-wizard-panel" id="sp_tpanel_2">
+                <h5><i class="fas fa-globe" style="margin-right:6px;"></i>Add Your First Website</h5>
+                <?php if ($tourWebsiteCount > 0) { ?>
+                    <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
+                        <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
+                        You already have <?php echo $tourWebsiteCount ?> website<?php echo $tourWebsiteCount == 1 ? '' : 's' ?> set up - nothing to do here.
+                    </div>
+                <?php } else { ?>
+                    <p>Everything below - the dashboard, rank tracking, audits - needs at least one website to work with. Takes a few seconds:</p>
+                    <div id="tour_web_general_err"></div>
+                    <div class="sp-tour-form-row">
+                        <label for="tour_web_name">Website Name <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_name" class="form-control" placeholder="e.g. My Company Website">
+                        <div class="sp-tour-field-err" id="tour_web_err_name"></div>
+                    </div>
+                    <div class="sp-tour-form-row">
+                        <label for="tour_web_url">Website URL <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_url" class="form-control" placeholder="https://example.com">
+                        <div class="sp-tour-field-err" id="tour_web_err_url"></div>
+                    </div>
+                    <div class="sp-tour-form-row">
+                        <label for="tour_web_keyword">Primary Keyword <span class="sp-tour-required">*</span></label>
+                        <input type="text" id="tour_web_keyword" class="form-control" placeholder="e.g. seo software">
+                        <div class="sp-tour-field-err" id="tour_web_err_keyword"></div>
+                    </div>
+                    <div class="sp-tour-form-row">
+                        <label for="tour_web_se">Search Engine <span class="sp-tour-required">*</span></label>
+                        <select id="tour_web_se" class="form-control custom-select">
+                            <?php foreach ($tourSearchEngines as $seInfo) { ?>
+                                <option value="<?php echo $seInfo['id'] ?>"><?php echo $seInfo['domain'] ?></option>
+                            <?php } ?>
+                        </select>
+                        <div class="sp-tour-field-err" id="tour_web_err_searchengines"></div>
+                    </div>
+                    <div class="sp-tour-form-row-pair">
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_lang">Language</label>
+                            <select id="tour_web_lang" class="form-control custom-select">
+                                <option value="">-- optional --</option>
+                                <?php foreach ($tourLanguages as $langInfo) { ?>
+                                    <option value="<?php echo $langInfo['lang_code'] ?>"><?php echo $langInfo['lang_name'] ?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_country">Country</label>
+                            <select id="tour_web_country" class="form-control custom-select">
+                                <option value="">-- optional --</option>
+                                <?php foreach ($tourCountries as $countryCode => $countryName) { ?>
+                                    <option value="<?php echo $countryCode ?>"><?php echo $countryName ?></option>
+                                <?php } ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="sp-tour-form-divider">Optional extras</div>
+                    <div class="sp-tour-form-row-pair">
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_social_type">Social Media</label>
+                            <select id="tour_web_social_type" class="form-control custom-select">
+                                <option value="">-- none --</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="twitter">Twitter</option>
+                                <option value="instagram">Instagram</option>
+                                <option value="pinterest">Pinterest</option>
+                                <option value="youtube">YouTube</option>
+                                <option value="reddit">Reddit</option>
+                            </select>
+                        </div>
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_social_url">&nbsp;</label>
+                            <input type="text" id="tour_web_social_url" class="form-control" placeholder="Profile URL">
+                        </div>
+                    </div>
+                    <div class="sp-tour-field-err" id="tour_web_err_social"></div>
+                    <div class="sp-tour-form-row-pair">
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_review_type">Review Link</label>
+                            <select id="tour_web_review_type" class="form-control custom-select" onchange="window._tourUpdateReviewHint()">
+                                <option value="">-- none --</option>
+                                <option value="google">Google My Business</option>
+                                <option value="yelp">Yelp</option>
+                                <option value="trustpilot">Trustpilot</option>
+                                <option value="tripadvisor">TripAdvisor</option>
+                            </select>
+                        </div>
+                        <div class="sp-tour-form-row">
+                            <label for="tour_web_review_url">&nbsp;</label>
+                            <input type="text" id="tour_web_review_url" class="form-control" placeholder="Review page URL">
+                        </div>
+                    </div>
+                    <div class="sp-tour-form-hint" id="tour_web_review_hint">The URL must contain the platform's name, e.g. a Yelp link should include "yelp".</div>
+                    <div class="sp-tour-field-err" id="tour_web_err_review"></div>
+
+                    <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="tour_web_submit_btn" onclick="window._tourSubmitWebsite()" style="margin-top:10px;">
+                        <i class="fas fa-plus" style="margin-right:5px;"></i>Add Website
+                    </button>
+                <?php } ?>
+            </div>
 
             <!-- Step 3: Seo Panel API - its own step, called out separately
                  from the general Settings list below since it's the main
@@ -175,8 +289,43 @@
                 </div>
             </div>
 
-            <!-- Step 5: SEO Tools -->
+            <!-- Step 5: Cron Job - nothing scheduled (rank checks, audits,
+                 reports) runs at all without this. Badge is a genuine live
+                 check (cron_run_log), not just a setting's presence.
+                 cron.php requires checkAdminLoggedIn() - a non-admin user
+                 can't reach that page at all, so they get an explanatory
+                 note instead of a link they'd just be denied on. -->
             <div class="sp-wizard-panel" id="sp_tpanel_5">
+                <h5><i class="fas fa-clock" style="margin-right:6px;"></i>Set Up the Cron Job</h5>
+                <p>SEO Panel checks rankings, runs audits, and generates reports on a schedule - but only once your server is actually calling <code>cron.php</code>. Nothing above matters if this isn't running.</p>
+                <?php if (isAdmin()) { ?>
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
+                        <span class="sp-tour-link-text"><strong>Cron Command</strong><small>The exact command to add to your server's crontab</small></span>
+                        <?php echo tourBadges('cron', true, $tourCronConnected, 'Detected', 'Not detected yet') ?>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                <?php } else { ?>
+                    <div class="sp-wizard-info-box">
+                        <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                        This is a server setting, so only an admin on your account can set it up. Current status:
+                        <?php echo tourBadges('cron', true, $tourCronConnected, 'Detected', 'Not detected yet') ?>
+                    </div>
+                <?php } ?>
+            </div>
+
+            <!-- Step 6: Dashboard -->
+            <div class="sp-wizard-panel" id="sp_tpanel_6">
+                <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
+                <p>This is the screen you land on after logging in. Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
+                <div class="sp-wizard-info-box">
+                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                    Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.
+                </div>
+            </div>
+
+            <!-- Step 7: SEO Tools -->
+            <div class="sp-wizard-panel" id="sp_tpanel_7">
                 <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
                 <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any of these to open it in a new tab:</p>
                 <div class="sp-tour-chip-list">
@@ -195,8 +344,8 @@
                 </div>
             </div>
 
-            <!-- Step 6: Plugins -->
-            <div class="sp-wizard-panel" id="sp_tpanel_6">
+            <!-- Step 8: Plugins -->
+            <div class="sp-wizard-panel" id="sp_tpanel_8">
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
                 <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools - things like article submission/spinning, a quick web proxy, and an SEO diary for notes.</p>
                 <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH . '/admin-panel.php?menu_selected=about-us&start_script=' . urlencode('settings.php?sec=aboutus') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
@@ -206,10 +355,10 @@
                 </a>
             </div>
 
-            <!-- Step 7: Done -->
-            <div class="sp-wizard-panel" id="sp_tpanel_7">
+            <!-- Step 9: Done -->
+            <div class="sp-wizard-panel" id="sp_tpanel_9">
                 <h5><i class="fas fa-flag-checkered" style="margin-right:6px;"></i>You're All Set</h5>
-                <p>That's the layout. Add a website to get started, and everything above will make a lot more sense once real data starts coming in.</p>
+                <p>That's the layout. Everything above will make a lot more sense once real data starts coming in.</p>
                 <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
                     <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
                     Want to see this again? Look for <strong>Take a tour</strong> in the Help menu.
@@ -241,15 +390,21 @@
 
 <script type="text/javascript">
 (function() {
-    var TOTAL_STEPS = 7;
+    var TOTAL_STEPS = 9;
     var currentStep = 1;
+    // set once the website step succeeds (or was already satisfied on
+    // load) - lets Next skip re-validating a step that's already done,
+    // and lets a keyword-only retry pass the existing website_id back
+    // instead of re-submitting the website fields
+    var tourCreatedWebsiteId = null;
 
     // shown on auto-trigger (new user, tour not yet seen) AND when the
-    // "Take a tour" link is clicked manually later - either way this
-    // resets to step 1, since it's a short linear tour, not a resumable
-    // checklist
-    window.featureTourShow = function() {
-        currentStep = 1;
+    // "Take a tour" link is clicked manually later. startStep resumes a
+    // new user where they left off (feature_tour_step); the manual
+    // reopen always passes 1 (see featureTourShow && featureTourShow()
+    // below with no argument, which defaults to step 1).
+    window.featureTourShow = function(startStep) {
+        currentStep = (startStep && startStep >= 1 && startStep <= TOTAL_STEPS) ? startStep : 1;
         _tourRender();
         $('#sp_tour_overlay').fadeIn(200);
     };
@@ -263,12 +418,14 @@
         }
         currentStep++;
         _tourRender();
+        _tourSaveStep();
     };
 
     window.featureTourBack = function() {
         if (currentStep > 1) {
             currentStep--;
             _tourRender();
+            _tourSaveStep();
         }
     };
 
@@ -280,7 +437,7 @@
         });
     };
 
-    // Tools/Settings/Plugins steps link to real, directly-navigable
+    // Tools/Settings/Plugins/Cron steps link to real, directly-navigable
     // pages that open in a new tab (seo-tools.php?menu_sec=... and
     // admin-panel.php?menu_selected=...&start_script=... - each is a
     // full page with its own navbar/sidebar that auto-loads the right
@@ -306,12 +463,113 @@
         });
     }
 
+    function _tourSaveStep() {
+        $.ajax({
+            url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
+            type: 'POST',
+            data: { sec: 'save_step', step: currentStep }
+        });
+    }
+
+    // Step 2's "Add Your First Website" form - creates the website,
+    // keyword, and optional social/review links in one request. On a
+    // partial failure (website created but keyword rejected), the
+    // returned website_id is remembered so a retry only re-attempts the
+    // keyword, not the whole website again.
+    window._tourSubmitWebsite = function() {
+        var $btn = $('#tour_web_submit_btn');
+        if ($btn.prop('disabled')) return;
+        $btn.prop('disabled', true);
+        $('.sp-tour-field-err').text('');
+        $('#tour_web_general_err').empty();
+
+        var payload = {
+            sec: 'create_website_setup',
+            name: $('#tour_web_name').val(),
+            url: $('#tour_web_url').val(),
+            keyword: $('#tour_web_keyword').val(),
+            search_engine: $('#tour_web_se').val(),
+            lang_code: $('#tour_web_lang').val(),
+            country_code: $('#tour_web_country').val(),
+            social_type: $('#tour_web_social_type').val(),
+            social_url: $('#tour_web_social_url').val(),
+            review_type: $('#tour_web_review_type').val(),
+            review_url: $('#tour_web_review_url').val()
+        };
+        if (tourCreatedWebsiteId) {
+            payload.website_id = tourCreatedWebsiteId;
+        }
+
+        $.ajax({
+            url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
+            type: 'POST',
+            data: payload,
+            dataType: 'json',
+            success: function(res) {
+                if (res.status === 'ok') {
+                    tourCreatedWebsiteId = res.website_id;
+                    var warningHtml = '';
+                    if (res.warnings) {
+                        $.each(res.warnings, function(kind, errs) {
+                            $.each(errs, function(field, html) {
+                                if (html) warningHtml += '<div class="sp-tour-form-hint">' + (kind === 'social' ? 'Social media link' : 'Review link') + ' not added: ' + $('<div>').html(html).text() + '</div>';
+                            });
+                        });
+                    }
+                    $('#sp_tpanel_2').html(
+                        '<h5><i class="fas fa-globe" style="margin-right:6px;"></i>Add Your First Website</h5>' +
+                        '<div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">' +
+                        '<i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>' +
+                        'Website and primary keyword added.</div>' + warningHtml
+                    );
+                } else if (res.stage === 'website') {
+                    _tourShowFieldErrors({ name: 'tour_web_err_name', url: 'tour_web_err_url' }, res.errors);
+                    $btn.prop('disabled', false);
+                } else if (res.stage === 'keyword') {
+                    tourCreatedWebsiteId = res.website_id;
+                    _tourShowFieldErrors({ name: 'tour_web_err_keyword', searchengines: 'tour_web_err_searchengines' }, res.errors);
+                    $btn.prop('disabled', false);
+                } else {
+                    $('#tour_web_general_err').text('Something went wrong. Please try again.');
+                    $btn.prop('disabled', false);
+                }
+            },
+            error: function() {
+                $('#tour_web_general_err').text('Something went wrong. Please try again.');
+                $btn.prop('disabled', false);
+            }
+        });
+    };
+
+    function _tourShowFieldErrors(fieldMap, errors) {
+        if (!errors) return;
+        $.each(errors, function(field, html) {
+            if (!html) return;
+            var slotId = fieldMap[field];
+            if (slotId && $('#' + slotId).length) {
+                $('#' + slotId).html(html);
+            } else {
+                $('#tour_web_general_err').html(html);
+            }
+        });
+    }
+
+    window._tourUpdateReviewHint = function() {
+        var type = $('#tour_web_review_type').val();
+        var $hint = $('#tour_web_review_hint');
+        if (!type) {
+            $hint.hide();
+        } else {
+            $hint.show().text('The URL must contain "' + type + '" (e.g. a ' + type + ' link should include that word).');
+        }
+    };
+
     // the connection badges are computed server-side when the tour first
-    // renders - if the user saves DataForSEO/Google/etc. credentials in
-    // another tab and comes back here without reloading, those badges
-    // would otherwise stay stale until their next login. This re-checks
-    // the live settings (a fresh request re-runs sp-load.php, so the
-    // constants it reads are never stale) and updates just the
+    // renders - if the user saves DataForSEO/Google/etc. credentials (or
+    // runs cron) in another tab and comes back here without reloading,
+    // those badges would otherwise stay stale until their next login.
+    // This re-checks the live state (a fresh request re-runs
+    // sp-load.php, so nothing here is cached) and updates just the
     // connection half of each badge in place, leaving the Important/
     // Optional badge and the rest of the row untouched.
     window.featureTourRefreshConnections = function() {
@@ -327,9 +585,11 @@
                 $.each(status, function(service, isConnected) {
                     var $slot = $('.sp-tour-badges[data-service="' + service + '"] .sp-tour-connection-badge');
                     if (!$slot.length) return;
+                    var connectedLabel = (service === 'cron') ? 'Detected' : 'Connected';
+                    var pendingLabel = (service === 'cron') ? 'Not detected yet' : 'Not set up';
                     $slot.html(isConnected
-                        ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> Connected</span>'
-                        : '<span class="sp-tour-badge sp-tour-badge-pending">Not set up</span>');
+                        ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' + connectedLabel + '</span>'
+                        : '<span class="sp-tour-badge sp-tour-badge-pending">' + pendingLabel + '</span>');
                 });
             },
             complete: function() {

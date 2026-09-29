@@ -1708,17 +1708,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `confirm` tinyint(1) NOT NULL DEFAULT '0',
   `spapi_skip` tinyint(1) NOT NULL DEFAULT 0,
   `spapi_upgrade_skip_date` date DEFAULT NULL,
-  `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0,
-  `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0,
   `version_upgrade_skip_date` date DEFAULT NULL,
   `feature_tour_seen` tinyint(1) NOT NULL DEFAULT 1,
+  `feature_tour_step` tinyint(1) NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`, `version_upgrade_skip_date`, `feature_tour_seen`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, 0, 0, NULL, 1);
+INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `version_upgrade_skip_date`, `feature_tour_seen`, `feature_tour_step`) VALUES
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, NULL, 1, 0);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
@@ -2111,16 +2110,13 @@ INSERT INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Enable GDPR/RGPD Cookie Consent Banner', 'SP_GDPR_COOKIE_BANNER', '0', 'system', 'bool', 1);
 
--- Initial setup wizard
-INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
-('Initial Setup Wizard', 'SP_SETUP_WIZARD', '0', 'system', 'bool', 0);
-
--- Feature tour: a short, skippable educational walkthrough shown once to
--- brand-new users (see users.feature_tour_seen) pointing out the
--- dashboard, SEO tools, settings tabs, and plugins - separate from the
--- (disabled) Setup Wizard above, which drives specific setup ACTIONS
--- rather than orienting a new user to the app's layout. On by default
--- and visible, unlike the wizard, since this is meant to actually run.
+-- Setup Tour: a short, skippable walkthrough shown once to brand-new
+-- users (see users.feature_tour_seen/feature_tour_step), covering
+-- adding a first website (+ keyword, optional social/review links),
+-- the cron job, and the rest of the app's layout. Replaces the old
+-- Setup Wizard entirely (its one useful piece - creating a website
+-- inline - was absorbed into this tour's own first step), so that
+-- wizard and its SP_SETUP_WIZARD setting/columns have been removed.
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Show feature tour to new users', 'SP_FEATURE_TOUR', '1', 'system', 'bool', 1);
 

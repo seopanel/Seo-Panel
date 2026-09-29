@@ -3499,6 +3499,57 @@ a.btn, a.btn:hover {
     display: inline-flex;
 }
 
+/* Step 2's inline Add Website form - creates a website, keyword, and
+   optional social/review links without leaving the tour. */
+.sp-tour-form-row {
+    margin-bottom: 12px;
+}
+.sp-tour-form-row label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 4px;
+}
+.sp-tour-required {
+    color: #b91c1c;
+}
+.sp-tour-form-row-pair {
+    display: flex;
+    gap: 12px;
+}
+.sp-tour-form-row-pair .sp-tour-form-row {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.sp-tour-field-err {
+    font-size: 12px;
+    margin-top: 3px;
+}
+.sp-tour-field-err:empty {
+    display: none;
+}
+.sp-tour-form-divider {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+    margin: 16px 0 12px;
+    padding-top: 12px;
+}
+.sp-tour-form-hint {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: -6px;
+    margin-bottom: 10px;
+}
+#tour_web_submit_btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Refresh button (tour header) - re-checks live connection status in
    case the user just saved credentials in another tab, without needing
    to close/reopen the tour or wait for next login. Given its own
