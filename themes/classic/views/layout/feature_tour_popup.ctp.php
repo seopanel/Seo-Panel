@@ -171,7 +171,7 @@
                         You're all set - nothing to do here.
                     </div>
                     <?php if ($tourFirstWebsite) { ?>
-                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/websites.php" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/websites.php" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-globe"></i></span>
                             <span class="sp-tour-link-text"><strong><?php echo htmlspecialchars($tourFirstWebsite['name']) ?></strong><small><?php echo htmlspecialchars($tourFirstWebsite['url']) ?></small></span>
                             <?php if ($tourFirstWebsiteKeywordCount > 0) { ?>
@@ -287,7 +287,7 @@
                 <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Seo Panel API</h5>
                 <p>The fastest way to get real rank and SERP data flowing without hunting down your own DataForSEO or MOZ keys - free to register, no credit card.</p>
                 <?php if (isAdmin()) { ?>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                         <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
                         <span class="sp-tour-link-text"><strong>Seo Panel API</strong><small>Rank tracking and SERP data, ready in a couple of minutes</small></span>
                         <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
@@ -312,43 +312,43 @@
                 <?php if (isAdmin()) { ?>
                     <p>Worth doing before the Tools menu next: without these connected, several tools won't have any real data to show yet. Click any row to go straight there in a new tab:</p>
                     <div class="sp-tour-link-list">
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
                             <span class="sp-tour-link-text"><strong>System</strong><small>Language, timezone, pagination, and other app-wide defaults</small></span>
                             <?php echo tourBadges('system', false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
                             <span class="sp-tour-link-text"><strong>DataForSEO</strong><small>The data provider behind rank checking and SERP data</small></span>
                             <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
                             <span class="sp-tour-link-text"><strong>MOZ</strong><small>Domain Authority, Page Authority, and Spam Score</small></span>
                             <?php echo tourBadges('moz', true, $tourMozConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
                             <span class="sp-tour-link-text"><strong>Google</strong><small>Connect Analytics and Search Console</small></span>
                             <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
                             <span class="sp-tour-link-text"><strong>Mail</strong><small>Scheduled reports, password resets, and registration emails all go through here</small></span>
                             <?php echo tourBadges('mail', true, $tourMailConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
                             <span class="sp-tour-link-text"><strong>Local AI</strong><small>Point AI-powered features at your own Ollama server</small></span>
                             <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
-                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
                             <span class="sp-tour-link-text"><strong>Proxy</strong><small>Proxies used for crawling and directory submission</small></span>
                             <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
@@ -373,7 +373,7 @@
                 <h5><i class="fas fa-clock" style="margin-right:6px;"></i>Set Up the Cron Job</h5>
                 <p>SEO Panel checks rankings, runs audits, and generates reports on a schedule - but only once your server is actually calling <code>cron.php</code>. Nothing above matters if this isn't running.</p>
                 <?php if (isAdmin()) { ?>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                         <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
                         <span class="sp-tour-link-text"><strong>Cron Command</strong><small>The exact command to add to your server's crontab</small></span>
                         <?php echo tourBadges('cron', true, $tourCronConnected, 'Detected', 'Not detected yet') ?>
@@ -392,7 +392,7 @@
             <div class="sp-wizard-panel" id="sp_tpanel_6">
                 <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
                 <p>Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
-                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                     <span class="sp-tour-link-icon"><i class="fas fa-chart-line"></i></span>
                     <span class="sp-tour-link-text"><strong>Dashboard</strong><small>The screen you land on after logging in</small></span>
                     <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
@@ -408,18 +408,18 @@
                 <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
                 <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any card to open it in a new tab:</p>
                 <div class="sp-tour-tool-grid">
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label">AI Visibility</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-key"></i></span><span class="sp-tour-tool-label">Keyword Position Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tasks"></i></span><span class="sp-tour-tool-label">Site Auditor</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-link"></i></span><span class="sp-tour-tool-label">Backlinks Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-globe"></i></span><span class="sp-tour-tool-label">Webmaster Tools</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-search-location"></i></span><span class="sp-tour-tool-label">Rank Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-folder-open"></i></span><span class="sp-tour-tool-label">Directory Submission</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-server"></i></span><span class="sp-tour-tool-label">Search Engine Saturation</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tachometer-alt"></i></span><span class="sp-tour-tool-label">PageSpeed Insights</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-share-alt"></i></span><span class="sp-tour-tool-label">Social Media Checker</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-chart-area"></i></span><span class="sp-tour-tool-label">Website Analytics</span></a>
-                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourNotifyDismiss()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-star"></i></span><span class="sp-tour-tool-label">Review Manager</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label">AI Visibility</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=keyword-position-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-key"></i></span><span class="sp-tour-tool-label">Keyword Position Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=site-auditor" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tasks"></i></span><span class="sp-tour-tool-label">Site Auditor</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=backlink-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-link"></i></span><span class="sp-tour-tool-label">Backlinks Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=webmaster-tools" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-globe"></i></span><span class="sp-tour-tool-label">Webmaster Tools</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=rank-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-search-location"></i></span><span class="sp-tour-tool-label">Rank Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=directory-submission" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-folder-open"></i></span><span class="sp-tour-tool-label">Directory Submission</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=saturation-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-server"></i></span><span class="sp-tour-tool-label">Search Engine Saturation</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=pagespeed" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-tachometer-alt"></i></span><span class="sp-tour-tool-label">PageSpeed Insights</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=sm-checker" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-share-alt"></i></span><span class="sp-tour-tool-label">Social Media Checker</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=web-analytics" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-chart-area"></i></span><span class="sp-tour-tool-label">Website Analytics</span></a>
+                    <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=review-manager" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-star"></i></span><span class="sp-tour-tool-label">Review Manager</span></a>
                 </div>
             </div>
 
@@ -434,7 +434,7 @@
                     <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools. Click any card to open it in a new tab:</p>
                     <div class="sp-tour-tool-grid">
                         <?php foreach ($tourPluginList as $pluginInfo) { ?>
-                            <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-plugins.php?sec=show&menu_selected=<?php echo intval($pluginInfo['id']) ?>" target="_blank" onclick="window.featureTourNotifyDismiss()">
+                            <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-plugins.php?sec=show&menu_selected=<?php echo intval($pluginInfo['id']) ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                                 <span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span>
                                 <span class="sp-tour-tool-icon"><i class="fas <?php echo tourPluginIcon($pluginInfo['name']) ?>"></i></span>
                                 <span class="sp-tour-tool-label"><?php echo htmlspecialchars($pluginInfo['label']) ?></span>
@@ -528,18 +528,25 @@
         });
     };
 
-    // Tools/Settings/Plugins/Cron steps link to real, directly-navigable
-    // pages that open in a new tab (seo-tools.php?menu_sec=... and
-    // admin-panel.php?menu_selected=...&start_script=... - each is a
-    // full page with its own navbar/sidebar that auto-loads the right
-    // tool/settings view, unlike linking straight to e.g. aivisibility.php
-    // or settings.php on their own, which render as a bare fragment with
-    // no chrome at all since those controllers hardcode layout='ajax' -
-    // confirmed live). The href does the actual navigation; this just
-    // marks the tour seen in the background so it won't auto-show again,
-    // without blocking the new tab from opening.
-    window.featureTourNotifyDismiss = function() {
-        _tourDismiss();
+    // Tools/Settings/Plugins/Cron/Seo Panel API/Dashboard steps link to
+    // real, directly-navigable pages that open in a new tab
+    // (seo-tools.php?menu_sec=... and admin-panel.php?menu_selected=...
+    // &start_script=... - each is a full page with its own navbar/
+    // sidebar that auto-loads the right tool/settings view, unlike
+    // linking straight to e.g. aivisibility.php or settings.php on
+    // their own, which render as a bare fragment with no chrome at all
+    // since those controllers hardcode layout='ajax' - confirmed live).
+    // The href does the actual navigation; this just saves the CURRENT
+    // step and closes the overlay in the background, without blocking
+    // the new tab from opening. Saves rather than dismisses - clicking
+    // a link to go look at something is the single most common way a
+    // user leaves the tour mid-flow, and if that also marked it
+    // permanently "seen" (the original behavior here), the whole point
+    // of step persistence (resume where you left off) would never
+    // actually apply to the case it matters most for. Only Skip or
+    // finishing the last step dismiss it for good.
+    window.featureTourPauseOnLinkClick = function() {
+        _tourSaveStep();
         $('#sp_tour_overlay').fadeOut(200);
     };
 
