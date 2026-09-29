@@ -473,7 +473,23 @@ class Spider {
 
 	# get contents of a web page
 	function getContent( $url, $enableProxy=true, $logCrawl = true, $allowPrivateTarget = false)	{
-		$willUseProxy = $enableProxy && SP_ENABLE_PROXY;
+		// Resolved once, upfront - both the SSRF guard right below and
+		// the curl proxy setup further down must agree on whether a
+		// proxy is GENUINELY going to carry this request, not just
+		// whether the setting is turned on. SP_ENABLE_PROXY can be on
+		// with zero active proxy rows configured (confirmed live) - in
+		// that case the request still goes out directly from this
+		// server, so the SSRF guard still needs to apply. It used to
+		// accidentally still apply in that case too, but only because
+		// a missing proxy crashed the entire page via showErrorMsg()'s
+		// exit=true before ever reaching curl_exec() - once that crash
+		// was fixed to gracefully proceed without a proxy instead
+		// (see below), this SSRF check needed to be based on the same
+		// resolved reality, or it would start silently sending
+		// SSRF-guard-bypassed requests directly from this server
+		// whenever a proxy was enabled-but-unavailable.
+		$proxyInfo = ($enableProxy && SP_ENABLE_PROXY) ? $this->getSpiderProxy() : [];
+		$willUseProxy = !empty($proxyInfo);
 		if (!$willUseProxy && !$allowPrivateTarget && Spider::isPrivateOrRestrictedTarget($url)) {
 			$ret = [
 				'page' => '',
@@ -567,24 +583,26 @@ class Spider {
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_USERPWD, $this -> _CURLOPT_USERPWD );
 		}
 		
-		// to use proxy if proxy enabled
-		$proxyInfo = [];
-		if ($enableProxy && SP_ENABLE_PROXY) {
-			$proxyCtrler = New ProxyController();
-			if ($proxyInfo = $this->getSpiderProxy()) {
-				curl_setopt($this -> _CURL_RESOURCE, CURLOPT_PROXY, $proxyInfo['proxy'].":".$proxyInfo['port']);
-				
-				if (CURLOPT_HTTPPROXYTUNNEL_VAL) {
-					curl_setopt($this -> _CURL_RESOURCE, CURLOPT_HTTPPROXYTUNNEL, CURLOPT_HTTPPROXYTUNNEL_VAL);
-				}		
-				
-				if (!empty($proxyInfo['proxy_auth'])) {
-					curl_setopt ($this -> _CURL_RESOURCE, CURLOPT_PROXYUSERPWD, $proxyInfo['proxy_username'].":".$proxyInfo['proxy_password']);
-				}				
-			} else {
-			    showErrorMsg("No active proxies found!! Please check your proxy settings from Admin Panel.");
+		// $proxyInfo/$willUseProxy already resolved once, upfront (see
+		// the SSRF guard above) - reused here rather than looked up
+		// again, so this and the SSRF check can never disagree about
+		// whether a proxy is actually carrying the request.
+		if ($willUseProxy) {
+			curl_setopt($this -> _CURL_RESOURCE, CURLOPT_PROXY, $proxyInfo['proxy'].":".$proxyInfo['port']);
+
+			if (CURLOPT_HTTPPROXYTUNNEL_VAL) {
+				curl_setopt($this -> _CURL_RESOURCE, CURLOPT_HTTPPROXYTUNNEL, CURLOPT_HTTPPROXYTUNNEL_VAL);
+			}
+
+			if (!empty($proxyInfo['proxy_auth'])) {
+				curl_setopt ($this -> _CURL_RESOURCE, CURLOPT_PROXYUSERPWD, $proxyInfo['proxy_username'].":".$proxyInfo['proxy_password']);
 			}
 		}
+		// SP_ENABLE_PROXY on with no active proxy row configured no
+		// longer crashes the whole page (showErrorMsg() used to exit
+		// here) - the request just proceeds without a proxy, matching
+		// $willUseProxy=false, which is also why the SSRF guard above
+		// still correctly applies to it.
 		
 		$ret = [];
 		$ret['page'] = curl_exec( $this -> _CURL_RESOURCE );
