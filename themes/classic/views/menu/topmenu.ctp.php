@@ -44,7 +44,20 @@ if (!empty($menuInfo['item_list'])) {
 		<?php echo $spText['common']['Support']?>
 	</a>
 	<?php if (isLoggedIn() && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) { ?>
-	<a href="javascript:void(0);" class="sp-tour-menu-link" onclick="window.featureTourShow && window.featureTourShow()" title="A quick tour that also sets up your first website">
+	<?php
+	// Manual reopen should resume where the user paused, same as the
+	// auto-show script does - not always restart at step 1. Only a
+	// user who is still mid-tour (feature_tour_seen=0, i.e. paused via
+	// a link click, never Skip/finished) has a meaningful step to
+	// resume; getTourState() already encodes exactly that distinction,
+	// so it's reused here rather than re-deriving it. Self-contained
+	// lookup since topmenu.ctp.php renders before default.ctp.php's
+	// own tour block further down the page computes $spTourState.
+	include_once(SP_CTRLPATH . "/feature_tour.ctrl.php");
+	$tourMenuResumeState = (new FeatureTourController())->getTourState(isLoggedIn());
+	$tourMenuResumeStep = !empty($tourMenuResumeState['show']) ? intval($tourMenuResumeState['step']) : 0;
+	?>
+	<a href="javascript:void(0);" class="sp-tour-menu-link" onclick="window.featureTourShow && window.featureTourShow(<?php echo $tourMenuResumeStep ?>)" title="A quick tour that also sets up your first website">
 		<i class="fas fa-compass"></i> <?php echo $spText['common']['Setup Tour'] ?? 'Setup Tour'?>
 	</a>
 	<?php } ?>
