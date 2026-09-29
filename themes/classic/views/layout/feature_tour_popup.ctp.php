@@ -1,0 +1,204 @@
+<div class="sp-wizard-overlay" id="sp_tour_overlay">
+    <div class="sp-wizard-box">
+
+        <!-- Header with step progress -->
+        <div class="sp-wizard-header">
+            <h4><i class="fas fa-compass" style="margin-right:8px;"></i>Quick Tour</h4>
+            <div class="sp-wizard-steps" id="sp_tour_steps">
+                <?php for ($i = 1; $i <= 6; $i++) { ?>
+                <div class="sp-wizard-step-item">
+                    <div class="sp-wizard-step-dot" id="sp_tdot_<?php echo $i ?>"><?php echo $i ?></div>
+                    <?php if ($i < 6) { ?><div class="sp-wizard-step-line" id="sp_tline_<?php echo $i ?>"></div><?php } ?>
+                </div>
+                <?php } ?>
+            </div>
+        </div>
+
+        <!-- Body — one panel per step -->
+        <div class="sp-wizard-body">
+
+            <!-- Step 1: Welcome -->
+            <div class="sp-wizard-panel" id="sp_tpanel_1">
+                <h5><i class="fas fa-hand-sparkles" style="margin-right:6px;"></i>Welcome to SEO Panel</h5>
+                <p>SEO Panel tracks rankings, audits your sites, checks backlinks, and monitors how you show up in AI answer engines - all from one self-hosted control room.</p>
+                <div class="sp-wizard-info-box">
+                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                    This is a 30-second tour of where everything lives. Skip it anytime, or take it again later from the <strong>Help</strong> menu.
+                </div>
+            </div>
+
+            <!-- Step 2: Dashboard -->
+            <div class="sp-wizard-panel" id="sp_tpanel_2">
+                <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i>Your Dashboard</h5>
+                <p>This is the screen you're looking at right now. Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.</p>
+                <div class="sp-wizard-info-box">
+                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                    Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.
+                </div>
+            </div>
+
+            <!-- Step 3: SEO Tools -->
+            <div class="sp-wizard-panel" id="sp_tpanel_3">
+                <h5><i class="fas fa-tools" style="margin-right:6px;"></i>SEO Tools</h5>
+                <p>The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place:</p>
+                <div class="sp-tour-chip-list">
+                    <span class="sp-tour-chip"><i class="fas fa-robot"></i> AI Visibility</span>
+                    <span class="sp-tour-chip"><i class="fas fa-search-location"></i> Rank Checker</span>
+                    <span class="sp-tour-chip"><i class="fas fa-tasks"></i> Site Auditor</span>
+                    <span class="sp-tour-chip"><i class="fas fa-link"></i> Backlinks Checker</span>
+                    <span class="sp-tour-chip"><i class="fas fa-tools"></i> Webmaster Tools</span>
+                    <span class="sp-tour-chip"><i class="fas fa-folder-open"></i> Directory Submission</span>
+                    <span class="sp-tour-chip"><i class="fas fa-server"></i> Search Engine Saturation</span>
+                    <span class="sp-tour-chip"><i class="fas fa-tachometer-alt"></i> PageSpeed Insights</span>
+                    <span class="sp-tour-chip"><i class="fas fa-share-alt"></i> Social Media Checker</span>
+                    <span class="sp-tour-chip"><i class="fas fa-chart-area"></i> Website Analytics</span>
+                    <span class="sp-tour-chip"><i class="fas fa-star"></i> Review Manager</span>
+                    <span class="sp-tour-chip"><i class="fas fa-key"></i> Keyword Position Checker</span>
+                </div>
+            </div>
+
+            <!-- Step 4: Settings - where your integrations live -->
+            <div class="sp-wizard-panel" id="sp_tpanel_4">
+                <h5><i class="fas fa-cog" style="margin-right:6px;"></i>Settings: Where Your Integrations Live</h5>
+                <p>SEO Panel has a lot of settings because it connects to a lot of services - here's the map so you don't have to hunt for it later:</p>
+                <ul class="sp-tour-settings-list">
+                    <li><strong>System</strong> &mdash; language, timezone, pagination, and other app-wide defaults</li>
+                    <li><strong>DataForSEO / MOZ</strong> &mdash; the data providers behind rank checking and domain metrics</li>
+                    <li><strong>Google</strong> &mdash; connect Analytics and Search Console</li>
+                    <li><strong>Mail</strong> &mdash; SMTP/SendGrid, so scheduled reports actually get delivered</li>
+                    <li><strong>Local AI</strong> &mdash; point AI-powered features at your own Ollama server</li>
+                    <li><strong>Seo Panel API</strong> &mdash; unlocks additional rank/SERP data services</li>
+                    <li><strong>Proxy</strong> &mdash; proxies used for crawling and directory submission</li>
+                </ul>
+                <div class="sp-wizard-info-box">
+                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                    All of these live under <strong>Settings</strong> in the top menu - nothing here needs to be set up right now.
+                </div>
+            </div>
+
+            <!-- Step 5: Plugins -->
+            <div class="sp-wizard-panel" id="sp_tpanel_5">
+                <h5><i class="fas fa-plug" style="margin-right:6px;"></i>Plugins</h5>
+                <p>The <strong>Plugins</strong> menu extends SEO Panel beyond the core tools - things like article submission/spinning, a quick web proxy, and an SEO diary for notes.</p>
+                <div class="sp-wizard-info-box">
+                    <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
+                    Browse and install more from <strong>Settings &rarr; About Us</strong>.
+                </div>
+            </div>
+
+            <!-- Step 6: Done -->
+            <div class="sp-wizard-panel" id="sp_tpanel_6">
+                <h5><i class="fas fa-flag-checkered" style="margin-right:6px;"></i>You're All Set</h5>
+                <p>That's the layout. Add a website to get started, and everything above will make a lot more sense once real data starts coming in.</p>
+                <div class="sp-wizard-info-box" style="background:#f0fff4; border-color:#34a853;">
+                    <i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>
+                    Want to see this again? Look for <strong>Take a tour</strong> in the Help menu.
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="sp-wizard-footer">
+            <div class="sp-wizard-footer-left">
+                <button type="button" class="sp-confirm-btn sp-confirm-btn-skip" id="sp_tbtn_skip"
+                    onclick="window.featureTourSkip()" title="Skip this tour">
+                    <i class="fas fa-forward" style="margin-right:5px;"></i>Skip
+                </button>
+            </div>
+            <div class="sp-wizard-footer-right">
+                <button type="button" class="sp-confirm-btn sp-confirm-btn-cancel" id="sp_tbtn_back"
+                    onclick="window.featureTourBack()" style="display:none;">
+                    <i class="fas fa-arrow-left" style="margin-right:5px;"></i>Back
+                </button>
+                <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="sp_tbtn_next"
+                    onclick="window.featureTourNext()">
+                    <i class="fas fa-arrow-right" style="margin-right:5px;"></i>Next
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    var TOTAL_STEPS = 6;
+    var currentStep = 1;
+
+    // shown on auto-trigger (new user, tour not yet seen) AND when the
+    // "Take a tour" link is clicked manually later - either way this
+    // resets to step 1, since it's a short linear tour, not a resumable
+    // checklist
+    window.featureTourShow = function() {
+        currentStep = 1;
+        _tourRender();
+        $('#sp_tour_overlay').fadeIn(200);
+    };
+
+    window.featureTourNext = function() {
+        if (currentStep === TOTAL_STEPS) {
+            _tourDismiss(function() {
+                $('#sp_tour_overlay').fadeOut(200);
+            });
+            return;
+        }
+        currentStep++;
+        _tourRender();
+    };
+
+    window.featureTourBack = function() {
+        if (currentStep > 1) {
+            currentStep--;
+            _tourRender();
+        }
+    };
+
+    // Skip has the same effect as finishing on the last step - either
+    // way the tour is marked seen and won't auto-show again
+    window.featureTourSkip = function() {
+        _tourDismiss(function() {
+            $('#sp_tour_overlay').fadeOut(200);
+        });
+    };
+
+    function _tourDismiss(callback) {
+        $.ajax({
+            url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
+            type: 'POST',
+            data: { sec: 'dismiss' },
+            complete: function() {
+                if (callback) callback();
+            }
+        });
+    }
+
+    function _tourRender() {
+        $('.sp-wizard-panel').removeClass('active');
+        $('#sp_tpanel_' + currentStep).addClass('active');
+
+        for (var i = 1; i <= TOTAL_STEPS; i++) {
+            var $dot  = $('#sp_tdot_' + i);
+            var $line = $('#sp_tline_' + i);
+            $dot.removeClass('active done');
+            if ($line.length) $line.removeClass('done');
+            if (i < currentStep) {
+                $dot.addClass('done').html('<i class="fas fa-check" style="font-size:10px;"></i>');
+                if ($line.length) $line.addClass('done');
+            } else if (i === currentStep) {
+                $dot.addClass('active').html(i);
+            } else {
+                $dot.html(i);
+            }
+        }
+
+        $('#sp_tbtn_back').toggle(currentStep > 1);
+        $('#sp_tbtn_skip').toggle(currentStep < TOTAL_STEPS);
+
+        var $next = $('#sp_tbtn_next');
+        if (currentStep === TOTAL_STEPS) {
+            $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>Get Started');
+        } else {
+            $next.html('<i class="fas fa-arrow-right" style="margin-right:5px;"></i>Next');
+        }
+    }
+})();
+</script>

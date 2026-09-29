@@ -224,6 +224,26 @@
     }
     ?>
     <?php
+    // Feature tour: a short, skippable educational walkthrough (dashboard,
+    // tools, settings, plugins) shown once to brand-new users - separate
+    // from the Setup Wizard above, which drives specific setup ACTIONS
+    // rather than orienting a new user to the app's layout. The popup
+    // markup itself is rendered for every logged-in user whenever the
+    // feature is on (not just new users) so the "Take a tour" link in the
+    // top menu can reopen it manually at any time; only the auto-show
+    // script is gated on getTourState(). Skipped entirely while the Setup
+    // Wizard is currently showing, so the two overlays never stack.
+    if (isLoggedIn() && empty($spWizardState['show']) && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) {
+        include_once(SP_CTRLPATH . "/feature_tour.ctrl.php");
+        $spTourCtrl = new FeatureTourController();
+        $spTourState = $spTourCtrl->getTourState(isLoggedIn());
+        include_once(SP_VIEWPATH . "/layout/feature_tour_popup.ctp.php");
+        if (!empty($spTourState['show'])) {
+            echo '<script>$(document).ready(function(){ window.featureTourShow(); });</script>';
+        }
+    }
+    ?>
+    <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
     if (isLoggedIn() && isAdmin()) {
         include_once(SP_CTRLPATH."/settings.ctrl.php");

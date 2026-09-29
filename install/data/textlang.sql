@@ -32395,6 +32395,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_SETUP_WIZARD', 'Initial Setup Wizard');
 
+-- Feature tour setting label (System Settings page) - see
+-- install/data/seopanel.sql's own comment for the full feature.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_FEATURE_TOUR', 'Show feature tour to new users');
+
 -- Same gap for the 4 AI Overview tracking settings on the Report Settings page.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_AIO_RETENTION_DAYS', 'AI Overview reference retention (days)'),

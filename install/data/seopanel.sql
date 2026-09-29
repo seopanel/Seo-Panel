@@ -1711,13 +1711,14 @@ CREATE TABLE IF NOT EXISTS `users` (
   `setup_wizard_step` tinyint(1) NOT NULL DEFAULT 0,
   `setup_wizard_dismissed` tinyint(1) NOT NULL DEFAULT 0,
   `version_upgrade_skip_date` date DEFAULT NULL,
+  `feature_tour_seen` tinyint(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
-INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`, `version_upgrade_skip_date`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, 0, 0, NULL);
+INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `setup_wizard_step`, `setup_wizard_dismissed`, `version_upgrade_skip_date`, `feature_tour_seen`) VALUES
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, 0, 0, NULL, 1);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
@@ -2113,6 +2114,15 @@ INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category
 -- Initial setup wizard
 INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
 ('Initial Setup Wizard', 'SP_SETUP_WIZARD', '0', 'system', 'bool', 0);
+
+-- Feature tour: a short, skippable educational walkthrough shown once to
+-- brand-new users (see users.feature_tour_seen) pointing out the
+-- dashboard, SEO tools, settings tabs, and plugins - separate from the
+-- (disabled) Setup Wizard above, which drives specific setup ACTIONS
+-- rather than orienting a new user to the app's layout. On by default
+-- and visible, unlike the wizard, since this is meant to actually run.
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Show feature tour to new users', 'SP_FEATURE_TOUR', '1', 'system', 'bool', 1);
 
 -- AI Visibility tool (Phase 1: AI referral tracking via JS snippet)
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES

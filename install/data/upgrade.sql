@@ -1218,3 +1218,18 @@ ALTER TABLE `languages` ENGINE=InnoDB;
 ALTER TABLE `texts` ENGINE=InnoDB;
 ALTER TABLE `translators` ENGINE=InnoDB;
 ALTER TABLE `sd_settings` ENGINE=InnoDB;
+
+-- Feature tour: a short, skippable educational walkthrough shown once to
+-- brand-new users, pointing out the dashboard, SEO tools, settings tabs,
+-- and plugins - separate from the (disabled) Setup Wizard, which drives
+-- specific setup ACTIONS rather than orienting a new user to the app's
+-- layout. Default 1 ("already seen") on the column itself so every
+-- EXISTING user row (this ALTER runs against them directly) and any
+-- future plain insert both default to "don't show" - only
+-- UserController::startRegistration()/createUser() explicitly insert 0
+-- for a genuinely new account, which is what actually triggers the tour.
+ALTER TABLE `users` ADD COLUMN `feature_tour_seen` tinyint(1) NOT NULL DEFAULT 1;
+INSERT IGNORE INTO `settings` (`set_label`, `set_name`, `set_val`, `set_category`, `set_type`, `display`) VALUES
+('Show feature tour to new users', 'SP_FEATURE_TOUR', '1', 'system', 'bool', 1);
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'settings', 'SP_FEATURE_TOUR', 'Show feature tour to new users');

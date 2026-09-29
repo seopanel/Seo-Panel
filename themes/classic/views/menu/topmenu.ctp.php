@@ -43,6 +43,12 @@ if (!empty($menuInfo['item_list'])) {
 	<a href="<?php echo !empty($custSiteInfo['support_url']) ? $custSiteInfo['support_url'] : SP_SUPPORT_LINK?>" target="_blank" rel="nofollow">
 		<?php echo $spText['common']['Support']?>
 	</a>
+	<?php if (isLoggedIn() && defined('SP_FEATURE_TOUR') && SP_FEATURE_TOUR) { ?>
+	<span class="pipe"> | </span>
+	<a href="javascript:void(0);" onclick="window.featureTourShow && window.featureTourShow()">
+		<?php echo $spText['common']['Take a tour'] ?? 'Take a tour'?>
+	</a>
+	<?php } ?>
 	<?php
 }
 ?>

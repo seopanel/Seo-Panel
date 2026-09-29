@@ -3317,6 +3317,37 @@ a.btn, a.btn:hover {
     margin-bottom: 10px;
 }
 
+/* ===== Feature Tour (educational tour, separate from the Setup
+   Wizard above - shown once to brand-new users; reuses all of the
+   wizard overlay/box/header/footer/info-box classes as-is) ===== */
+.sp-tour-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.sp-tour-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f0f7ff;
+    color: #0d5db5;
+    border: 1px solid #d6e6fb;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.sp-tour-settings-list {
+    margin: 0 0 14px;
+    padding-left: 20px;
+    font-size: 13px;
+    color: #333;
+}
+.sp-tour-settings-list li {
+    margin-bottom: 6px;
+}
+
 /* === Safe-area insets (notch / Dynamic Island / status bar / home
    indicator) - sitewide, unscoped ===
    The viewport meta tag now includes viewport-fit=cover, so the page

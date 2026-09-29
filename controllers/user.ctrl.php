@@ -697,11 +697,13 @@ class UserController extends Controller{
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
 					$utypeId = intval($userInfo['utype_id']);
+					// feature_tour_seen=0 - see the equivalent comment in
+					// createUser(): a genuinely new account should get the tour
 					$sql = "insert into users
-					(utype_id,username,password,first_name,last_name,email,created,status) 
+					(utype_id,username,password,first_name,last_name,email,created,status,feature_tour_seen)
 					values ($utypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."',
 					'".addslashes($userInfo['firstName'])."','".addslashes($userInfo['lastName'])."',
-					'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus)";
+					'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus,0)";
 					$this->db->query($sql);
 					
 					// get user id created
@@ -974,10 +976,14 @@ class UserController extends Controller{
 		if(!$this->validate->flagErr){
 			if (!$this->__checkUserName($userInfo['userName'])) {
 				if (!$this->__checkEmail($userInfo['email'])) {
-					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm) 
+					// feature_tour_seen=0 - this is a brand-new account, so the
+					// educational feature tour should show on its first login
+					// (see FeatureTourController::getTourState()); every other
+					// insert path/existing row defaults to 1 ("already seen")
+					$sql = "insert into users(utype_id,username,password,first_name,last_name,email,created,status, expiry_date, confirm, feature_tour_seen)
 						values($userTypeId,'".addslashes($userInfo['userName'])."','".addslashes($this->__hashPassword($userInfo['password']))."'
 						,'".addslashes($userInfo['firstName'])."', '".addslashes($userInfo['lastName'])."'
-						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1)";
+						,'".addslashes($userInfo['email'])."',UNIX_TIMESTAMP(),$userStatus, {$userInfo['expiry_date']}, 1, 0)";
 					$insertOk = $this->db->query($sql);
 
 					if ($insertOk) {
