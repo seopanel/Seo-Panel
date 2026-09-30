@@ -18,8 +18,8 @@
 
 use Google\Auth\HttpHandler\HttpHandlerFactory;
 use GuzzleHttp\ClientInterface;
-use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Utils;
 
 /**
  * Wrapper around Google Access Tokens which provides convenience functions
@@ -58,7 +58,11 @@ class Google_AccessToken_Revoke
       }
     }
 
-    $body = Psr7\stream_for(http_build_query(array('token' => $token)));
+    // guzzlehttp/psr7 2.x removed the GuzzleHttp\Psr7\stream_for() free
+    // function (upgraded from 1.x as part of the Guzzle/psr7 CVE cleanup
+    // - see spTests coverage) - Utils::streamFor() is its direct
+    // replacement, same behavior.
+    $body = Utils::streamFor(http_build_query(array('token' => $token)));
     $request = new Request(
         'POST',
         Google_Client::OAUTH2_REVOKE_URI,

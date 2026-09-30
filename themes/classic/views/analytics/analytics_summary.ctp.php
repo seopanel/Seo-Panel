@@ -9,7 +9,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
         		<td>
-        			<?php echo $websiteList[$websiteId]['url']; ?>
+        			<?php echo htmlspecialchars($websiteList[$websiteId]['url'] ?? ''); ?>
     			</td>
     		</tr>
 		<?php }?>
@@ -42,9 +42,9 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
-								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 							<?php }else{?>
-								<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+								<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 							<?php }?>
 						<?php }?>
 					</select>
@@ -133,11 +133,11 @@ $colCount = ($baseColCount * 3) + 2;
 			$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
 			$scriptLink = "website_id={$listInfo['website_id']}&source_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 			$trClass = ($listInfo['source_name'] == 'total') ? "table-secondary" : "";
-			$sourceName = ($listInfo['source_name'] == 'total') ? "<b>".$spText['common']['Total']."</b>" : $listInfo['source_name'];
+			$sourceName = ($listInfo['source_name'] == 'total') ? "<b>".$spText['common']['Total']."</b>" : htmlspecialchars($listInfo['source_name']);
 			?>
 			<tr class="<?php echo $trClass?>">
 				<td>
-					<a href="javascript:void(0)"><?php echo $websiteList[$listInfo['website_id']]['name']; ?></a>
+					<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
 				</td>
 				<td><?php echo $sourceName; ?></td>
 				<?php

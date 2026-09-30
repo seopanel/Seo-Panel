@@ -43,7 +43,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Website Analytics Overview'] ?? 'Website Analytics Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-users text-primary"></i> <?php echo $spTextHome['Users'] ?? 'Users'?>
@@ -149,6 +149,65 @@ if (!empty($noWebsites)) {
 			</div>
 		</div>
 	</div>
+
+	<!-- AI Traffic & Search Insights -->
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><i class="fas fa-robot"></i> AI Traffic &amp; Search Insights</h4>
+				</div>
+				<div class="card-body">
+					<div class="row mb-3">
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-mouse-pointer text-primary"></i> AI Referral Clicks</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo number_format($aiVisibilityStats['referralHits'] ?? 0)?></span></h3>
+							<small class="text-muted">visits from an AI platform link</small>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-eye text-info"></i> AI Overview Impressions</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo intval($aiVisibilityStats['aioPresent'] ?? 0)?></span></h3>
+							<small class="text-muted">of <?php echo intval($aiVisibilityStats['aioMeasured'] ?? 0)?> measured keywords</small>
+						</div>
+						<div class="col-md-6">
+							<p class="text-muted mb-2">Combines this Google Analytics data with Search Console data for the same period into one plain-language summary.</p>
+							<?php if (!empty($localAiAvailable)) { ?>
+							<button type="button" class="btn btn-outline-secondary btn-sm" onclick="analyticsSummarizeTrafficSearch()">
+								<i class="fa fa-magic"></i> Summarize with AI
+							</button>
+							<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+							<?php } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php if (!empty($localAiAvailable)) { ?>
+	<script type="text/javascript">
+	function analyticsSummarizeTrafficSearch() {
+		var box = document.getElementById('trafficSearchSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/analytics_dashboard.php',
+			data: {
+				sec: 'summarizetrafficsearch',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+	<?php } ?>
 
 	<!-- Pie Charts Row -->
 	<div class="row mb-4">
@@ -428,6 +487,20 @@ function drawAllCharts() {
 	drawSourceDistributionChart();
 }
 
+// redraw on resize/orientationchange - Google Charts never does this on
+// its own, and each chart above now reads its container's CURRENT width
+// fresh via spChartWidth() every time it runs (see common.js), so simply
+// re-invoking drawAllCharts() here is enough to keep every chart on this
+// page matching its card instead of staying sized for whatever width
+// existed at first draw.
+(function() {
+	var spAnalyticsChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spAnalyticsChartResizeTimer);
+		spAnalyticsChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw user types pie chart (New vs Returning)
 function drawUserTypesChart() {
 	<?php
@@ -443,6 +516,7 @@ function drawUserTypesChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['New vs Returning Users'] ?? 'New vs Returning Users'?>',
+		width: spChartWidth('user_types_chart'),
 		height: 300,
 		colors: ['#34A853', '#4285F4'],
 		chartArea: { width: '90%', height: '80%' },
@@ -468,6 +542,7 @@ function drawEngagementChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Session Engagement'] ?? 'Session Engagement'?>',
+		width: spChartWidth('engagement_chart'),
 		height: 300,
 		colors: ['#34A853', '#EA4335'],
 		chartArea: { width: '90%', height: '80%' },
@@ -495,6 +570,7 @@ function drawSessionOverviewChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Goal Conversions'] ?? 'Goal Conversions'?>',
+		width: spChartWidth('session_overview_chart'),
 		height: 300,
 		colors: ['#FBBC05', '#4285F4'],
 		chartArea: { width: '90%', height: '80%' },
@@ -522,6 +598,7 @@ function drawTrafficTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Users & Sessions Over Time'] ?? 'Users & Sessions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('traffic_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853', '#17a2b8'],
 		legend: { position: 'bottom' },
@@ -558,6 +635,7 @@ function drawBounceRateChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Bounce Rate Over Time'] ?? 'Bounce Rate Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('bounce_rate_chart'),
 		height: 350,
 		colors: ['#ffc107'],
 		legend: { position: 'bottom' },
@@ -595,6 +673,7 @@ function drawSessionDurationChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Session Duration Over Time'] ?? 'Session Duration Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('session_duration_chart'),
 		height: 350,
 		colors: ['#6c757d'],
 		legend: { position: 'bottom' },
@@ -630,6 +709,7 @@ function drawSourceDistributionChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Traffic by Source'] ?? 'Traffic by Source'?>',
+		width: spChartWidth('source_distribution_chart'),
 		height: 350,
 		chartArea: { width: '90%', height: '80%' },
 		legend: { position: 'right' },

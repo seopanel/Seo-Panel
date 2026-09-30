@@ -415,8 +415,107 @@ class Spider {
 		}		
 	}
 	
-	# get contents of a web page	
-	function getContent( $url, $enableProxy=true, $logCrawl = true)	{
+	/**
+	 * SSRF guard - Spider::getContent() is the app's single shared
+	 * crawl chokepoint (website meta-crawl, backlink/saturation/rank
+	 * checkers, Site Auditor, MetaTagGenerator, robots.txt fetching,
+	 * etc.), and until now had zero restriction on WHAT it could be
+	 * pointed at. Two independent ways that was exploitable: directly,
+	 * via any "crawl this URL" feature that takes an admin/user-supplied
+	 * URL (e.g. websites.php?sec=crawlmeta&url=...) with no ownership
+	 * check even required; and persistently, by registering a website
+	 * whose url IS an internal/private target - every unattended
+	 * scheduled crawl of "my websites" then fetches it forever. Blocks
+	 * loopback/private (RFC1918)/link-local (which covers the
+	 * 169.254.169.254 cloud metadata endpoint)/other reserved ranges,
+	 * both IPv4 and IPv6, via a resolve-time check - same approach and
+	 * same known limitation (DNS-rebinding TOCTOU: not re-checked on
+	 * each hop of a redirect, and the name could resolve differently a
+	 * moment later) as QuickWebProxy's own isPrivateOrRestrictedTarget()
+	 * guard for its "Web Server" proxy source.
+	 *
+	 * Not applied when this call is actually going out through an
+	 * admin-configured outbound proxy (SP_ENABLE_PROXY + $enableProxy) -
+	 * that request originates from the proxy's network, not this
+	 * server's own, which is a boundary the admin explicitly opted into
+	 * (mirrors QuickWebProxy's own proxied-vs-direct distinction). Also
+	 * not applied when the caller explicitly opts out via
+	 * $allowPrivateTarget on getContent() - reserved for the rare,
+	 * already high-trust caller where reaching an internal/loopback
+	 * target is the deliberately intended behavior, e.g.
+	 * AIVisibilityController::__selfTestWebsite() verifying a site whose
+	 * docroot is admin-configured directly on this filesystem (a
+	 * self-hosted single-server setup legitimately has "my own website"
+	 * resolve to localhost/an internal address from this server's own
+	 * point of view) - that feature already requires filesystem write
+	 * access to reach this code path at all, a higher trust bar than
+	 * anything this guard is meant to stop.
+	 */
+	public static function isPrivateOrRestrictedTarget($url) {
+	    $host = parse_url($url, PHP_URL_HOST);
+	    if (empty($host)) {
+	        // no scheme in the raw input (e.g. "example.com", no "://") -
+	        // parse_url() can't find a host without one
+	        $host = parse_url('http://' . ltrim($url, '/'), PHP_URL_HOST);
+	    }
+	    if (empty($host)) {
+	        return true;
+	    }
+
+	    $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+	    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+	        // didn't resolve to an IP at all - fail closed
+	        return true;
+	    }
+
+	    return !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+	}
+
+	# get contents of a web page
+	function getContent( $url, $enableProxy=true, $logCrawl = true, $allowPrivateTarget = false)	{
+		// Resolved once, upfront - both the SSRF guard right below and
+		// the curl proxy setup further down must agree on whether a
+		// proxy is GENUINELY going to carry this request, not just
+		// whether the setting is turned on. SP_ENABLE_PROXY can be on
+		// with zero active proxy rows configured (confirmed live) - in
+		// that case the request still goes out directly from this
+		// server, so the SSRF guard still needs to apply. It used to
+		// accidentally still apply in that case too, but only because
+		// a missing proxy crashed the entire page via showErrorMsg()'s
+		// exit=true before ever reaching curl_exec() - once that crash
+		// was fixed to gracefully proceed without a proxy instead
+		// (see below), this SSRF check needed to be based on the same
+		// resolved reality, or it would start silently sending
+		// SSRF-guard-bypassed requests directly from this server
+		// whenever a proxy was enabled-but-unavailable.
+		$proxyInfo = ($enableProxy && SP_ENABLE_PROXY) ? $this->getSpiderProxy() : [];
+		$willUseProxy = !empty($proxyInfo);
+		if (!$willUseProxy && !$allowPrivateTarget && Spider::isPrivateOrRestrictedTarget($url)) {
+			$ret = [
+				'page' => '',
+				'error' => 1,
+				'errmsg' => 'Blocked: target resolves to a private, loopback, link-local, or otherwise restricted address.',
+				'http_code' => 0,
+			];
+			$this->effectiveUrl = $url;
+
+			if ($logCrawl) {
+				$crawlLogCtrl = new CrawlLogController();
+				$crawlInfo = [];
+				$crawlInfo['crawl_status'] = 0;
+				$crawlInfo['ref_id'] = $crawlInfo['crawl_link'] = addslashes($url);
+				$crawlInfo['crawl_referer'] = addslashes($this-> _CURLOPT_REFERER);
+				$crawlInfo['crawl_cookie'] = addslashes($this -> _CURLOPT_COOKIE);
+				$crawlInfo['crawl_post_fields'] = addslashes($this -> _CURLOPT_POSTFIELDS);
+				$crawlInfo['crawl_useragent'] = addslashes($this->_CURLOPT_USERAGENT);
+				$crawlInfo['proxy_id'] = 0;
+				$crawlInfo['log_message'] = addslashes($ret['errmsg']);
+				$ret['log_id'] = $crawlLogCtrl->createCrawlLog($crawlInfo);
+			}
+
+			return $ret;
+		}
+
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_URL , $url );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_FAILONERROR , $this -> _CURLOPT_FAILONERROR );
 		curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_MAXREDIRS , $this -> _CURLOPT_MAXREDIRS );
@@ -484,24 +583,26 @@ class Spider {
 			curl_setopt( $this -> _CURL_RESOURCE , CURLOPT_USERPWD, $this -> _CURLOPT_USERPWD );
 		}
 		
-		// to use proxy if proxy enabled
-		$proxyInfo = [];
-		if ($enableProxy && SP_ENABLE_PROXY) {
-			$proxyCtrler = New ProxyController();
-			if ($proxyInfo = $this->getSpiderProxy()) {
-				curl_setopt($this -> _CURL_RESOURCE, CURLOPT_PROXY, $proxyInfo['proxy'].":".$proxyInfo['port']);
-				
-				if (CURLOPT_HTTPPROXYTUNNEL_VAL) {
-					curl_setopt($this -> _CURL_RESOURCE, CURLOPT_HTTPPROXYTUNNEL, CURLOPT_HTTPPROXYTUNNEL_VAL);
-				}		
-				
-				if (!empty($proxyInfo['proxy_auth'])) {
-					curl_setopt ($this -> _CURL_RESOURCE, CURLOPT_PROXYUSERPWD, $proxyInfo['proxy_username'].":".$proxyInfo['proxy_password']);
-				}				
-			} else {
-			    showErrorMsg("No active proxies found!! Please check your proxy settings from Admin Panel.");
+		// $proxyInfo/$willUseProxy already resolved once, upfront (see
+		// the SSRF guard above) - reused here rather than looked up
+		// again, so this and the SSRF check can never disagree about
+		// whether a proxy is actually carrying the request.
+		if ($willUseProxy) {
+			curl_setopt($this -> _CURL_RESOURCE, CURLOPT_PROXY, $proxyInfo['proxy'].":".$proxyInfo['port']);
+
+			if (CURLOPT_HTTPPROXYTUNNEL_VAL) {
+				curl_setopt($this -> _CURL_RESOURCE, CURLOPT_HTTPPROXYTUNNEL, CURLOPT_HTTPPROXYTUNNEL_VAL);
+			}
+
+			if (!empty($proxyInfo['proxy_auth'])) {
+				curl_setopt ($this -> _CURL_RESOURCE, CURLOPT_PROXYUSERPWD, $proxyInfo['proxy_username'].":".$proxyInfo['proxy_password']);
 			}
 		}
+		// SP_ENABLE_PROXY on with no active proxy row configured no
+		// longer crashes the whole page (showErrorMsg() used to exit
+		// here) - the request just proceeds without a proxy, matching
+		// $willUseProxy=false, which is also why the SSRF guard above
+		// still correctly applies to it.
 		
 		$ret = [];
 		$ret['page'] = curl_exec( $this -> _CURL_RESOURCE );

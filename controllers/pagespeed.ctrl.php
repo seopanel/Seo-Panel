@@ -220,14 +220,21 @@ class PageSpeedController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval( $searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval( $searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked. Same fallback as the other
+		// tool fixes this session: their own first website.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from pagespeedresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-	
+
 		$i = 0;
 		$colList = $this->colList;
 		foreach ($colList as $col => $dbCol) {
@@ -328,14 +335,19 @@ class PageSpeedController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same fix as showReports() - see that method's comment
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from pagespeedresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-	
+
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {

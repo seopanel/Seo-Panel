@@ -20,7 +20,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 include_once 'install.class.php';
-include_once 'db.class.php';
 include_once 'dbi.class.php';
 
 @ini_set("display_errors", "Off");

@@ -37,7 +37,7 @@
 								</div>
 							<?php } else {?>
 								<div class="captcha-wrapper">
-									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image">
+									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image" alt="<?php echo htmlspecialchars($spText['login']['Enter the code as it is shown'])?>">
 								</div>
 								<input type="text" name="code" value="<?php echo $post['code']?>" required="required" class="form-control forgot-input" id="code" placeholder="Enter the code">
 							<?php }?>

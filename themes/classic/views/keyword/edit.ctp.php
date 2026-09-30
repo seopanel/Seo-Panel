@@ -9,16 +9,16 @@
 		<td class="right">&nbsp;</td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
+		<td class="td_left_col"><label for="keywordname"><?php echo $spText['common']['Name']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" name="name" value="<?php echo $post['name']?>" class="form-control">
+			<input type="text" id="keywordname" name="name" value="<?php echo $post['name']?>" class="form-control">
 			<?php echo $errMsg['name']?>
 		</td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spText['common']['Website']?>:</td>
+		<td class="td_left_col"><label for="keyword_website_id"><?php echo $spText['common']['Website']?>:</label></td>
 		<td class="td_right_col">
-			<select name="website_id" class="custom-select">
+			<select name="website_id" id="keyword_website_id" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $post['website_id']){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -31,20 +31,20 @@
 		</td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['common']['lang']?>:</td>
+		<td class="td_left_col"><label for="lang_code"><?php echo $spText['common']['lang']?>:</label></td>
 		<td class="td_right_col">
 			<?php echo $this->render('language/languageselectbox', 'ajax'); ?>
 		</td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spText['common']['Country']?>:</td>
+		<td class="td_left_col"><label for="country_code"><?php echo $spText['common']['Country']?>:</label></td>
 		<td class="td_right_col">
 			<?php echo $this->render('country/countryselectbox', 'ajax'); ?>
 		</td>
 	</tr>
 	<?php $post['searchengines'] = is_array($post['searchengines']) ? $post['searchengines'] : array(); ?>
 	<tr class="white_row">
-		<td class="td_left_col"><?php echo $spText['common']['Search Engine']?>:</td>
+		<td class="td_left_col"><label for="searchengines"><?php echo $spText['common']['Search Engine']?>:</label></td>
 		<td class="td_right_col">
 			<select name="searchengines[]" class="multi" multiple="multiple" id="searchengines">
 				<?php foreach($seList as $seInfo){?>
@@ -54,9 +54,9 @@
 			</select>
 			<?php echo $errMsg['searchengines']?>
 			<br>
-			<input type="checkbox" id="select_all" onclick="selectAllOptions('searchengines', true); $('clear_all').checked=false;"> <?php echo $spText['label']['Select All']?>
+			<input type="checkbox" id="select_all" onclick="selectAllOptions('searchengines', true); $('clear_all').checked=false;"> <label for="select_all"><?php echo $spText['label']['Select All']?></label>
 			&nbsp;&nbsp;
-			<input type="checkbox" id="clear_all" onclick="selectAllOptions('searchengines', false); $('select_all').checked=false;"> <?php echo $spText['label']['Clear All']?>
+			<input type="checkbox" id="clear_all" onclick="selectAllOptions('searchengines', false); $('select_all').checked=false;"> <label for="clear_all"><?php echo $spText['label']['Clear All']?></label>
 		</td>
 	</tr>
 </table>

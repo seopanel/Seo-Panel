@@ -46,9 +46,9 @@ $discoveredVia = isset($_GET['discovered_via']) ? $_GET['discovered_via'] : '';
 			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" class="custom-select">
 				<?php foreach($projectList as $list) {?>
 					<?php if($list['id'] == $projectId) {?>
-						<option value="<?php echo $list['id']?>" selected="selected"><?php echo $list['name']?></option>
+						<option value="<?php echo $list['id']?>" selected="selected"><?php echo htmlspecialchars($list['name'])?></option>
 					<?php } else {?>
-						<option value="<?php echo $list['id']?>"><?php echo $list['name']?></option>
+						<option value="<?php echo $list['id']?>"><?php echo htmlspecialchars($list['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>

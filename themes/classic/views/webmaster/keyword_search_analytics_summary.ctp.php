@@ -9,7 +9,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
         		<td>
-        			<?php echo $websiteList[$websiteId]['url']; ?>
+        			<?php echo htmlspecialchars($websiteList[$websiteId]['url'] ?? ''); ?>
     			</td>
     		</tr>
 		<?php }?>
@@ -42,9 +42,9 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
-								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 							<?php }else{?>
-								<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+								<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 							<?php }?>
 						<?php }?>
 					</select>
@@ -136,9 +136,9 @@ $colCount = ($baseColCount * 3) + 2;
 			?>
 			<tr>
 				<td>
-					<a href="javascript:void(0)"><?php echo $websiteList[$listInfo['website_id']]['name']; ?></a>
+					<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
 				</td>
-				<td colspan="3"><?php echo $listInfo['name']; ?></td>
+				<td colspan="3"><?php echo htmlspecialchars($listInfo['name'])?></td>
 				<?php
 				foreach ($colList as $colName => $colVal){
 					if ($colName == 'name') continue;

@@ -90,7 +90,11 @@ class SettingsController extends Controller{
 				case "dataforseo":
 				    $this->set('headLabel', $spTextPanel['DataForSEO Settings']);
 				    break;
-					
+
+				case "local_ai":
+				    $this->set('headLabel', $spTextPanel['Local AI Settings']);
+				    break;
+
 				case "mail":
 				    $this->set('headLabel', $spTextPanel['Mail Settings']);
 				    break;
@@ -113,8 +117,12 @@ class SettingsController extends Controller{
 	}
 	
 	function updateSystemSettings($postInfo) {
-		
+
 		$setList = $this->__getAllSettings(true, 1, $postInfo['category']);
+		// names only, not old/new values - several settings in this list
+		// are secrets (SMTP password, API keys) that must never land in
+		// a table other admins can browse
+		$changedSettingNames = [];
 		foreach($setList as $setInfo){
 		    
 		    // exclude from update
@@ -156,14 +164,52 @@ class SettingsController extends Controller{
 		            break;
 			}			
 			
+			if ((string) $setInfo['set_val'] !== (string) $postInfo[$setInfo['set_name']]) {
+				$changedSettingNames[] = $setInfo['set_name'];
+			}
+
 			$sql = "update settings set set_val='".addslashes($postInfo[$setInfo['set_name']])."' where set_name='".addslashes($setInfo['set_name'])."'";
 			$this->db->query($sql);
 		}
-		
+
+		if (!empty($changedSettingNames)) {
+			$this->logAuditEvent('settings.update', 'settings', null, $postInfo['category'] ?? null, implode(', ', $changedSettingNames));
+		}
+
 		$this->set('saved', 1);
 		$this->showSystemSettings($postInfo['category']);
 	}
-	
+
+	// GET settings.php?sec=auditlog - admin-only (settings.php gates the
+	// entire file with checkAdminLoggedIn() except sec=aboutus, so no
+	// separate check needed here). Paginated, most recent first, with an
+	// optional action-type filter - same pagination pattern already used
+	// by every other list in the app (see UserController::listUsers()).
+	function showAuditLog($info=[]) {
+		$info['pageno'] = intval($info['pageno'] ?? 0);
+		$pageScriptPath = 'settings.php?sec=auditlog&actionfilter=' . urlencode($info['actionfilter'] ?? '');
+
+		$sql = "select * from audit_log where 1=1";
+		if (!empty($info['actionfilter'])) {
+			$sql .= " and action='" . addslashes($info['actionfilter']) . "'";
+		}
+		$sql .= " order by id desc";
+
+		$this->db->query($sql, true);
+		$this->paging->setDivClass('pagingdiv');
+		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
+		$pagingDiv = $this->paging->printPages($pageScriptPath, '', 'scriptDoLoad', 'content', 'layout=ajax');
+		$this->set('pagingDiv', $pagingDiv);
+		$sql .= " limit " . $this->paging->start . "," . $this->paging->per_page;
+		$this->set('auditLogList', $this->db->select($sql));
+
+		$actionList = $this->db->select("select distinct action from audit_log order by action");
+		$this->set('actionList', $actionList);
+		$this->set('actionFilter', $info['actionfilter'] ?? '');
+
+		$this->render('settings/auditlog');
+	}
+
 	# func to show about us of seo panel
 	function showAboutUs($info) {
 	    
@@ -217,10 +263,115 @@ class SettingsController extends Controller{
 	    // if message needs to be returned
 	    if ($return) {
 	        return [$oldVersion, $message];
-	    } else {
-	        echo $oldVersion ? showErrorMsg($message, false) : showSuccessMsg($message, false);
 	    }
-	    
+
+	    echo $oldVersion ? showErrorMsg($message, false) : showSuccessMsg($message, false);
+	    if ($oldVersion) {
+	        echo '<div class="text-center" style="margin-top:10px;"><a class="btn btn-primary" href="javascript:void(0);" onclick="window.onlineUpgradeStart()">'.$this->spTextSettings['Upgrade Now'].'</a></div>';
+	    }
+	}
+
+	# checks whether the server-side prerequisites for an online (in-app)
+	# upgrade are met - a newer version must exist, and the app needs write
+	# access plus the curl/ZipArchive extensions to download and apply it
+	function __onlineUpgradePreflight() {
+	    $failed = [];
+
+	    if (!class_exists('ZipArchive')) {
+	        $failed[] = 'ZipArchive extension';
+	    }
+	    if (!function_exists('curl_init')) {
+	        $failed[] = 'curl extension';
+	    }
+
+	    $writablePaths = [
+	        'application root' => SP_ABSPATH,
+	        'controllers' => SP_CTRLPATH,
+	        'libs' => SP_LIBPATH,
+	        'classic theme' => SP_THEMEPATH.'/classic',
+	        'install' => SP_ABSPATH.'/install',
+	        'tmp' => SP_TMPPATH,
+	    ];
+	    foreach ($writablePaths as $label => $path) {
+	        // bug fix: is_writable() returns false for BOTH "exists but not
+	        // writable" and "doesn't exist at all", and this loop couldn't
+	        // tell those apart - so an admin who followed the documented
+	        // "remove install/ for security" step got a generic
+	        // "missing requirements" failure that never said WHY, blocking
+	        // one-click upgrade entirely. __overlay()'s __copyRecursive()
+	        // (libs/onlineupgrade.class.php) already mkdir()s any directory
+	        // present in the release zip but missing locally - install/ IS
+	        // shipped in the release, so it will be recreated automatically.
+	        // Only a genuinely missing 'install' needs its PARENT (already
+	        // checked separately here as 'application root') writable, not
+	        // itself - skip it rather than false-failing on it.
+	        if ($label === 'install' && !file_exists($path)) {
+	            continue;
+	        }
+	        if (!is_writable($path)) {
+	            $failed[] = $label.' ('.$path.')';
+	        }
+	    }
+
+	    return [empty($failed), $failed];
+	}
+
+	# check whether an online upgrade can be offered - GET, sec=onlineupgradecheck
+	function checkOnlineUpgrade() {
+	    header('Content-Type: application/json');
+
+	    list($oldVersion, $message) = $this->checkVersion(true);
+	    if (!$oldVersion) {
+	        echo json_encode(['status' => 'success', 'data' => ['outdated' => false]]);
+	        return;
+	    }
+
+	    list($preflightOk, $failed) = $this->__onlineUpgradePreflight();
+	    if (!$preflightOk) {
+	        echo json_encode([
+	            'status' => 'error',
+	            'message' => 'Your server is missing requirements for automatic upgrade: '.implode(', ', $failed).'. Please upgrade manually instead.',
+	            'data' => ['fallback_url' => SP_DOWNLOAD_LINK],
+	        ]);
+	        return;
+	    }
+
+	    echo json_encode(['status' => 'success', 'data' => ['outdated' => true, 'preflight' => true]]);
+	}
+
+	# download and apply the latest release's files - POST, sec=onlineupgradeproceed.
+	# Never touches the database - success just hands the admin off to the
+	# existing install/upgrade.php wizard to finish the schema migration
+	# themselves with one more manual click.
+	function proceedOnlineUpgrade() {
+	    header('Content-Type: application/json');
+
+	    list($oldVersion, $message) = $this->checkVersion(true);
+	    if (!$oldVersion) {
+	        echo json_encode(['status' => 'error', 'message' => 'Your Seo Panel installation is already up to date.']);
+	        return;
+	    }
+
+	    list($preflightOk, $failed) = $this->__onlineUpgradePreflight();
+	    if (!$preflightOk) {
+	        echo json_encode([
+	            'status' => 'error',
+	            'message' => 'Your server is missing requirements for automatic upgrade: '.implode(', ', $failed).'. Please upgrade manually instead.',
+	            'data' => ['fallback_url' => SP_DOWNLOAD_LINK],
+	        ]);
+	        return;
+	    }
+
+	    include_once(SP_LIBPATH.'/onlineupgrade.class.php');
+	    $upgrader = new OnlineUpgrade();
+	    list($ok, $err) = $upgrader->run();
+
+	    if (!$ok) {
+	        echo json_encode(['status' => 'error', 'message' => $err, 'data' => ['fallback_url' => SP_DOWNLOAD_LINK]]);
+	        return;
+	    }
+
+	    echo json_encode(['status' => 'success', 'data' => ['redirect' => 'install/upgrade.php']]);
 	}
 
 	// show google api settings notification
@@ -295,7 +446,8 @@ class SettingsController extends Controller{
 			$this->set('adminName', $adminName);
 			$content = $this->getViewContent('email/test_email');
 			
-			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content)) {
+			$debugMail = !empty($info['debug_mail']) ? intval($info['debug_mail']) : false;
+			if (!sendMail($adminInfo['email'], $adminName, $info['test_email'], "Test email from " . SP_COMPANY_NAME, $content, '', $debugMail)) {
 				showErrorMsg('An internal error occured while sending mail!');
 			} else {
 				showSuccessMsg("Email send successfully to " . $info['test_email']);
@@ -323,8 +475,9 @@ class SettingsController extends Controller{
 	    if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) return false;
 	    if (!defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) return false;
 	    switch ($feature) {
-	        case 'serp': return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
-	        default:     return true;
+	        case 'serp':          return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
+	        case 'search_volume': return defined('SP_ENABLE_SPAPI_SEARCH_VOLUME') && SP_ENABLE_SPAPI_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 
@@ -332,14 +485,26 @@ class SettingsController extends Controller{
 	    if (!defined('SP_ENABLE_DFS') || !SP_ENABLE_DFS) return false;
 	    if ((SP_DFS_API_LOGIN == "") || (SP_DFS_API_PASSWORD == "")) return false;
 	    switch ($feature) {
-	        case 'serp':     return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
-	        case 'backsatu': return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
-	        case 'review':   return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
-	        default:         return true;
+	        case 'serp':          return defined('SP_ENABLE_DFS_SERP') && SP_ENABLE_DFS_SERP;
+	        case 'backsatu':      return defined('SP_ENABLE_DFS_BACK_SATU') && SP_ENABLE_DFS_BACK_SATU;
+	        case 'backlink':      return defined('SP_ENABLE_DFS_BACKLINK') && SP_ENABLE_DFS_BACKLINK;
+	        case 'review':        return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
+	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
+	        default:              return true;
 	    }
 	}
 
-	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+	// func to check whether Local AI (Ollama) is enabled+configured - cheap
+	// constant check only, no live reachability probe (that only happens
+	// via the explicit "Test connection" button and inside real calls -
+	// see LocalAIController)
+	public static function isLocalAIEnabled() {
+	    if (!defined('SP_ENABLE_LOCAL_AI') || !SP_ENABLE_LOCAL_AI) return false;
+	    if (!defined('SP_LOCAL_AI_URL') || empty(SP_LOCAL_AI_URL)) return false;
+	    return true;
+	}
+
+	public static function getSearchResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
 	    $status = false;
 	    $results =  [];
 
@@ -348,7 +513,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 	        $dfsCtrler = new DataForSEOController();
 	        $status = true;
-	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $dfsCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 
@@ -357,7 +522,7 @@ class SettingsController extends Controller{
 	        include_once(SP_CTRLPATH."/spapi.ctrl.php");
 	        $spapiCtrler = new SPAPIController();
 	        $status = true;
-	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron);
+	        $results = $spapiCtrler->__getSERPResults($keywordInfo, $showAll, $seId, $cron, $includeAio);
 	        return [$status, $results];
 	    }
 
@@ -563,6 +728,48 @@ class SettingsController extends Controller{
 	    $userId = isLoggedIn();
 	    if ($userId) {
 	        $this->db->query("UPDATE users SET spapi_upgrade_skip_date='" . date('Y-m-d') . "' WHERE id=" . intval($userId));
+	        echo json_encode(['status' => 'success']);
+	    } else {
+	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);
+	    }
+	}
+
+	// check whether the daily login "new version available" notice popup
+	// should be shown - notice-only, the popup's own CTA just navigates to
+	// Settings > Version, it never triggers an upgrade itself
+	function showVersionUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if (!isAdmin() || !$userId) {
+	        return false;
+	    }
+
+	    // check if user has skipped today
+	    $userInfo = $this->dbHelper->getRow('users', "id=" . intval($userId), "version_upgrade_skip_date");
+	    if (!empty($userInfo['version_upgrade_skip_date']) && $userInfo['version_upgrade_skip_date'] === date('Y-m-d')) {
+	        return false;
+	    }
+
+	    // get today's cached check result; if missing (e.g. cleared on login), run a fresh check now.
+	    // Deliberately a separate cache key from alerts.ctrl.php's 'install_check': that one only
+	    // refreshes on cron days (1st/7th/14th of the month) and stores raw message HTML, not a
+	    // clean status a popup can branch on, so it doesn't fit a "once per day on login" check.
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $versionCheckInfo = $informationCtrler->__getTodayInformation('version_check_popup');
+	    if (empty($versionCheckInfo)) {
+	        list($oldVersion) = $this->checkVersion(true);
+	        $informationCtrler->updateTodayInformation($oldVersion ? 'outdated' : 'uptodate', 'version_check_popup');
+	        $versionCheckInfo = ['page' => $oldVersion ? 'outdated' : 'uptodate'];
+	    }
+
+	    return !empty($versionCheckInfo['page']) && $versionCheckInfo['page'] === 'outdated';
+	}
+
+	// skip the version-upgrade notice popup for today
+	function skipVersionUpgradePopup() {
+	    $userId = isLoggedIn();
+	    if ($userId) {
+	        $this->db->query("UPDATE users SET version_upgrade_skip_date='" . date('Y-m-d') . "' WHERE id=" . intval($userId));
 	        echo json_encode(['status' => 'success']);
 	    } else {
 	        echo json_encode(['status' => 'error', 'message' => 'User not logged in.']);

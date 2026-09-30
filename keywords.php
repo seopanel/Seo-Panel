@@ -78,9 +78,26 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     		    foreach($_POST['ids'] as $id) {
     		        $controller->__deleteKeyword($id);
     		    }
-		    }		    			
+		    }
 			$controller->listKeywords($_POST);
-		    break;	    
+		    break;
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['keywordId'], 1);
+			$controller->listKeywords($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['keywordId'], 0);
+			$controller->listKeywords($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteKeyword($_POST['keywordId']);
+			$controller->listKeywords($_POST);
+			break;
 
 		default:
 			$controller->listKeywords($_POST);
@@ -89,26 +106,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['keywordId'], 1);			
-			$controller->listKeywords($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['keywordId'], 0);
-			$controller->listKeywords($_GET);
-			break;
-		
+
 		case "reports":
 			$controller->showKeywordReports($_GET['keywordId']);
 			break;
-		
-		case "delete":
-			$controller->__deleteKeyword($_GET['keywordId']);
-			$controller->listKeywords($_GET);
-			break;
-		
+
 		case "edit":
 			$controller->editKeyword($_GET['keywordId']);
 			break;		

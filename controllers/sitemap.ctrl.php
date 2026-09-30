@@ -43,6 +43,30 @@ class SitemapController extends Controller{
  	var $generateIndex = false;		# generate sitemap index file for multiple sitemaps
  	var $maxFileSize = 52428800;	# maximum file size in bytes (50MB)
 
+	function __construct() {
+		parent::__construct();
+		// IDOR fix: $sitemapDir was declared "" and never reassigned
+		// anywhere, so every user's generated sitemaps landed flat in the
+		// shared SP_TMPPATH root with predictable filenames (just the
+		// sanitized project name) - and download.ctrl.php's
+		// downloadFile() had no ownership check of its own either, so any
+		// logged-in user (any tenant on a multi-user install) could
+		// download any other user's sitemap just by guessing/knowing
+		// their project name, disclosing that site's full page/URL
+		// structure (including unlisted/staging pages). Scoping storage
+		// to a per-user subdirectory - derived from the CALLER'S OWN
+		// session, never from client input - closes this at the source:
+		// a filename collision or guess can no longer cross a user
+		// boundary, because the directory it would need to guess is not
+		// something client input can influence at all.
+		$userId = intval(isLoggedIn());
+		$this->sitemapDir = 'sitemap/' . $userId;
+		$sitemapPath = SP_TMPPATH . '/' . $this->sitemapDir;
+		if (!is_dir($sitemapPath)) {
+			@mkdir($sitemapPath, 0755, true);
+		}
+	}
+
 	# func to show sitemap generator interface
 	function showSitemapGenerator() {
 		

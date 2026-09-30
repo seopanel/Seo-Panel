@@ -244,11 +244,11 @@ class SocialMediaController extends Controller{
         $this->render( 'socialmedia/edit_social_media_link');   
     }
     
-    function createSocialMediaLink($listInfo=[]) {
+    function createSocialMediaLink($listInfo=[], $apiCall=false) {
         $listInfo['name'] = trim($listInfo['name']);
-        $listInfo['url'] = trim($listInfo['url']);        
+        $listInfo['url'] = trim($listInfo['url']);
         $errMsg = $this->validateSocialMediaLink($listInfo);
-        
+
         // if no error occured
         if (!$this->validate->flagErr) {
             $dataList = [
@@ -258,12 +258,18 @@ class SocialMediaController extends Controller{
                 'website_id|int' => $listInfo['website_id'],
             ];
             $this->dbHelper->insertRow($this->linkTable, $dataList);
+            if ($apiCall) {
+                return array('success', 'Successfully created social media link');
+            }
             $this->showSocialMediaLinks(['name' => $listInfo['name']]);
             exit;
         }
-        
+
+        if ($apiCall) {
+            return array('error', $errMsg);
+        }
         $this->set('errMsg', $errMsg);
-        $this->newSocialMediaLink($listInfo);        
+        $this->newSocialMediaLink($listInfo);
     }
     
     function editSocialMediaLink($linkId, $listInfo=[]) {        
@@ -544,10 +550,26 @@ class SocialMediaController extends Controller{
 		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
 		$websiteId = intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked, letting any non-admin view ANY
+		// other user's social media report summary for an arbitrary
+		// website_id. Falling back to 0 (rather than a specific website)
+		// reuses this method's own existing "no website_id given" semantics
+		// below - it means "all of my websites", not one arbitrary pick.
+		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
+			$websiteId = 0;
+		}
 		$this->set('websiteId', $websiteId);
 	
-		// to find order col
-		if (!empty($searchInfo['order_col'])) {
+		// to find order col - order_col is caller-supplied and lands
+		// directly in an ORDER BY clause with no way to parameterize an
+		// identifier position, so it must be checked against a fixed
+		// whitelist (not just addslashes()'d, which does nothing for an
+		// unquoted SQL identifier) - previously unchecked, letting any
+		// logged-in non-admin run a blind SQL injection via ORDER BY
+		// (e.g. a CASE/SLEEP() expression), same fix shape Site Auditor
+		// already uses for its own order_col.
+		if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->colList)) {
 			$orderCol = $searchInfo['order_col'];
 			$orderVal = getOrderByVal($searchInfo['order_val']);
 		} else {
@@ -720,17 +742,32 @@ class SocialMediaController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked. Same fallback as the other
+		// dashboard/tool fixes this session: their own first website.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$linkList = $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name");
 		$this->set('linkList', $linkList);
 		$linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
+		// same check one level down: a non-admin's link_id must belong to
+		// the just-resolved (already-scoped) linkList - previously
+		// unchecked, so a foreign link_id bypassed the website_id scoping
+		// entirely (this table has no direct website ownership column of
+		// its own to filter on in the query below).
+		if (!empty($linkId) && !isAdmin() && !in_array($linkId, array_column($linkList, 'id'))) {
+			$linkId = $linkList[0]['id'] ?? '';
+		}
 		$this->set('linkId', $linkId);
-	
+
 		$list = [];
 		if (!empty($linkId)) {
-		
+
     		$sql = "select s.* from $this->linkReportTable s
     		where report_date>='$fromTimeDate' and report_date<='$toTimeDate' and s.sm_link_id=$linkId
     		order by s.report_date";
@@ -768,11 +805,30 @@ class SocialMediaController extends Controller{
     		$list = array_reverse($reportList, true);
 		}
 		
-		$this->set('list', $list);				
+		$this->set('list', $list);
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
 		$this->render('socialmedia/social_media_reports');
-		
+
 	}
-	
+
+	/*
+	 * AJAX action: plain-language AI summary of this social media link's
+	 * follower/like trend over the selected date range - see
+	 * LocalAIController::summarizeSocialMediaTrend(). Never auto-fired;
+	 * returns JSON for the "Summarize with AI" button in
+	 * social_media_reports.ctp.php. Ownership is enforced by
+	 * summarizeSocialMediaTrend() itself, not re-checked here.
+	 */
+	function summarizeTrend($info) {
+		$userId = isLoggedIn();
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->summarizeSocialMediaTrend($info['link_id'], $userId, $fromTime, $toTime);
+		header('Content-Type: application/json');
+		print json_encode($result);
+	}
+
 	// func to show social media link select box
 	function showSocialMediaLinkSelectBox($websiteId, $linkId = ""){
 	    $websiteId = intval($websiteId);
@@ -809,12 +865,20 @@ class SocialMediaController extends Controller{
 	    $websiteController = New WebsiteController();
 	    $websiteList = $websiteController->__getAllWebsites($userId, true);
 	    $this->set('websiteList', $websiteList);
-	    $websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+	    $websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+	    // same fix as viewDetailedReports() - see that method's comment
+	    if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+	        $websiteId = '';
+	    }
+	    if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 	    $this->set('websiteId', $websiteId);
-	    
+
 	    $linkList = $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name");
 	    $this->set('linkList', $linkList);
 	    $linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
+	    if (!empty($linkId) && !isAdmin() && !in_array($linkId, array_column($linkList, 'id'))) {
+	        $linkId = $linkList[0]['id'] ?? '';
+	    }
 	    $this->set('linkId', $linkId);
 	    
 	    // if reports not empty

@@ -438,12 +438,27 @@ function getCurrentUrl() {
 
 # function to check whether refferer is from same site
 function isValidReferer($referer) {
-	
-	if(stristr($referer, SP_WEBPATH)) {
-		if (!stristr($referer, 'install') && !stristr($referer, 'login.php')) {
-			$referer = str_ireplace("&lang_code=", "&", $referer);
-			return $referer;
-		}		
+	$referer = (string) $referer;
+	if ($referer === '') return '';
+
+	// used to be a plain stristr() substring check, which an attacker's
+	// OWN page could pass just by putting SP_WEBPATH anywhere in its own
+	// url (e.g. "https://evil.com/?x=".SP_WEBPATH) - get a victim to
+	// click through from that page to a real login here, and the
+	// browser's real Referer header (that attacker url) would validate
+	// as "safe", sending the victim straight back to the attacker's page
+	// the moment they log in with their real credentials (open redirect /
+	// phishing amplification, CWE-601). Now requires the referer to
+	// actually START with this site's own scheme+host+path at a proper
+	// boundary, not just contain it as a substring anywhere.
+	$webpath = SP_WEBPATH;
+	if (stripos($referer, $webpath) !== 0) return '';
+	$boundary = substr($referer, strlen($webpath), 1);
+	if ($boundary !== '' && $boundary !== '/' && $boundary !== '?') return '';
+
+	if (!stristr($referer, 'install') && !stristr($referer, 'login.php')) {
+		$referer = str_ireplace("&lang_code=", "&", $referer);
+		return $referer;
 	}
 	return '';
 }
@@ -521,69 +536,96 @@ function debugVar($value, $exitFlag = true) {
 }
 
 # func to send mail
-function sendMail($from, $fromName, $to ,$subject,$content, $attachment = ''){
-	$mail = new PHPMailer();
+function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $debugMail = false){
+	$mail = new \PHPMailer\PHPMailer\PHPMailer();
 	$mail->CharSet = 'UTF-8';
-	
+
 	# check whether the mail send by smtp or not
 	if(SP_SMTP_MAIL){
-		$mail->IsSMTP();	
+		$mail->isSMTP();
 		$mail->SMTPAuth = true;
 		$mail->Host = SP_SMTP_HOST;
 		$mail->Username = SP_SMTP_USERNAME;
 		$mail->Password = SP_SMTP_PASSWORD;
 		$mail->Port = SP_SMTP_PORT;
-		
+
 		// if mail encryption enabled
 		if (defined('SP_MAIL_ENCRYPTION') && (SP_MAIL_ENCRYPTION != '')) {
             $mail->SMTPSecure = SP_MAIL_ENCRYPTION;
-		}		
+		}
+
+		// if debug is enabled — collect lines via callback for console display
+		$debugLines = [];
+		if ($debugMail) {
+			$mail->SMTPDebug = 2; // 2 = client + server responses
+			$mail->Debugoutput = function($str, $level) use (&$debugLines) {
+				$debugLines[] = htmlspecialchars(rtrim($str));
+			};
+		}
 	}
 
 	$mail->From = $from;
 	$mail->FromName = $fromName;
-	$mail->AddAddress($to);
-	$mail->WordWrap = 70;                              
-	$mail->IsHTML(true);
+	foreach (array_map('trim', explode(',', $to)) as $toAddr) {
+		if (!empty($toAddr)) $mail->addAddress($toAddr);
+	}
+	$mail->WordWrap = 70;
+	$mail->isHTML(true);
 
 	$mail->Subject = $subject;
 	$mail->Body = $content;
 	$mail->msgHTML($content); //creates plaintext alternate automatically
 	$mail->AltBody = 'To view the message, please use an HTML compatible email viewer!'; //fallback
-	
+
 	// if attachments are there
 	if (!empty($attachment)) {
-		$mail->AddAttachment($attachment);
+		$mail->addAttachment($attachment);
 	}
-	
+
 	$mailLogInfo = [];
-	
+
 	// if sendgrid api should be used, if enabled it
 	if ($mail->Host == 'smtp.sendgrid.net' && SP_SENDGRID_API) {
 		$sendLog = sendMailBySendgridAPI($mail, $to);
 		$mailLogInfo['mail_category'] = 'sendgrid';
 	} else {
-	
+
 		// normal mail send fails or not
-		if($mail->Send()){
+		if($mail->send()){
 			$sendLog['status'] = 1;
 			$sendLog['log_message'] = "Success";
 		} else {
 			$sendLog['status'] = 0;
 			$sendLog['log_message'] = $mail->ErrorInfo;
 		}
-		
+
 	}
-	
+
+	// output SMTP debug log as console if debug mode enabled
+	if ($debugMail && !empty($debugLines)) {
+		echo '<div style="background:#1a1a1a; font-family:\'Courier New\',Consolas,monospace; font-size:12px; line-height:1.7; padding:15px; border-radius:6px; margin-top:15px; max-height:420px; overflow-y:auto; overflow-x:auto; border:1px solid #333;">';
+		foreach ($debugLines as $line) {
+			if (strpos($line, 'CLIENT ->') !== false) {
+				$color = '#00ff41'; // green for client output
+			} elseif (strpos($line, 'SERVER ->') !== false) {
+				$color = '#00cfff'; // cyan for server responses
+			} else {
+				$color = '#aaaaaa'; // grey for info lines
+			}
+			echo '<div style="color:' . $color . '; white-space:pre-wrap; word-break:break-all;">' . $line . '</div>';
+		}
+		echo '</div>';
+	}
+
 	// update mail log
-	$crawlLogCtrl = new CrawlLogController();	
+	$crawlLogCtrl = new CrawlLogController();
 	$mailLogInfo['subject'] = $subject;
 	$mailLogInfo['from_address'] = $from;
 	$mailLogInfo['to_address'] = $to;
 	$mailLogInfo['status'] = $sendLog['status'];
 	$mailLogInfo['log_message'] = $sendLog['log_message'];
 	$crawlLogCtrl->createMailLog($mailLogInfo);
-	
+
 	return $sendLog['status'];
 	
 }

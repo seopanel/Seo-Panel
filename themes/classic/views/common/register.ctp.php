@@ -197,7 +197,7 @@
 									<?php echo $spText['login']['Enter the code as it is shown']?>
 								</label>
 								<div class="captcha-wrapper">
-									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image">
+									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image" alt="<?php echo htmlspecialchars($spText['login']['Enter the code as it is shown'])?>">
 								</div>
 								<input type="text" name="code" value="<?php echo $post['code']?>" class="form-control register-input" id="code" required="required" placeholder="Enter the code">
 							<?php }?>

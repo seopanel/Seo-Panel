@@ -17,7 +17,11 @@
 
 namespace Google\Auth\Middleware;
 
+use Google\Auth\FetchAuthTokenCache;
 use Google\Auth\FetchAuthTokenInterface;
+use Google\Auth\GetQuotaProjectInterface;
+use Google\Auth\UpdateMetadataInterface;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -29,22 +33,25 @@ use Psr\Http\Message\RequestInterface;
  *
  * Requests will be accessed with the authorization header:
  *
- * 'Authorization' 'Bearer <value of auth_token>'
+ * 'authorization' 'Bearer <value of auth_token>'
  */
 class AuthTokenMiddleware
 {
     /**
-     * @var callback
+     * @var callable
      */
     private $httpHandler;
 
     /**
+     * It must be an implementation of FetchAuthTokenInterface.
+     * It may also implement UpdateMetadataInterface allowing direct
+     * retrieval of auth related headers
      * @var FetchAuthTokenInterface
      */
     private $fetcher;
 
     /**
-     * @var callable
+     * @var ?callable
      */
     private $tokenCallback;
 
@@ -57,8 +64,8 @@ class AuthTokenMiddleware
      */
     public function __construct(
         FetchAuthTokenInterface $fetcher,
-        callable $httpHandler = null,
-        callable $tokenCallback = null
+        ?callable $httpHandler = null,
+        ?callable $tokenCallback = null
     ) {
         $this->fetcher = $fetcher;
         $this->httpHandler = $httpHandler;
@@ -88,7 +95,6 @@ class AuthTokenMiddleware
      *   $res = $client->get('myproject/taskqueues/myqueue');
      *
      * @param callable $handler
-     *
      * @return \Closure
      */
     public function __invoke(callable $handler)
@@ -99,28 +105,58 @@ class AuthTokenMiddleware
                 return $handler($request, $options);
             }
 
-            $request = $request->withHeader('Authorization', 'Bearer ' . $this->fetchToken());
+            $request = $this->addAuthHeaders($request);
+
+            if ($quotaProject = $this->getQuotaProject()) {
+                $request = $request->withHeader(
+                    GetQuotaProjectInterface::X_GOOG_USER_PROJECT_HEADER,
+                    $quotaProject
+                );
+            }
 
             return $handler($request, $options);
         };
     }
 
     /**
-     * Call fetcher to fetch the token.
+     * Adds auth related headers to the request.
      *
-     * @return string
+     * @param RequestInterface $request
+     * @return RequestInterface
      */
-    private function fetchToken()
+    private function addAuthHeaders(RequestInterface $request)
     {
-        $auth_tokens = $this->fetcher->fetchAuthToken($this->httpHandler);
-
-        if (array_key_exists('access_token', $auth_tokens)) {
-            // notify the callback if applicable
-            if ($this->tokenCallback) {
-                call_user_func($this->tokenCallback, $this->fetcher->getCacheKey(), $auth_tokens['access_token']);
-            }
-
-            return $auth_tokens['access_token'];
+        if (!$this->fetcher instanceof UpdateMetadataInterface ||
+            ($this->fetcher instanceof FetchAuthTokenCache &&
+             !$this->fetcher->getFetcher() instanceof UpdateMetadataInterface)
+        ) {
+            $token = $this->fetcher->fetchAuthToken();
+            $request = $request->withHeader(
+                'authorization', 'Bearer ' . ($token['access_token'] ?? $token['id_token'] ?? '')
+            );
+        } else {
+            $headers = $this->fetcher->updateMetadata($request->getHeaders(), null, $this->httpHandler);
+            $request = Utils::modifyRequest($request, ['set_headers' => $headers]);
         }
+
+        if ($this->tokenCallback && ($token = $this->fetcher->getLastReceivedToken())) {
+            if (array_key_exists('access_token', $token)) {
+                call_user_func($this->tokenCallback, $this->fetcher->getCacheKey(), $token['access_token']);
+            }
+        }
+
+        return $request;
+    }
+
+    /**
+     * @return string|null
+     */
+    private function getQuotaProject()
+    {
+        if ($this->fetcher instanceof GetQuotaProjectInterface) {
+            return $this->fetcher->getQuotaProject();
+        }
+
+        return null;
     }
 }

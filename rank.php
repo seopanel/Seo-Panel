@@ -76,11 +76,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "quickrank":
 			$controller->showQuickRankChecker();
 			break;
-			
-		case "showmozrank":
-			$controller->printMOZRank(urldecode($_GET['url']));
-			break;
-			
+
 		case "generate":
 			$controller->showGenerateReports($_GET);
 			break;
@@ -91,6 +87,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			
 		case "graphical-reports":
 			$controller->showGraphicalReports($_GET);
+			break;
+
+		case "summarizetrend":
+			$controller->summarizeTrend($_GET);
 			break;
 
 		default:

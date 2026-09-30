@@ -33,13 +33,21 @@ $controller->spTextAPI = $controller->getLanguageTexts('api', $_SESSION['lang_co
 $controller->set('spTextAPI', $controller->spTextAPI);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-	
+
 	switch ($_POST['sec']) {
-		
+
+		case "regenerate_api_key":
+			$controller->regenerateAPIKey();
+			break;
+
+		case "regenerate_api_secret":
+			$controller->regenerateAPISecret();
+			break;
+
 		default:
 			$controller->showAPIConnectionManager($_POST);
-			break;	
-		    
+			break;
+
 	}
 
 } else {

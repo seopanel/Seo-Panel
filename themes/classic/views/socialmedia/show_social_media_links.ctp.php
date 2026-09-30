@@ -69,7 +69,7 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 	<?php
 	if(count($list) > 0) {
 		foreach($list as $i => $listInfo){
-		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", "{$listInfo['name']}");
+		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", htmlspecialchars($listInfo['name']));
 			?>
 			<tr>
 				<td><?php echo $projectLink?></td>
@@ -80,13 +80,13 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 				<td>
 					<?php
 					if ($listInfo['type'] == "linkedin") {
-					    echo $serviceList[$listInfo['type']]['show_url'] . "/" . $listInfo['url'];
+					    echo htmlspecialchars($serviceList[$listInfo['type']]['show_url'] . "/" . $listInfo['url']);
 					} else {
-					   echo $listInfo['url'];
+					   echo htmlspecialchars($listInfo['url']);
 					}
 					?>
 				</td>
-				<td><?php echo $listInfo['website_name']?></td>
+				<td><?php echo htmlspecialchars($listInfo['website_name'])?></td>
 				<td><?php echo showStatusBadge($listInfo['status']);?></td>
 				<td>
 					<?php

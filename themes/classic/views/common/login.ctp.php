@@ -10,6 +10,7 @@
 						<?php echo ucwords($spText['common']['signin'])?>
 					</h2>
 					<p class="login-subtitle"><?php echo $spText['login']['Welcome message']?></p>
+					<p class="login-tools-hint"><?php echo $spText['login']['Tools hint'] ?? 'Your SEO, AEO &amp; GEO control room: rank tracking, site audits, backlinks, AI Visibility, and more - all in one place.'?></p>
 				</div>
 
 				<div class="login-body">

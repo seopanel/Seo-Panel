@@ -13,9 +13,9 @@ $webUrl = "";
 					if($websiteInfo['id'] == $websiteId){
 						$webUrl = $websiteInfo['url'];
 						?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>
@@ -64,7 +64,7 @@ if(empty($websiteId)){
 				<td><a><?php echo $listInfo['desktop_speed_score'].'</a> '. $listInfo['rank_diff_desktop_speed_score']?></td>
 				<td><a><?php echo $listInfo['mobile_speed_score'].'</a> '. $listInfo['rank_diff_mobile_speed_score']?></td>
 				<td>
-					<a href="https://developers.google.com/speed/pagespeed/insights/?url=<?php echo $webUrl; ?>" target="_blank">
+					<a href="https://developers.google.com/speed/pagespeed/insights/?url=<?php echo urlencode($webUrl); ?>" target="_blank">
 						<?php echo $spText['common']['Details']?> &gt;&gt;
 					</a>
 				</td>

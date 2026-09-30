@@ -27,10 +27,20 @@ class DirectoryController extends Controller{
 	var $checkPR = 0;
 	
 	function showSubmissionPage( ) {
-		
+
 		$userId = isLoggedIn();
 		$this->session->setSession('dirsub_pr', '');
-		
+
+		// default new sessions to excluding reciprocal-link directories -
+		// reciprocal linking is a link scheme Google's own guidelines have
+		// long treated as a spam signal, so "opt out of it" is the safer
+		// default; a user who has already made an explicit choice this
+		// session (via the "no_reciprocal" checkbox/sec=checkreciprocal)
+		// keeps that choice untouched
+		if (!isset($_SESSION['no_reciprocal'])) {
+			$this->session->setSession('no_reciprocal', 1);
+		}
+
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
 		
@@ -66,12 +76,34 @@ class DirectoryController extends Controller{
 			$websiteInfo = $submitInfo;
 		}
 		
-		$this->set('websiteInfo', $websiteInfo);		
+		$this->set('websiteInfo', $websiteInfo);
 		$this->session->setSession('no_captcha', empty($submitInfo['no_captcha']) ? 0 : 1);
 		$this->session->setSession('dirsub_pr', $submitInfo['pagerank']);
 		$this->session->setSession('dirsub_lang', $submitInfo['lang_code']);
-		$this->set('noTitles', $this->noTitles);		
+		$this->set('noTitles', $this->noTitles);
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('directory/showsitesubmission');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) draft of a directory
+	 * listing title/description for this website - see
+	 * LocalAIController::suggestDirectoryListing(). Never auto-fired;
+	 * returns JSON for the "Suggest with AI" buttons in
+	 * showsitesubmission.ctp.php (one per title/description slot) to
+	 * populate that slot with (the user still reviews and can edit before
+	 * actually submitting anywhere). Ownership is enforced by
+	 * suggestDirectoryListing() itself, not re-checked here.
+	 */
+	function suggestListing($info) {
+		$userId = isLoggedIn();
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->suggestDirectoryListing($info['website_id'], $userId, $info['avoid'] ?? '');
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	function saveSubmissiondata( $submitInfo ) {
@@ -674,11 +706,25 @@ class DirectoryController extends Controller{
 	}
 	
 	function deleteSubmissionReports($dirSubId){
-		
 		$dirSubId = intval($dirSubId);
+
+		// previously no ownership check at all - any logged-in non-admin
+		// could delete another user's directory submission report just by
+		// supplying its id
+		if (!isAdmin()) {
+			$userId = isLoggedIn();
+			$subInfo = $this->dbHelper->getRow('dirsubmitinfo', "id=$dirSubId");
+			if (empty($subInfo)) return;
+			include_once(SP_CTRLPATH . "/website.ctrl.php");
+			$websiteInfo = (new WebsiteController())->__getWebsiteInfo($subInfo['website_id']);
+			if (empty($websiteInfo) || intval($websiteInfo['user_id']) !== intval($userId)) {
+				return;
+			}
+		}
+
 		$sql = "delete from dirsubmitinfo where id=$dirSubId";
 		$this->db->query($sql);
-		
+
 		echo "<script>scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=reports');</script>";
 	}
 	
@@ -919,12 +965,31 @@ class DirectoryController extends Controller{
 	
 	# function to log submission data
 	function logSubmissionResult($content, $dirId, $websiteId) {
-		
+
 		$filename = SP_TMPPATH."/subres_web".$websiteId."_dir".$dirId.".html";
 		$fp = fopen($filename, 'w');
 		fwrite($fp, $content);
 		fclose($fp);
-		
+
+	}
+
+	/**
+	 * these are write-only debugging snapshots - logSubmissionResult()
+	 * is the only place that ever touches this filename pattern, nothing
+	 * in the app reads them back - so with the Directory Submission
+	 * cron resubmitting every active website to every active directory
+	 * on a schedule, one file per (website, directory) pair accumulates
+	 * in tmp/ forever with no cap. Swept on the same cron cycle as
+	 * clearCrawlLog(), same $daysBefore convention.
+	 * @param int $daysBefore The days before the submission log files to be deleted
+	 */
+	function clearSubmissionLogFiles($daysBefore) {
+		$dateBefore = mktime(0, 0, 0, date('m'), date('d') - $daysBefore, date('y'));
+		foreach (glob(SP_TMPPATH . "/subres_web*_dir*.html") ?: [] as $file) {
+			if (filemtime($file) < $dateBefore) {
+				@unlink($file);
+			}
+		}
 	}
 	
 	# function to get directory script type meta info

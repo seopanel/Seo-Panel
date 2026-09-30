@@ -242,5 +242,40 @@ class Controller extends Seopanel{
 		$this->view->data = $this->data;
 		return $this->view->getViewContent($viewFile);
 	}
+
+	// records a security-relevant admin action for later review (Settings
+	// > Audit Log) - who did what, when, from where. Deliberately
+	// denormalizes the actor's username and the target's label (not just
+	// their ids) so the log entry stays readable independently of either
+	// row still existing later (e.g. "user X deleted user Y" must still
+	// read correctly after user Y's own row is gone). $details is
+	// free-form text for anything extra worth capturing (e.g. which
+	// setting names changed) - callers must never put a secret/password
+	// value in here, only in $targetLabel is it borderline-safe (a
+	// username, not a credential).
+	function logAuditEvent($action, $targetType = null, $targetId = null, $targetLabel = null, $details = null) {
+		$actorId = isLoggedIn();
+		$actorUsername = null;
+		if (!empty($actorId)) {
+			$actorInfo = $this->db->select("select username from users where id=" . intval($actorId), true);
+			$actorUsername = $actorInfo['username'] ?? null;
+		}
+		$ip = $_SERVER['REMOTE_ADDR'] ?? null;
+		$now = date('Y-m-d H:i:s');
+
+		$sql = "insert into audit_log
+			(actor_user_id, actor_username, action, target_type, target_id, target_label, details, ip_address, created_at)
+			values (" .
+			(empty($actorId) ? "NULL" : intval($actorId)) . ", " .
+			($actorUsername === null ? "NULL" : "'" . addslashes($actorUsername) . "'") . ", " .
+			"'" . addslashes($action) . "', " .
+			($targetType === null ? "NULL" : "'" . addslashes($targetType) . "'") . ", " .
+			($targetId === null ? "NULL" : intval($targetId)) . ", " .
+			($targetLabel === null ? "NULL" : "'" . addslashes($targetLabel) . "'") . ", " .
+			($details === null ? "NULL" : "'" . addslashes($details) . "'") . ", " .
+			($ip === null ? "NULL" : "'" . addslashes($ip) . "'") . ", " .
+			"'$now')";
+		$this->db->query($sql);
+	}
 }
 ?>

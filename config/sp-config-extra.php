@@ -72,6 +72,11 @@ define('SP_API_FILE', 'api/api.php');
 # The crawl log clear interval in days
 define('SP_CRAWL_LOG_CLEAR_TIME', 90);
 
+# Directory submission debug snapshot (tmp/subres_web{id}_dir{id}.html)
+# clear interval in days - these are write-only debugging artifacts,
+# never read back anywhere in the app, so a short retention is fine
+define('SP_SUBMISSION_LOG_CLEAR_TIME', 7);
+
 # The api language code
 define('SP_API_LANG_CODE', 'en');
 
@@ -104,6 +109,14 @@ define('SP_SPONSOR_PAGE', SP_MAIN_SITE . '/sponsors.php');
 
 # The seo panel version page
 define('SP_VERSION_PAGE', SP_MAIN_SITE . '/getversion.php');
+
+# NOTE: SP_ONLINE_UPGRADE_URL (the release zip used by Settings > Version's
+# "Upgrade Now") is intentionally NOT define()'d here. It's referenced
+# inline as defined('SP_ONLINE_UPGRADE_URL') ? SP_ONLINE_UPGRADE_URL :
+# 'https://www.seopanel.org/spdownload/' in SettingsController, the same
+# pattern SP_SPAPI_URL uses, so it can be overridden via a `settings` table
+# row (e.g. to point at a local fixture server for testing) without editing
+# this file.
 
 # seo panel theme site url
 define('SP_THEMESITE', SP_MAIN_SITE . '/themes/');

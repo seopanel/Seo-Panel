@@ -252,9 +252,10 @@ class ProxyController extends Controller{
 	function __getProxyInfo($proxyId){
 		$sql = "select * from proxylist where id=".intval($proxyId);
 		$listInfo = $this->db->select($sql, true);
+		if (empty($listInfo['id'])) return false;
 		$listInfo['proxy_username'] = stripslashes($listInfo['proxy_username']);
 		$listInfo['proxy_password'] = stripslashes($listInfo['proxy_password']);
-		return empty($listInfo['id']) ? false :  $listInfo;
+		return $listInfo;
 	}
 
 	function editProxy($proxyId, $listInfo=''){
@@ -326,9 +327,10 @@ class ProxyController extends Controller{
 	function getRandomProxy() {
 		$sql = "SELECT * FROM proxylist where status=1 ORDER BY RAND() LIMIT 1";
 		$listInfo = $this->db->select($sql, true);
+		if (empty($listInfo['id'])) return false;
 		$listInfo['proxy_username'] = stripslashes($listInfo['proxy_username']);
 		$listInfo['proxy_password'] = stripslashes($listInfo['proxy_password']);
-		return empty($listInfo['id']) ? false :  $listInfo;
+		return $listInfo;
 	}
 
 	// function to show cron command

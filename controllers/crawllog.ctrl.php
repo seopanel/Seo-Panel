@@ -348,7 +348,12 @@ class CrawlLogController extends Controller {
 	    $sql = "INSERT INTO mail_logs(".implode(",", array_keys($mailInfo)).")";
 	    $sql .= " values ('".implode("','", array_values($mailInfo))."')";
 	    $this->db->query($sql);
-	    $logId = $this->db->getMaxId($this->tablName);
+	    // was reading getMaxId($this->tablName), which is "crawl_log" (this
+	    // class's other log table) - not "mail_logs", the table just
+	    // inserted into, so the returned id never actually identified the
+	    // new row. Harmless today (createMailLog()'s one caller discards
+	    // the return value), but worth fixing since it's a real bug.
+	    $logId = $this->db->getMaxId('mail_logs');
 	    return $logId;
 	}
 }

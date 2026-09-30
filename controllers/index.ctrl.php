@@ -33,6 +33,12 @@ class IndexController extends Controller{
 		}else{
 		    $spTextGuest = $this->getLanguageTexts('guest', $_SESSION['lang_code']);
 		    $this->set('spTextGuest', $spTextGuest);
+		    // the tool grid on the guest homepage shows each tool's real,
+		    // translated name (e.g. $spTextTools['ai-visibility']) - this
+		    // category was never loaded for guests before, so every tool
+		    // heading rendered blank (silently, since PHP treats an
+		    // undefined array key as empty string rather than an error)
+		    $this->set('spTextTools', $this->getLanguageTexts('seotools', $_SESSION['lang_code']));
 			$this->render('home');
 		}
 	}

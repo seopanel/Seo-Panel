@@ -192,7 +192,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 <div class="report-info-card">
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-globe"></i> <?php echo $spTextSA['Project Url']?>:</span>
-		<a href="<?php echo $projectInfo['url']?>" target="_blank" class="report-info-value report-info-url"><?php echo $projectInfo['url']?></a>
+		<a href="<?php echo htmlspecialchars($projectInfo['url'])?>" target="_blank" class="report-info-value report-info-url"><?php echo htmlspecialchars($projectInfo['url'])?></a>
 	</div>
 	<div class="report-info-item">
 		<span class="report-info-label"><i class="fas fa-clock"></i> <?php echo $spText['label']['Updated']?>:</span>
@@ -235,7 +235,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 <table width="100%" cellpadding="5" cellspacing="0" style="border-collapse: collapse; border: 1px solid #B0C2CC; margin-bottom: 15px;">
 	<tr style="background: #f5f5f5;">
 		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; font-weight: bold; padding: 10px;">
-			<?php echo $spTextSA['Project Url']?>: <?php echo $projectInfo['url']?>
+			<?php echo $spTextSA['Project Url']?>: <?php echo htmlspecialchars($projectInfo['url'])?>
 		</td>
 		<td colspan="2" style="border-bottom: 1px solid #B0C2CC; padding: 10px;">
 			<?php echo $spText['label']['Updated']?>: <?php echo $projectInfo['last_updated']?>
@@ -270,7 +270,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			$noText = $spText['common']['No'];
 			?>
 			<tr>
-				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo $listInfo['page_url']?></td>
+				<td style="border: 1px solid #ddd; padding: 6px; word-break: break-all;"><?php echo htmlspecialchars($listInfo['page_url'])?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['page_authority']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_backlinks']?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['google_indexed'] ? $yesText : $noText?></td>
@@ -310,6 +310,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	<div class="link-report-header">
 		<i class="fas fa-link"></i> <?php echo $spTextSA["Link Reports"]?>
 	</div>
+	<div style="overflow-x:auto;">
 	<table class="link-report-table">
 		<thead>
 			<tr>
@@ -336,7 +337,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	if(count($list) > 0){
 		$catCount = count($list);
 		foreach($list as $i => $listInfo){            
-            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap($listInfo['page_url'], 100, "<br>", true));             
+            $pageLink = scriptAJAXLinkHref('siteauditor.php', 'subcontent', "sec=pagedetails&report_id={$listInfo['id']}&pageno=$pageNo&order_col=$orderCol&order_val=$orderVal", wordwrap(htmlspecialchars($listInfo['page_url']), 100, "<br>", true));
             $pageLink = !empty($pdfVersion) ? str_replace("href='javascript:void(0);'", "", $pageLink) : $pageLink;
             ?>
 			<tr>
@@ -417,6 +418,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 	?>
 		</tbody>
 	</table>
+	</div>
 </div>
     <table class="actionSec mt-2">
     	<tr>

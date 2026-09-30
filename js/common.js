@@ -3,6 +3,21 @@ var buttonList = new Array();
 var scriptList = new Array();
 var needPopup = false;
 
+// bug fix: scriptDoLoad()/scriptDoLoadPost() (below) and the dialog/popup
+// variants in popup.js drive virtually all in-page navigation across the
+// entire panel (every list, edit form, report, and action link), but none
+// of them had an error handler - only success. A session timeout, a PHP
+// fatal error, a 500, or a dropped connection left the loading spinner
+// showing forever with zero feedback and no way to know anything went
+// wrong. This mirrors the working pattern openSerpModalSP() (this file)
+// already uses for its own AJAX call.
+function showAjaxLoadError(targetElementId) {
+	var target = document.getElementById(targetElementId);
+	if (target) {
+		target.innerHTML = '<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>';
+	}
+}
+
 function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading) {
 	if(needPopup) {
 		scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading);
@@ -16,12 +31,15 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 	jQuery.ajax({
 		type: "POST",
 		url:scriptUrl,
-		data: scriptArgs, 
+		data: scriptArgs,
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
 	            eval($(this).text());
 	         });
+	     },
+	     error: function() {
+	         showAjaxLoadError(scriptPos);
 	     }
 	});
 }
@@ -43,6 +61,9 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
              jQuery("#"+scriptPos).find("script").each(function(i) {
                 eval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
      });
 }
@@ -88,6 +109,9 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
              jQuery("#"+scriptPos).find("script").each(function(i) {
                 eval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
     });
 }
@@ -234,13 +258,28 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 	return false;
 }
 
+// State-changing actions this dropdown can trigger - previously ALL of
+// these (including delete) went out over confirmLoad(), a plain GET
+// request. A GET-triggered destructive action is forgeable by a bare
+// <img src="..."> or link on any page a logged-in victim (admin or not)
+// has open, no JavaScript required - not mitigated by modern browsers'
+// SameSite=Lax cookie default, which explicitly still allows simple/
+// top-level GET requests to carry cookies. Routed through confirmSubmit()
+// instead (POST, via scriptDoLoadPost()) for exactly these - 'listform'
+// is the consistent wrapping form id every list view using this dropdown
+// already defines for its own bulk-select actions; if a given view
+// doesn't have one, jQuery's serialize() on a missing selector just
+// returns an empty string, so this degrades safely rather than breaking.
+var SP_STATE_CHANGING_ACTIONS = ['delete', 'delete_alert', 'Activate', 'Inactivate', 'recheckreport', 'addToWebmasterTools',
+	'showrunproject', 'checkscore', 'deletepage', 'upgrade', 'reinstall', 'deleteSitemap'];
+
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 	actVal = document.getElementById(actionDiv).value;
 	scriptArgs += "&sec=" + actVal;
 	switch (actVal) {
-		case "select":		
+		case "select":
 			break;
-		
+
 		case "checkstatus":
 		case "edit":
 		case "reports":
@@ -249,17 +288,19 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 		case "website-access-manager":
 			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 			break;
-	
+
 		default:
 			if(spdemo){
-				if((actVal == 'delete') || (actVal == 'Activate') || (actVal == 'Inactivate') || (actVal == 'recheckreport') || (actVal == 'addToWebmasterTools')
-					|| (actVal == 'showrunproject') || (actVal == 'checkscore') || (actVal == 'deletepage') || (actVal == 'upgrade') || (actVal == 'reinstall') 
-					|| (actVal == 'deleteSitemap')){
+				if(SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1){
 					alertDemoMsg();
 					return false;
 				}
 			}
-			confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			if (SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1) {
+				confirmSubmit(scriptUrl, 'listform', scriptPos, scriptArgs);
+			} else {
+				confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			}
 			break;
 	}
 }
@@ -457,6 +498,12 @@ function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 
+function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
+	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
+	scriptArgs += "&base_url=" + encodeURIComponent(baseUrl);
+	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}
+
 function openTab(tabName, dialog = false) {
 	dialogId = dialog ? "#dialogContent " : "";
 	$(dialogId + '.tabcontent').hide();	
@@ -465,19 +512,35 @@ function openTab(tabName, dialog = false) {
 	$(dialogId + '#' + tabName + "Link").addClass('active');
 }
 
-$(function() {	
+$(function() {
 	// Submenu click function
 	$("#subui a").click(function () {
 	    // Remove active classes first
 	    $("#subui a").removeClass("menu_active");
 	    $("#subui li").removeClass("menu_active");
-	    
+
 	    // Add class to clicked <a> and its parent <li>
 	    $(this).addClass("menu_active");
 	    $(this).parent("li").addClass("menu_active");
-	    
+
 	    // Collapse the navbar (for mobile)
 	    $(".navbar-collapse").collapse("hide");
-	});	
+	});
 });
+
+// func to get a Google Chart container's current pixel width, for
+// passing as that chart's own explicit `width` option. Google Charts
+// never redraws itself when its container's size changes later (a
+// well-known limitation) and, left unset, its own auto-detected width
+// isn't reliable on every layout - passing this explicitly, re-read on
+// every draw call (including resize-triggered redraws), is what keeps
+// a chart correctly sized for its actual container instead of
+// overflowing it (which a card's own overflow:hidden then clips
+// instead of visibly shrinking). Returns undefined if the container
+// isn't in the DOM (e.g. its section didn't render for lack of data),
+// same as omitting the option entirely.
+function spChartWidth(containerId) {
+	var el = document.getElementById(containerId);
+	return el ? el.offsetWidth : undefined;
+}
 
