@@ -414,12 +414,59 @@ function tourText($key, $default) {
                 <h5><i class="fas fa-clock" style="margin-right:6px;"></i><?php echo tourText('tour_step5_heading', 'Set Up the Cron Job') ?></h5>
                 <p><?php echo tourText('tour_step5_body', "SEO Panel checks rankings, runs audits, and generates reports on a schedule - but only once your server is actually calling <code>cron.php</code>. Nothing above matters if this isn't running.") ?></p>
                 <?php if (isAdmin()) { ?>
-                    <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
-                        <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
-                        <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Cron Command'] ?? 'Cron Command' ?></strong><small><?php echo tourText('tour_cron_desc', "The exact command to add to your server's crontab") ?></small></span>
-                        <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet')) ?>
-                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                    </a>
+                    <?php
+                    // Site Auditor runs on its own separate cron script
+                    // (siteauditorcron.php), not cron.php above - easy to
+                    // miss since it lives under the Seo Tools shell
+                    // (seo-tools.php?menu_sec=site-auditor), not Reports
+                    // Manager. default_args (this shell's equivalent of
+                    // admin-panel.php's inner-script arguments, read by
+                    // SeoToolsController::index()) lands directly on that
+                    // tool's own Cron Command sub-page instead of just its
+                    // default view.
+                    // Both rows wrapped in sp-tour-link-list (same wrapper
+                    // Step 4's Settings rows use) for the gap/margin
+                    // between them - without it the two rows sit flush
+                    // against each other, and the ping-trigger hint just
+                    // below (sp-tour-form-hint's negative margin-top,
+                    // meant to hug a form field above it) looked stuck
+                    // directly onto the Site Auditor row instead of being
+                    // its own separate line - confirmed live via screenshot.
+                    $tourSaCronLink = SP_WEBPATH . '/seo-tools.php?menu_sec=site-auditor&default_args=' . urlencode('sec=croncommand');
+                    ?>
+                    <div class="sp-tour-link-list">
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
+                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Cron Command'] ?? 'Cron Command' ?></strong><small><?php echo tourText('tour_cron_desc', "The exact command to add to your server's crontab") ?></small></span>
+                            <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet')) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                        <a class="sp-tour-link-row" href="<?php echo $tourSaCronLink ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                            <span class="sp-tour-link-icon"><i class="fas fa-tasks"></i></span>
+                            <span class="sp-tour-link-text"><strong><?php echo sprintf(tourText('tour_sa_cron_title', '%s Cron Command'), $spTextSeoTools['site-auditor'] ?? 'Site Auditor') ?></strong><small><?php echo tourText('tour_sa_cron_desc', 'A separate command for scheduled site audits') ?></small></span>
+                            <?php echo tourBadges('siteauditor_cron', true) ?>
+                            <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                        </a>
+                    </div>
+                    <?php
+                    // Resumable job queue needs no mention here - it's on by
+                    // default for every fresh install (SP_JOB_QUEUE_ENABLED
+                    // seeds '1' in both seopanel.sql and upgrade.sql) and
+                    // there's nothing for a new user to set up. The ping
+                    // trigger is the opposite: off by default (opt-in - it
+                    // hands out a bearer-token-style secret URL, so it can't
+                    // just be silently turned on) and only actually useful
+                    // to someone whose host has no real crontab access - a
+                    // small secondary link rather than a second full row,
+                    // reached via the same Reports Manager tab (Scheduler
+                    // Health, cron.php?sec=health) as Cron Command above.
+                    ?>
+                    <div class="sp-tour-form-hint">
+                        <?php echo tourText('tour_cron_ping_hint', "Can't set up a real crontab on your host?") ?>
+                        <a href="<?php echo tourSettingsLink('cron.php?sec=health', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                            <?php echo sprintf(tourText('tour_cron_ping_hint_link', 'Use the %s instead.'), $spTextPanel['External ping trigger'] ?? 'External Ping Trigger') ?>
+                        </a>
+                    </div>
                 <?php } else { ?>
                     <div class="sp-wizard-info-box">
                         <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>

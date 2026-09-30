@@ -245,6 +245,67 @@
         </div>
     </div>
 
+    <?php
+    // cron.php above only covers rank/backlink/saturation/report
+    // generation - three more scripts ship in SP_ABSPATH with their own,
+    // independent cron entries (Site Auditor, Proxy Checker, Directory
+    // Checker), each with its own recommended schedule already used
+    // elsewhere in the app (siteauditor/croncommand.ctp.php,
+    // proxy/croncommand.ctp.php) - repeated here so a fresh install sees
+    // every cron job it needs in one place, not just the main one.
+    // 'seotools' isn't in Controller::$sessionCats (only common/login/
+    // button/label are), and this view is the top-level render target
+    // for this request (not include_once'd from inside another render
+    // like feature_tour_popup.ctp.php is), so a plain local assignment
+    // here is safe - no global-scope-across-include() gotcha.
+    $spTextSeoTools = (new Controller())->getLanguageTexts('seotools', $_SESSION['lang_code']);
+    $otherCronJobs = array(
+        array(
+            'label'    => $spTextSeoTools['site-auditor'] ?? 'Site Auditor',
+            'desc'     => $spTextPanel['Runs scheduled site audits'] ?? 'Runs scheduled site audits',
+            'script'   => 'siteauditorcron.php',
+            'schedule' => '*/15 * * * *',
+            'freq'     => $spTextPanel['Every 15 minutes'] ?? 'Every 15 minutes',
+            'note'     => $spTextPanel['Core feature - set this up on every install'] ?? 'Core feature - set this up on every install',
+        ),
+        array(
+            'label'    => $spTextPanel['Proxy Checker'] ?? 'Proxy Checker',
+            'desc'     => $spTextPanel['Verifies your configured proxies are still working'] ?? 'Verifies your configured proxies are still working',
+            'script'   => 'proxycheckercron.php',
+            'schedule' => '0 0,6 * * *',
+            'freq'     => $spTextPanel['Twice daily'] ?? 'Twice daily',
+            'note'     => $spTextPanel['Only needed if you use the Proxy Manager'] ?? 'Only needed if you use the Proxy Manager',
+        ),
+        array(
+            'label'    => $spTextSeoTools['directory-submission'] ?? 'Directory Submission',
+            'desc'     => $spTextPanel['Checks pending directory submission status'] ?? 'Checks pending directory submission status',
+            'script'   => 'directorycheckercron.php',
+            'schedule' => '0 0 * * *',
+            'freq'     => $spTextPanel['Daily at midnight'] ?? 'Daily at midnight',
+            'note'     => $spTextPanel['Only needed if you use Directory Manager / Article Submitter'] ?? 'Only needed if you use Directory Manager / Article Submitter',
+        ),
+    );
+    ?>
+    <div class="cron-card">
+        <div class="cron-card-title">
+            <i class="fas fa-list-check"></i>
+            <?php echo $spTextPanel['Other Available Cron Jobs'] ?? 'Other Available Cron Jobs'?>
+        </div>
+        <p style="color:#666; font-size:13px; margin-top:0;">
+            <?php echo $spTextPanel['The main cron job above covers rank checking, backlinks, and reports. These run separately:'] ?? 'The main cron job above covers rank checking, backlinks, and reports. These run separately:'?>
+        </p>
+        <?php foreach ($otherCronJobs as $job) { ?>
+        <div class="cron-info-item" style="margin-bottom: 15px; border-left-color:#667eea;">
+            <div class="cron-info-label"><?php echo htmlspecialchars($job['label']) ?></div>
+            <div class="cron-info-value" style="margin-bottom:8px;"><?php echo htmlspecialchars($job['desc']) ?></div>
+            <pre class="cron-command" style="font-size:12px; background:#1e1e1e; padding:10px 14px; border-radius:6px; color:#4ec9b0; margin:0 0 6px 0;"><?php echo htmlspecialchars($job['schedule'] . ' php ' . SP_ABSPATH . '/' . $job['script']) ?></pre>
+            <div style="font-size:12px; color:#888;">
+                <?php echo htmlspecialchars($job['freq']) ?> &middot; <em><?php echo htmlspecialchars($job['note']) ?></em>
+            </div>
+        </div>
+        <?php } ?>
+    </div>
+
     <div class="cron-card">
         <div class="cron-card-title">
             <i class="fas fa-calendar-alt"></i>
