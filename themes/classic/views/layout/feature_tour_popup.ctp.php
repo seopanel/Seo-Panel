@@ -40,9 +40,6 @@ function tourText($key, $default) {
         <div class="sp-wizard-header">
             <h4 class="sp-tour-header-row">
                 <span><i class="fas fa-compass" style="margin-right:8px;"></i><?php echo $spText['common']['Setup Tour'] ?? 'Setup Tour' ?></span>
-                <button type="button" class="sp-tour-refresh-btn" id="sp_tour_refresh_btn" onclick="window.featureTourRefreshConnections()" title="<?php echo htmlspecialchars(tourText('tour_refresh_tooltip', 'Just saved something in another tab? Refresh to update the connection badges below')) ?>">
-                    <i class="fas fa-sync-alt"></i> <?php echo tourText('tour_refresh', 'Refresh') ?>
-                </button>
             </h4>
             <div class="sp-wizard-steps" id="sp_tour_steps">
                 <?php for ($i = 1; $i <= 9; $i++) { ?>
@@ -95,23 +92,40 @@ function tourText($key, $default) {
             // app itself gates real functionality on (SettingsController::
             // isSpApiEnabled()/isDFSEnabled()/isLocalAIEnabled(), and the
             // matching credential settings for MOZ/Google/Mail/Proxy) -
-            // a cheap defined()/non-empty check, no live API calls.
-            $tourSpApiConnected = defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED;
-            $tourDfsConnected = defined('SP_DFS_API_LOGIN') && SP_DFS_API_LOGIN !== '' && defined('SP_DFS_API_PASSWORD') && SP_DFS_API_PASSWORD !== '';
+            // a cheap defined()/non-empty check, no live API calls, except
+            // seopanel_api (see __isSpApiConnected()'s own comment for why
+            // that one's the exception - this is the same live,
+            // once-a-day-cached value the Refresh button's AJAX endpoint
+            // returns, so the very first render already agrees with it
+            // instead of only catching up after a manual Refresh click).
+            $tourSpApiConnected = (new FeatureTourController())->__isSpApiConnected();
+            // DataForSEO and MOZ exist to answer the exact same "where do
+            // rank/SERP numbers come from" need the Seo Panel API step
+            // above already offers a free, zero-setup answer to (see its
+            // own body text) - so they're only genuinely Important when
+            // that easier path hasn't been taken; once it has, having
+            // your own DataForSEO/MOZ keys too is a nice-to-have, not a
+            // blocker, same as Local AI/Proxy already are.
+            $tourDfsMozImportant = !$tourSpApiConnected;
+            // Live checks (same methods the Refresh button's AJAX
+            // endpoint calls), not presence checks - see each
+            // __is*Connected() method's own comment in feature_tour.ctrl.php
+            // for why each one is safe/free to call on every render.
+            $tourDfsConnected = (new FeatureTourController())->__isDataForSeoConnected();
             // SP_MOZ_API_ACCESS_ID is a legacy field, hidden from the
             // settings UI (display=0) - a real user can never fill it in,
             // and MozController itself only ever reads SP_MOZ_API_SECRET
             // ("API Token" in the UI) for real API calls. Requiring both
             // meant this badge could never show Connected even with a
             // correctly saved token - confirmed live via a screenshot.
-            $tourMozConnected = defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '';
+            $tourMozConnected = (new FeatureTourController())->__isMozConnected();
             $tourGoogleConnected = defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '';
             // Not gated on SP_SMTP_MAIL ("Enable SMTP") - per the app's
             // author, mail is sometimes sent through an API-based
             // provider rather than that toggle, so a filled-in host is
             // enough to call this configured.
             $tourMailConnected = defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
-            $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
+            $tourLocalAiConnected = (new FeatureTourController())->__isLocalAiConnected();
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
             $tourCronConnected = (new FeatureTourController())->__isCronDetected();
 
@@ -134,16 +148,34 @@ function tourText($key, $default) {
             // Refresh button (see the <script> below) can find and update
             // just the connection half in place, without touching the
             // importance badge or re-rendering the row
-            function tourBadges($service, $isImportant, $isConnected = null, $connectedLabel = null, $pendingLabel = null) {
+            // $showImportance=false lets a caller put the Important/
+            // Optional badge somewhere else instead (Step 3 puts it next
+            // to the step heading itself, since that step has exactly
+            // one row - see tourImportanceBadge() called directly there).
+            function tourBadges($service, $isImportant, $isConnected = null, $connectedLabel = null, $pendingLabel = null, $showImportance = true) {
                 $connectedLabel = $connectedLabel ?? tourText('tour_connected', 'Connected');
                 $pendingLabel = $pendingLabel ?? tourText('tour_not_set_up', 'Not set up');
                 $html = '<span class="sp-tour-badges" data-service="' . $service . '">';
-                $html .= tourImportanceBadge($isImportant);
+                if ($showImportance) {
+                    $html .= tourImportanceBadge($isImportant);
+                }
                 if ($isConnected !== null) {
                     $html .= '<span class="sp-tour-connection-badge">' . tourConnectionBadgeHtml($isConnected, $connectedLabel, $pendingLabel) . '</span>';
                 }
                 $html .= '</span>';
                 return $html;
+            }
+            // Per-row refresh trigger - there's no single shared header
+            // button anymore (there used to be one), so every row with a
+            // live connection badge gets its own. Still a single global
+            // refresh under the hood (featureTourRefreshConnections()
+            // re-checks every service in one AJAX call and updates every
+            // .sp-tour-badges[data-service] on the page, not just this
+            // row's) - clicking any one of them updates all of them.
+            // preventDefault/stopPropagation so clicking it refreshes
+            // instead of following the row's own link.
+            function tourRefreshBtn() {
+                return '<button type="button" class="sp-tour-refresh-btn sp-tour-refresh-btn-inline" onclick="event.preventDefault(); event.stopPropagation(); window.featureTourRefreshConnections(this);" title="' . htmlspecialchars(tourText('tour_refresh_tooltip', 'Just saved something in another tab? Refresh to update the connection badges below')) . '"><i class="fas fa-sync-alt"></i></button>';
             }
 
             $tourUserId = isLoggedIn();
@@ -325,20 +357,21 @@ function tourText($key, $default) {
                  to login.php, so they get the live badge without a
                  broken link, same treatment as the Cron step below. -->
             <div class="sp-wizard-panel" id="sp_tpanel_3">
-                <h5><i class="fas fa-plug" style="margin-right:6px;"></i><?php echo tourText('tour_step3_heading', 'Seo Panel API') ?></h5>
+                <h5><i class="fas fa-plug" style="margin-right:6px;"></i><?php echo tourText('tour_step3_heading', 'Seo Panel API') ?> <?php echo tourImportanceBadge(true) ?></h5>
                 <p><?php echo tourText('tour_step3_body', 'The fastest way to get real rank and SERP data flowing without hunting down your own DataForSEO or MOZ keys - free to register, no credit card.') ?></p>
                 <?php if (isAdmin()) { ?>
                     <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=seopanel_api') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                         <span class="sp-tour-link-icon"><i class="fas fa-plug"></i></span>
                         <span class="sp-tour-link-text"><strong><?php echo tourText('tour_seopanel_api_label', 'Seo Panel API') ?></strong><small><?php echo tourText('tour_seopanel_api_desc', 'Rank tracking and SERP data, ready in a couple of minutes') ?></small></span>
-                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
+                        <?php echo tourRefreshBtn() ?>
+                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected, null, null, false) ?>
                         <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                     </a>
                 <?php } else { ?>
                     <div class="sp-wizard-info-box">
                         <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
                         <?php echo tourText('tour_admin_only_spapi', 'This is an account-wide setting, so only an admin on your account can register it. Current status:') ?>
-                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected) ?>
+                        <?php echo tourBadges('seopanel_api', true, $tourSpApiConnected, null, null, false) ?>
                     </div>
                 <?php } ?>
             </div>
@@ -355,44 +388,70 @@ function tourText($key, $default) {
                     <div class="sp-tour-link-list">
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-sliders-h"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['System Settings'] ?? 'System Settings' ?></strong><small><?php echo tourText('tour_system_desc', 'Language, timezone, pagination, and other app-wide defaults') ?></small></span>
-                            <?php echo tourBadges('system', false) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['System Settings'] ?? 'System Settings' ?></strong><?php echo tourImportanceBadge(false) ?></span>
+                                <small><?php echo tourText('tour_system_desc', 'Language, timezone, pagination, and other app-wide defaults') ?></small>
+                            </span>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=dataforseo') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-database"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['DataForSEO Settings'] ?? 'DataForSEO Settings' ?></strong><small><?php echo tourText('tour_dfs_desc', 'The data provider behind rank checking and SERP data') ?></small></span>
-                            <?php echo tourBadges('dataforseo', true, $tourDfsConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['DataForSEO Settings'] ?? 'DataForSEO Settings' ?></strong><?php echo tourImportanceBadge($tourDfsMozImportant) ?></span>
+                                <small><?php echo tourText('tour_dfs_desc', 'The data provider behind rank checking and SERP data') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('dataforseo', $tourDfsMozImportant, $tourDfsConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=moz') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-chart-bar"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['MOZ Settings'] ?? 'MOZ Settings' ?></strong><small><?php echo tourText('tour_moz_desc', 'Domain Authority, Page Authority, and Spam Score') ?></small></span>
-                            <?php echo tourBadges('moz', true, $tourMozConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['MOZ Settings'] ?? 'MOZ Settings' ?></strong><?php echo tourImportanceBadge($tourDfsMozImportant) ?></span>
+                                <small><?php echo tourText('tour_moz_desc', 'Domain Authority, Page Authority, and Spam Score') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('moz', $tourDfsMozImportant, $tourMozConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=google') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fab fa-google"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Google Settings'] ?? 'Google Settings' ?></strong><small><?php echo tourText('tour_google_desc', 'Connect Analytics and Search Console') ?></small></span>
-                            <?php echo tourBadges('google', true, $tourGoogleConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['Google Settings'] ?? 'Google Settings' ?></strong><?php echo tourImportanceBadge(true) ?></span>
+                                <small><?php echo tourText('tour_google_desc', 'Connect Analytics and Search Console') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('google', true, $tourGoogleConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=mail') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-envelope"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Mail Settings'] ?? 'Mail Settings' ?></strong><small><?php echo tourText('tour_mail_desc', 'Scheduled reports, password resets, and registration emails all go through here') ?></small></span>
-                            <?php echo tourBadges('mail', true, $tourMailConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['Mail Settings'] ?? 'Mail Settings' ?></strong><?php echo tourImportanceBadge(true) ?></span>
+                                <small><?php echo tourText('tour_mail_desc', 'Scheduled reports, password resets, and registration emails all go through here') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('mail', true, $tourMailConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?category=local_ai') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-brain"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Local AI Settings'] ?? 'Local AI Settings' ?></strong><small><?php echo tourText('tour_localai_desc', 'Point AI-powered features at your own Ollama server') ?></small></span>
-                            <?php echo tourBadges('local_ai', false, $tourLocalAiConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['Local AI Settings'] ?? 'Local AI Settings' ?></strong><?php echo tourImportanceBadge(false) ?></span>
+                                <small><?php echo tourText('tour_localai_desc', 'Point AI-powered features at your own Ollama server') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('local_ai', false, $tourLocalAiConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('settings.php?sec=proxysettings') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-network-wired"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Proxy Settings'] ?? 'Proxy Settings' ?></strong><small><?php echo tourText('tour_proxy_desc', 'Proxies used for crawling and directory submission') ?></small></span>
-                            <?php echo tourBadges('proxy', false, $tourProxyConnected) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['Proxy Settings'] ?? 'Proxy Settings' ?></strong><?php echo tourImportanceBadge(false) ?></span>
+                                <small><?php echo tourText('tour_proxy_desc', 'Proxies used for crawling and directory submission') ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('proxy', false, $tourProxyConnected, null, null, false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                     </div>
@@ -437,16 +496,40 @@ function tourText($key, $default) {
                     <div class="sp-tour-link-list">
                         <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('cron.php?sec=croncommand', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-terminal"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo $spTextPanel['Cron Command'] ?? 'Cron Command' ?></strong><small><?php echo tourText('tour_cron_desc', "The exact command to add to your server's crontab") ?></small></span>
-                            <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet')) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo $spTextPanel['Cron Command'] ?? 'Cron Command' ?></strong><?php echo tourImportanceBadge(true) ?></span>
+                                <small><?php echo tourText('tour_cron_desc', "The exact command to add to your server's crontab") ?></small>
+                            </span>
+                            <?php echo tourRefreshBtn() ?>
+                            <?php echo tourBadges('cron', true, $tourCronConnected, tourText('tour_detected', 'Detected'), tourText('tour_not_detected', 'Not detected yet'), false) ?>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <a class="sp-tour-link-row" href="<?php echo $tourSaCronLink ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-tasks"></i></span>
-                            <span class="sp-tour-link-text"><strong><?php echo sprintf(tourText('tour_sa_cron_title', '%s Cron Command'), $spTextSeoTools['site-auditor'] ?? 'Site Auditor') ?></strong><small><?php echo tourText('tour_sa_cron_desc', 'A separate command for scheduled site audits') ?></small></span>
-                            <?php echo tourBadges('siteauditor_cron', true) ?>
+                            <span class="sp-tour-link-text">
+                                <span class="sp-tour-link-title-row"><strong><?php echo sprintf(tourText('tour_sa_cron_title', '%s Cron Command'), $spTextSeoTools['site-auditor'] ?? 'Site Auditor') ?></strong><?php echo tourImportanceBadge(true) ?></span>
+                                <small><?php echo tourText('tour_sa_cron_desc', 'A separate command for scheduled site audits') ?></small>
+                            </span>
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
+                    </div>
+                    <?php
+                    // "Test Now" - unlike every other badge in this tour,
+                    // there's no API key or account to check for cron:
+                    // it's an OS-level crontab entry outside the app's
+                    // control, invisible from inside a PHP request. The
+                    // Detected badge above only ever reflects a PAST run
+                    // that already happened on its own - this is the one
+                    // place in the whole tour that can actually trigger a
+                    // real one right now instead of just waiting for the
+                    // server's own schedule (or re-checking a status that
+                    // hasn't changed yet). See
+                    // FeatureTourController::testCronNow().
+                    ?>
+                    <div class="sp-tour-form-hint" id="tour_cron_test_hint">
+                        <?php echo tourText('tour_cron_test_label', "Not sure it's actually working?") ?>
+                        <a href="javascript:void(0);" id="tour_cron_test_link" onclick="window.featureTourTestCronNow()"><?php echo tourText('tour_test_cron_link', 'Test cron now') ?></a>
+                        <span id="tour_cron_test_result"></span>
                     </div>
                     <?php
                     // Resumable job queue needs no mention here - it's on by
@@ -594,6 +677,11 @@ function tourText($key, $default) {
         reviewNotAdded: <?php echo json_encode(tourText('tour_review_not_added', 'Review link')) ?>,
         notAddedSuffix: <?php echo json_encode(tourText('tour_not_added_suffix', 'not added: %s')) ?>,
         genericError: <?php echo json_encode(tourText('tour_generic_error', 'Something went wrong. Please try again.')) ?>,
+        testCronLink: <?php echo json_encode(tourText('tour_test_cron_link', 'Test cron now')) ?>,
+        testingCron: <?php echo json_encode(tourText('tour_testing_cron', 'Running a real test pass - this can take up to 20 seconds...')) ?>,
+        cronTestBusy: <?php echo json_encode(tourText('tour_cron_test_busy', 'A cron run is already in progress - try again shortly.')) ?>,
+        cronTestDone: <?php echo json_encode(tourText('tour_cron_test_done', 'Test run completed - see the status above.')) ?>,
+        refreshChecked: <?php echo json_encode(tourText('tour_refresh_checked', 'Checked latest status')) ?>,
         reviewHintDynamic: <?php echo json_encode(tourText('tour_review_hint_dynamic', 'The URL must contain "%s" (e.g. a %s link should include that word).')) ?>,
         addWebsiteHeading: <?php echo json_encode(tourText('tour_step2_heading', 'Add Your First Website')) ?>
     };
@@ -782,8 +870,59 @@ function tourText($key, $default) {
     // sp-load.php, so nothing here is cached) and updates just the
     // connection half of each badge in place, leaving the Important/
     // Optional badge and the rest of the row untouched.
-    window.featureTourRefreshConnections = function() {
-        var $btn = $('#sp_tour_refresh_btn');
+    // shared by both the Refresh buttons and Test Now below, so a
+    // badge updates the exact same way regardless of which one changed it
+    function _tourUpdateConnectionBadge(service, isConnected) {
+        var $slot = $('.sp-tour-badges[data-service="' + service + '"] .sp-tour-connection-badge');
+        if (!$slot.length) return;
+        var connectedLabel = (service === 'cron') ? TOUR_I18N.detected : TOUR_I18N.connected;
+        var pendingLabel = (service === 'cron') ? TOUR_I18N.notDetected : TOUR_I18N.notSetUp;
+        $slot.html(isConnected
+            ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' + connectedLabel + '</span>'
+            : '<span class="sp-tour-badge sp-tour-badge-pending">' + pendingLabel + '</span>');
+    }
+
+    // "Checked latest status" confirmation on its own line right below
+    // the row the clicked button belongs to (same plain-text pattern as
+    // the Cron step's "Test cron now" result, not a floating tooltip) -
+    // fades in, sits for 10 seconds, fades out and removes itself. A
+    // fresh click on the SAME row clears any pending hide from a
+    // previous one rather than letting that old timer remove the new
+    // message early.
+    function _tourShowRefreshResult(triggerEl, message) {
+        if (!triggerEl) return;
+        var $row = $(triggerEl).closest('.sp-tour-link-row');
+        if (!$row.length) return;
+        var $existing = $row.next('.sp-tour-refresh-result-row');
+        if ($existing.length) {
+            clearTimeout($existing.data('sp-tour-hide-timeout'));
+            $existing.remove();
+        }
+        var $msg = $('<div class="sp-tour-refresh-result-row"></div>').text(message);
+        $row.after($msg);
+        // triggers the opacity/max-height transition on the NEXT tick,
+        // rather than starting already-visible with no fade-in
+        setTimeout(function() { $msg.addClass('sp-tour-refresh-result-show'); }, 10);
+        var hideTimeout = setTimeout(function() {
+            $msg.removeClass('sp-tour-refresh-result-show');
+            setTimeout(function() { $msg.remove(); }, 300);
+        }, 10000);
+        $msg.data('sp-tour-hide-timeout', hideTimeout);
+    }
+
+    window.featureTourRefreshConnections = function(triggerEl) {
+        // There's no single shared header button anymore - every row
+        // with a live connection badge has its own (tourRefreshBtn()),
+        // and this targets all of them at once by class, not an id -
+        // .hasClass()/.addClass()/.removeClass() on a multi-element
+        // jQuery set apply to the whole set, so every button spins
+        // together and the "already refreshing" guard below still only
+        // needs to check one of them. triggerEl (the specific button
+        // actually clicked, passed by tourRefreshBtn()'s onclick) is
+        // only used for where to show the confirmation message - every
+        // button's badges still get updated regardless of which one
+        // was clicked.
+        var $btn = $('.sp-tour-refresh-btn');
         if ($btn.hasClass('sp-tour-refreshing')) return;
         $btn.addClass('sp-tour-refreshing');
         $.ajax({
@@ -793,17 +932,51 @@ function tourText($key, $default) {
             dataType: 'json',
             success: function(status) {
                 $.each(status, function(service, isConnected) {
-                    var $slot = $('.sp-tour-badges[data-service="' + service + '"] .sp-tour-connection-badge');
-                    if (!$slot.length) return;
-                    var connectedLabel = (service === 'cron') ? TOUR_I18N.detected : TOUR_I18N.connected;
-                    var pendingLabel = (service === 'cron') ? TOUR_I18N.notDetected : TOUR_I18N.notSetUp;
-                    $slot.html(isConnected
-                        ? '<span class="sp-tour-badge sp-tour-badge-connected"><i class="fas fa-check-circle"></i> ' + connectedLabel + '</span>'
-                        : '<span class="sp-tour-badge sp-tour-badge-pending">' + pendingLabel + '</span>');
+                    _tourUpdateConnectionBadge(service, isConnected);
                 });
+                _tourShowRefreshResult(triggerEl, TOUR_I18N.refreshChecked);
             },
             complete: function() {
                 $btn.removeClass('sp-tour-refreshing');
+            }
+        });
+    };
+
+    // Actually RUNS cron.php's own logic once, right now (budget-limited,
+    // same lock/deadline mechanism the real ping trigger uses - see
+    // FeatureTourController::testCronNow()) - unlike every refresh button
+    // above, which only re-checks a status that was already whatever it
+    // already was. Can take up to ~20 seconds (SP_JOB_QUEUE_BUDGET_SECONDS),
+    // so this gets its own loading state rather than reusing the quick
+    // spin-icon pattern the sub-second refresh buttons use.
+    window.featureTourTestCronNow = function() {
+        var $link = $('#tour_cron_test_link');
+        var $result = $('#tour_cron_test_result');
+        if ($link.hasClass('sp-tour-testing')) return;
+        $link.addClass('sp-tour-testing');
+        var originalText = $link.text();
+        $link.text(TOUR_I18N.testingCron);
+        $result.text('').css('color', '');
+        $.ajax({
+            url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
+            type: 'POST',
+            data: { sec: 'test_cron_now' },
+            dataType: 'json',
+            timeout: 35000,
+            success: function(res) {
+                if (res.status === 'busy') {
+                    $result.text(TOUR_I18N.cronTestBusy).css('color', '#c98a13');
+                    return;
+                }
+                _tourUpdateConnectionBadge('cron', !!res.detected);
+                $result.text(TOUR_I18N.cronTestDone).css('color', '#1f9d55');
+            },
+            error: function() {
+                $result.text(TOUR_I18N.genericError).css('color', '#c0392b');
+            },
+            complete: function() {
+                $link.removeClass('sp-tour-testing');
+                $link.text(originalText);
             }
         });
     };

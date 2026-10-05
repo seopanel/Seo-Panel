@@ -2026,10 +2026,26 @@ class CronController extends Controller {
 		if (empty(SP_CRON_PING_ENABLED)) {
 			return;
 		}
+		$this->runManualTrigger($triggerSource);
+	}
 
+	/*
+	 * The actual budget-limited run both runPingTrigger() (gated behind
+	 * SP_CRON_PING_ENABLED - an opportunistic background poke, off by
+	 * default) and FeatureTourController's "Test Now" button (an
+	 * explicit, one-off admin click, ungated - the whole point is
+	 * answering "does cron.php actually work on this server" before the
+	 * admin has set anything up yet, ping trigger included) share.
+	 * $triggerSource is how they're told apart afterwards in
+	 * cron_run_log ('tour-test' for the latter).
+	 */
+	function runManualTrigger($triggerSource) {
 		if (!$this->acquireSchedulerLock()) {
-			// another run (cli or ping) already holds the lock - normal, not an error
-			return;
+			// another run (cli or ping) already holds the lock - normal,
+			// not an error. Returns false so a caller like the tour's
+			// "Test Now" button can tell this apart from an actual run
+			// and say so, instead of claiming success it didn't get.
+			return false;
 		}
 
 		// this is a public, secret-gated, server-to-server endpoint (see
@@ -2125,6 +2141,7 @@ class CronController extends Controller {
 		ob_end_clean();
 		$this->finishRunLog('completed');
 		$this->releaseSchedulerLock();
+		return true;
 	}
 
 	/*

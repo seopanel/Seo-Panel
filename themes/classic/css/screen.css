@@ -3481,6 +3481,11 @@ a.btn, a.btn:hover {
     font-size: 13.5px;
     color: #1a1a2e;
 }
+.sp-tour-link-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 .sp-tour-link-text small {
     font-size: 11.5px;
     color: #7a7f8c;
@@ -3623,6 +3628,39 @@ a.btn, a.btn:hover {
 @keyframes sp-tour-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+/* Inline variant - same button, same featureTourRefreshConnections()
+   trigger and the same .sp-tour-refreshing spin above, just recolored
+   for sitting inside a light sp-tour-link-row instead of the blue
+   header (the white-on-translucent default would be invisible there). */
+.sp-tour-refresh-btn-inline {
+    background: #eef2fb;
+    border: 1px solid #d3def5;
+    color: #1a73e8;
+}
+.sp-tour-refresh-btn-inline:hover {
+    background: #dde8fb;
+    border-color: #b7cbf2;
+}
+/* A new line right below the row the clicked refresh button belongs to
+   (inserted as that row's next sibling in the DOM - same plain-text
+   pattern as the Cron step's "Test cron now" result, not a floating
+   tooltip). padding-left lines it up under the row's title text, past
+   the icon column. Faded in on arrival, faded out and removed by its
+   own setTimeout in featureTourRefreshConnections(). */
+.sp-tour-refresh-result-row {
+    font-size: 11px;
+    color: #1f9d55;
+    font-weight: 600;
+    padding: 2px 0 0 44px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.25s ease;
+}
+.sp-tour-refresh-result-row.sp-tour-refresh-result-show {
+    opacity: 1;
+    max-height: 20px;
 }
 
 /* === Safe-area insets (notch / Dynamic Island / status bar / home

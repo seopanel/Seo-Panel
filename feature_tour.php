@@ -30,6 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         case 'create_website_setup':
             $controller->createWebsiteSetup($_POST);
             break;
+        case 'test_cron_now':
+            $controller->testCronNow();
+            break;
     }
 } else {
     // read-only status check - no state change, so GET is fine here
