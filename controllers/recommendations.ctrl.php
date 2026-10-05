@@ -1032,7 +1032,14 @@ class RecommendationsController extends Controller {
         $now = date('Y-m-d H:i:s');
 
         foreach ($sources as $s) {
-            $source = $s['source'];
+            // source is an ENUM('google','yahoo','bing','baidu','yandex')
+            // at the schema level, so this can never actually carry a
+            // quote today - addslashes() anyway, matching how the one
+            // existing writer of this same column
+            // (WebmasterController::insertWebsiteAnalytics()) already
+            // treats it, rather than relying on the enum constraint
+            // holding forever (confirmed via a dedicated review pass).
+            $source = addslashes($s['source']);
             $recent = $this->db->select(
                 "SELECT SUM(clicks) AS clicks, SUM(impressions) AS impressions FROM website_search_analytics
                  WHERE website_id=$websiteId AND source='$source' AND report_date >= '$recentCutoff'", true
@@ -1194,21 +1201,25 @@ class RecommendationsController extends Controller {
      * install won't have enough history yet).
      */
     private function __generateCronReliabilityRecommendations($websiteId, $userId) {
-        $rows = $this->db->select(
-            "SELECT url_section, status, error_message FROM cron_job_timing
-             WHERE website_id=$websiteId ORDER BY started_at DESC LIMIT 200"
-        );
-        if (empty($rows)) return;
-
-        $bySection = array();
-        foreach ($rows as $r) {
-            $section = $r['url_section'];
-            if (!isset($bySection[$section])) $bySection[$section] = array();
-            if (count($bySection[$section]) < 5) $bySection[$section][] = $r;
-        }
+        $sections = $this->db->select("SELECT DISTINCT url_section FROM cron_job_timing WHERE website_id=$websiteId");
+        if (empty($sections)) return;
 
         $now = date('Y-m-d H:i:s');
-        foreach ($bySection as $section => $runs) {
+        foreach ($sections as $s) {
+            $section = addslashes($s['url_section']);
+            // one query per section, not a single global LIMIT 200 then
+            // group-in-PHP as this started out - a high-frequency section
+            // (e.g. keyword-position-checker, run many times per cron
+            // pass via the chunked job queue) could fill that whole
+            // window and crowd a low-frequency section's own last-5-runs
+            // out of it entirely, silently hiding a genuinely failing
+            // rare tool (confirmed via a dedicated review pass). Realistic
+            // section counts are small (~10), so this stays cheap.
+            $runs = $this->db->select(
+                "SELECT status, error_message FROM cron_job_timing
+                 WHERE website_id=$websiteId AND url_section='$section'
+                 ORDER BY started_at DESC LIMIT 5"
+            );
             if (count($runs) < 5) continue;
 
             $failures = 0;
