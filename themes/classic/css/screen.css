@@ -3645,14 +3645,15 @@ a.btn, a.btn:hover {
 /* A new line right below the row the clicked refresh button belongs to
    (inserted as that row's next sibling in the DOM - same plain-text
    pattern as the Cron step's "Test cron now" result, not a floating
-   tooltip). padding-left lines it up under the row's title text, past
-   the icon column. Faded in on arrival, faded out and removed by its
-   own setTimeout in featureTourRefreshConnections(). */
+   tooltip). Right-aligned, under the refresh button/badges side of the
+   row rather than the title. Faded in on arrival, faded out and
+   removed by its own setTimeout in featureTourRefreshConnections(). */
 .sp-tour-refresh-result-row {
     font-size: 11px;
     color: #1f9d55;
     font-weight: 600;
-    padding: 2px 0 0 44px;
+    text-align: right;
+    padding: 2px 0 0 0;
     opacity: 0;
     max-height: 0;
     overflow: hidden;

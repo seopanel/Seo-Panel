@@ -108,7 +108,29 @@ function tourText($key, $default) {
             // automatically, the moment the tour modal actually opens -
             // same real data, just paid for only when it's actually
             // needed instead of on every page view.
-            $tourSpApiConnected = defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED;
+            //
+            // seopanel_api is the one exception to "presence check only"
+            // above - SP_SPAPI_REGISTERED just means registration
+            // happened AT SOME POINT, not that it still works today (a
+            // registered-but-now-broken account stays SP_SPAPI_REGISTERED
+            // forever) - confirmed live: with spAPI genuinely NOT working,
+            // this still showed Connected and, worse, marked DataForSEO/
+            // MOZ Optional (they're only Important when spAPI ISN'T
+            // covering that need - see $tourDfsMozImportant below) purely
+            // because registration had happened once. Reading the cached
+            // check result instead - a plain DB read via
+            // __getTodayInformation(), not the live call
+            // __isSpApiConnected() wraps around it - is still free of the
+            // network cost this whole comment block exists to avoid,
+            // while actually reflecting today's real status: the cache
+            // is populated by the first thing that runs the real check
+            // each day (an admin page view via updateSpApiAlerts(), or
+            // the tour itself opening), so it's usually warm by the time
+            // this renders, and correctly defaults to "not connected"
+            // rather than "trust it forever" on the rare cold-cache miss.
+            include_once(SP_CTRLPATH . "/information.ctrl.php");
+            $tourSpApiCacheInfo = (new InformationController())->__getTodayInformation('spapi_check');
+            $tourSpApiConnected = !empty($tourSpApiCacheInfo) && $tourSpApiCacheInfo['page'] === 'ok';
             // DataForSEO and MOZ exist to answer the exact same "where do
             // rank/SERP numbers come from" need the Seo Panel API step
             // above already offers a free, zero-setup answer to (see its
