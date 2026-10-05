@@ -741,6 +741,7 @@ class RecommendationsController extends Controller {
                     "On {$f['prev_date']} your site was mentioned when {$providerLabel} was asked this question. " .
                     "As of {$f['latest_date']}, it's no longer mentioned."
                 );
+                $rule = "ai_perception:{$f['prompt_id']}:{$f['provider']}:mention_lost";
             } else {
                 $type  = 'warning';
                 $title = addslashes("{$providerLabel}'s sentiment turned negative for \"{$promptText}\"");
@@ -748,7 +749,16 @@ class RecommendationsController extends Controller {
                     "{$providerLabel}'s answer to this question turned negative between {$f['prev_date']} and " .
                     "{$f['latest_date']}. Open the AI Perception check to review the response."
                 );
+                $rule = "ai_perception:{$f['prompt_id']}:{$f['provider']}:sentiment_negative";
             }
+            // 'rule' keyed by (prompt_id, provider, which condition fired) -
+            // stable across refreshes even as prev_date/latest_date/title
+            // shift day to day, unlike __recommendationIdentity()'s other
+            // fallback (title) would be. Without this, every daily refresh
+            // mints a "new" row for the same ongoing issue (confirmed via
+            // a dedicated review pass) and re-triggers the daily digest
+            // email every day instead of just once.
+            $f['rule'] = $rule;
             $meta = addslashes(json_encode($f));
 
             $this->db->query(
@@ -808,6 +818,11 @@ class RecommendationsController extends Controller {
                 "For the prompt \"{$promptText}\", {$providerLabel} mentioned {$competitorName} but not you, " .
                 "as of {$r['checked_date']}."
             );
+            // stable identity independent of checked_date, which changes
+            // every refresh - see the matching comment in
+            // __generateAiPerceptionDropRecommendations() for why this
+            // matters (anti-spam diffing, not just dedup on this one run).
+            $r['rule'] = "ai_perception_competitor:{$r['prompt_id']}:{$r['provider']}:{$r['competitor_id']}";
             $meta = addslashes(json_encode($r));
 
             $this->db->query(
@@ -866,6 +881,7 @@ class RecommendationsController extends Controller {
             "now at {$latestCount} as of {$latest['result_date']}. Review recently lost or removed backlinks."
         );
         $meta = addslashes(json_encode(array(
+            'rule' => 'backlink_drop',
             'baseline_count' => $baselineCount, 'latest_count' => $latestCount,
             'baseline_date'  => $baseline['result_date'], 'latest_date' => $latest['result_date'],
             'drop_pct'       => $dropPct,
@@ -928,6 +944,7 @@ class RecommendationsController extends Controller {
                 "({$baseline['report_date']} to {$latest['report_date']}). New negative reviews may need a response."
             );
             $meta = addslashes(json_encode(array(
+                'rule' => "review_drop:{$link['id']}",
                 'link_id' => $link['id'], 'baseline_rating' => $baselineRating, 'latest_rating' => $latestRating,
                 'baseline_date' => $baseline['report_date'], 'latest_date' => $latest['report_date'],
             )));
@@ -964,7 +981,12 @@ class RecommendationsController extends Controller {
         if (empty($recent) || empty($prior)) return;
 
         $priorSessions = intval($prior['sessions']);
-        if ($priorSessions < 10) return; // too little traffic for a % comparison to mean anything
+        // week-to-week traffic naturally swings 20%+ on a low-traffic
+        // site from weekday/weekend mix or one lost referral source
+        // alone - a floor of 10 sessions/week was too low to filter that
+        // noise out (confirmed via a dedicated review pass), so this is
+        // meaningfully higher than the other generators' sample floors.
+        if ($priorSessions < 50) return;
 
         $recentSessions = intval($recent['sessions']);
         $dropPct = round((($priorSessions - $recentSessions) / $priorSessions) * 100, 1);
@@ -980,6 +1002,7 @@ class RecommendationsController extends Controller {
             ($priorGoals > 0 ? ", with goal completions down from {$priorGoals} to {$recentGoals}" : "") . "."
         );
         $meta = addslashes(json_encode(array(
+            'rule' => 'ga_sessions_drop',
             'recent_sessions' => $recentSessions, 'prior_sessions' => $priorSessions,
             'recent_goals' => $recentGoals, 'prior_goals' => $priorGoals, 'drop_pct' => $dropPct,
         )));
@@ -1021,7 +1044,10 @@ class RecommendationsController extends Controller {
             if (empty($recent) || empty($prior)) continue;
 
             $priorImpressions = intval($prior['impressions']);
-            if ($priorImpressions < 50) continue;
+            // same noise concern as __generateAnalyticsDropRecommendations()'s
+            // sessions floor - 50 impressions/week is still thin, bumped
+            // to 200 so a 20% swing means something.
+            if ($priorImpressions < 200) continue;
 
             $recentImpressions = intval($recent['impressions']);
             $dropPct = round((($priorImpressions - $recentImpressions) / $priorImpressions) * 100, 1);
@@ -1034,6 +1060,7 @@ class RecommendationsController extends Controller {
                 "7 days compared to the week before. This can signal a ranking drop, a de-indexing issue, or reduced search interest."
             );
             $meta = addslashes(json_encode(array(
+                'rule' => "search_console_drop:{$source}",
                 'source' => $source, 'recent_impressions' => $recentImpressions,
                 'prior_impressions' => $priorImpressions, 'drop_pct' => $dropPct,
             )));
@@ -1084,6 +1111,7 @@ class RecommendationsController extends Controller {
                 "{$latest['result_date']}). Check Core Web Vitals in the PageSpeed Insights tool for details."
             );
             $meta = addslashes(json_encode(array(
+                'rule' => "pagespeed_regression:{$c['field']}",
                 'metric' => $c['field'], 'prev_score' => $prevScore, 'latest_score' => $latestScore,
                 'prev_date' => $prev['result_date'], 'latest_date' => $latest['result_date'],
             )));
@@ -1143,6 +1171,7 @@ class RecommendationsController extends Controller {
                 "now at {$latestFollowers} as of {$latest['report_date']}."
             );
             $meta = addslashes(json_encode(array(
+                'rule' => "social_follower_drop:{$link['id']}",
                 'link_id' => $link['id'], 'platform' => $link['type'],
                 'baseline_followers' => $baselineFollowers, 'latest_followers' => $latestFollowers, 'lost' => $lost,
             )));
@@ -1198,7 +1227,7 @@ class RecommendationsController extends Controller {
                 "This tool's scheduled runs are failing repeatedly" . (!empty($lastError) ? ". Last error: {$lastError}" : "") .
                 ". Its data may be stale until this is fixed."
             );
-            $meta = addslashes(json_encode(array('url_section' => $section, 'failures' => $failures, 'last_error' => $lastError)));
+            $meta = addslashes(json_encode(array('rule' => "cron_reliability:{$section}", 'url_section' => $section, 'failures' => $failures, 'last_error' => $lastError)));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
@@ -1236,7 +1265,7 @@ class RecommendationsController extends Controller {
                 (!empty($r['last_error']) ? ". Last error: {$r['last_error']}" : "") .
                 ". This part of the data will remain incomplete until resolved."
             );
-            $meta = addslashes(json_encode(array('url_section' => $r['url_section'], 'count' => $count, 'last_error' => $r['last_error'])));
+            $meta = addslashes(json_encode(array('rule' => "job_queue_failure:{$r['url_section']}", 'url_section' => $r['url_section'], 'count' => $count, 'last_error' => $r['last_error'])));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
@@ -1274,7 +1303,7 @@ class RecommendationsController extends Controller {
         $now = date('Y-m-d H:i:s');
         $title = addslashes("{$inactive} of your {$total} directory submissions are no longer active");
         $desc  = addslashes("These backlinks may have been lost. Consider re-submitting or replacing them with active directories.");
-        $meta  = addslashes(json_encode(array('total' => $total, 'inactive' => $inactive, 'pct' => $pct)));
+        $meta  = addslashes(json_encode(array('rule' => 'directory_decay', 'total' => $total, 'inactive' => $inactive, 'pct' => $pct)));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
@@ -1367,6 +1396,7 @@ class RecommendationsController extends Controller {
                 "but {$rankClause}. Worth targeting with dedicated content."
             );
         }
+        $bestCandidate['rule'] = "keyword_opportunity:{$bestCandidate['keyword_id']}";
         $meta = addslashes(json_encode($bestCandidate));
 
         $now = date('Y-m-d H:i:s');
@@ -1417,7 +1447,7 @@ class RecommendationsController extends Controller {
             "({$issueTitles}" . ($issueCount > 3 ? ', ...' : '') . "). Technical issues can suppress rankings even when " .
             "content hasn't changed - worth checking whether these are connected."
         );
-        $meta = addslashes(json_encode(array('rank_drop_count' => $rankDropN, 'auditor_issue_count' => $issueCount)));
+        $meta = addslashes(json_encode(array('rule' => 'cross_tool', 'rank_drop_count' => $rankDropN, 'auditor_issue_count' => $issueCount)));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
