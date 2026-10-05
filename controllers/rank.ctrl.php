@@ -83,10 +83,17 @@ class RankController extends Controller{
 			$urlList[] = addHttpToUrl($websiteInfo['url']);
 		}
 		
-		// get moz ranks
+		// get moz ranks. $returnLog=true - a failed call must be told
+		// apart from a genuine 0, so the backlink save below can be
+		// skipped on failure instead of writing a false 0 to
+		// backlinkresults (same root cause and fix as
+		// BacklinkController::generateReports(), confirmed live as the
+		// actual cause of previously-active sites' backlink counts
+		// dropping to a flat, implausible 0 - not a real loss).
 		$mozCtrler = new MozController();
-		$mozRankList = $mozCtrler->__getMozRankInfo($urlList);
-				
+		list($mozRankList, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo($urlList, true);
+		$mozOk = !empty($mozCrawlInfo['crawl_status']);
+
 		// loop through each websites
 		foreach ( $websiteList as $i => $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
@@ -94,14 +101,19 @@ class RankController extends Controller{
 			$websiteInfo['domain_authority'] = !empty($mozRankList[$i]['domain_authority']) ? $mozRankList[$i]['domain_authority'] : 0;
 			$websiteInfo['page_authority'] = !empty($mozRankList[$i]['page_authority']) ? $mozRankList[$i]['page_authority'] : 0;
 
-			$this->saveRankResults($websiteInfo, true);			
+			$this->saveRankResults($websiteInfo, true);
 			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
 
-			// Also save backlink data from Moz API
-			$backlinkCtrler = New BacklinkController();
-			$websiteInfo['external_pages_to_page'] = !empty($mozRankList[$i]['external_pages_to_page']) ? $mozRankList[$i]['external_pages_to_page'] : 0;
-			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankList[$i]['external_pages_to_root_domain']) ? $mozRankList[$i]['external_pages_to_root_domain'] : 0;
-			$backlinkCtrler->saveRankResults($websiteInfo, true);
+			// Also save backlink data from Moz API - only if the call
+			// actually succeeded.
+			if ($mozOk) {
+				$backlinkCtrler = New BacklinkController();
+				$websiteInfo['external_pages_to_page'] = !empty($mozRankList[$i]['external_pages_to_page']) ? $mozRankList[$i]['external_pages_to_page'] : 0;
+				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankList[$i]['external_pages_to_root_domain']) ? $mozRankList[$i]['external_pages_to_root_domain'] : 0;
+				$backlinkCtrler->saveRankResults($websiteInfo, true);
+			} else {
+				echo "<p class='note error'>Moz API call failed - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
+			}
 		}
 	}
 	

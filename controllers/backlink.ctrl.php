@@ -116,16 +116,31 @@ class BacklinkController extends Controller{
 		foreach ( $websiteList as $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 
-			// Get all Moz data in one API call
+			// Get all Moz data in one API call. $returnLog=true so a
+			// failed call (bad token, rate limit, network error) can be
+			// told apart from a genuine 0 - without it, __getMozRankInfo()
+			// returns an empty array on EITHER outcome, and the old code
+			// below wrote 0 to backlinkresults either way. Confirmed live:
+			// this is why previously-active sites' backlink counts could
+			// drop to a flat, implausible 0 - not a real loss, a silently
+			// swallowed API failure (see AI Insights' own "latest value
+			// is suspiciously 0" guards, added as a downstream workaround
+			// for this same root cause before it was traced here).
 			include_once(SP_CTRLPATH."/moz.ctrl.php");
 			$mozCtrler = new MozController();
-			$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+			list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
-			// Extract backlink data
-			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
-			$this->saveRankResults($websiteInfo, true);
-			echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
+			// Extract backlink data - only trust it, and only save a row
+			// at all, if the call actually succeeded.
+			if ($mozOk) {
+				$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+				$this->saveRankResults($websiteInfo, true);
+				echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
+			} else {
+				echo "<p class='note error'>".($mozCrawlInfo['log_message'] ?? 'Moz API call failed')." - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
+			}
 
 			// Also save rank data
 			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;

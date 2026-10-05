@@ -678,14 +678,33 @@ class CronController extends Controller {
 		$langCode = $userInfo['lang_code'];
 		
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
+		// $returnLog=true on both calls - desktop and mobile are two
+		// independent API calls, either can fail on its own. Without the
+		// crawl status, savePageSpeedResults() intval()s a missing score
+		// straight to 0 and writes it regardless (confirmed live as the
+		// actual cause of previously-active sites' PageSpeed scores
+		// dropping to a flat, implausible 0 - not a real collapse).
+		// desktop_speed_score/mobile_speed_score are NOT NULL columns, so
+		// a failed metric still has to store SOME number - 0 stays the
+		// placeholder for "not measured", same as a missing score always
+		// has been, but the row is now skipped entirely when BOTH calls
+		// fail rather than writing two 0s that look like a real result.
 		$params = array('screenshot' => false, 'strategy' => 'desktop', 'locale' => $langCode);
-		$websiteInfo['desktop'] = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params);
+		list($desktopInfo, $desktopCrawlInfo) = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params, '', true);
 		$params = array('screenshot' => false, 'strategy' => 'mobile', 'locale' => $langCode);
-		$websiteInfo['mobile'] = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params);
-		
-		$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
-		echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
-	
+		list($mobileInfo, $mobileCrawlInfo) = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params, '', true);
+		$websiteInfo['desktop'] = $desktopInfo;
+		$websiteInfo['mobile'] = $mobileInfo;
+		$desktopOk = !empty($desktopCrawlInfo['crawl_status']);
+		$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
+
+		if ($desktopOk || $mobileOk) {
+			$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
+			echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
+		} else {
+			echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
+		}
+
 	}
 	
 	# func to generate social media checker reports from cron
@@ -709,16 +728,21 @@ class CronController extends Controller {
 			
 			if ($result['status']) {
 				echo "Crawled social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
+				// only save on a successful crawl - $result['status']
+				// was already being checked above for the log line, but
+				// the save itself ran unconditionally regardless, which
+				// wrote a 0-followers row on every failed fetch
+				// (confirmed live as the actual cause of previously-
+				// active links' follower counts dropping to a flat,
+				// implausible 0 - not a real loss).
+				$socialMediaCtrler->saveSocialMediaLinkResults($linkInfo['id'], $result);
 			} else {
 				echo "Failed Crawling of social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
 				echo $result['msg'];
 			}
-			
-			// save the social media data
-			$socialMediaCtrler->saveSocialMediaLinkResults($linkInfo['id'], $result);
 			sleep(SP_CRAWL_DELAY + 5);
 		}
-		
+
 		echo "Saved social media results of website id: <b>$websiteId</b>.....</br>\n";
 	
 	}
@@ -755,11 +779,18 @@ class CronController extends Controller {
 				$result = $reviewController->getReviewDetails($linkInfo['type'], $linkInfo['url']);
 				if ($result['status']) {
 					echo "Crawled review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
+					// only save on a successful crawl - $result['status']
+					// was already being checked above for the log line,
+					// but the save itself ran unconditionally regardless,
+					// which wrote a 0-reviews/0-rating row on every failed
+					// fetch (confirmed live as the actual cause of
+					// previously-active links' review data dropping to a
+					// flat, implausible 0 - not a real loss).
+					$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
 					echo $result['msg'];
 				}
-				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 				sleep(SP_CRAWL_DELAY + 5);
 			}
 		} else {
@@ -776,20 +807,19 @@ class CronController extends Controller {
 
 				if ($result['status']) {
 					echo "Crawled review results of <b>{$linkInfo['name']}</b>.....</br>\n";
+					// see the Yelp branch's matching comment above
+					$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>.....</br>\n";
 					echo $result['msg'];
 				}
-
-				// save the review data
-				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 				sleep(SP_CRAWL_DELAY + 5);
 			}
 		}
 
 		echo "Saved review results of website id: <b>$websiteId</b>.....</br>\n";
-	}	
-	
+	}
+
 	# func to generate backlink reports from cron
 	function backlinkCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/backlink.ctrl.php");
@@ -803,30 +833,46 @@ class CronController extends Controller {
 
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
 		$mozCtrler = new MozController();
-		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+		// $returnLog=true - lets a failed Moz call be told apart from a
+		// genuine 0, so the save below can be skipped on failure instead
+		// of writing a false 0 to backlinkresults (confirmed live as the
+		// actual cause of previously-active sites' backlink counts
+		// dropping to a flat, implausible 0 - not a real loss).
+		list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+		$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
 		// Extract backlink data from Moz API (default / fallback source)
-		$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-		$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+		$websiteInfo['external_pages_to_page'] = ($mozOk && !empty($mozRankInfo[0]['external_pages_to_page'])) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+		$websiteInfo['external_pages_to_root_domain'] = ($mozOk && !empty($mozRankInfo[0]['external_pages_to_root_domain'])) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
 
 		// DataForSEO backlink summary, when enabled, overrides the backlink-specific
 		// metrics above with real link-graph data. The Moz call above still runs
 		// unconditionally since Rank Checker depends on its domain/page authority
 		// data separately - this only replaces the backlink-count fields.
 		include_once(SP_CTRLPATH."/settings.ctrl.php");
+		$dfsOk = false;
 		if (SettingsController::isDFSEnabled('backlink')) {
 			include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 			$dfsCtrler = new DataForSEOController();
 			$dfsSummary = $dfsCtrler->__getBacklinkSummary($websiteUrl);
 			if (!empty($dfsSummary)) {
+				$dfsOk = true;
 				$websiteInfo['external_pages_to_page'] = $dfsSummary['backlinks'];
 				$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
 				$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
 			}
 		}
 
-		$backlinkCtrler->saveRankResults($websiteInfo, true);
-		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+		// only save a backlink row at all if at least one real data
+		// source (Moz or DFS) actually succeeded - otherwise today's
+		// crawl genuinely produced nothing, and no row is more honest
+		// than a row full of 0s.
+		if ($mozOk || $dfsOk) {
+			$backlinkCtrler->saveRankResults($websiteInfo, true);
+			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+		} else {
+			$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - no data source succeeded.....<br>\n");
+		}
 
 		// Also save rank data from Moz API
 		$rankCtrler = New RankController();
@@ -851,7 +897,11 @@ class CronController extends Controller {
 
 		$websiteUrl = addHttpToUrl($websiteInfo['url']);
 		$mozCtrler = new MozController();
-		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+		// $returnLog=true - see backlinkCheckerCron()'s matching comment;
+		// same root cause, same fix, applied here too since this path
+		// also writes a backlinkresults row from the same Moz call.
+		list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+		$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
 		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
 		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
@@ -859,14 +909,19 @@ class CronController extends Controller {
 		$rankCtrler->saveRankResults($websiteInfo, true);
 		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
 
-		// Save backlink results from Moz data
-		$backlinkCtrler = New BacklinkController();
-		$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-		$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
-		$backlinkCtrler->saveRankResults($websiteInfo, true);
-		$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+		// Save backlink results from Moz data - only if the call actually
+		// succeeded, not on every pass regardless (see backlinkCheckerCron()).
+		if ($mozOk) {
+			$backlinkCtrler = New BacklinkController();
+			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+			$backlinkCtrler->saveRankResults($websiteInfo, true);
+			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+		} else {
+			$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+		}
 	}
-	
+
 	# func to check search volume for all active keywords of a website
 	# Priority: DataForSEO (live) > SP API
 	function searchVolumeCheckerCron($websiteId) {
@@ -1350,13 +1405,23 @@ class CronController extends Controller {
 			$langCode = $userInfo['lang_code'];
 
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
+			// $returnLog=true - see the non-queued pageSpeedCheckerCron()'s
+			// matching comment; same root cause, same fix.
 			$params = array('screenshot' => false, 'strategy' => 'desktop', 'locale' => $langCode);
-			$websiteInfo['desktop'] = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params);
+			list($desktopInfo, $desktopCrawlInfo) = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params, '', true);
 			$params = array('screenshot' => false, 'strategy' => 'mobile', 'locale' => $langCode);
-			$websiteInfo['mobile'] = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params);
+			list($mobileInfo, $mobileCrawlInfo) = $pageSpeedCtrler->__getPageSpeedInfo($websiteUrl, $params, '', true);
+			$websiteInfo['desktop'] = $desktopInfo;
+			$websiteInfo['mobile'] = $mobileInfo;
+			$desktopOk = !empty($desktopCrawlInfo['crawl_status']);
+			$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
 
-			$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
-			echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
+			if ($desktopOk || $mobileOk) {
+				$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
+				echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
+			} else {
+				echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
+			}
 		});
 	}
 
@@ -1375,25 +1440,34 @@ class CronController extends Controller {
 		$this->drainChunkQueue('backlink-checker', $websiteId, function($chunk) use ($backlinkCtrler, $websiteInfo) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 			$mozCtrler = new MozController();
-			$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+			// $returnLog=true - see the non-queued backlinkCheckerCron()'s
+			// matching comment; same root cause, same fix.
+			list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
-			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+			$websiteInfo['external_pages_to_page'] = ($mozOk && !empty($mozRankInfo[0]['external_pages_to_page'])) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+			$websiteInfo['external_pages_to_root_domain'] = ($mozOk && !empty($mozRankInfo[0]['external_pages_to_root_domain'])) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
 
 			include_once(SP_CTRLPATH."/settings.ctrl.php");
+			$dfsOk = false;
 			if (SettingsController::isDFSEnabled('backlink')) {
 				include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 				$dfsCtrler = new DataForSEOController();
 				$dfsSummary = $dfsCtrler->__getBacklinkSummary($websiteUrl);
 				if (!empty($dfsSummary)) {
+					$dfsOk = true;
 					$websiteInfo['external_pages_to_page'] = $dfsSummary['backlinks'];
 					$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
 					$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
 				}
 			}
 
-			$backlinkCtrler->saveRankResults($websiteInfo, true);
-			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+			if ($mozOk || $dfsOk) {
+				$backlinkCtrler->saveRankResults($websiteInfo, true);
+				$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+			} else {
+				$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - no data source succeeded.....<br>\n");
+			}
 
 			$rankCtrler = New RankController();
 			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
@@ -1419,7 +1493,10 @@ class CronController extends Controller {
 		$this->drainChunkQueue('rank-checker', $websiteId, function($chunk) use ($rankCtrler, $websiteInfo) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 			$mozCtrler = new MozController();
-			$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+			// $returnLog=true - see backlinkCheckerCron()'s matching
+			// comment; same root cause, same fix.
+			list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
 			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
 			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
@@ -1427,11 +1504,15 @@ class CronController extends Controller {
 			$rankCtrler->saveRankResults($websiteInfo, true);
 			$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
 
-			$backlinkCtrler = New BacklinkController();
-			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
-			$backlinkCtrler->saveRankResults($websiteInfo, true);
-			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+			if ($mozOk) {
+				$backlinkCtrler = New BacklinkController();
+				$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+				$backlinkCtrler->saveRankResults($websiteInfo, true);
+				$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
+			} else {
+				$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+			}
 		});
 	}
 
@@ -1456,12 +1537,12 @@ class CronController extends Controller {
 
 			if ($result['status']) {
 				echo "Crawled social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
+				// see the non-queued socialMediaCheckerCron()'s matching comment
+				$socialMediaCtrler->saveSocialMediaLinkResults($linkInfo['id'], $result);
 			} else {
 				echo "Failed Crawling of social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
 				echo $result['msg'];
 			}
-
-			$socialMediaCtrler->saveSocialMediaLinkResults($linkInfo['id'], $result);
 			sleep(SP_CRAWL_DELAY + 5);
 		});
 
@@ -1513,11 +1594,12 @@ class CronController extends Controller {
 			$label = ($type == 'yelp') ? ' (Yelp)' : '';
 			if ($result['status']) {
 				echo "Crawled review results of <b>{$linkInfo['name']}</b>$label.....</br>\n";
+				// see the non-queued reviewCheckerCron()'s matching comment
+				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 			} else {
 				echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>$label.....</br>\n";
 				echo $result['msg'];
 			}
-			$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
 			sleep(SP_CRAWL_DELAY + 5);
 		});
 
