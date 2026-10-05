@@ -182,6 +182,24 @@ class RecommendationsController extends Controller {
         $this->__generateAIBotSilentRecommendation($websiteId, $userId);
         $this->__generateRankDropRecommendations($websiteId, $userId);
         $this->__generateSiteAuditorRecommendations($websiteId, $userId);
+        // Added in priority order from a deep-research pass across every
+        // feature/report not yet covered above - see each generator's own
+        // comment for its data source and why it's shaped the way it is.
+        $this->__generateAiPerceptionDropRecommendations($websiteId, $userId);
+        $this->__generateAiPerceptionCompetitorRecommendations($websiteId, $userId);
+        $this->__generateBacklinkDropRecommendations($websiteId, $userId);
+        $this->__generateReviewDropRecommendations($websiteId, $userId);
+        $this->__generateAnalyticsDropRecommendations($websiteId, $userId);
+        $this->__generateSearchConsoleDropRecommendations($websiteId, $userId);
+        $this->__generatePageSpeedRegressionRecommendations($websiteId, $userId);
+        $this->__generateSocialFollowerRecommendations($websiteId, $userId);
+        $this->__generateCronReliabilityRecommendations($websiteId, $userId);
+        $this->__generateJobQueueFailureRecommendations($websiteId, $userId);
+        $this->__generateDirectorySubmissionDecayRecommendations($websiteId, $userId);
+        $this->__generateSearchVolumeMismatchRecommendations($websiteId, $userId);
+        // Must run LAST - reads this same run's own rank_tracker/
+        // site_auditor rows, already inserted above.
+        $this->__generateRankDropAuditorCorrelationRecommendations($websiteId, $userId);
 
         $newlyAdded = array();
         foreach ($this->__getStoredRecommendations($websiteId, $userId) as $rec) {
@@ -634,5 +652,778 @@ class RecommendationsController extends Controller {
                     ($websiteId, $userId, '{$check['type']}', 'site_auditor', '$title', '$desc', '$meta', '$now')"
             );
         }
+    }
+
+    // Display names for AiPerceptionController's provider enum
+    // ('openai'/'anthropic'/'google') - same mapping already used in
+    // every AI Perception view (aiperception/settings.ctp.php,
+    // tracking.ctp.php, check.ctp.php), repeated here rather than
+    // shared since those are view-layer constants, not a controller one.
+    private function __aiPerceptionProviderLabels() {
+        return array(
+            'openai'    => 'OpenAI (ChatGPT)',
+            'anthropic' => 'Anthropic (Claude)',
+            'google'    => 'Google (Gemini)',
+        );
+    }
+
+    /*
+     * AI Perception: did a provider stop mentioning this site, or did its
+     * sentiment turn negative, between the two most recent checks for a
+     * prompt? AiPerceptionController::TRACKING_INTERVAL_DAYS gates each
+     * (prompt, provider) pair to at most one check per 7 days, so "latest
+     * vs a fixed N-days-ago cutoff" (the rank-drop generator's approach)
+     * doesn't fit well here - a slow week could mean zero checks in a
+     * 7-day window. Comparing the two most recent checks instead, so this
+     * always fires on a genuine change regardless of check cadence.
+     * MySQL 5.7 here has no window functions, and grouping+keeping the
+     * top 2 rows per (prompt_id, provider) in PHP is simpler than the
+     * nested-derived-table SQL that would otherwise take to express
+     * "second most recent row per group".
+     */
+    private function __generateAiPerceptionDropRecommendations($websiteId, $userId) {
+        $prompts = $this->db->select("SELECT id, prompt_text FROM llm_perception_prompts WHERE website_id=$websiteId AND status=1");
+        if (empty($prompts)) return;
+
+        $promptIds = implode(',', array_map(function($p) { return intval($p['id']); }, $prompts));
+        $promptTextMap = array();
+        foreach ($prompts as $p) { $promptTextMap[$p['id']] = $p['prompt_text']; }
+
+        $results = $this->db->select(
+            "SELECT prompt_id, provider, checked_date, mentioned, sentiment
+             FROM llm_perception_results
+             WHERE prompt_id IN ($promptIds)
+             ORDER BY prompt_id, provider, checked_date DESC"
+        );
+        if (empty($results)) return;
+
+        // keep only the 2 most recent rows per (prompt_id, provider) -
+        // already DESC-ordered by the query above
+        $byGroup = array();
+        foreach ($results as $r) {
+            $key = $r['prompt_id'] . '|' . $r['provider'];
+            if (!isset($byGroup[$key])) $byGroup[$key] = array();
+            if (count($byGroup[$key]) < 2) $byGroup[$key][] = $r;
+        }
+
+        $providerLabels = $this->__aiPerceptionProviderLabels();
+        $now = date('Y-m-d H:i:s');
+        $flagged = array();
+
+        foreach ($byGroup as $rows) {
+            if (count($rows) < 2) continue; // need two checks to compare against
+            list($latest, $prev) = $rows;
+
+            $mentionLost = (!empty($prev['mentioned']) && empty($latest['mentioned']));
+            $sentimentWorsened = (!$mentionLost
+                && $prev['sentiment'] !== 'negative' && $latest['sentiment'] === 'negative');
+            if (!$mentionLost && !$sentimentWorsened) continue;
+
+            $flagged[] = array(
+                'prompt_id'    => $latest['prompt_id'],
+                'provider'     => $latest['provider'],
+                'prev_date'    => $prev['checked_date'],
+                'latest_date'  => $latest['checked_date'],
+                'mention_lost' => $mentionLost,
+            );
+        }
+        if (empty($flagged)) return;
+        $flagged = array_slice($flagged, 0, 20);
+
+        foreach ($flagged as $f) {
+            $promptText    = !empty($promptTextMap[$f['prompt_id']]) ? $promptTextMap[$f['prompt_id']] : 'a tracked prompt';
+            $providerLabel = $providerLabels[$f['provider']] ?? ucfirst($f['provider']);
+
+            if ($f['mention_lost']) {
+                $type  = 'error';
+                $title = addslashes("{$providerLabel} stopped mentioning you for \"{$promptText}\"");
+                $desc  = addslashes(
+                    "On {$f['prev_date']} your site was mentioned when {$providerLabel} was asked this question. " .
+                    "As of {$f['latest_date']}, it's no longer mentioned."
+                );
+            } else {
+                $type  = 'warning';
+                $title = addslashes("{$providerLabel}'s sentiment turned negative for \"{$promptText}\"");
+                $desc  = addslashes(
+                    "{$providerLabel}'s answer to this question turned negative between {$f['prev_date']} and " .
+                    "{$f['latest_date']}. Open the AI Perception check to review the response."
+                );
+            }
+            $meta = addslashes(json_encode($f));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, '$type', 'ai_perception', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * AI Perception: a tracked competitor is mentioned for a prompt this
+     * site is NOT mentioned for, on the same check (same prompt,
+     * provider, checked_date) - a direct, named competitive loss, the
+     * single most actionable signal the whole LLM Perception feature can
+     * produce. Single-date, no history needed.
+     */
+    private function __generateAiPerceptionCompetitorRecommendations($websiteId, $userId) {
+        $competitors = $this->db->select("SELECT id, name FROM llm_perception_competitors WHERE website_id=$websiteId AND status=1");
+        if (empty($competitors)) return;
+        $competitorNameMap = array();
+        foreach ($competitors as $c) { $competitorNameMap[$c['id']] = $c['name']; }
+
+        $prompts = $this->db->select("SELECT id, prompt_text FROM llm_perception_prompts WHERE website_id=$websiteId AND status=1");
+        if (empty($prompts)) return;
+        $promptIds = implode(',', array_map(function($p) { return intval($p['id']); }, $prompts));
+        $promptTextMap = array();
+        foreach ($prompts as $p) { $promptTextMap[$p['id']] = $p['prompt_text']; }
+
+        $sql = "SELECT r.prompt_id, r.provider, r.checked_date, cr.competitor_id
+                FROM llm_perception_results r
+                JOIN (
+                    SELECT prompt_id, provider, MAX(checked_date) AS max_date
+                    FROM llm_perception_results
+                    WHERE prompt_id IN ($promptIds)
+                    GROUP BY prompt_id, provider
+                ) l ON l.prompt_id=r.prompt_id AND l.provider=r.provider AND l.max_date=r.checked_date
+                JOIN llm_perception_competitor_results cr
+                    ON cr.prompt_id=r.prompt_id AND cr.provider=r.provider
+                   AND cr.checked_date=r.checked_date AND cr.mentioned=1
+                WHERE r.mentioned=0";
+        $rows = $this->db->select($sql);
+        if (empty($rows)) return;
+        $rows = array_slice($rows, 0, 20);
+
+        $providerLabels = $this->__aiPerceptionProviderLabels();
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($rows as $r) {
+            $promptText     = !empty($promptTextMap[$r['prompt_id']]) ? $promptTextMap[$r['prompt_id']] : 'a tracked prompt';
+            $competitorName = !empty($competitorNameMap[$r['competitor_id']]) ? $competitorNameMap[$r['competitor_id']] : 'A tracked competitor';
+            $providerLabel  = $providerLabels[$r['provider']] ?? ucfirst($r['provider']);
+
+            $title = addslashes("{$competitorName} is being recommended by {$providerLabel} instead of you");
+            $desc  = addslashes(
+                "For the prompt \"{$promptText}\", {$providerLabel} mentioned {$competitorName} but not you, " .
+                "as of {$r['checked_date']}."
+            );
+            $meta = addslashes(json_encode($r));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'error', 'ai_perception', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Backlinks Checker: external_pages_to_root_domain fell between the
+     * latest check and a ~30-day-old baseline. Same latest-vs-baseline
+     * shape as __generateRankDropRecommendations(), one row per website
+     * instead of per keyword. Percentage alone is noisy for small
+     * backlink counts, so a site with under 20 baseline backlinks flags
+     * on ANY drop rather than needing to clear the 15% bar.
+     */
+    private function __generateBacklinkDropRecommendations($websiteId, $userId) {
+        $cutoffDate = date('Y-m-d', strtotime('-30 days'));
+
+        $latest = $this->db->select(
+            "SELECT external_pages_to_root_domain, result_date FROM backlinkresults
+             WHERE website_id=$websiteId ORDER BY result_date DESC LIMIT 1", true
+        );
+        if (empty($latest)) return;
+
+        $baseline = $this->db->select(
+            "SELECT external_pages_to_root_domain, result_date FROM backlinkresults
+             WHERE website_id=$websiteId AND result_date <= '$cutoffDate'
+             ORDER BY result_date DESC LIMIT 1", true
+        );
+        if (empty($baseline)) return;
+
+        $gapDays = (strtotime($latest['result_date']) - strtotime($baseline['result_date'])) / 86400;
+        if ($gapDays < 14) return;
+
+        $baselineCount = intval($baseline['external_pages_to_root_domain']);
+        $latestCount   = intval($latest['external_pages_to_root_domain']);
+        // A previously-active site dropping to LITERALLY 0 backlinks is
+        // far more likely a failed/incomplete crawl than genuine total
+        // loss - confirmed live in this dev environment's own data
+        // (external checks going silently to 0 after a certain date,
+        // same pattern seen in reviews/social/PageSpeed below). Treat as
+        // no reliable data rather than a real drop to avoid false alarms.
+        if ($baselineCount <= 0 || $latestCount <= 0 || $latestCount >= $baselineCount) return;
+
+        $dropPct = round((($baselineCount - $latestCount) / $baselineCount) * 100, 1);
+        if ($baselineCount >= 20 && $dropPct < 15) return;
+
+        $now = date('Y-m-d H:i:s');
+        $title = addslashes("Backlinks dropped {$dropPct}% in the last 30 days");
+        $desc  = addslashes(
+            "This website had {$baselineCount} referring pages to its root domain on {$baseline['result_date']}; " .
+            "now at {$latestCount} as of {$latest['result_date']}. Review recently lost or removed backlinks."
+        );
+        $meta = addslashes(json_encode(array(
+            'baseline_count' => $baselineCount, 'latest_count' => $latestCount,
+            'baseline_date'  => $baseline['result_date'], 'latest_date' => $latest['result_date'],
+            'drop_pct'       => $dropPct,
+        )));
+
+        $this->db->query(
+            "INSERT INTO sp_recommendations
+                (website_id, user_id, type, category, title, description, meta, refreshed_at)
+             VALUES
+                ($websiteId, $userId, 'warning', 'backlink_checker', '$title', '$desc', '$meta', '$now')"
+        );
+    }
+
+    /*
+     * Review Manager: average rating dropped at least 0.3 stars between
+     * the latest check and a ~30-day-old baseline, per review link (one
+     * website can track Google/Yelp/TripAdvisor/etc. separately). Per-
+     * link, not aggregated, since a drop on one platform shouldn't be
+     * diluted by other platforms being stable.
+     */
+    private function __generateReviewDropRecommendations($websiteId, $userId) {
+        $links = $this->db->select("SELECT id, name, type FROM review_links WHERE website_id=$websiteId AND status=1");
+        if (empty($links)) return;
+
+        $cutoffDate = date('Y-m-d', strtotime('-30 days'));
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($links as $link) {
+            $latest = $this->db->select(
+                "SELECT rating, reviews, report_date FROM review_link_results
+                 WHERE review_link_id={$link['id']} ORDER BY report_date DESC LIMIT 1", true
+            );
+            if (empty($latest)) continue;
+
+            $baseline = $this->db->select(
+                "SELECT rating, reviews, report_date FROM review_link_results
+                 WHERE review_link_id={$link['id']} AND report_date <= '$cutoffDate'
+                 ORDER BY report_date DESC LIMIT 1", true
+            );
+            if (empty($baseline)) continue;
+
+            $gapDays = (strtotime($latest['report_date']) - strtotime($baseline['report_date'])) / 86400;
+            if ($gapDays < 14) continue;
+
+            // reviews=0 on the latest check almost always means the crawl
+            // failed to fetch the page, not that every review vanished -
+            // confirmed live (this dev environment's own data goes
+            // reviews=0/rating=0 after a certain date, consistent with
+            // backlinks/social/PageSpeed hitting the same failure mode).
+            if (intval($latest['reviews']) <= 0) continue;
+
+            $baselineRating = floatval($baseline['rating']);
+            $latestRating   = floatval($latest['rating']);
+            $ratingDrop     = round($baselineRating - $latestRating, 2);
+            if ($ratingDrop < 0.3) continue;
+
+            $title = addslashes("{$link['name']} rating dropped from {$baselineRating} to {$latestRating}");
+            $desc  = addslashes(
+                "Your average rating on {$link['name']} fell over the last 30 days " .
+                "({$baseline['report_date']} to {$latest['report_date']}). New negative reviews may need a response."
+            );
+            $meta = addslashes(json_encode(array(
+                'link_id' => $link['id'], 'baseline_rating' => $baselineRating, 'latest_rating' => $latestRating,
+                'baseline_date' => $baseline['report_date'], 'latest_date' => $latest['report_date'],
+            )));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'warning', 'review_manager', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Google Analytics: sitewide sessions down 20%+ week-over-week. Sits
+     * alongside webmaster_tools' per-keyword opportunity rows but reads a
+     * different table (website_analytics, GA's own sitewide numbers, not
+     * keyword_analytics' per-keyword GSC data) - catches a broad traffic
+     * problem that per-keyword tracking might miss entirely if the drop
+     * is concentrated in untracked keywords/pages.
+     */
+    private function __generateAnalyticsDropRecommendations($websiteId, $userId) {
+        $recentCutoff = date('Y-m-d', strtotime('-7 days'));
+        $priorCutoff  = date('Y-m-d', strtotime('-14 days'));
+
+        $recent = $this->db->select(
+            "SELECT SUM(sessions) AS sessions, SUM(goalCompletionsAll) AS goals FROM website_analytics
+             WHERE website_id=$websiteId AND report_date >= '$recentCutoff'", true
+        );
+        $prior = $this->db->select(
+            "SELECT SUM(sessions) AS sessions, SUM(goalCompletionsAll) AS goals FROM website_analytics
+             WHERE website_id=$websiteId AND report_date >= '$priorCutoff' AND report_date < '$recentCutoff'", true
+        );
+        if (empty($recent) || empty($prior)) return;
+
+        $priorSessions = intval($prior['sessions']);
+        if ($priorSessions < 10) return; // too little traffic for a % comparison to mean anything
+
+        $recentSessions = intval($recent['sessions']);
+        $dropPct = round((($priorSessions - $recentSessions) / $priorSessions) * 100, 1);
+        if ($dropPct < 20) return;
+
+        $recentGoals = intval($recent['goals']);
+        $priorGoals  = intval($prior['goals']);
+
+        $now = date('Y-m-d H:i:s');
+        $title = addslashes("Sessions down {$dropPct}% week-over-week");
+        $desc  = addslashes(
+            "This website had {$recentSessions} sessions in the last 7 days vs {$priorSessions} the week before" .
+            ($priorGoals > 0 ? ", with goal completions down from {$priorGoals} to {$recentGoals}" : "") . "."
+        );
+        $meta = addslashes(json_encode(array(
+            'recent_sessions' => $recentSessions, 'prior_sessions' => $priorSessions,
+            'recent_goals' => $recentGoals, 'prior_goals' => $priorGoals, 'drop_pct' => $dropPct,
+        )));
+
+        $this->db->query(
+            "INSERT INTO sp_recommendations
+                (website_id, user_id, type, category, title, description, meta, refreshed_at)
+             VALUES
+                ($websiteId, $userId, 'warning', 'web_analytics', '$title', '$desc', '$meta', '$now')"
+        );
+    }
+
+    /*
+     * Search Console: sitewide impressions down 20%+ week-over-week, per
+     * source (google/bing/yandex/etc. - website_search_analytics.source).
+     * Distinct from webmaster_tools' per-keyword opportunity rows the
+     * same way __generateAnalyticsDropRecommendations() is - catches a
+     * broad de-indexing/algorithm-update scenario that individual
+     * keyword tracking alone might not surface quickly.
+     */
+    private function __generateSearchConsoleDropRecommendations($websiteId, $userId) {
+        $sources = $this->db->select("SELECT DISTINCT source FROM website_search_analytics WHERE website_id=$websiteId");
+        if (empty($sources)) return;
+
+        $recentCutoff = date('Y-m-d', strtotime('-7 days'));
+        $priorCutoff  = date('Y-m-d', strtotime('-14 days'));
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($sources as $s) {
+            $source = $s['source'];
+            $recent = $this->db->select(
+                "SELECT SUM(clicks) AS clicks, SUM(impressions) AS impressions FROM website_search_analytics
+                 WHERE website_id=$websiteId AND source='$source' AND report_date >= '$recentCutoff'", true
+            );
+            $prior = $this->db->select(
+                "SELECT SUM(clicks) AS clicks, SUM(impressions) AS impressions FROM website_search_analytics
+                 WHERE website_id=$websiteId AND source='$source' AND report_date >= '$priorCutoff' AND report_date < '$recentCutoff'", true
+            );
+            if (empty($recent) || empty($prior)) continue;
+
+            $priorImpressions = intval($prior['impressions']);
+            if ($priorImpressions < 50) continue;
+
+            $recentImpressions = intval($recent['impressions']);
+            $dropPct = round((($priorImpressions - $recentImpressions) / $priorImpressions) * 100, 1);
+            if ($dropPct < 20) continue;
+
+            $sourceLabel = ucfirst($source);
+            $title = addslashes("Search Console impressions down {$dropPct}% on {$sourceLabel}");
+            $desc  = addslashes(
+                "Impressions on {$sourceLabel} fell from {$priorImpressions} to {$recentImpressions} over the last " .
+                "7 days compared to the week before. This can signal a ranking drop, a de-indexing issue, or reduced search interest."
+            );
+            $meta = addslashes(json_encode(array(
+                'source' => $source, 'recent_impressions' => $recentImpressions,
+                'prior_impressions' => $priorImpressions, 'drop_pct' => $dropPct,
+            )));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'warning', 'search_console', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * PageSpeed Insights: mobile or desktop score dropped 15+ points
+     * between the two most recent checks. Two-point comparison (no fixed
+     * baseline window needed) since PageSpeed checks don't run on a
+     * predictable daily cadence.
+     */
+    private function __generatePageSpeedRegressionRecommendations($websiteId, $userId) {
+        $rows = $this->db->select(
+            "SELECT desktop_speed_score, mobile_speed_score, result_date FROM pagespeedresults
+             WHERE website_id=$websiteId ORDER BY result_date DESC LIMIT 2"
+        );
+        if (count($rows) < 2) return;
+        list($latest, $prev) = $rows;
+
+        $now = date('Y-m-d H:i:s');
+        $checks = array(
+            array('field' => 'mobile_speed_score',  'label' => 'Mobile'),
+            array('field' => 'desktop_speed_score', 'label' => 'Desktop'),
+        );
+
+        foreach ($checks as $c) {
+            $prevScore   = intval($prev[$c['field']]);
+            $latestScore = intval($latest[$c['field']]);
+            // a score of exactly 0 is not a realistic organic PageSpeed
+            // result for a real page - almost always a failed API call,
+            // same failure mode confirmed live for backlinks/reviews/
+            // social above, not a genuine total performance collapse.
+            if ($latestScore <= 0) continue;
+            $drop = $prevScore - $latestScore;
+            if ($drop < 15) continue;
+
+            $title = addslashes("{$c['label']} PageSpeed score dropped from {$prevScore} to {$latestScore}");
+            $desc  = addslashes(
+                "A recent deploy or added script may be slowing the site down (checked {$prev['result_date']} vs " .
+                "{$latest['result_date']}). Check Core Web Vitals in the PageSpeed Insights tool for details."
+            );
+            $meta = addslashes(json_encode(array(
+                'metric' => $c['field'], 'prev_score' => $prevScore, 'latest_score' => $latestScore,
+                'prev_date' => $prev['result_date'], 'latest_date' => $latest['result_date'],
+            )));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'warning', 'pagespeed', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Social Media Checker: follower count dropped, per tracked link.
+     * Follower counts rarely fall on their own, so even a modest drop
+     * (10+) is worth a look - usually tied to a specific event (platform
+     * purge, content controversy) rather than gradual churn.
+     */
+    private function __generateSocialFollowerRecommendations($websiteId, $userId) {
+        $links = $this->db->select("SELECT id, name, type FROM social_media_links WHERE website_id=$websiteId AND status=1");
+        if (empty($links)) return;
+
+        $cutoffDate = date('Y-m-d', strtotime('-30 days'));
+        $now = date('Y-m-d H:i:s');
+
+        foreach ($links as $link) {
+            $latest = $this->db->select(
+                "SELECT followers, report_date FROM social_media_link_results
+                 WHERE sm_link_id={$link['id']} ORDER BY report_date DESC LIMIT 1", true
+            );
+            if (empty($latest)) continue;
+
+            $baseline = $this->db->select(
+                "SELECT followers, report_date FROM social_media_link_results
+                 WHERE sm_link_id={$link['id']} AND report_date <= '$cutoffDate'
+                 ORDER BY report_date DESC LIMIT 1", true
+            );
+            if (empty($baseline)) continue;
+
+            $gapDays = (strtotime($latest['report_date']) - strtotime($baseline['report_date'])) / 86400;
+            if ($gapDays < 14) continue;
+
+            $baselineFollowers = intval($baseline['followers']);
+            $latestFollowers   = intval($latest['followers']);
+            // followers=0 on the latest check almost always means the
+            // crawl failed, not that every follower vanished - same
+            // failure mode confirmed live for backlinks/reviews/PageSpeed.
+            if ($latestFollowers <= 0) continue;
+            $lost = $baselineFollowers - $latestFollowers;
+            if ($lost < 10) continue;
+
+            $platform = ucfirst($link['type']);
+            $title = addslashes("{$platform} followers dropped by {$lost}");
+            $desc  = addslashes(
+                "{$platform} ({$link['name']}) had {$baselineFollowers} followers on {$baseline['report_date']}, " .
+                "now at {$latestFollowers} as of {$latest['report_date']}."
+            );
+            $meta = addslashes(json_encode(array(
+                'link_id' => $link['id'], 'platform' => $link['type'],
+                'baseline_followers' => $baselineFollowers, 'latest_followers' => $latestFollowers, 'lost' => $lost,
+            )));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'warning', 'social_media', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Scheduler reliability: a specific cron tool (url_section) failed 3
+     * or more of its last 5 runs for this website - the data it feeds
+     * may be silently stale. Reuses cron_job_timing, built for the
+     * Scheduler Health page earlier this session; requires at least 5
+     * recorded runs for that section before judging it (a brand-new
+     * install won't have enough history yet).
+     */
+    private function __generateCronReliabilityRecommendations($websiteId, $userId) {
+        $rows = $this->db->select(
+            "SELECT url_section, status, error_message FROM cron_job_timing
+             WHERE website_id=$websiteId ORDER BY started_at DESC LIMIT 200"
+        );
+        if (empty($rows)) return;
+
+        $bySection = array();
+        foreach ($rows as $r) {
+            $section = $r['url_section'];
+            if (!isset($bySection[$section])) $bySection[$section] = array();
+            if (count($bySection[$section]) < 5) $bySection[$section][] = $r;
+        }
+
+        $now = date('Y-m-d H:i:s');
+        foreach ($bySection as $section => $runs) {
+            if (count($runs) < 5) continue;
+
+            $failures = 0;
+            $lastError = '';
+            foreach ($runs as $r) {
+                if ($r['status'] === 'failed') {
+                    $failures++;
+                    if (empty($lastError) && !empty($r['error_message'])) $lastError = $r['error_message'];
+                }
+            }
+            if ($failures < 3) continue;
+
+            $sectionLabel = ucwords(str_replace(array('-', '_'), ' ', $section));
+            $title = addslashes("{$sectionLabel} has failed {$failures} of the last 5 cron runs");
+            $desc  = addslashes(
+                "This tool's scheduled runs are failing repeatedly" . (!empty($lastError) ? ". Last error: {$lastError}" : "") .
+                ". Its data may be stale until this is fixed."
+            );
+            $meta = addslashes(json_encode(array('url_section' => $section, 'failures' => $failures, 'last_error' => $lastError)));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'error', 'scheduler_health', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Scheduler reliability: job_queue chunks that have exhausted their
+     * retry attempts and permanently failed (status='failed' AND
+     * attempts >= max_attempts, not just "retrying") - catches silent
+     * partial failure in the resumable chunked scheduler that otherwise
+     * has no user-facing surfacing anywhere today.
+     */
+    private function __generateJobQueueFailureRecommendations($websiteId, $userId) {
+        $rows = $this->db->select(
+            "SELECT url_section, COUNT(*) AS cnt, MAX(last_error) AS last_error FROM job_queue
+             WHERE website_id=$websiteId AND status='failed' AND attempts >= max_attempts
+             GROUP BY url_section"
+        );
+        if (empty($rows)) return;
+
+        $now = date('Y-m-d H:i:s');
+        foreach ($rows as $r) {
+            $sectionLabel = ucwords(str_replace(array('-', '_'), ' ', $r['url_section']));
+            $count = intval($r['cnt']);
+            $title = addslashes(
+                $count == 1 ? "A {$sectionLabel} job chunk has permanently failed" : "{$count} {$sectionLabel} job chunks have permanently failed"
+            );
+            $desc = addslashes(
+                "These chunks have exhausted their retry attempts and will not complete" .
+                (!empty($r['last_error']) ? ". Last error: {$r['last_error']}" : "") .
+                ". This part of the data will remain incomplete until resolved."
+            );
+            $meta = addslashes(json_encode(array('url_section' => $r['url_section'], 'count' => $count, 'last_error' => $r['last_error'])));
+
+            $this->db->query(
+                "INSERT INTO sp_recommendations
+                    (website_id, user_id, type, category, title, description, meta, refreshed_at)
+                 VALUES
+                    ($websiteId, $userId, 'error', 'scheduler_health', '$title', '$desc', '$meta', '$now')"
+            );
+        }
+    }
+
+    /*
+     * Directory Submission: a meaningful share of this website's
+     * submitted directory listings have since gone inactive (directories
+     * table's own 'working' flag flips dirsubmitinfo.active off when a
+     * recheck finds the listing gone). This feature is "set and forget"
+     * for most users, so decay is otherwise invisible. dirsubmitinfo has
+     * no history column (submit_time is the only timestamp, set once at
+     * submission) - this is a current-state ratio check, not a true
+     * before/after trend like every other generator above.
+     */
+    private function __generateDirectorySubmissionDecayRecommendations($websiteId, $userId) {
+        $row = $this->db->select(
+            "SELECT COUNT(*) AS total, SUM(CASE WHEN active=0 THEN 1 ELSE 0 END) AS inactive
+             FROM dirsubmitinfo WHERE website_id=$websiteId AND status=1", true
+        );
+        if (empty($row)) return;
+
+        $total = intval($row['total']);
+        if ($total < 5) return; // too small a sample for a ratio to mean anything
+
+        $inactive = intval($row['inactive']);
+        $pct = round(($inactive / $total) * 100, 1);
+        if ($pct < 25) return;
+
+        $now = date('Y-m-d H:i:s');
+        $title = addslashes("{$inactive} of your {$total} directory submissions are no longer active");
+        $desc  = addslashes("These backlinks may have been lost. Consider re-submitting or replacing them with active directories.");
+        $meta  = addslashes(json_encode(array('total' => $total, 'inactive' => $inactive, 'pct' => $pct)));
+
+        $this->db->query(
+            "INSERT INTO sp_recommendations
+                (website_id, user_id, type, category, title, description, meta, refreshed_at)
+             VALUES
+                ($websiteId, $userId, 'todo', 'directory_submission', '$title', '$desc', '$meta', '$now')"
+        );
+    }
+
+    /*
+     * Keyword opportunity: a tracked keyword with high search volume and
+     * low difficulty (per DataForSEO's keyword_search_volume) that isn't
+     * ranking well, paired with proof this site CAN compete (another
+     * tracked keyword it already ranks top 10 for). Weakest generator
+     * here by design - keyword_search_volume has a UNIQUE KEY
+     * (keyword_id, source), so it's overwritten on every crawl with no
+     * history, and there's no "related keyword" concept in the schema,
+     * so this is necessarily a current-state snapshot comparison across
+     * this website's own tracked keywords, not a true opportunity-mining
+     * feature. Still useful as occasional, honest signal - just not a
+     * trend like the generators above it.
+     */
+    private function __generateSearchVolumeMismatchRecommendations($websiteId, $userId) {
+        $keywords = $this->db->select("SELECT id, name FROM keywords WHERE website_id=$websiteId AND status=1");
+        if (count($keywords) < 2) return;
+
+        $keywordIds = implode(',', array_map(function($k) { return intval($k['id']); }, $keywords));
+        $nameMap = array();
+        foreach ($keywords as $k) { $nameMap[$k['id']] = $k['name']; }
+
+        $rankSql = "SELECT sr.keyword_id, MIN(sr.rank) AS best_rank
+                    FROM searchresults sr
+                    JOIN (
+                        SELECT keyword_id, MAX(result_date) AS max_date
+                        FROM searchresults WHERE keyword_id IN ($keywordIds)
+                        GROUP BY keyword_id
+                    ) l ON l.keyword_id=sr.keyword_id AND l.max_date=sr.result_date
+                    GROUP BY sr.keyword_id";
+        $rankMap = array();
+        foreach ($this->db->select($rankSql) as $r) { $rankMap[$r['keyword_id']] = intval($r['best_rank']); }
+
+        $svRows = $this->db->select(
+            "SELECT keyword_id, search_volume, keyword_difficulty FROM keyword_search_volume
+             WHERE keyword_id IN ($keywordIds) AND source='google'"
+        );
+        if (empty($svRows)) return;
+
+        $bestCandidate = null;
+        foreach ($svRows as $sv) {
+            $volume = intval($sv['search_volume']);
+            $difficulty = floatval($sv['keyword_difficulty']);
+            if ($volume < 500 || $difficulty > 30) continue; // only high-volume, easy terms
+
+            $currentRank = isset($rankMap[$sv['keyword_id']]) ? $rankMap[$sv['keyword_id']] : null;
+            if ($currentRank !== null && $currentRank <= 20) continue; // already doing fine
+
+            if ($bestCandidate === null || $volume > $bestCandidate['volume']) {
+                $bestCandidate = array(
+                    'keyword_id' => $sv['keyword_id'], 'volume' => $volume,
+                    'difficulty' => $difficulty, 'rank' => $currentRank,
+                );
+            }
+        }
+        if ($bestCandidate === null) return;
+
+        $provenKeywordId = null;
+        foreach ($rankMap as $kwId => $rank) {
+            if ($rank <= 10 && $kwId != $bestCandidate['keyword_id']) { $provenKeywordId = $kwId; break; }
+        }
+
+        $candidateName = !empty($nameMap[$bestCandidate['keyword_id']]) ? $nameMap[$bestCandidate['keyword_id']] : 'a tracked keyword';
+        $volume = $bestCandidate['volume'];
+        $difficulty = round($bestCandidate['difficulty']);
+        $rankClause = ($bestCandidate['rank'] !== null)
+            ? "is only ranking at position {$bestCandidate['rank']}"
+            : "isn't being tracked for rank yet";
+
+        if ($provenKeywordId !== null) {
+            $provenName = $nameMap[$provenKeywordId];
+            $provenRank = $rankMap[$provenKeywordId];
+            $title = addslashes("Untapped opportunity: \"{$candidateName}\" ({$volume}/mo searches, easy to rank)");
+            $desc  = addslashes(
+                "You already rank #{$provenRank} for \"{$provenName}\", proving you can compete in this space. " .
+                "\"{$candidateName}\" gets an estimated {$volume} searches/month with low difficulty ({$difficulty}/100) but {$rankClause}. Worth targeting."
+            );
+        } else {
+            $title = addslashes("Untapped keyword opportunity: \"{$candidateName}\"");
+            $desc  = addslashes(
+                "\"{$candidateName}\" gets an estimated {$volume} searches/month with low difficulty ({$difficulty}/100), " .
+                "but {$rankClause}. Worth targeting with dedicated content."
+            );
+        }
+        $meta = addslashes(json_encode($bestCandidate));
+
+        $now = date('Y-m-d H:i:s');
+        $this->db->query(
+            "INSERT INTO sp_recommendations
+                (website_id, user_id, type, category, title, description, meta, refreshed_at)
+             VALUES
+                ($websiteId, $userId, 'todo', 'keyword_opportunity', '$title', '$desc', '$meta', '$now')"
+        );
+    }
+
+    /*
+     * Cross-tool correlation: this refresh pass also flagged keyword rank
+     * drops AND Site Auditor currently shows issues on this website - the
+     * one insight no single existing report can produce on its own, since
+     * it ties two generators' output together. Reads sp_recommendations
+     * rows THIS SAME refreshRecommendationsForWebsite() run already
+     * inserted (rank_tracker, site_auditor), so this must run after both
+     * in that method's call order. auditorreports has no per-issue
+     * history (see __generateSiteAuditorRecommendations()'s own table),
+     * so this deliberately says "may be related" / "worth checking",
+     * not "caused by" - it's correlating two things that are both true
+     * right now, not proving a new issue appeared at the same time as
+     * the drop.
+     */
+    private function __generateRankDropAuditorCorrelationRecommendations($websiteId, $userId) {
+        $rankDropRow = $this->db->select(
+            "SELECT COUNT(*) AS cnt FROM sp_recommendations
+             WHERE website_id=$websiteId AND user_id=$userId AND category='rank_tracker'", true
+        );
+        $rankDropN = !empty($rankDropRow) ? intval($rankDropRow['cnt']) : 0;
+        if ($rankDropN == 0) return;
+
+        $auditorIssues = $this->db->select(
+            "SELECT title FROM sp_recommendations
+             WHERE website_id=$websiteId AND user_id=$userId AND category='site_auditor'"
+        );
+        if (empty($auditorIssues)) return;
+
+        $issueCount = count($auditorIssues);
+        $issueTitles = implode('; ', array_map(function($i) { return $i['title']; }, array_slice($auditorIssues, 0, 3)));
+
+        $now = date('Y-m-d H:i:s');
+        $title = addslashes("Rank drops and site auditor issues may be related");
+        $desc  = addslashes(
+            ($rankDropN == 1 ? "1 keyword dropped" : "{$rankDropN} keywords dropped") . " recently, and Site Auditor " .
+            "currently flags " . ($issueCount == 1 ? "1 issue" : "{$issueCount} issues") . " on this website " .
+            "({$issueTitles}" . ($issueCount > 3 ? ', ...' : '') . "). Technical issues can suppress rankings even when " .
+            "content hasn't changed - worth checking whether these are connected."
+        );
+        $meta = addslashes(json_encode(array('rank_drop_count' => $rankDropN, 'auditor_issue_count' => $issueCount)));
+
+        $this->db->query(
+            "INSERT INTO sp_recommendations
+                (website_id, user_id, type, category, title, description, meta, refreshed_at)
+             VALUES
+                ($websiteId, $userId, 'warning', 'cross_tool', '$title', '$desc', '$meta', '$now')"
+        );
     }
 }
