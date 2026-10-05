@@ -88,17 +88,27 @@ function tourText($key, $default) {
             function tourSettingsLink($startScript, $menuSelected = 'settings') {
                 return SP_WEBPATH . '/admin-panel.php?menu_selected=' . urlencode($menuSelected) . '&start_script=' . urlencode($startScript);
             }
-            // "already configured" per category - the same constants the
-            // app itself gates real functionality on (SettingsController::
-            // isSpApiEnabled()/isDFSEnabled()/isLocalAIEnabled(), and the
-            // matching credential settings for MOZ/Google/Mail/Proxy) -
-            // a cheap defined()/non-empty check, no live API calls, except
-            // seopanel_api (see __isSpApiConnected()'s own comment for why
-            // that one's the exception - this is the same live,
-            // once-a-day-cached value the Refresh button's AJAX endpoint
-            // returns, so the very first render already agrees with it
-            // instead of only catching up after a manual Refresh click).
-            $tourSpApiConnected = (new FeatureTourController())->__isSpApiConnected();
+            // "already configured" per category - a cheap defined()/
+            // non-empty check, no live API calls here. This view
+            // renders on EVERY logged-in page load site-wide (not just
+            // when the tour is actually open - see default.ctp.php's own
+            // comment on why), so the real live checks
+            // (__isSpApiConnected()/__isDataForSeoConnected()/
+            // __isMozConnected()/__isLocalAiConnected() in
+            // feature_tour.ctrl.php) must NEVER run as part of this
+            // initial render - three are cached once a day, but the
+            // first page load of the day would still pay the full
+            // network cost synchronously, and Local AI's check isn't
+            // cached at all (by design - see its own comment), so an
+            // enabled-but-slow/unreachable Ollama server would stall
+            // EVERY single page on the site, forever. Confirmed live as
+            // the actual cause of a reported slow dashboard. Instead,
+            // featureTourShow() below calls the exact same
+            // featureTourRefreshConnections() the Refresh buttons use,
+            // automatically, the moment the tour modal actually opens -
+            // same real data, just paid for only when it's actually
+            // needed instead of on every page view.
+            $tourSpApiConnected = defined('SP_SPAPI_REGISTERED') && SP_SPAPI_REGISTERED;
             // DataForSEO and MOZ exist to answer the exact same "where do
             // rank/SERP numbers come from" need the Seo Panel API step
             // above already offers a free, zero-setup answer to (see its
@@ -107,26 +117,24 @@ function tourText($key, $default) {
             // your own DataForSEO/MOZ keys too is a nice-to-have, not a
             // blocker, same as Local AI/Proxy already are.
             $tourDfsMozImportant = !$tourSpApiConnected;
-            // Live checks (same methods the Refresh button's AJAX
-            // endpoint calls), not presence checks - see each
-            // __is*Connected() method's own comment in feature_tour.ctrl.php
-            // for why each one is safe/free to call on every render.
-            $tourDfsConnected = (new FeatureTourController())->__isDataForSeoConnected();
+            $tourDfsConnected = defined('SP_DFS_API_LOGIN') && SP_DFS_API_LOGIN !== '' && defined('SP_DFS_API_PASSWORD') && SP_DFS_API_PASSWORD !== '';
             // SP_MOZ_API_ACCESS_ID is a legacy field, hidden from the
             // settings UI (display=0) - a real user can never fill it in,
             // and MozController itself only ever reads SP_MOZ_API_SECRET
             // ("API Token" in the UI) for real API calls. Requiring both
             // meant this badge could never show Connected even with a
             // correctly saved token - confirmed live via a screenshot.
-            $tourMozConnected = (new FeatureTourController())->__isMozConnected();
+            $tourMozConnected = defined('SP_MOZ_API_SECRET') && SP_MOZ_API_SECRET !== '';
             $tourGoogleConnected = defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '';
             // Not gated on SP_SMTP_MAIL ("Enable SMTP") - per the app's
             // author, mail is sometimes sent through an API-based
             // provider rather than that toggle, so a filled-in host is
             // enough to call this configured.
             $tourMailConnected = defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '';
-            $tourLocalAiConnected = (new FeatureTourController())->__isLocalAiConnected();
+            $tourLocalAiConnected = SettingsController::isLocalAIEnabled();
             $tourProxyConnected = defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY;
+            // cron_run_log is a plain local DB read, not a network call -
+            // genuinely cheap, so this one's fine to check on every render
             $tourCronConnected = (new FeatureTourController())->__isCronDetected();
 
             function tourConnectionBadgeHtml($isConnected, $connectedLabel, $pendingLabel) {
@@ -695,6 +703,14 @@ function tourText($key, $default) {
         currentStep = (startStep && startStep >= 1 && startStep <= TOTAL_STEPS) ? startStep : 1;
         _tourRender();
         $('#sp_tour_overlay').fadeIn(200);
+        // The server-rendered badges above are cheap presence checks
+        // only (see this file's own comment on $tourSpApiConnected) -
+        // this is where the REAL checks actually happen, exactly once
+        // per tour open (auto-show or manual reopen alike), not on
+        // every page load. No triggerEl, so no "Checked latest status"
+        // message - that's reserved for an explicit Refresh click, not
+        // this automatic one.
+        window.featureTourRefreshConnections();
     };
 
     window.featureTourNext = function() {
