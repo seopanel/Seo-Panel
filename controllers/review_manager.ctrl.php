@@ -186,6 +186,20 @@ class ReviewManagerController extends ReviewBase{
     function createReviewLink($listInfo = '', $apiCall=false) {
         $listInfo['name'] = trim($listInfo['name']);
         $listInfo['url'] = trim($listInfo['url']);
+
+        // a non-admin's website_id must be one of their own - previously
+        // unchecked, letting any logged-in non-admin attach a bogus link
+        // to another user's website (consuming THEIR link-count quota
+        // and getting crawled on their behalf by cron). $apiCall=true
+        // (e.g. FeatureTourController::createWebsiteSetup()) is trusted
+        // to have already verified ownership of the website_id it passes
+        // in, same convention WebsiteController::createWebsite()/
+        // KeywordController::createKeyword() already use.
+        if (!$apiCall && !isAdmin() && !empty($listInfo['website_id']) && !(new WebsiteController())->__verifyWebsiteOwnership($listInfo['website_id'])) {
+            showErrorMsg($_SESSION['text']['label']['Access denied']);
+            return;
+        }
+
         $errMsg = $this->validateReviewLink($listInfo);
 
         // if no error occured
@@ -233,6 +247,16 @@ class ReviewManagerController extends ReviewBase{
     function updateReviewLink($listInfo) {
         $listInfo['name'] = trim($listInfo['name']);
         $listInfo['url'] = trim($listInfo['url']);
+
+        // the entry point's own verifyActionAllowed($listInfo['id']) only
+        // checks the link's CURRENT website_id, not the NEW one being
+        // written here - without this, a non-admin could re-point their
+        // own existing link onto another user's website_id.
+        if (!isAdmin() && !empty($listInfo['website_id']) && !(new WebsiteController())->__verifyWebsiteOwnership($listInfo['website_id'])) {
+            showErrorMsg($_SESSION['text']['label']['Access denied']);
+            return;
+        }
+
         $this->set('post', $listInfo);
         $errMsg = $this->validateReviewLink($listInfo);
         
@@ -921,6 +945,13 @@ class ReviewManagerController extends ReviewBase{
 	// func to show review link select box
 	function showReviewLinkSelectBox($websiteId, $linkId = ""){
 	    $websiteId = intval($websiteId);
+	    // previously unchecked - any logged-in non-admin could enumerate
+	    // another user's review link names/ids via an arbitrary
+	    // website_id, unlike every other single-target action in
+	    // review.php
+	    if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($websiteId)) {
+	        return;
+	    }
 	    $this->set('linkList', $this->__getReviewLinks("website_id=$websiteId and status=1 order by name"));
 	    $this->set('linkId', $linkId);
 	    $this->render('review/review_link_select_box');
