@@ -1,7 +1,21 @@
 <?php
 class MetaTagGenerator extends SeoPluginsController{
 	var $metaTags = "";
-	
+
+	// css/mtg.css (the .mtg-form/.mtg-card design system every view in this
+	// plugin uses) would otherwise only ever load as a side effect of
+	// SeoPluginsController::showSeoPlugins() building the plugin browser's
+	// left menu - i.e. only if the user happened to reach a page via that
+	// menu first. A direct action dispatch (every AJAX nav after the
+	// first click) skips it entirely, rendering unstyled. Found and fixed
+	// the same way in the SeoDiary plugin - loading it here instead
+	// guarantees it on every single action.
+	function initPlugin($data) {
+		if (empty($data['not_set_global_vars'])) {
+			echo $this->loadAllPluginCss(PLUGIN_PATH . "/css", $this->pluginWebPath . "/css");
+		}
+	}
+
 	function index() {
 		$this->set('sectionHead', 'Meta Tag Generator');
 		$userId = isLoggedIn();
@@ -49,6 +63,11 @@ class MetaTagGenerator extends SeoPluginsController{
 			$websiteInfo = $info;
 		}
 		$this->set('websiteInfo', $websiteInfo);
+		// language/languageselectbox.ctp.php (shared core view) keys its
+		// own selected-option logic off $post['lang_code'] - never set
+		// here before, so the dropdown could never show a pre-selected
+		// language even once lang_code started being persisted
+		$this->set('post', $websiteInfo);
 
 		include_once(SP_CTRLPATH . '/settings.ctrl.php');
 		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
@@ -75,6 +94,15 @@ class MetaTagGenerator extends SeoPluginsController{
 	
 	function createmetatag($info) {
 
+		// IDOR guard - same gap show()/showPreview() already have fixed;
+		// this one writes to the website record, so was actually worse -
+		// any logged-in user could overwrite another user's website's
+		// title/description/meta fields just by supplying its website_id
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($info['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$errMsg['title'] = formatErrorMsg($this->validate->checkBlank($info['title']));
 		$errMsg['description'] = formatErrorMsg($this->validate->checkBlank($info['description']));
 		$errMsg['keywords'] = formatErrorMsg($this->validate->checkBlank($info['keywords']));
@@ -85,6 +113,10 @@ class MetaTagGenerator extends SeoPluginsController{
 			$this->show($info, true);
 			return;
 		}
+
+		$this->saveWebsiteMetaInfo($info);
+
+		print '<div class="mtg-save-confirm"><i class="fas fa-check-circle"></i> Saved to this website\'s record - the Audit tool will now reflect these changes.</div>';
 		print "<p><b>Meta Tags</b><br><br>";
 		$this->highLight('<head>', false);
 		// htmlspecialchars() on every user-supplied value below - XSS fix:
@@ -185,6 +217,42 @@ class MetaTagGenerator extends SeoPluginsController{
 		print "</p>";
 	}
 	
+	/*
+	 * Persists what this tool generates onto the website record itself -
+	 * previously createmetatag() only ever produced a copy-paste snippet,
+	 * never wrote anything back. That meant the Audit tool's "Fix" link
+	 * was a dead end: edit the form, Proceed, get a snippet, go back to
+	 * Audit - still flagged, because title/description/keywords (the only
+	 * 3 fields Audit actually checks, and the only 3 that already had
+	 * website columns) were never saved. Called from createmetatag() only
+	 * after validation passes and ownership is confirmed.
+	 */
+	function saveWebsiteMetaInfo($info) {
+		$data = [
+			'title' => $info['title'],
+			'description' => $info['description'],
+			'keywords' => $info['keywords'],
+			'canonical_url' => $info['canonical_url'] ?? '',
+			'viewport|int' => !empty($info['viewport']) ? 1 : 0,
+			'copyright' => $info['copyright'] ?? '',
+			'owner_name' => $info['owner_name'] ?? '',
+			'owner_email' => $info['owner_email'] ?? '',
+			'expires' => $info['expires'] ?? '',
+			'rating' => $info['rating'] ?? '',
+			'distribution' => $info['distribution'] ?? '',
+			'robots' => $info['robots'] ?? '',
+			'revisit_after' => $info['revisit-after'] ?? '',
+			'og_title' => $info['og_title'] ?? '',
+			'og_description' => $info['og_description'] ?? '',
+			'og_image' => $info['og_image'] ?? '',
+			'og_url' => $info['og_url'] ?? '',
+			'twitter_card' => $info['twitter_card'] ?? '',
+			'meta_charset' => $info['charset'] ?? '',
+			'lang_code' => $info['lang_code'] ?? '',
+		];
+		$this->dbHelper->updateRow('websites', $data, 'id=' . intval($info['website_id']));
+	}
+
 	function highLight($str, $padd=true){
 
 		if($padd) $this->metaTags .= "&nbsp;&nbsp;";

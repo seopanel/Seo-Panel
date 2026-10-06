@@ -2079,3 +2079,26 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('zh', 'panel', 'Scheduler Health', '调度器状态'),
 ('ja', 'panel', 'Scheduler Health', 'スケジューラの状態'),
 ('ar', 'panel', 'Scheduler Health', 'حالة المجدول');
+
+--
+-- MetaTagGenerator: persist what it generates (canonical URL, viewport,
+-- OG/Twitter Card, rating/distribution/robots/revisit-after/expires,
+-- charset, language) directly on the website record instead of only
+-- producing a copy-paste snippet - see the plugin's own createmetatag()
+-- for how these are written.
+--
+ALTER TABLE `websites` ADD COLUMN `canonical_url` varchar(255) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `viewport` tinyint(1) NOT NULL DEFAULT 1;
+ALTER TABLE `websites` ADD COLUMN `copyright` varchar(255) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `expires` varchar(50) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `rating` varchar(20) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `distribution` varchar(20) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `robots` varchar(30) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `revisit_after` varchar(20) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `og_title` varchar(100) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `og_description` varchar(300) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `og_image` varchar(255) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `og_url` varchar(255) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `twitter_card` varchar(30) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `meta_charset` varchar(20) DEFAULT NULL;
+ALTER TABLE `websites` ADD COLUMN `lang_code` varchar(10) DEFAULT NULL;
