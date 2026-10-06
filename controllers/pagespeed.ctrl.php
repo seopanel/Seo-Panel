@@ -184,10 +184,14 @@ class PageSpeedController extends Controller{
 		// loop through the list
 		foreach ($list as $url) {
 			$reportList[$url] = array();
+			// $returnLog=true so the view can show an explicit failure
+			// state instead of a misleading "0/100" indistinguishable
+			// from a genuinely poor score - same root cause already
+			// fixed for the persisted path, generateReports() above.
 			$params = array('screenshot' => false, 'strategy' => 'desktop', 'locale' => $_SESSION['lang_code']);
-			$reportList[$url]['desktop'] = $this->__getPageSpeedInfo($url, $params);
+			list($reportList[$url]['desktop'], $reportList[$url]['desktop_crawl']) = $this->__getPageSpeedInfo($url, $params, '', true);
 			$params = array('screenshot' => false, 'strategy' => 'mobile', 'locale' => $_SESSION['lang_code']);
-			$reportList[$url]['mobile'] = $this->__getPageSpeedInfo($url, $params);
+			list($reportList[$url]['mobile'], $reportList[$url]['mobile_crawl']) = $this->__getPageSpeedInfo($url, $params, '', true);
 		}
 		
 		$this->set('reportList', $reportList);
@@ -413,17 +417,31 @@ class PageSpeedController extends Controller{
 		# loop through each websites
 		foreach ( $websiteList as $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
-			
+
+			// $returnLog=true on both calls - desktop and mobile are two
+			// independent API calls, either can fail on its own. Without
+			// the crawl status, savePageSpeedResults() writes a false 0
+			// regardless of whether the call actually succeeded. Same
+			// fix already applied to the cron-side caller,
+			// CronController::pageSpeedCheckerCron() - this web-facing
+			// "Generate Reports Now" path had the identical gap.
 			$params = array('screenshot' => false, 'strategy' => 'desktop', 'locale' => $_SESSION['lang_code']);
-			$websiteInfo['desktop'] = $this->__getPageSpeedInfo($websiteUrl, $params);
+			list($desktopInfo, $desktopCrawlInfo) = $this->__getPageSpeedInfo($websiteUrl, $params, '', true);
 			$params = array('screenshot' => false, 'strategy' => 'mobile', 'locale' => $_SESSION['lang_code']);
-			$websiteInfo['mobile'] = $this->__getPageSpeedInfo($websiteUrl, $params);
-				
-			$this->savePageSpeedResults($websiteInfo, true);
-			
-			echo "<p class='note notesuccess'>".$this->spTextPS['Saved page speed results of']." <b>$websiteUrl</b>.....</p>";
+			list($mobileInfo, $mobileCrawlInfo) = $this->__getPageSpeedInfo($websiteUrl, $params, '', true);
+			$websiteInfo['desktop'] = $desktopInfo;
+			$websiteInfo['mobile'] = $mobileInfo;
+			$desktopOk = !empty($desktopCrawlInfo['crawl_status']);
+			$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
+
+			if ($desktopOk || $mobileOk) {
+				$this->savePageSpeedResults($websiteInfo, true);
+				echo "<p class='note notesuccess'>".$this->spTextPS['Saved page speed results of']." <b>$websiteUrl</b>.....</p>";
+			} else {
+				echo "<p class='note error'>Page speed results of <b>$websiteUrl</b> NOT saved - both desktop and mobile checks failed (avoiding a false 0).....</p>";
+			}
 		}
-		
+
 	}
 
 	# function to save rank details

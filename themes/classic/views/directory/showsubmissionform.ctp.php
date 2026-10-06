@@ -1,6 +1,10 @@
 <?php if(!empty($msg)){
     $msgClass = empty($error) ? "alert-success" : "alert-danger";
-    echo "<div class='alert $msgClass'>$msg</div>";
+    // $msg can be text extracted directly from a third-party directory
+    // site's own HTML response (submitSite()'s regex match on its
+    // success message) - genuinely untrusted external content, same bug
+    // class as the already-fixed printSearchEngineSaturation() XSS
+    echo "<div class='alert $msgClass'>" . htmlspecialchars($msg, ENT_QUOTES) . "</div>";
 }
 ?>
 <form id="submissionForm" name="submissionForm">

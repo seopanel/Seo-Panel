@@ -132,7 +132,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showDirectoryManager($_GET);
 			break;
 			
-		case "dirstatus":			
+		case "dirstatus":
+			// the directories table is global/shared across every tenant -
+			// unlike the directorymgr/startdircheck/checkdir cases right
+			// below, this one had no admin check at all, letting any
+			// logged-in non-admin disable/enable any directory for the
+			// whole installation
+			checkAdminLoggedIn();
 			$controller->changeStatusDirectory($_GET['dir_id'], $_GET['status'], true);
 			break;
 			
