@@ -334,9 +334,23 @@ class AnalyticsController extends Controller {
 		if (!empty($searchInfo['website_id'])) {
 			$websiteId = intval($searchInfo['website_id']);
 			$websiteController = New WebsiteController();
+			// this fetches GA4 data using the WEBSITE OWNER's own
+			// connected Google account ($websiteInfo['user_id'] below,
+			// not the requesting user) - so a caller-supplied website_id
+			// was previously never verified to belong to the logged-in
+			// user before being used, letting any non-admin read another
+			// user's real Analytics data for an arbitrary website_id.
+			// Same fix already applied to the sibling
+			// WebMasterController::doQuickChecker().
+			$userId = isLoggedIn();
+			$websiteList = $websiteController->__getAllWebsites($userId, true);
+			if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+				showErrorMsg($_SESSION['text']['label']['Access denied']);
+				return;
+			}
 			$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
-			$this->set('websiteInfo', $websiteInfo);			
-			
+			$this->set('websiteInfo', $websiteInfo);
+
 			if (!empty($websiteInfo['url'])) {
 				$reportStartDate = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-1 days'));
 				$reportEndDate = !empty($searchInfo['to_time']) ? $searchInfo['to_time'] : date('Y-m-d');

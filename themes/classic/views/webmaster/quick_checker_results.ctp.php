@@ -45,7 +45,7 @@ $(document).ready(function() {
 			?>
 			<tr style="<?php echo $foundStyle?>">
 				<td><?php echo $i++?></td>
-				<td><?php echo $keyword?></td>
+				<td><?php echo htmlspecialchars($keyword, ENT_QUOTES)?></td>
 				<td><?php echo $listInfo['clicks']?></td>
 				<td><?php echo $listInfo['impressions']?></td>
 				<td><?php echo round($listInfo['ctr'] * 100, 2)?></td>

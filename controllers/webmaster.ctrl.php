@@ -346,11 +346,21 @@ class WebMasterController extends GoogleAPIController {
 					
 				$this->insertWebsiteAnalytics($websiteId, $info);
 			}
-			
+
 		}
-		
+
+		// none of this method's cron.ctrl.php callers check its return
+		// value at all - a failure here (bad/expired Search Console
+		// refresh token, quota error, API outage) previously left zero
+		// trace anywhere. Same fix already applied to the sibling
+		// AnalyticsController::storeWebsiteAnalytics(); $result['msg'] is
+		// always set on failure by getQueryResults() above.
+		if (empty($result['status']) && !empty($result['msg'])) {
+			error_log("SEO Panel: WebMasterController::storeWebsiteAnalytics() failed for website $websiteId: " . $result['msg']);
+		}
+
 		return $result;
-		
+
 	}
 	
 	/*
@@ -466,15 +476,23 @@ class WebMasterController extends GoogleAPIController {
 		}
 		$this->set('websiteId', $websiteId);
 
-		// to find order col
-		if (!empty($searchInfo['order_col'])) {
+		// to find order col - caller-supplied and lands directly in an
+		// ORDER BY clause with no way to parameterize an identifier
+		// position, so it must be checked against a fixed whitelist (not
+		// just addslashes()'d, which does nothing for an unquoted SQL
+		// identifier) - previously unchecked, letting any logged-in
+		// non-admin run blind SQL injection via ORDER BY (e.g. a
+		// CASE/SLEEP() expression). Same fix shape
+		// AnalyticsController::viewAnalyticsSummary() already uses;
+		// $this->colList is exactly the column set actually SELECTed below.
+		if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->colList)) {
 			$orderCol = $searchInfo['order_col'];
 			$orderVal = getOrderByVal($searchInfo['order_val']);
 		} else {
 			$orderCol = "clicks";
 			$orderVal = 'DESC';
 		}
-	
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
@@ -638,23 +656,31 @@ class WebMasterController extends GoogleAPIController {
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 	
-		// to find order col
-		if (!empty($searchInfo['order_col'])) {
+		// to find order col - same SQLi-via-ORDER-BY risk and fix as
+		// viewKeywordSearchSummary() above; $this->colList is the same
+		// shared metric set both reports render (name/clicks/impressions/
+		// ctr/average_position).
+		if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->colList)) {
 			$orderCol = $searchInfo['order_col'];
 			$orderVal = getOrderByVal($searchInfo['order_val']);
 		} else {
 			$orderCol = "clicks";
 			$orderVal = 'DESC';
 		}
-	
+
+		// moved above $scriptPath's construction - it was previously
+		// assigned AFTER being read into that string below, so
+		// website_id was always empty there and paging to page 2+ of a
+		// website-filtered summary silently dropped the filter
+		$websiteId = intval($searchInfo['website_id']);
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewWebsiteSearchSummary&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=website-search-reports";
-		
-		$websiteId = intval($searchInfo['website_id']);
+
 		$conditions = !empty($websiteId) ? " and w.id=$websiteId" : "";
 		$conditions .= isAdmin() ? "" : $websiteController->getWebsiteUserAccessCondition($userId);
 		$conditions .= !empty($searchInfo['search_name']) ? " and w.url like '%".addslashes($searchInfo['search_name'])."%'" : "";
@@ -1153,6 +1179,10 @@ class WebMasterController extends GoogleAPIController {
 
 		if (!empty($searchInfo['website_id'])) {
 			$websiteId = intval($searchInfo['website_id']);
+			// was read into $websiteReport['source'] below without ever
+			// being assigned - undefined-variable warning (harmless only
+			// because the view never reads that key)
+			$source = $this->sourceList[0];
 			$websiteController = New WebsiteController();
 			// this fetches Search Console data using the WEBSITE OWNER's
 			// own connected Google account ($websiteInfo['user_id'] below,
