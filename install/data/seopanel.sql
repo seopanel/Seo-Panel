@@ -1718,8 +1718,13 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `email` (`email`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=2 ;
 
+-- feature_tour_seen=0 here (not the column's own default of 1) - this
+-- row IS the brand-new user a fresh install's Setup Tour exists for;
+-- upgrade.sql's ALTER instead defaults every EXISTING row (on an
+-- already-deployed install) to 1, which is the right call there but
+-- would wrongly suppress the tour for this one if copied here too.
 INSERT INTO `users` (`id`, `utype_id`, `username`, `password`, `first_name`, `last_name`, `email`, `lang_code`, `created`, `status`, `expiry_date`, `confirm_code`, `confirm`, `spapi_skip`, `spapi_upgrade_skip_date`, `version_upgrade_skip_date`, `feature_tour_seen`, `feature_tour_step`) VALUES
-(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, NULL, 1, 0);
+(1, 1, 'spadmin', 'a4d312c461703c46a56b1bdcda9b5cdc', 'Seo Panel', 'Admin', '', 'en', 0, 1, NULL, '', 0, 0, NULL, NULL, 0, 0);
 
 CREATE TABLE IF NOT EXISTS `usertypes` (
   `id` int(8) NOT NULL AUTO_INCREMENT,
