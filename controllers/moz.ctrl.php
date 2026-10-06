@@ -180,7 +180,10 @@ class MozController extends Controller {
         // update crawl log
         $crawlLogCtrl = new CrawlLogController();
         $crawlInfo['crawl_type'] = 'rank';
-        $crawlInfo['ref_id'] = $url;
+        // was $url - the leftover loop variable from the request-building
+        // foreach above, so a multi-URL batch call's crawl log only ever
+        // recorded the LAST url, not the batch actually being logged
+        $crawlInfo['ref_id'] = implode(',', $urlList);
         $crawlInfo['subject'] = "moz link metrics";
         $crawlLogCtrl->updateCrawlLog($ret['log_id'], $crawlInfo);
         return $returnLog ? array($mozUrlMetrics, $crawlInfo) : $mozUrlMetrics;

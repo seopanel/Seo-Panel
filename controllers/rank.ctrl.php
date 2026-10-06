@@ -45,9 +45,14 @@ class RankController extends Controller{
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 		
+		// $returnLog=true so the view can show an explicit failure state
+		// instead of "-", which it already shows for a genuine 0 too -
+		// the two were indistinguishable here, same root cause already
+		// fixed for the persisted path, generateReports() above.
 		$mozCtrler = new MozController();
-		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+		list($mozRankList, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo($list, true);
 		$this->set('mozRankList', $mozRankList);
+		$this->set('mozOk', !empty($mozCrawlInfo['crawl_status']));
 
 		$this->set('list', $list);
 		$this->render('rank/findquickrank');
@@ -97,22 +102,29 @@ class RankController extends Controller{
 		// loop through each websites
 		foreach ( $websiteList as $i => $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
-			$websiteInfo['spam_score'] = !empty($mozRankList[$i]['spam_score']) ? $mozRankList[$i]['spam_score'] : 0;
-			$websiteInfo['domain_authority'] = !empty($mozRankList[$i]['domain_authority']) ? $mozRankList[$i]['domain_authority'] : 0;
-			$websiteInfo['page_authority'] = !empty($mozRankList[$i]['page_authority']) ? $mozRankList[$i]['page_authority'] : 0;
 
-			$this->saveRankResults($websiteInfo, true);
-			echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
-
-			// Also save backlink data from Moz API - only if the call
-			// actually succeeded.
+			// Both saves below come from this same Moz response, so both
+			// are gated on $mozOk together - rank's own save used to run
+			// unconditionally here (before this fix), writing a false 0
+			// for spam_score/domain_authority/page_authority into
+			// rankresults on a Moz failure despite the backlink save just
+			// below it already being correctly gated - same root cause as
+			// BacklinkController::generateReports()'s mirror bug.
 			if ($mozOk) {
+				$websiteInfo['spam_score'] = !empty($mozRankList[$i]['spam_score']) ? $mozRankList[$i]['spam_score'] : 0;
+				$websiteInfo['domain_authority'] = !empty($mozRankList[$i]['domain_authority']) ? $mozRankList[$i]['domain_authority'] : 0;
+				$websiteInfo['page_authority'] = !empty($mozRankList[$i]['page_authority']) ? $mozRankList[$i]['page_authority'] : 0;
+
+				$this->saveRankResults($websiteInfo, true);
+				echo "<p class='note notesuccess'>".$this->spTextRank['Saved rank results of']." <b>$websiteUrl</b>.....</p>";
+
+				// Also save backlink data from Moz API
 				$backlinkCtrler = New BacklinkController();
 				$websiteInfo['external_pages_to_page'] = !empty($mozRankList[$i]['external_pages_to_page']) ? $mozRankList[$i]['external_pages_to_page'] : 0;
 				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankList[$i]['external_pages_to_root_domain']) ? $mozRankList[$i]['external_pages_to_root_domain'] : 0;
 				$backlinkCtrler->saveRankResults($websiteInfo, true);
 			} else {
-				echo "<p class='note error'>Moz API call failed - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
+				echo "<p class='note error'>Moz API call failed - <b>$websiteUrl</b> rank/backlink results NOT saved (avoiding a false 0).....</p>";
 			}
 		}
 	}

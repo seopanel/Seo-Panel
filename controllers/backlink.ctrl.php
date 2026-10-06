@@ -47,20 +47,25 @@ class BacklinkController extends Controller{
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 		
+		// $returnLog=true so the view can show an explicit failure state
+		// instead of "-", which it already shows for a genuine 0 too -
+		// the two were indistinguishable here, same root cause already
+		// fixed for the persisted path, generateReports() above.
 		$mozCtrler = new MozController();
-		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+		list($mozRankList, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo($list, true);
 
 		$this->set('mozRankList', $mozRankList);
+		$this->set('mozOk', !empty($mozCrawlInfo['crawl_status']));
 		$this->set('list', $list);
 		$this->render('backlink/findbacklink');
 	}
-	
+
 	function printBacklink($backlinkInfo){
 		$metric = !empty($backlinkInfo['metric']) ? $backlinkInfo['metric'] : 'external_pages_to_page';
 		$backlinkCount = $this->__getBacklinks($backlinkInfo['url'], $metric);
 		echo $backlinkCount;
 	}
-	
+
 	function __getBacklinks ($url, $metric = 'external_pages_to_page') {
 		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
 
@@ -132,21 +137,28 @@ class BacklinkController extends Controller{
 			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
 			// Extract backlink data - only trust it, and only save a row
-			// at all, if the call actually succeeded.
+			// at all, if the call actually succeeded. The rank cross-save
+			// below used to run unconditionally even after this fix -
+			// same root cause, just missed on this second write - so it's
+			// gated on the same $mozOk here now too.
 			if ($mozOk) {
 				$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
 				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
 				$this->saveRankResults($websiteInfo, true);
 				echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
-			} else {
-				echo "<p class='note error'>".($mozCrawlInfo['log_message'] ?? 'Moz API call failed')." - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
-			}
 
-			// Also save rank data
-			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-			$rankCtrler->saveRankResults($websiteInfo, true);
+				// Also save rank data
+				$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+				$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+				$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+				$rankCtrler->saveRankResults($websiteInfo, true);
+			} else {
+				// log_message is built directly from Moz's own JSON-RPC
+				// error response (external, third-party data) - escaped
+				// before echoing, same bug class already fixed in
+				// SaturationCheckerController::printSearchEngineSaturation()
+				echo "<p class='note error'>".htmlspecialchars($mozCrawlInfo['log_message'] ?? 'Moz API call failed', ENT_QUOTES)." - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
+			}
 		}
 	}
 	

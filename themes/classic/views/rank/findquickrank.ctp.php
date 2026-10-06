@@ -32,7 +32,7 @@
 				$spamScoreLabel = getSpamScoreLabel($spamScore);
 				?>
 				<span class="badge bg-<?php echo $spamScoreColor?>" title="<?php echo $spamScoreLabel?>">
-					<?php echo $spamScore > 0 ? round($spamScore, 2) . '%' : '-'; ?>
+					<?php echo empty($mozOk) ? 'Failed' : ($spamScore > 0 ? round($spamScore, 2) . '%' : '-'); ?>
 				</span>
 				</td>
 				<td width="150px" class='td_br_right rankarea'>
@@ -42,7 +42,7 @@
 				$daLabel = getAuthorityLabel($da);
 				?>
 				<span class="badge bg-<?php echo $daColor?>" title="<?php echo $daLabel?>">
-					<?php echo $da > 0 ? round($da, 2) : '-'; ?>
+					<?php echo empty($mozOk) ? 'Failed' : ($da > 0 ? round($da, 2) : '-'); ?>
 				</span>
 				</td>
 				<td width="150px" class='td_br_right rankarea'>
@@ -52,7 +52,7 @@
 				$paLabel = getAuthorityLabel($pa);
 				?>
 				<span class="badge bg-<?php echo $paColor?>" title="<?php echo $paLabel?>">
-					<?php echo $pa > 0 ? round($pa, 2) : '-'; ?>
+					<?php echo empty($mozOk) ? 'Failed' : ($pa > 0 ? round($pa, 2) : '-'); ?>
 				</span>
 				</td>
 			</tr>
