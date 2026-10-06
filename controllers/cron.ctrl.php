@@ -195,13 +195,41 @@ class CronController extends Controller {
 		}
 	}
 
-	# revert chunks whose claiming process died mid-way (stuck 'running' too long) back to 'pending'
+	/*
+	 * Revert chunks whose claiming process died mid-way (stuck 'running'
+	 * too long) back to 'pending' - OR to 'failed' if this chunk has
+	 * already hit max_attempts, same terminal check failChunk() applies
+	 * for a caught Throwable. Without this, a chunk whose processing
+	 * reliably crashes the whole PHP process (an uncatchable fatal, e.g.
+	 * memory exhaustion, rather than a Throwable drainChunkQueue()'s own
+	 * try/catch can catch) was never terminated: claimNextChunk() already
+	 * increments attempts at claim time (so a reaped chunk's attempts
+	 * count is accurate, no re-increment needed here), but this method
+	 * used to blindly revive every stale row to 'pending' regardless,
+	 * letting the oldest (and therefore always-reclaimed-first) poison
+	 * chunk crash the process again on every subsequent run forever,
+	 * permanently blocking every other chunk queued behind it for that
+	 * (website, tool).
+	 */
 	function reapStaleChunks($staleMinutes = 15) {
 		$staleMinutes = intval($staleMinutes);
-		$this->db->query("
-			UPDATE job_queue SET status = 'pending', available_at = NOW()
+		$staleRows = $this->db->select("
+			SELECT id, attempts, max_attempts FROM job_queue
 			WHERE status = 'running' AND claimed_at < (NOW() - INTERVAL $staleMinutes MINUTE)
 		");
+		foreach ($staleRows as $row) {
+			if (intval($row['attempts']) >= intval($row['max_attempts'])) {
+				$this->dbHelper->updateRow('job_queue', [
+					'status' => 'failed',
+					'last_error' => 'Reaped as stale after exhausting max_attempts - its processing likely crashed the PHP process rather than throwing a catchable exception',
+				], 'id=' . intval($row['id']));
+			} else {
+				$this->dbHelper->updateRow('job_queue', [
+					'status' => 'pending',
+					'available_at' => 'NOW()',
+				], 'id=' . intval($row['id']));
+			}
+		}
 	}
 
 	/**
@@ -535,8 +563,21 @@ class CronController extends Controller {
 			$websiteCtrler = New WebsiteController();
 			$this->websiteInfo = $websiteCtrler->__getWebsiteInfo($websiteId);
 		}
-		
-		if($cron){			
+
+		// __getWebsiteInfo() returns false for a deleted/invalid id - this
+		// used to fall straight through: $userInfo lookup below against a
+		// bool user_id silently resolves to isAdmin=false + an empty
+		// access list, so the tool loop further down just continue()s
+		// every iteration and the method returns having done nothing, no
+		// error anywhere. Reachable from the web admin's "Generate
+		// Report Now" GET action (cron.php sec=generate) with an
+		// admin-supplied website_id.
+		if (empty($this->websiteInfo)) {
+			echo "<p class='note error'>Website id $websiteId not found - nothing to generate.</p>\n";
+			return;
+		}
+
+		if($cron){
 			if(empty($this->cronList)){
 				$this->loadCronJobTools();
 			}
@@ -591,7 +632,7 @@ class CronController extends Controller {
 
 				case "keyword-position-checker":
 					// Check search volumes via DataForSEO (if enabled) or SP API (if configured).
-					// Run before keywordPositionCheckerCron(), which can die() early once
+					// Run before keywordPositionCheckerCron(), which can return early once
 					// SP_NUMBER_KEYWORDS_CRON is reached, so search volume still gets a turn.
 					include_once(SP_CTRLPATH . "/settings.ctrl.php");
 					if (SettingsController::isDFSEnabled('search_volume') || SettingsController::isSpApiEnabled('search_volume')) {
@@ -652,14 +693,27 @@ class CronController extends Controller {
 		
 		if (SP_MULTIPLE_CRON_EXEC && $saturationCtrler->isReportsExists($websiteInfo['id'], $this->timeStamp)) return;
 		
-		$saturationCtrler->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);			
+		$saturationCtrler->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);
+		// save if AT LEAST ONE engine's check actually succeeded (partial
+		// data still useful, same "OR" philosophy as pageSpeedCheckerCron's
+		// desktop/mobile gating) - previously saved unconditionally, so a
+		// captcha/regex-mismatch on every engine silently wrote 0s
+		$saturationOk = false;
 		foreach ($saturationCtrler->colList as $col => $dbCol) {
-			$websiteInfo[$col] = $saturationCtrler->__getSaturationRank($col, true);
+			list($websiteInfo[$col], $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
+			if (!empty($crawlInfo['crawl_status'])) {
+				$saturationOk = true;
+			} else {
+				error_log("SaturationCheckerCron: $col check failed for website {$websiteInfo['id']} ($websiteUrl) - " . ($crawlInfo['log_message'] ?? 'unknown error'));
+			}
 		}
-			
-		$saturationCtrler->saveRankResults($websiteInfo, true);			
-		echo "Saved Search Engine Saturation results of <b>$websiteUrl</b>.....</br>\n";
-		
+
+		if ($saturationOk) {
+			$saturationCtrler->saveRankResults($websiteInfo, true);
+			echo "Saved Search Engine Saturation results of <b>$websiteUrl</b>.....</br>\n";
+		} else {
+			echo "<p class='note error'>Search Engine Saturation check failed for every engine - <b>$websiteUrl</b> results NOT saved (avoiding a false 0).....</p>\n";
+		}
 	}
 	
 	# func to generate pagespeed reports from cron
@@ -703,6 +757,7 @@ class CronController extends Controller {
 			echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
 		} else {
 			echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
+			error_log("pageSpeedCheckerCron: both desktop and mobile checks failed for website {$websiteInfo['id']} ($websiteUrl)");
 		}
 
 	}
@@ -739,12 +794,18 @@ class CronController extends Controller {
 			} else {
 				echo "Failed Crawling of social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
 				echo $result['msg'];
+				// echo alone never reaches anywhere outside a real CLI run -
+				// a ping/beacon-triggered run (the common case - fires on
+				// admin page loads) buffers and discards all output, so
+				// this failure was previously invisible everywhere except
+				// a manual CLI invocation
+				error_log("socialMediaCheckerCron: crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website $websiteId) - " . ($result['msg'] ?? 'unknown error'));
 			}
 			sleep(SP_CRAWL_DELAY + 5);
 		}
 
 		echo "Saved social media results of website id: <b>$websiteId</b>.....</br>\n";
-	
+
 	}
 	
 	# func to generate review checker reports from cron
@@ -790,6 +851,7 @@ class CronController extends Controller {
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
 					echo $result['msg'];
+					error_log("reviewCheckerCron (Yelp): crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website $websiteId) - " . ($result['msg'] ?? 'unknown error'));
 				}
 				sleep(SP_CRAWL_DELAY + 5);
 			}
@@ -812,6 +874,7 @@ class CronController extends Controller {
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>.....</br>\n";
 					echo $result['msg'];
+					error_log("reviewCheckerCron: crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website $websiteId) - " . ($result['msg'] ?? 'unknown error'));
 				}
 				sleep(SP_CRAWL_DELAY + 5);
 			}
@@ -872,6 +935,7 @@ class CronController extends Controller {
 			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 		} else {
 			$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - no data source succeeded.....<br>\n");
+			error_log("backlinkCheckerCron: no data source succeeded for website {$websiteInfo['id']} ($websiteUrl)");
 		}
 
 		// Also save rank data from Moz API
@@ -919,6 +983,7 @@ class CronController extends Controller {
 			$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 		} else {
 			$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+			error_log("rankCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - backlink-side save skipped");
 		}
 	}
 
@@ -966,6 +1031,7 @@ class CronController extends Controller {
 				} else {
 					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
 					$this->debugMsg("DFS: Search volume failed for <b>{$keywordInfo['name']}</b>: {$dfsResult['message']}.....<br>\n");
+					error_log("searchVolumeCheckerCron (DFS): failed for keyword {$keywordInfo['id']} ({$keywordInfo['name']}) - " . ($dfsResult['message'] ?? 'unknown error'));
 				}
 
 			} else {
@@ -978,6 +1044,7 @@ class CronController extends Controller {
 					$this->debugMsg("SP API: Search volume ({$status}) for <b>{$keywordInfo['name']}</b>.....<br>\n");
 				} else {
 					$this->debugMsg("SP API: Search volume failed for <b>{$keywordInfo['name']}</b>: {$apiResult['message']}.....<br>\n");
+					error_log("searchVolumeCheckerCron (SP API): failed for keyword {$keywordInfo['id']} ({$keywordInfo['name']}) - " . ($apiResult['message'] ?? 'unknown error'));
 					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
 
 					if (stripos($apiResult['message'], 'limit exceeded') !== false || stripos($apiResult['message'], 'limit reached') !== false) {
@@ -1065,6 +1132,16 @@ class CronController extends Controller {
 			case 'crawl':
 			default:
 				// Direct crawl / scraping method
+
+				// SP_NUMBER_KEYWORDS_CRON cap already reached by an earlier
+				// website in this same cron run (executeCron()'s own loop
+				// calls this function once per website) - skip straight to
+				// returning rather than running this website's keyword
+				// query and crawling at least one more keyword past the cap.
+				if (SP_NUMBER_KEYWORDS_CRON > 0 && $this->checkedKeywords >= SP_NUMBER_KEYWORDS_CRON) {
+					return;
+				}
+
 				// get keywords not to be checked
 				$time = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 				$sql = "select distinct(keyword_id) from keywordcrontracker kc, keywords k where k.id=kc.keyword_id and k.website_id=$websiteId and time=$time";
@@ -1128,7 +1205,20 @@ class CronController extends Controller {
 					if ( (SP_NUMBER_KEYWORDS_CRON > 0) && !empty($crawlResult) ) {
 					    $this->checkedKeywords++;
 					    if ($this->checkedKeywords == SP_NUMBER_KEYWORDS_CRON) {
-					        die("Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job");
+					        // was die() - killed the whole PHP process, which
+					        // skips every bit of cron.php's post-executeCron()
+					        // maintenance (log pruning, AI Insights refresh,
+					        // AI Perception tracking, ...) whenever this cap
+					        // was hit - every single run, on an install with
+					        // this setting configured. return lets this
+					        // website's keyword loop (and executeCron()'s
+					        // loop over any remaining websites, short-
+					        // circuited by the guard at the top of this
+					        // function's 'crawl' case) stop the same way
+					        // drainChunkQueue() does elsewhere in this file,
+					        // without tearing down the whole process.
+					        echo "Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job.....</br>\n";
+					        return;
 					    }
 					}
 
@@ -1143,6 +1233,13 @@ class CronController extends Controller {
 
 	# func to run keyword position checker via SP API
 	function keywordPositionCheckerCronSPAPI($websiteId, $reportController, $keywordCtrler) {
+		// SP_NUMBER_KEYWORDS_CRON cap already reached by an earlier website
+		// in this same cron run - see the matching guard in the 'crawl'
+		// case of keywordPositionCheckerCron() above for why.
+		if (SP_NUMBER_KEYWORDS_CRON > 0 && $this->checkedKeywords >= SP_NUMBER_KEYWORDS_CRON) {
+			return;
+		}
+
 		$spapiCtrler = new SPAPIController();
 		$reportDate = date('Y-m-d', $this->timeStamp);
 		$time = strtotime($reportDate);
@@ -1272,7 +1369,10 @@ class CronController extends Controller {
 			if (SP_NUMBER_KEYWORDS_CRON > 0) {
 				$this->checkedKeywords++;
 				if ($this->checkedKeywords == SP_NUMBER_KEYWORDS_CRON) {
-					die("Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job");
+					// was die() - see the matching fix in the 'crawl' case
+					// of keywordPositionCheckerCron() above for why
+					echo "Reached total number of allowed keywords(".SP_NUMBER_KEYWORDS_CRON.") in each cron job.....</br>\n";
+					return;
 				}
 			}
 
@@ -1379,11 +1479,21 @@ class CronController extends Controller {
 
 		$this->drainChunkQueue('saturation-checker', $websiteId, function($chunk) use ($saturationCtrler, $websiteInfo) {
 			$saturationCtrler->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);
+			$saturationOk = false;
 			foreach ($saturationCtrler->colList as $col => $dbCol) {
-				$websiteInfo[$col] = $saturationCtrler->__getSaturationRank($col, true);
+				list($websiteInfo[$col], $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
+				if (!empty($crawlInfo['crawl_status'])) {
+					$saturationOk = true;
+				} else {
+					error_log("saturationCheckerCronQueued: $col check failed for website {$websiteInfo['id']} ($websiteUrl) - " . ($crawlInfo['log_message'] ?? 'unknown error'));
+				}
 			}
-			$saturationCtrler->saveRankResults($websiteInfo, true);
-			echo "Saved Search Engine Saturation results of <b>$websiteUrl</b>.....</br>\n";
+			if ($saturationOk) {
+				$saturationCtrler->saveRankResults($websiteInfo, true);
+				echo "Saved Search Engine Saturation results of <b>$websiteUrl</b>.....</br>\n";
+			} else {
+				echo "<p class='note error'>Search Engine Saturation check failed for every engine - <b>$websiteUrl</b> results NOT saved (avoiding a false 0).....</p>\n";
+			}
 		});
 	}
 
@@ -1421,6 +1531,7 @@ class CronController extends Controller {
 				echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
 			} else {
 				echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
+			error_log("pageSpeedCheckerCron: both desktop and mobile checks failed for website {$websiteInfo['id']} ($websiteUrl)");
 			}
 		});
 	}
@@ -1467,6 +1578,7 @@ class CronController extends Controller {
 				$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 			} else {
 				$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - no data source succeeded.....<br>\n");
+				error_log("backlinkCheckerCron: no data source succeeded for website {$websiteInfo['id']} ($websiteUrl)");
 			}
 
 			$rankCtrler = New RankController();
@@ -1512,6 +1624,7 @@ class CronController extends Controller {
 				$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 			} else {
 				$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+				error_log("rankCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - backlink-side save skipped");
 			}
 		});
 	}
@@ -1531,7 +1644,7 @@ class CronController extends Controller {
 		}
 		$this->enqueueChunks('sm-checker', $websiteId, $chunkMap);
 
-		$this->drainChunkQueue('sm-checker', $websiteId, function($chunk) use ($socialMediaCtrler) {
+		$this->drainChunkQueue('sm-checker', $websiteId, function($chunk) use ($socialMediaCtrler, $websiteId) {
 			$linkInfo = $chunk['payload'];
 			$result = $socialMediaCtrler->getSocialMediaDetails($linkInfo['type'], $linkInfo['url']);
 
@@ -1542,6 +1655,7 @@ class CronController extends Controller {
 			} else {
 				echo "Failed Crawling of social media results of <b>{$linkInfo['name']}</b>.....</br>\n";
 				echo $result['msg'];
+				error_log("socialMediaCheckerCronQueued: crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website $websiteId) - " . ($result['msg'] ?? 'unknown error'));
 			}
 			sleep(SP_CRAWL_DELAY + 5);
 		});
@@ -1575,7 +1689,7 @@ class CronController extends Controller {
 		}
 		$this->enqueueChunks('review-manager', $websiteId, $chunkMap);
 
-		$this->drainChunkQueue('review-manager', $websiteId, function($chunk) use ($reviewController, $reportDate) {
+		$this->drainChunkQueue('review-manager', $websiteId, function($chunk) use ($reviewController, $reportDate, $websiteId) {
 			$type = $chunk['payload']['type'];
 			$linkInfo = $chunk['payload']['link'];
 
@@ -1599,6 +1713,7 @@ class CronController extends Controller {
 			} else {
 				echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>$label.....</br>\n";
 				echo $result['msg'];
+				error_log("reviewCheckerCronQueued: crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website $websiteId) - " . ($result['msg'] ?? 'unknown error'));
 			}
 			sleep(SP_CRAWL_DELAY + 5);
 		});
@@ -1651,6 +1766,7 @@ class CronController extends Controller {
 				} else {
 					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
 					$this->debugMsg("DFS: Search volume failed for <b>{$keywordInfo['name']}</b>: {$dfsResult['message']}.....<br>\n");
+					error_log("searchVolumeCheckerCron (DFS): failed for keyword {$keywordInfo['id']} ({$keywordInfo['name']}) - " . ($dfsResult['message'] ?? 'unknown error'));
 				}
 			} else {
 				$apiResult = $spapiCtrler->postSearchVolumeKeyword($keywordInfo, 'google');
@@ -1660,6 +1776,7 @@ class CronController extends Controller {
 					$this->debugMsg("SP API: Search volume ({$status}) for <b>{$keywordInfo['name']}</b>.....<br>\n");
 				} else {
 					$this->debugMsg("SP API: Search volume failed for <b>{$keywordInfo['name']}</b>: {$apiResult['message']}.....<br>\n");
+					error_log("searchVolumeCheckerCron (SP API): failed for keyword {$keywordInfo['id']} ({$keywordInfo['name']}) - " . ($apiResult['message'] ?? 'unknown error'));
 					$spapiCtrler->saveKeywordSearchVolumeData($keywordInfo['id'], 'google', null, 'fail');
 
 					if (stripos($apiResult['message'], 'limit exceeded') !== false || stripos($apiResult['message'], 'limit reached') !== false) {

@@ -1271,7 +1271,8 @@ CREATE TABLE IF NOT EXISTS `cron_job_timing` (
   `error_message` text,
   PRIMARY KEY (`id`),
   KEY `run_id` (`run_id`),
-  KEY `url_section_started` (`url_section`,`started_at`)
+  KEY `url_section_started` (`url_section`,`started_at`),
+  KEY `started_at` (`started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
 CREATE TABLE IF NOT EXISTS `job_queue` (
@@ -1293,7 +1294,8 @@ CREATE TABLE IF NOT EXISTS `job_queue` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_chunk` (`website_id`,`url_section`,`chunk_key`),
   KEY `claim_lookup` (`website_id`,`url_section`,`status`,`available_at`),
-  KEY `run_id` (`claimed_by_run_id`)
+  KEY `run_id` (`claimed_by_run_id`),
+  KEY `status_updated` (`status`,`updated_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ;
 
 CREATE TABLE IF NOT EXISTS `saturationresults` (

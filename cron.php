@@ -60,13 +60,31 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 		switch($_GET['sec']){
 			
 			case "generate":
-				$controller->routeCronJob($_GET['website_id'], $_GET['repTools']);
-				if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
-					echo "<br>=== Processing pending DataForSEO tasks ===<br>";
-					include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
-					$dfsCtrler = new DataForSEOController();
-					$dfsCtrler->processPendingDFSTasks(true);
-					echo "<br>=== DataForSEO tasks processing completed ===<br>";
+				// Same scheduler lock the CLI cron run holds for its whole
+				// invocation - this "Generate Report Now" admin action used
+				// to run with no lock at all, so it could race an
+				// in-progress CLI/ping cron touching the same website (e.g.
+				// both read the same keyword as "not yet crawled" before
+				// either marks it crawled, crawling/charging it twice).
+				// Non-blocking (matches the CLI's own acquireSchedulerLock()
+				// call) - if a cron run is already in progress, this just
+				// reports that rather than making the admin wait for an
+				// unknown, possibly-long run to finish.
+				if ($controller->acquireSchedulerLock()) {
+					try {
+						$controller->routeCronJob($_GET['website_id'], $_GET['repTools']);
+						if (defined('SP_DFS_API_LOGIN') && !empty(SP_DFS_API_LOGIN)) {
+							echo "<br>=== Processing pending DataForSEO tasks ===<br>";
+							include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
+							$dfsCtrler = new DataForSEOController();
+							$dfsCtrler->processPendingDFSTasks(true);
+							echo "<br>=== DataForSEO tasks processing completed ===<br>";
+						}
+					} finally {
+						$controller->releaseSchedulerLock();
+					}
+				} else {
+					echo "<p class='note error'>A scheduled cron run is currently in progress - please try Generate Report Now again in a moment.</p>";
 				}
 				break;
 			

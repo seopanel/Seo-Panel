@@ -2102,3 +2102,12 @@ ALTER TABLE `websites` ADD COLUMN `og_url` varchar(255) DEFAULT NULL;
 ALTER TABLE `websites` ADD COLUMN `twitter_card` varchar(30) DEFAULT NULL;
 ALTER TABLE `websites` ADD COLUMN `meta_charset` varchar(20) DEFAULT NULL;
 ALTER TABLE `websites` ADD COLUMN `lang_code` varchar(10) DEFAULT NULL;
+
+--
+-- Two of the scheduler's own prune queries (pruneOldJobQueueRows(),
+-- pruneOldJobTimingRows()'s first DELETE) ran full table scans on their
+-- own highest-write-volume tables - no existing index covers a bare
+-- updated_at/started_at predicate.
+--
+ALTER TABLE `job_queue` ADD KEY `status_updated` (`status`,`updated_at`);
+ALTER TABLE `cron_job_timing` ADD KEY `started_at` (`started_at`);

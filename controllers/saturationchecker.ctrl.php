@@ -77,45 +77,65 @@ class SaturationCheckerController extends Controller{
 		echo "<a href='".htmlspecialchars($saturationUrl, ENT_QUOTES)."' target='_blank'>".htmlspecialchars($saturationCount, ENT_QUOTES)."</a>";
 	}
 	
-	function __getSaturationRank ($engine, $cron = false) {
-		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
+	/*
+	 * $returnLog=true returns [$saturationCount, $crawlInfo] instead of
+	 * just $saturationCount, so a caller can tell "0 results" apart from
+	 * "the fetch/scrape failed" - same pattern __getMozRankInfo()/
+	 * __getPageSpeedInfo() already use. Added because the cron callers
+	 * (saturationCheckerCron()/saturationCheckerCronQueued()) used to
+	 * save whatever this returned unconditionally - a captcha or a
+	 * changed search-results page layout (regex no longer matches) was
+	 * silently written as a real "0 indexed pages" result, same bug
+	 * class already fixed this session for backlink/rank/social/review/
+	 * pagespeed, just missed here.
+	 */
+	function __getSaturationRank ($engine, $cron = false, $returnLog = false) {
+		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return $returnLog ? [0, ['crawl_status' => 1]] : 0;
 
 		// Use sample API data if enabled (saves API credits)
 		if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
-			return rand(50, 10000);
+			$sampleCount = rand(50, 10000);
+			return $returnLog ? [$sampleCount, ['crawl_status' => 1]] : $sampleCount;
 		}
 
 		// check whether any api source is enabled for crawl keyword
 		$searchInfo = ['name' => "site:$this->url", "engine" => $engine];
 		list($resDataStatus, $resData) = SettingsController::getSearchResultCount($searchInfo, $cron);
 		if ($resDataStatus) {
-		    return __assign($resData, 'count', 0);
+		    $dfsCount = __assign($resData, 'count', 0);
+		    // __getSERPResultCount() always sets 'status' (bool) - the
+		    // real crawl-success signal, distinct from $resDataStatus
+		    // above (which only means "DataForSEO is the configured
+		    // source", not that this particular call succeeded)
+		    $dfsOk = !empty($resData['status']);
+		    return $returnLog ? [$dfsCount, ['crawl_status' => $dfsOk ? 1 : 0, 'log_message' => $resData['message'] ?? '']] : $dfsCount;
 		}
-		
+
 		$saturationCount = 0;
 		$r = [];
+		$crawlInfo = ['crawl_status' => 1];
 		switch ($engine) {
-			
+
 			#google
 			case 'google':
-				$url = $this->saturationUrlList[$engine] . urlencode($this->url);			
+				$url = $this->saturationUrlList[$engine] . urlencode($this->url);
 				$v = $this->spider->getContent($url);
 				$pageContent = empty($v['page']) ? '' :  $v['page'];
 				$r = [];
 				$engineInfo = Spider::getCrawlEngineInfo('google', 'saturation');
-				if (preg_match($engineInfo['regex1'], $pageContent, $r)){					
-				} elseif (preg_match($engineInfo['regex2'], $pageContent, $r)){					
-				} elseif (preg_match($engineInfo['regex3'], $pageContent, $r)){					
-				} elseif (preg_match($engineInfo['regex4'], $pageContent, $r)){					
+				if (preg_match($engineInfo['regex1'], $pageContent, $r)){
+				} elseif (preg_match($engineInfo['regex2'], $pageContent, $r)){
+				} elseif (preg_match($engineInfo['regex3'], $pageContent, $r)){
+				} elseif (preg_match($engineInfo['regex4'], $pageContent, $r)){
 				} elseif (preg_match('/of <b>([0-9\,]+)<\/b>/si', $pageContent, $r) ) {
 				} else {
 					$crawlInfo['crawl_status'] = 0;
 					$crawlInfo['log_message'] = SearchEngineController::isCaptchInSearchResults($pageContent) ? "<font class=error>Captcha found</font> in search result page" : "Regex not matched error occured while parsing search results!";
 				}
-								
+
 				$saturationCount = !empty($r[1]) ? str_replace(',', '', $r[1]) : 0;
 				break;
-				
+
 			#msn
 			case 'msn':
 				$url = $this->saturationUrlList[$engine] . urlencode(addHttpToUrl($this->url));
@@ -141,7 +161,7 @@ class SaturationCheckerController extends Controller{
 		$crawlInfo['ref_id'] = $this->url;
 		$crawlInfo['subject'] = $engine;
 		$crawlLogCtrl->updateCrawlLog($v['log_id'], $crawlInfo);
-		return $saturationCount;
+		return $returnLog ? [$saturationCount, $crawlInfo] : $saturationCount;
 	}
 	
 	# func to show genearte reports interface
