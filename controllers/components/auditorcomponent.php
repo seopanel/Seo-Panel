@@ -99,6 +99,16 @@ class AuditorComponent extends Controller{
 				}
             }
             
+            // Gate the whole "mark it crawled and save real metrics" path
+            // on the fetch having actually succeeded - a failed fetch used
+            // to fall straight through to here anyway, silently saving
+            // crawled=1 with every metric at its hardcoded default
+            // (mobile_friendly=0, https_secure=0, word_count=0, ...),
+            // permanently recording a false result indistinguishable from
+            // a genuinely-checked page. Leaving the row at crawled=0 on
+            // failure lets the next cron pass retry it, same philosophy
+            // as the crawler-results fix elsewhere this session.
+            if (!empty($pageInfo['crawl_status'])) {
             $reportInfo['id'] = $rInfo['id'];
             $reportInfo['page_title'] = addslashes($pageInfo['page_title']);
             $reportInfo['page_description'] = addslashes($pageInfo['page_description']);
@@ -202,12 +212,13 @@ class AuditorComponent extends Controller{
 
             // calculate score of each page and update it
             $this->updateReportPageScore($rInfo['id']);
-            
+
             // calculate score of each page and update it
             $this->updateProjectPageScore($projectInfo['id']);
+            } // if (!empty($pageInfo['crawl_status']))
         }
-        
-        return $reportUrl;                 
+
+        return $reportUrl;
     }
     
     // function to get report info

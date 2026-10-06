@@ -1284,6 +1284,31 @@ class SiteAuditorController extends Controller{
 		$this->render('siteauditor/croncommand');
 	}
     
+    /*
+     * Named separately from CronController::acquireSchedulerLock()'s
+     * 'seopanel_scheduler' lock (a different MySQL GET_LOCK() name,
+     * deliberately - the two cron scripts are meant to run independently
+     * on their own schedules, typically cron.php hourly-ish and
+     * siteauditorcron.php every 15 minutes per the recommended command
+     * shown in Settings; sharing one lock would block whichever one runs
+     * longer out of its own schedule entirely). executeCron() normally
+     * processes a single link per invocation and returns quickly, but a
+     * project's very first run (sitemap discovery - see
+     * discoverAndParseSitemaps()) can run long on a large site, risking
+     * overlap with the next scheduled invocation 15 minutes later - both
+     * could pick the same "uncrawled" row and crawl it twice. Not data
+     * corruption (last write wins), just wasted duplicate work, but cheap
+     * to prevent.
+     */
+    function acquireCronLock($timeoutSec = 0) {
+        $result = $this->db->select("SELECT GET_LOCK('seopanel_siteauditor_cron', $timeoutSec) as locked", true);
+        return !empty($result['locked']);
+    }
+
+    function releaseCronLock() {
+        $this->db->query("SELECT RELEASE_LOCK('seopanel_siteauditor_cron')");
+    }
+
     // function toexecute cron job
     function executeCron() {
         $sql = "select id from auditorprojects where cron=1 and status=1";

@@ -113,6 +113,17 @@ class Spider {
 			'external' => 0,
 			'total_links' => 0,
 		    'site_links' => [],
+		    // AuditorComponent::runReport() (the one caller of this method)
+		    // used to mark a page "crawled" and save it unconditionally,
+		    // with every metric silently defaulting to 0/false on a failed
+		    // fetch - permanently recording e.g. "not mobile friendly",
+		    // "not HTTPS", "0 words" for a page that was simply
+		    // unreachable, indistinguishable from a genuinely-checked
+		    // empty page. Same root-cause class as the crawler-results
+		    // fix elsewhere this session, just missed here. Mirrors the
+		    // same success gate this method already uses below to decide
+		    // whether to parse $ret['page'] at all.
+		    'crawl_status' => 0,
 		);
 		
 		$checkUrl = formatUrl($domainUrl);
@@ -129,9 +140,12 @@ class Spider {
 		$matches = [];
 		$match = [];
 		if( !empty($ret['page'])){
-			$string = str_replace(array("\n",'\n\r','\r\n','\r'), "", $ret['page']);			
+			$string = str_replace(array("\n",'\n\r','\r\n','\r'), "", $ret['page']);
 			$pageInfo = WebsiteController::crawlMetaData($url, '', $string, true);
-			
+			// crawlMetaData() replaces $pageInfo wholesale - re-set this
+			// after, not before
+			$pageInfo['crawl_status'] = 1;
+
 			// check whether base url tag is there
 			$baseTagUrl = "";
 			if (preg_match("/<base (.*?)>/is", $string, $match)) {
