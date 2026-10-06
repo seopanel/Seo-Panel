@@ -101,6 +101,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->checkOnlineUpgrade();
 			break;
 
+		case "check_daily_notices":
+			$controller->checkDailyNotices();
+			break;
+
 		case "test_email":
 			$controller->showTestEmailSettings();
 			break;

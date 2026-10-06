@@ -234,6 +234,7 @@
     ?>
     <?php
     // show spAPI registration popup for admin users who haven't registered or skipped
+    // (DB-only check, no live network call - safe to run inline)
     if (isLoggedIn() && isAdmin()) {
         include_once(SP_CTRLPATH."/settings.ctrl.php");
         $spApiCtrl = new SettingsController();
@@ -252,25 +253,51 @@
                 include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
             }
         } else {
-            $spapiCheckResult = $spApiCtrl->showSpApiUpgradePopup();
+            // The upgrade/version checks below used to run right here,
+            // synchronously, before the page could finish sending - each
+            // is cached once per day (information_list table), but on a
+            // cache miss (the day's first page view) each falls back to
+            // a LIVE network call with its own timeout (SP API account
+            // check: 30s, version check: 15s), so whichever page a user
+            // happened to load first each day silently paid that cost
+            // and felt slow, with every later page that same day fast
+            // (cache hit). Markup renders unconditionally now (cheap,
+            // static); checkDailyNotices() below runs both checks via a
+            // background AJAX call fired after the page has already
+            // loaded, so the page itself is never blocked on them - any
+            // popup just appears a moment later instead.
             include_once(SP_VIEWPATH."/settings/spapi_upgrade_popup.ctp.php");
-            if ($spapiCheckResult) {
-                echo '<script>$(document).ready(function(){ window.spapiShowUpgradePopup(); });</script>';
-            }
         }
-    }
-    ?>
-    <?php
-    // show the daily "new version available" notice popup for admin users -
-    // once per day on login, notice-only (its CTA just navigates to
-    // Settings > Version, it never triggers an upgrade from here)
-    if (isLoggedIn() && isAdmin()) {
-        include_once(SP_CTRLPATH."/settings.ctrl.php");
-        $versionUpgradeCtrl = new SettingsController();
-        if ($versionUpgradeCtrl->showVersionUpgradePopup()) {
-            include_once(SP_VIEWPATH."/settings/version_upgrade_popup.ctp.php");
-            echo '<script>$(document).ready(function(){ window.versionUpgradeShowPopup(); });</script>';
-        }
+        include_once(SP_VIEWPATH."/settings/version_upgrade_popup.ctp.php");
+        ?>
+        <script type="text/javascript">
+        $(document).ready(function() {
+            $.ajax({
+                url: '<?php echo SP_WEBPATH?>/settings.php?sec=check_daily_notices',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    if (data.spapi_upgrade) {
+                        window.spapiShowUpgradePopup({
+                            title: data.spapi_upgrade_title,
+                            icon: data.spapi_upgrade_icon,
+                            alertMsg: data.spapi_upgrade_alert_msg,
+                            subMsg: data.spapi_upgrade_sub_msg
+                        });
+                    } else if (data.version_outdated) {
+                        // else-if rather than two independent ifs (the
+                        // original synchronous code ran these as separate
+                        // blocks, so both could in theory have fired at
+                        // once - two full-screen overlays racing on the
+                        // same page load) - SP API upgrade is the more
+                        // actionable of the two, so it takes priority.
+                        window.versionUpgradeShowPopup();
+                    }
+                }
+            });
+        });
+        </script>
+        <?php
     }
     ?>
     <?php

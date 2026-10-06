@@ -765,6 +765,58 @@ class SettingsController extends Controller{
 	    return !empty($versionCheckInfo['page']) && $versionCheckInfo['page'] === 'outdated';
 	}
 
+	// AJAX: runs the SP API upgrade check and the version-update check and
+	// returns JSON. Both are still cached once-per-day exactly as before
+	// (__getTodayInformation()) - this just moves WHEN they run: out of
+	// the main page render (default.ctp.php used to call
+	// showSpApiUpgradePopup()/showVersionUpgradePopup() directly, inline,
+	// before the page could finish sending) and into a background request
+	// fired after the page has already loaded. On a cache miss (the first
+	// page view of the day) each of those calls a live network check with
+	// its own timeout (30s for the SP API account check, 15s for the
+	// version check) - previously that cost was paid synchronously by
+	// whatever page the user happened to load first that day; now the
+	// page itself is never blocked on it, any popup just appears a moment
+	// later once this call returns.
+	function checkDailyNotices() {
+	    $result = [
+	        'spapi_upgrade' => false,
+	        'spapi_upgrade_title' => '',
+	        'spapi_upgrade_icon' => '',
+	        'spapi_upgrade_alert_msg' => '',
+	        'spapi_upgrade_sub_msg' => '',
+	        'version_outdated' => false,
+	    ];
+
+	    if (isLoggedIn() && isAdmin()) {
+	        $upgradeReason = $this->showSpApiUpgradePopup();
+	        if ($upgradeReason) {
+	            $result['spapi_upgrade'] = true;
+	            if ($upgradeReason === 'expired') {
+	                $result['spapi_upgrade_title'] = 'API Subscription Expired';
+	                $result['spapi_upgrade_icon'] = 'fa-calendar-times';
+	                $result['spapi_upgrade_alert_msg'] = 'Your Seo Panel API subscription has <strong>expired</strong>.';
+	                $result['spapi_upgrade_sub_msg'] = 'Upgrade your plan to restore access to the Seo Panel API.';
+	            } elseif ($upgradeReason === 'monthly_limit') {
+	                $result['spapi_upgrade_title'] = 'API Monthly Limit Reached';
+	                $result['spapi_upgrade_icon'] = 'fa-tachometer-alt';
+	                $result['spapi_upgrade_alert_msg'] = 'You have reached your <strong>monthly API request limit</strong>.';
+	                $result['spapi_upgrade_sub_msg'] = 'Upgrade your plan to continue using the Seo Panel API without interruption.';
+	            } else {
+	                $result['spapi_upgrade_title'] = 'Upgrade Seo Panel API Plan';
+	                $result['spapi_upgrade_icon'] = 'fa-rocket';
+	                $result['spapi_upgrade_alert_msg'] = 'Upgrade your Seo Panel API plan to unlock more features and higher limits.';
+	                $result['spapi_upgrade_sub_msg'] = 'Choose a plan that fits your needs and get the most out of the Seo Panel API.';
+	            }
+	        }
+
+	        $result['version_outdated'] = $this->showVersionUpgradePopup();
+	    }
+
+	    header('Content-Type: application/json');
+	    echo json_encode($result);
+	}
+
 	// skip the version-upgrade notice popup for today
 	function skipVersionUpgradePopup() {
 	    $userId = isLoggedIn();
