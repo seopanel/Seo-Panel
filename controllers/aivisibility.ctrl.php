@@ -215,7 +215,12 @@ class AIVisibilityController extends Controller {
 			$exportContent .= createExportContent(['Website', 'AI Visibility Score', 'AI Referral Sessions', 'AI Referral Conversions']);
 			foreach ($summaryByWebsite as $summary) {
 				$exportContent .= createExportContent([
-					$summary['name'],
+					// a website name is fully user-controlled - same CSV
+					// formula-injection guard __streamCsv() already
+					// applies elsewhere in this file, missed here since
+					// this export path goes through the generic
+					// createExportContent() helper instead
+					$this->__neutralizeCsvFormula($summary['name']),
 					$summary['score']['overall'] !== null ? $summary['score']['overall'] . '%' : 'n/a',
 					$summary['roi']['sessions'] !== null ? $summary['roi']['sessions'] : 'not connected',
 					$summary['roi']['conversions'] !== null ? $summary['roi']['conversions'] : 'not connected',
@@ -368,16 +373,18 @@ class AIVisibilityController extends Controller {
 		// existing row the first toggle moves it to blocked
 		$nextBlocked = empty($existing) ? 1 : (empty($existing['is_blocked']) ? 1 : 0);
 
-		if (!empty($existing)) {
-			$this->dbHelper->updateRow('ai_visibility_robots_rules', ['is_blocked|int' => $nextBlocked, 'updated_at' => 'NOW()'], "website_id=$websiteId and platform='" . addslashes($platform) . "'");
-		} else {
-			$this->dbHelper->insertRow('ai_visibility_robots_rules', [
-				'website_id|int' => $websiteId,
-				'platform' => $platform,
-				'is_blocked|int' => $nextBlocked,
-				'updated_at' => 'NOW()',
-			]);
-		}
+		// INSERT...ON DUPLICATE KEY UPDATE instead of this SELECT-then-
+		// branch's separate insert/update - two near-simultaneous toggles
+		// of the same platform (double-click, two tabs) could both see
+		// "no existing row" above and both attempt an insert, the second
+		// hitting the website_platform unique key and throwing instead
+		// of updating. Same idiom the aggregate-on-write inserts
+		// elsewhere in this file already use (see the ai_referrals/
+		// ai_bot_hits inserts).
+		$platformSql = addslashes($platform);
+		$this->db->query("INSERT INTO ai_visibility_robots_rules (website_id, platform, is_blocked, updated_at)
+				VALUES ($websiteId, '$platformSql', $nextBlocked, NOW())
+				ON DUPLICATE KEY UPDATE is_blocked = $nextBlocked, updated_at = NOW()");
 
 		// append-only compliance record - never updated/deleted, unlike
 		// the current-state row above (see exportRobotsAuditLog())
@@ -2002,7 +2009,20 @@ PHP;
 
 		foreach ($sites as $siteAccess) {
 			if ($bytesUsed >= $byteBudget) break;
-			$bytesUsed += $this->__tailAccessLogForWebsite($siteAccess, $byteBudget - $bytesUsed);
+			// One Throwable from one website's log (a transient DB error,
+			// a malformed line that trips something unexpected mid-tail)
+			// must never abort the rest - same idiom checkTrafficAnomalies()/
+			// sendWeeklyDigests() already use elsewhere in this file. Without
+			// this, it previously propagated all the way up and killed the
+			// whole cron.php CLI process for that run, silently skipping
+			// checkTrafficAnomalies()/sendWeeklyDigests()/
+			// refreshAllAIInsights() and everything else after it in that
+			// run's tail.
+			try {
+				$bytesUsed += $this->__tailAccessLogForWebsite($siteAccess, $byteBudget - $bytesUsed);
+			} catch (Throwable $e) {
+				continue;
+			}
 		}
 	}
 
@@ -2249,21 +2269,38 @@ PHP;
 				$summaryByWebsite[$w['id']] = array_merge(['name' => $w['name']], $summary);
 			}
 
-			$reportCtrler->updateUserReportSetting($userId, 'ai_visibility_last_digest_sent', date('Y-m-d'));
-
+			// Both skip cases below (no traffic / no email) genuinely
+			// have nothing to send, so recording the attempt here is
+			// correct - avoids recomputing a quiet week on every
+			// subsequent cron run, per this function's own doc comment.
 			if (!$hasAnyTraffic) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_visibility_last_digest_sent', date('Y-m-d'));
 				continue;
 			}
 
 			$userInfo = $userCtrler->__getUserInfo($userId);
 			if (empty($userInfo['email'])) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_visibility_last_digest_sent', date('Y-m-d'));
 				continue;
 			}
 
+			// Only mark as sent once the send genuinely succeeded. This
+			// used to be marked sent BEFORE this call - an ordinary SMTP
+			// failure (down/bad creds/recipient rejection) returns false
+			// rather than throwing, so that boolean was never checked,
+			// and the real failure got silently recorded as success:
+			// the next 7 days of cron runs would then skip retrying it,
+			// losing that week's digest with no trace anywhere. Leaving
+			// last_digest_sent untouched on failure lets the next cron
+			// run simply retry instead.
 			try {
-				$this->sendWeeklyDigestEmail($userInfo, $summaryByWebsite);
+				$sent = $this->sendWeeklyDigestEmail($userInfo, $summaryByWebsite);
 			} catch (Throwable $e) {
-				continue;
+				$sent = false;
+			}
+
+			if ($sent) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_visibility_last_digest_sent', date('Y-m-d'));
 			}
 		}
 	}
