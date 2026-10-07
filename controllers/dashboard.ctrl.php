@@ -1348,7 +1348,7 @@ class DashboardController extends Controller {
         // Get website analytics data
         $waStats = $this->getWAStats($websiteId, $fromTime, $toTime);
         $waTrends = $this->getWATrends($websiteId, $fromTime, $toTime);
-        $waSourceDistribution = $this->getWASourceDistribution($websiteId, $toTime);
+        $waSourceDistribution = $this->getWASourceDistribution($websiteId, $fromTime, $toTime);
 
         // Get previous period stats for comparison
         $prevWAStats = $this->getWAStats($websiteId, $prevFromTime, $prevToTime);
@@ -1430,7 +1430,7 @@ class DashboardController extends Controller {
     }
 
     // Get website analytics source distribution
-    private function getWASourceDistribution($websiteId, $date) {
+    private function getWASourceDistribution($websiteId, $fromTime, $toTime) {
         $sql = "SELECT
                     wa.source_id,
                     ans.source_name,
@@ -1440,8 +1440,7 @@ class DashboardController extends Controller {
                 FROM website_analytics wa
                 LEFT JOIN analytic_sources ans ON wa.source_id = ans.id
                 WHERE wa.website_id=" . intval($websiteId) . "
-                AND wa.report_date <= '$date'
-                AND wa.report_date >= DATE_SUB('$date', INTERVAL 30 DAY)
+                AND wa.report_date BETWEEN '$fromTime' AND '$toTime'
                 GROUP BY wa.source_id, ans.source_name
                 ORDER BY users DESC
                 LIMIT 10";
