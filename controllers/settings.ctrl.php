@@ -118,7 +118,20 @@ class SettingsController extends Controller{
 	
 	function updateSystemSettings($postInfo) {
 
-		$setList = $this->__getAllSettings(true, 1, $postInfo['category']);
+		// was passed straight through with no sanitization at all - this
+		// value lands unquoted in __getAllSettings()'s own WHERE clause
+		// (libs/controller.class.php), unlike showSystemSettings() right
+		// above, which already htmlentities()/addslashes()'s the exact
+		// same value before the identical call. The app's global SQLi
+		// filter doesn't block a bare boolean/UNION payload either, so
+		// this was a genuine blind SQL injection via category. Sanitized
+		// into its own variable rather than overwriting $postInfo
+		// ['category'] in place - showSystemSettings() below (called
+		// with the original $postInfo['category']) already applies this
+		// exact same sanitization itself, so mutating it here too would
+		// double-encode it there.
+		$safeCategory = addslashes(htmlentities($postInfo['category'], ENT_QUOTES));
+		$setList = $this->__getAllSettings(true, 1, $safeCategory);
 		// names only, not old/new values - several settings in this list
 		// are secrets (SMTP password, API keys) that must never land in
 		// a table other admins can browse
@@ -599,8 +612,9 @@ class SettingsController extends Controller{
 	    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 	    curl_setopt($ch, CURLOPT_POSTREDIR, CURL_REDIR_POST_ALL);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+	    // was explicitly disabling TLS cert/host verification here
+	    // (CURLOPT_SSL_VERIFYHOST/VERIFYPEER = 0) - curl's own defaults
+	    // (verify both) are already correct, so just not overriding them
 	    $rawResponse = curl_exec($ch);
 	    curl_close($ch);
 
@@ -658,8 +672,6 @@ class SettingsController extends Controller{
 	    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 	    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
 	    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-	    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 	    $rawResponse = curl_exec($ch);
 	    curl_close($ch);
 

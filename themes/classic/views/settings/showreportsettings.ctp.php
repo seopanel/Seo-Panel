@@ -66,14 +66,14 @@ if (!empty($saved)) {
 								?>
 							</select>
 						<?php } else {?>
-							<input type="text" name="<?php echo $listInfo['set_name']?>" value="<?php echo stripslashes($listInfo['set_val'])?>" class="form-control" style='width:<?php echo $width?>px'>
+							<input type="text" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" class="form-control" style='width:<?php echo $width?>px'>
 							<?php if ($listInfo['set_name'] == 'SP_NUMBER_KEYWORDS_CRON') {?>
 								<p class="mt-2 text-muted"><?php echo $spTextReport['keywordnumbercheckedcronnote']?></p>
 							<?php } ?>
 						<?php }?>
 					<?php }?>
 				<?php }else{?>
-					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control" style='width:<?php echo $width?>px'><?php echo stripslashes($listInfo['set_val'])?></textarea>
+					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control" style='width:<?php echo $width?>px'><?php echo htmlspecialchars(stripslashes($listInfo['set_val']))?></textarea>
 				<?php }?>
 			</td>
 		</tr>

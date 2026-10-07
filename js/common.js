@@ -498,10 +498,32 @@ function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
 
+// POST, not scriptDoLoad()'s GET - this hands the server a base_url to
+// fetch (the Ollama base URL currently typed in the form, which may not
+// even be saved yet - that's the point, "test before save") and a bare
+// <img src="...settings.php?sec=checkOllamaAPI&base_url=...">  could
+// otherwise force an already-logged-in admin's browser to make the
+// server issue that request to an attacker-chosen target (SSRF via
+// confused deputy), same class of fix already applied to every other
+// GET-based state/action-triggering bug this session.
 function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
 	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
 	scriptArgs += "&base_url=" + encodeURIComponent(baseUrl);
-	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+	showLoadingIcon(scriptPos);
+	jQuery.ajax({
+		type: "POST",
+		url: scriptUrl,
+		data: scriptArgs,
+		success: function(data){
+			document.getElementById(scriptPos).innerHTML = data;
+			jQuery("#"+scriptPos).find("script").each(function(i) {
+				eval($(this).text());
+			});
+		},
+		error: function() {
+			showAjaxLoadError(scriptPos);
+		}
+	});
 }
 
 function openTab(tabName, dialog = false) {

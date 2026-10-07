@@ -64,6 +64,36 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 				$controller->proceedOnlineUpgrade();
 			}
 			break;
+
+		// moved off GET - unlike checkMozCon/checkGoogleAPI/
+		// checkDataForSEOAPI/checkSpApiCon above (and below), which all
+		// call a FIXED, hardcoded third-party host using caller-supplied
+		// credentials, this one lets the caller choose the TARGET HOST
+		// itself (base_url) and deliberately allows private/internal
+		// targets (see LocalAIController::__checkOllamaConnection()'s
+		// own $allowPrivateTarget=true) - a bare
+		// <img src="...settings.php?sec=checkOllamaAPI&base_url=...">
+		// could force an already-logged-in admin's browser to make the
+		// server issue a request to an attacker-chosen target (SSRF via
+		// confused deputy). POST alone closes the "simple cross-site
+		// GET" vector, same mitigation tier already applied to every
+		// other GET-based state/action-triggering bug this session.
+		case "checkOllamaAPI":
+		    if (empty($_POST['base_url'])) {
+		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+		    } else {
+		        include_once(SP_CTRLPATH."/localai.ctrl.php");
+		        $localAiCtrler = new LocalAIController();
+		        $connResult = $localAiCtrler->__checkOllamaConnection($_POST['base_url']);
+
+		        if ($connResult['status']) {
+		            print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
+		        } else {
+		            print "<span class='error'>{$connResult['message']}</span>";
+		        }
+		    }
+
+		    break;
 	}
 
 }else{
@@ -166,23 +196,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		        }
 		    }
 		    
-		    break;
-
-		case "checkOllamaAPI":
-		    if (empty($_GET['base_url'])) {
-		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
-		    } else {
-		        include_once(SP_CTRLPATH."/localai.ctrl.php");
-		        $localAiCtrler = new LocalAIController();
-		        $connResult = $localAiCtrler->__checkOllamaConnection($_GET['base_url']);
-
-		        if ($connResult['status']) {
-		            print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
-		        } else {
-		            print "<span class='error'>{$connResult['message']}</span>";
-		        }
-		    }
-
 		    break;
 
 		case "checkSpApiCon":
