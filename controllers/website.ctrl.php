@@ -493,11 +493,16 @@ class WebsiteController extends Controller{
 		
 		// check whether admin or api calll
 		if (isAdmin() || $apiCall) {
-			$userId = empty($listInfo['user_id']) ? isLoggedIn() : $listInfo['user_id'];	
+			// was missing intval() here (unlike createWebsite()'s own
+			// identical case, and unlike $listInfo['id'] right below) -
+			// $userId is interpolated unquoted into "user_id = $userId,"
+			// further down, so a raw request value gave any admin/API
+			// caller a blind SQL injection point via this one field
+			$userId = empty($listInfo['user_id']) ? isLoggedIn() : intval($listInfo['user_id']);
 		} else {
 			$userId = isLoggedIn();
 		}
-		
+
 		$listInfo['id'] = intval($listInfo['id']);
 
 		// the web-UI path (not the REST API, which is admin-equivalent by

@@ -82,6 +82,14 @@ class UserAPI extends Seopanel{
 		$userInfo['firstName'] = $info['first_name'];
 		$userInfo['lastName'] = $info['last_name'];
 		$userInfo['confirmPassword'] = $userInfo['password'];
+		// this docblock documents $info['type_id'] as setting the new
+		// user's type, but UserController::createUser() actually reads
+		// $userInfo['userType'] (defaulting to 2 when absent) - type_id
+		// was never mapped to it, so every API-created user silently got
+		// the default type regardless of what was passed here
+		if (isset($info['type_id'])) {
+			$userInfo['userType'] = $info['type_id'];
+		}
 		$return = $this->ctrler->createUser($userInfo, false);
 		
 		// if user creation is success
@@ -131,6 +139,10 @@ class UserAPI extends Seopanel{
 			$userInfo['firstName'] = $userInfo['first_name'];
 			$userInfo['lastName'] = $userInfo['last_name'];
 			$userInfo['confirmPassword'] = $userInfo['password'];
+			// same type_id -> userType mapping gap as createUser() above
+			if (isset($info['type_id'])) {
+				$userInfo['userType'] = $info['type_id'];
+			}
 			$return = $this->ctrler->updateUser($userInfo, false);
 			
 			// if user creation is success

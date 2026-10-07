@@ -36,10 +36,18 @@ if (SP_DEMO) {
 	
 	$category = strtolower($inputInfo['category']);
 	$action = $inputInfo['action'];
-	
+
+	// whitelisted against the actual set of *.api.php files this
+	// directory ships, rather than trusting the lowercased request
+	// value as-is before using it to build a filesystem include path -
+	// not a demonstrated traversal today (nothing else on disk ends in
+	// .api.php), but a missing-input-validation bug on a value used for
+	// file inclusion regardless, and cheap to close outright
+	$validApiCategories = array('user', 'website', 'keyword', 'searchengine');
+
 	// check for category and action values
-	if (!empty($category) && !empty($action)) {
-		
+	if (!empty($category) && !empty($action) && in_array($category, $validApiCategories)) {
+
 		// call api class with the action
 		if (include(SP_ABSPATH . "/api/" . $category . ".api.php")) {
 			$categortClassName = ucfirst($category) . "API";
