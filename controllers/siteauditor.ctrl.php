@@ -1506,6 +1506,12 @@ class SiteAuditorController extends Controller{
         // Parse all discovered sitemaps in priority order
         $auditorComp = $this->createComponent('AuditorComponent');
         $addedCount = 0;
+        // was a fresh COUNT(*) query on every single url in every
+        // sitemap, just to re-derive a number $addedCount already
+        // tracks incrementally - a 5,000-url sitemap issued up to 5,000
+        // extra queries just for this one max_links gate. Fetched once
+        // up front and incremented locally instead.
+        $totalLinksSoFar = $this->getCountcrawledLinks($projectInfo['id']);
 
         foreach ($sitemapUrls as $sitemapUrl) {
             // Save sitemap info
@@ -1539,8 +1545,7 @@ class SiteAuditorController extends Controller{
                 }
 
                 // Check max links limit
-                $totalLinks = $this->getCountcrawledLinks($projectInfo['id']);
-                if ($totalLinks >= $projectInfo['max_links']) {
+                if ($totalLinksSoFar >= $projectInfo['max_links']) {
                     break 2; // Break out of both loops
                 }
 
@@ -1552,6 +1557,7 @@ class SiteAuditorController extends Controller{
                 );
                 $auditorComp->saveReportInfo($reportInfo);
                 $addedCount++;
+                $totalLinksSoFar++;
             }
 
             // Update sitemap URL count
