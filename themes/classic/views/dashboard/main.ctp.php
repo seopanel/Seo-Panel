@@ -332,11 +332,32 @@ if (!function_exists('renderStatTile')) {
 	$referralHits = intval($aiVisibilityStats['referralHits']);
 	$topPlatform = $aiVisibilityStats['topPlatform'];
 
+	// aiVisibilityStats is already scoped to the selected period
+	// ($fromTime/$toTime) by the controller - this text used to say
+	// "last 30 days" unconditionally regardless of which period was
+	// actually selected (day/week/month/year), including when that
+	// wrong text got copied verbatim into a SEO Diary note via "Add to
+	// SEO Diary" below.
+	$periodPhraseMap = [
+		'day' => 'the last day',
+		'week' => 'the last 7 days',
+		'month' => 'the last 30 days',
+		'year' => 'the last year',
+	];
+	$periodBadgeMap = [
+		'day' => '24h',
+		'week' => '7d',
+		'month' => '30d',
+		'year' => '1y',
+	];
+	$aiPeriodPhrase = $periodPhraseMap[$period ?? 'month'] ?? $periodPhraseMap['month'];
+	$aiPeriodBadge = $periodBadgeMap[$period ?? 'month'] ?? $periodBadgeMap['month'];
+
 	if ($referralHits > 0) {
-		$aiFindingTitle = "AI crawlers visited $referralHits time" . ($referralHits == 1 ? '' : 's') . " in the last 30 days";
-		$aiFindingDesc = "ChatGPT, Perplexity, Gemini, Claude and similar AI crawlers fetched this site $referralHits time" . ($referralHits == 1 ? '' : 's') . " over the last 30 days" . (!empty($topPlatform) ? ", most often via $topPlatform." : ".");
+		$aiFindingTitle = "AI crawlers visited $referralHits time" . ($referralHits == 1 ? '' : 's') . " in $aiPeriodPhrase";
+		$aiFindingDesc = "ChatGPT, Perplexity, Gemini, Claude and similar AI crawlers fetched this site $referralHits time" . ($referralHits == 1 ? '' : 's') . " over $aiPeriodPhrase" . (!empty($topPlatform) ? ", most often via $topPlatform." : ".");
 	} else {
-		$aiFindingTitle = "No AI crawler activity in the last 30 days";
+		$aiFindingTitle = "No AI crawler activity in $aiPeriodPhrase";
 		$aiFindingDesc = "No AI crawler visit has been recorded for this site in the selected period.";
 	}
 	?>
@@ -382,7 +403,7 @@ if (!function_exists('renderStatTile')) {
 							<?php renderStatTile('Cited in AI Overview', 'Keywords where this site was cited as a source', $aioCited, 'success'); ?>
 						</div>
 						<div class="col-md-3">
-							<?php renderStatTile('AI Crawler Visits (30d)', 'Requests from AI crawlers (ChatGPT, Perplexity, Gemini, Claude, etc.)', number_format($referralHits), 'primary', !empty($topPlatform) ? 'Top: ' . htmlspecialchars($topPlatform) : null); ?>
+							<?php renderStatTile("AI Crawler Visits ($aiPeriodBadge)", 'Requests from AI crawlers (ChatGPT, Perplexity, Gemini, Claude, etc.)', number_format($referralHits), 'primary', !empty($topPlatform) ? 'Top: ' . htmlspecialchars($topPlatform) : null); ?>
 						</div>
 					</div>
 					<div class="alert <?php echo $referralHits > 0 ? 'alert-info' : 'alert-warning'?> mt-3 mb-0">
