@@ -157,6 +157,9 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 				}
 				?>
 				</strong>
+				<?php if ($listInfo['set_name'] == 'SP_SENDGRID_API') { ?>
+					<br><small class="text-muted">Also set SMTP Host to <code>smtp.sendgrid.net</code> and SMTP Password to your Sendgrid API key below - this toggle alone does not send mail via Sendgrid.</small>
+				<?php } ?>
 			</td>
 			<td class="td_right_col">
 				<?php if($listInfo['set_type'] != 'text'){?>

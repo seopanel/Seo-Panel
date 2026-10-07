@@ -68,7 +68,7 @@ if (!empty($saved)) {
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
-    		<a onclick="scriptDoLoad('settings.php?sec=reportsettings', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-warning">
+    		<a onclick="scriptDoLoad('settings.php?sec=proxysettings', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>
          	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('settings.php', 'updateSettings', 'content')"; ?>
