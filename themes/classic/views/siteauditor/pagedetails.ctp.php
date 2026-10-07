@@ -1,5 +1,15 @@
 <?php
-$backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno={$post['pageno']}&order_col={$post['order_col']}&order_val={$post['order_val']}')";
+// pageno/order_col/order_val previously went straight into this
+// onclick attribute with no validation or escaping, reached via GET
+// sec=pagedetails - a single quote broke out of the JS string and ran
+// arbitrary JS for whoever loaded that response. Same whitelist
+// showLinksReport() itself validates order_col/order_val against
+// before using them in SQL.
+$validBackLinkOrderCols = array('page_url', 'page_authority', 'score', 'brocken', 'external_links', 'total_links', 'google_backlinks', 'indexed', 'crawled', 'page_title', 'page_description', 'page_keywords', 'comments');
+$backLinkPageno = intval($post['pageno'] ?? 0);
+$backLinkOrderCol = (!empty($post['order_col']) && in_array($post['order_col'], $validBackLinkOrderCols)) ? $post['order_col'] : 'page_url';
+$backLinkOrderVal = (strtoupper($post['order_val'] ?? '') === 'ASC') ? 'ASC' : 'DESC';
+$backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno=$backLinkPageno&order_col=$backLinkOrderCol&order_val=$backLinkOrderVal')";
 
 // Calculate link statistics
 $totalLinks = count($linkList);
@@ -751,7 +761,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 				<div class="detail-card full-width">
 					<div class="detail-label"><i class="fas fa-link"></i> <?php echo $spTextSA['Canonical URL'] ?? 'Canonical URL'?></div>
 					<div class="detail-value">
-						<a href="<?php echo $reportInfo['canonical_url']?>" target="_blank"><?php echo $reportInfo['canonical_url']?></a>
+						<a href="<?php echo htmlspecialchars($reportInfo['canonical_url'], ENT_QUOTES)?>" target="_blank"><?php echo htmlspecialchars($reportInfo['canonical_url'])?></a>
 					</div>
 				</div>
 				<?php } ?>

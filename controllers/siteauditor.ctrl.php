@@ -443,7 +443,21 @@ class SiteAuditorController extends Controller{
 	
 	// fucntion to load reports page after teh actions
 	function loadReportsPage($info=[]) {
-	    print "<script>scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno={$info['pageno']}&order_col={$info['order_col']}&order_val={$info['order_val']}')</script>";
+	    // pageno/order_col/order_val previously went straight into this
+	    // inline <script> body with no escaping - reachable via GET
+	    // sec=checkscore (checkPageScore() passes $_GET straight through)
+	    // and the deletepage case, so e.g.
+	    // ?sec=checkscore&report_id=<id>&order_col=x');alert(document.domain)//
+	    // ran arbitrary JS for whoever loaded that response. pageno is
+	    // forced numeric; order_col/order_val are checked against the
+	    // same fixed whitelist showLinksReport() itself validates against
+	    // before using them in SQL, so an invalid value can't reach here
+	    // either.
+	    $validLinkOrderCols = array('page_url', 'page_authority', 'score', 'brocken', 'external_links', 'total_links', 'google_backlinks', 'indexed', 'crawled', 'page_title', 'page_description', 'page_keywords', 'comments');
+	    $pageno = intval($info['pageno'] ?? 0);
+	    $orderCol = (!empty($info['order_col']) && in_array($info['order_col'], $validLinkOrderCols)) ? $info['order_col'] : 'page_url';
+	    $orderVal = (strtoupper($info['order_val'] ?? '') === 'ASC') ? 'ASC' : 'DESC';
+	    print "<script>scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno=$pageno&order_col=$orderCol&order_val=$orderVal')</script>";
 	}
 	
 	// function to check page score
@@ -993,9 +1007,17 @@ class SiteAuditorController extends Controller{
 			    $listInfo['https_secure'] = $listInfo['https_secure'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['has_og_tags'] = $listInfo['has_og_tags'] ? $spText['common']['Yes'] : $spText['common']['No'];
 			    $listInfo['has_twitter_cards'] = $listInfo['has_twitter_cards'] ? $spText['common']['Yes'] : $spText['common']['No'];
+				// page_url/title/description/keywords and comments are
+				// crawled, third-party-controlled content - neutralized
+				// against CSV formula/DDE injection (a value starting
+				// with =/+/-/@ can execute as a formula when the
+				// exported CSV is opened in Excel/LibreOffice) before
+				// writing them into this row; every other value here is
+				// app-internal (counts, Yes/No labels), not attacker
+				// reachable.
 				$exportContent .= createExportContent(array(
 					$i+1,
-					$listInfo['page_url'],
+					neutralizeCsvFormula($listInfo['page_url']),
 					$listInfo['page_authority'],
 					$listInfo['google_backlinks'],
 					$listInfo['google_indexed'],
@@ -1010,10 +1032,10 @@ class SiteAuditorController extends Controller{
 					$listInfo['score'],
 					$listInfo['brocken'],
 					$listInfo['crawled'],
-					$listInfo['page_title'],
-					$listInfo['page_description'],
-					$listInfo['page_keywords'],
-					$comments
+					neutralizeCsvFormula($listInfo['page_title']),
+					neutralizeCsvFormula($listInfo['page_description']),
+					neutralizeCsvFormula($listInfo['page_keywords']),
+					neutralizeCsvFormula($comments)
 				));
 			}
 			exportToCsv('siteauditor_report', $exportContent);
@@ -1256,8 +1278,12 @@ class SiteAuditorController extends Controller{
 			$exportContent .= createExportContent(array($spText['common']['No'], $headArr[$repType], $headArr["page_urls"], $headArr["count"]));
 			foreach($dupInfo[$repType] as $i => $listInfo) {
 			    $pageUrls = "";
-			    foreach($listInfo['page_urls'] as $urlInfo) $pageUrls .= $urlInfo['page_url'] . "\n";   
-				$exportContent .= createExportContent(array($i+1, $listInfo[$repType], $pageUrls, $listInfo['count']));
+			    foreach($listInfo['page_urls'] as $urlInfo) $pageUrls .= $urlInfo['page_url'] . "\n";
+			    // $listInfo[$repType] (the duplicated title/description/
+			    // keywords value) and $pageUrls are both crawled,
+			    // third-party-controlled content - same CSV formula
+			    // injection guard as showLinksReport()'s export above
+				$exportContent .= createExportContent(array($i+1, neutralizeCsvFormula($listInfo[$repType]), neutralizeCsvFormula($pageUrls), $listInfo['count']));
 			}
 			exportToCsv('siteauditor_duplicate_'.$repType, $exportContent);
 		} else {

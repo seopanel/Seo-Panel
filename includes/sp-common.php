@@ -465,7 +465,25 @@ function isValidReferer($referer) {
 
 # func to create export content
 function createExportContent($list) {
-	return '"'.implode('","',$list)."\"\r\n"; 
+	return '"'.implode('","',$list)."\"\r\n";
+}
+
+// Neutralizes CSV formula/DDE injection (a value starting with =, +, -,
+// or @ can be read as a spreadsheet formula on open) - shared so every
+// module can apply it to its own attacker-influenced string fields
+// before passing them to createExportContent(). Deliberately NOT
+// applied inside createExportContent() itself: that would also
+// neutralize legitimate negative numbers/percentages (e.g. a rank_diff
+// of "-5") that plenty of exports elsewhere in the app already rely on
+// rendering as-is - callers opt in per-field instead, same pattern
+// AIVisibilityController::__neutralizeCsvFormula()/__streamCsv() already
+// established for that module.
+function neutralizeCsvFormula($value) {
+	$value = (string) $value;
+	if (preg_match('/^[=+\-@]/', $value)) {
+		return "'" . $value;
+	}
+	return $value;
 }
 
 # func to export data to csv file
