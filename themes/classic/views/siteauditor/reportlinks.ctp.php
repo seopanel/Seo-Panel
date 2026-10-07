@@ -281,7 +281,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_og_tags'] ? $yesText : $noText?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><?php echo $listInfo['has_twitter_cards'] ? $yesText : $noText?></td>
 				<td style="border: 1px solid #ddd; padding: 6px; text-align: center;"><strong><?php
-	$pdfMaxScore = 38;
+	$pdfMaxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating this PDF export's percentage above what the screen/CSV already show for the same project
 	$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $listInfo['score']) / $pdfMaxScore * 100, 100) : 0;
 	echo round($pdfScorePercentage, 0) . '%';
 ?></strong></td>
@@ -354,7 +354,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 				<td style="text-align: center;">
 				    <?php
 				    	if ($pdfVersion) {
-							$pdfMaxScore = 38;
+							$pdfMaxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating this PDF export's percentage above what the screen/CSV already show for the same project
 							$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $listInfo['score']) / $pdfMaxScore * 100, 100) : 0;
 							echo "<b>" . round($pdfScorePercentage, 0) . "%</b>";
 						} else {

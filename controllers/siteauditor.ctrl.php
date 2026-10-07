@@ -936,10 +936,24 @@ class SiteAuditorController extends Controller{
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
 		$pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');
 		$this->set('pagingDiv', $pagingDiv);
-		$sql .= " order by $orderCol $orderVal";		
-		
-		$sql .= in_array($data['doc_type'], array('pdf', 'print', 'export')) ? "" : " limit ".$this->paging->start .",". $this->paging->per_page; 
-		
+		// $orderCol passes $validLinkOrderCols' whitelist above, but two
+		// of those values aren't real auditorreports columns: the
+		// "Indexed" header actually displays google_indexed (confirmed
+		// in the view - no bare "indexed" column exists), and "Comments"
+		// is a derived, per-row PHP value computed further down this
+		// same function (AuditorComponent's own per-check messages), not
+		// a column at all. Sorting by either threw a raw
+		// "Unknown column" SQL error and broke the whole report list.
+		$sqlOrderCol = $orderCol;
+		if ($orderCol === 'indexed') {
+			$sqlOrderCol = 'google_indexed';
+		} elseif ($orderCol === 'comments') {
+			$sqlOrderCol = 'score';
+		}
+		$sql .= " order by $sqlOrderCol $orderVal";
+
+		$sql .= in_array($data['doc_type'], array('pdf', 'print', 'export')) ? "" : " limit ".$this->paging->start .",". $this->paging->per_page;
+
 		$reportList = $this->db->select($sql);
 		$spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 		$headArr =  array(

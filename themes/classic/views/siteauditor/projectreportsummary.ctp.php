@@ -33,7 +33,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['last_updated']?></td>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Score']?>:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php
-				$pdfMaxScore = 38;
+				$pdfMaxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating this PDF export's percentage above what the screen/CSV already show for the same project
 				$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $projectInfo['score']) / $pdfMaxScore * 100, 100) : 0;
 				echo round($pdfScorePercentage, 1) . '%';
 			?></td>
