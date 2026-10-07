@@ -1569,6 +1569,19 @@ CREATE TABLE IF NOT EXISTS `sp_recommendations` (
   KEY `website_user` (`website_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+-- Tracks the last successful refresh per website+user independent of
+-- whether that refresh actually found anything - MAX(refreshed_at) over
+-- sp_recommendations itself returns NULL whenever a refresh genuinely
+-- finds zero issues (a common, expected "all clear" outcome, not an
+-- edge case), which was indistinguishable from "never refreshed" and
+-- rendered the exact same misleading "No AI insights yet" empty state.
+CREATE TABLE IF NOT EXISTS `sp_recommendations_refresh` (
+  `website_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `refreshed_at` datetime NOT NULL,
+  PRIMARY KEY (`website_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
 CREATE TABLE IF NOT EXISTS `testplugin` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `title` varchar(64) CHARACTER SET latin1 NOT NULL,

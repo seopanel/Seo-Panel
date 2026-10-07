@@ -2111,3 +2111,19 @@ ALTER TABLE `websites` ADD COLUMN `lang_code` varchar(10) DEFAULT NULL;
 --
 ALTER TABLE `job_queue` ADD KEY `status_updated` (`status`,`updated_at`);
 ALTER TABLE `cron_job_timing` ADD KEY `started_at` (`started_at`);
+
+--
+-- Tracks the last successful Recommendations refresh per website+user
+-- independent of whether that refresh actually found anything -
+-- MAX(refreshed_at) over sp_recommendations itself returns NULL
+-- whenever a refresh genuinely finds zero issues (a common, expected
+-- "all clear" outcome, not an edge case), which was indistinguishable
+-- from "never refreshed" and rendered the exact same misleading
+-- "No AI insights yet" empty state.
+--
+CREATE TABLE IF NOT EXISTS `sp_recommendations_refresh` (
+  `website_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `refreshed_at` datetime NOT NULL,
+  PRIMARY KEY (`website_id`,`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;

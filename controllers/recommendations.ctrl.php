@@ -145,10 +145,29 @@ class RecommendationsController extends Controller {
             }
         }
 
+        $refreshError = null;
         if (!empty($websiteId)) {
-            $this->refreshRecommendationsForWebsite($websiteId, $userId);
+            // was uncaught - unlike the cron caller (CronController::
+            // refreshAllAIInsights()), which already wraps this same call
+            // in try/catch. A Throwable from any one of the 18 generators
+            // used to surface as a raw uncaught-exception response with no
+            // indication to the user that anything failed - now rolled
+            // back cleanly by refreshRecommendationsForWebsite() itself
+            // (so no data is lost either way), and reported here so the
+            // re-rendered dashboard can show a real error instead of
+            // silently looking like an "all clear" refresh.
+            try {
+                $this->refreshRecommendationsForWebsite($websiteId, $userId);
+            } catch (Throwable $e) {
+                error_log("SEO Panel: refreshRecommendations() failed for website $websiteId: " . $e->getMessage());
+                $refreshError = 'Refresh failed - please try again. If this keeps happening, contact support.';
+            }
         }
 
+        // must be set BEFORE showRecommendationsDashboard() below, which
+        // calls $this->render() as its very last step - a set() after
+        // render() already ran has no effect on the output.
+        $this->set('refreshError', $refreshError);
         $this->showRecommendationsDashboard($data);
     }
 
@@ -172,34 +191,64 @@ class RecommendationsController extends Controller {
             $previousKeys[$this->__recommendationIdentity($rec)] = true;
         }
 
-        // Clear old recommendations for this website / user
-        $this->db->query("DELETE FROM sp_recommendations WHERE website_id=$websiteId AND user_id=$userId");
+        // Wrapped in a real DB transaction (sp_recommendations is InnoDB) -
+        // this used to DELETE then re-INSERT with no transaction and no
+        // concurrency guard at all. Two overlapping refreshes for the same
+        // website (a double-click, or two browser tabs) could interleave
+        // their DELETE/INSERT and leave duplicate rows, or leave the table
+        // empty if one request's DELETE landed after the other's INSERTs
+        // had already run. And if any ONE of the 18 generators below threw
+        // (a real Throwable, not just a failed query), the DELETE had
+        // already committed with nothing re-inserted to replace it - the
+        // AJAX caller had no try/catch either (unlike the cron caller,
+        // which already wraps this same call), so the user was left with
+        // zero recommendations and no indication anything went wrong. Any
+        // failure now rolls back to the exact state before this call ran.
+        $this->db->query("START TRANSACTION");
+        try {
+            // Clear old recommendations for this website / user
+            $this->db->query("DELETE FROM sp_recommendations WHERE website_id=$websiteId AND user_id=$userId");
 
-        // Generate and persist each recommendation set
-        $this->__generateWebmasterRecommendations($websiteId, $userId);
-        $this->__generateAIOverviewCitationRecommendations($websiteId, $userId);
-        $this->__generateAIBotBlockedRecommendation($websiteId, $userId);
-        $this->__generateAIBotSilentRecommendation($websiteId, $userId);
-        $this->__generateRankDropRecommendations($websiteId, $userId);
-        $this->__generateSiteAuditorRecommendations($websiteId, $userId);
-        // Added in priority order from a deep-research pass across every
-        // feature/report not yet covered above - see each generator's own
-        // comment for its data source and why it's shaped the way it is.
-        $this->__generateAiPerceptionDropRecommendations($websiteId, $userId);
-        $this->__generateAiPerceptionCompetitorRecommendations($websiteId, $userId);
-        $this->__generateBacklinkDropRecommendations($websiteId, $userId);
-        $this->__generateReviewDropRecommendations($websiteId, $userId);
-        $this->__generateAnalyticsDropRecommendations($websiteId, $userId);
-        $this->__generateSearchConsoleDropRecommendations($websiteId, $userId);
-        $this->__generatePageSpeedRegressionRecommendations($websiteId, $userId);
-        $this->__generateSocialFollowerRecommendations($websiteId, $userId);
-        $this->__generateCronReliabilityRecommendations($websiteId, $userId);
-        $this->__generateJobQueueFailureRecommendations($websiteId, $userId);
-        $this->__generateDirectorySubmissionDecayRecommendations($websiteId, $userId);
-        $this->__generateSearchVolumeMismatchRecommendations($websiteId, $userId);
-        // Must run LAST - reads this same run's own rank_tracker/
-        // site_auditor rows, already inserted above.
-        $this->__generateRankDropAuditorCorrelationRecommendations($websiteId, $userId);
+            // Generate and persist each recommendation set
+            $this->__generateWebmasterRecommendations($websiteId, $userId);
+            $this->__generateAIOverviewCitationRecommendations($websiteId, $userId);
+            $this->__generateAIBotBlockedRecommendation($websiteId, $userId);
+            $this->__generateAIBotSilentRecommendation($websiteId, $userId);
+            $this->__generateRankDropRecommendations($websiteId, $userId);
+            $this->__generateSiteAuditorRecommendations($websiteId, $userId);
+            // Added in priority order from a deep-research pass across every
+            // feature/report not yet covered above - see each generator's own
+            // comment for its data source and why it's shaped the way it is.
+            $this->__generateAiPerceptionDropRecommendations($websiteId, $userId);
+            $this->__generateAiPerceptionCompetitorRecommendations($websiteId, $userId);
+            $this->__generateBacklinkDropRecommendations($websiteId, $userId);
+            $this->__generateReviewDropRecommendations($websiteId, $userId);
+            $this->__generateAnalyticsDropRecommendations($websiteId, $userId);
+            $this->__generateSearchConsoleDropRecommendations($websiteId, $userId);
+            $this->__generatePageSpeedRegressionRecommendations($websiteId, $userId);
+            $this->__generateSocialFollowerRecommendations($websiteId, $userId);
+            $this->__generateCronReliabilityRecommendations($websiteId, $userId);
+            $this->__generateJobQueueFailureRecommendations($websiteId, $userId);
+            $this->__generateDirectorySubmissionDecayRecommendations($websiteId, $userId);
+            $this->__generateSearchVolumeMismatchRecommendations($websiteId, $userId);
+            // Must run LAST - reads this same run's own rank_tracker/
+            // site_auditor rows, already inserted above.
+            $this->__generateRankDropAuditorCorrelationRecommendations($websiteId, $userId);
+
+            // Recorded independently of sp_recommendations' own row count -
+            // see __getLastRefreshedAt()'s own comment for why - and inside
+            // this same transaction, so a rolled-back refresh correctly
+            // leaves the PREVIOUS refreshed_at in place rather than
+            // claiming credit for an attempt that didn't actually commit.
+            $this->db->query("INSERT INTO sp_recommendations_refresh (website_id, user_id, refreshed_at)
+                    VALUES ($websiteId, $userId, NOW())
+                    ON DUPLICATE KEY UPDATE refreshed_at = NOW()");
+
+            $this->db->query("COMMIT");
+        } catch (Throwable $e) {
+            $this->db->query("ROLLBACK");
+            throw $e;
+        }
 
         $newlyAdded = array();
         foreach ($this->__getStoredRecommendations($websiteId, $userId) as $rec) {
@@ -272,9 +321,20 @@ class RecommendationsController extends Controller {
 
     /*
      * Return the timestamp of the last refresh for display.
+     *
+     * Was: MAX(refreshed_at) over sp_recommendations itself - that
+     * returns NULL whenever the last refresh genuinely found zero
+     * issues (a healthy site with no rank drops, no site-auditor
+     * issues, etc. - a common, EXPECTED outcome, not an edge case),
+     * which the view then couldn't tell apart from "never refreshed",
+     * and rendered the literally false "No AI insights yet - click
+     * Refresh" message immediately after a successful refresh that
+     * found nothing wrong. sp_recommendations_refresh tracks the
+     * refresh event itself, independent of how many rows (if any)
+     * resulted from it.
      */
     private function __getLastRefreshedAt($websiteId, $userId) {
-        $sql = "SELECT MAX(refreshed_at) AS ts FROM sp_recommendations
+        $sql = "SELECT refreshed_at AS ts FROM sp_recommendations_refresh
                 WHERE website_id=$websiteId AND user_id=$userId";
         $row = $this->db->select($sql, true);
         return !empty($row['ts']) ? $row['ts'] : null;

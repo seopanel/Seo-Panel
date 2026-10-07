@@ -119,6 +119,10 @@
     color: #888;
 }
 .rec-empty i { font-size: 28px; color: #667eea; display: block; margin-bottom: 10px; }
+.rec-empty.rec-clear { border-color: #38ef7d; }
+.rec-empty.rec-clear i { color: #11998e; }
+.rec-empty.rec-error-banner { border-color: #e74c3c; color: #c0392b; }
+.rec-empty.rec-error-banner i { color: #e74c3c; }
 </style>
 
 <div class="rec-container">
@@ -136,7 +140,7 @@
             </select>
 
             <button type="button" class="rec-btn"
-                onclick="scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
+                onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
 
@@ -146,10 +150,22 @@
         </div>
     </form>
 
-    <?php if (empty($recommendations)) { ?>
+    <?php if (!empty($refreshError)) { ?>
+        <div class="rec-empty rec-error-banner">
+            <i class="fas fa-exclamation-triangle"></i>
+            <?php echo htmlspecialchars($refreshError) ?>
+        </div>
+    <?php } ?>
+
+    <?php if (empty($recommendations) && empty($refreshedAt)) { ?>
         <div class="rec-empty">
             <i class="fas fa-info-circle"></i>
             No AI insights yet. Click <strong>Refresh AI Insights</strong> to analyse your SEO data.
+        </div>
+    <?php } elseif (empty($recommendations)) { ?>
+        <div class="rec-empty rec-clear">
+            <i class="fas fa-check-circle"></i>
+            All clear - no issues found as of <?php echo htmlspecialchars($refreshedAt) ?>.
         </div>
     <?php } else { ?>
 
