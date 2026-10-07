@@ -1529,6 +1529,16 @@ class SiteAuditorController extends Controller{
             foreach ($urls as $url) {
                 $url = Spider::formatUrl($url);
 
+                // Check whether valid html serving link - was missing
+                // here (unlike runReport()'s own on-page-link path,
+                // which checks this first), so a sitemap listing PDFs/
+                // images got them queued and scored as if they were
+                // real HTML pages, skewing word-count/title/heading
+                // checks and the project average.
+                if ($auditorComp->isExcludedFileExtension($url, $projectInfo)) {
+                    continue;
+                }
+
                 // Check if excluded
                 if ($auditorComp->isExcludeLink($url, $projectInfo['exclude_links'])) {
                     continue;
