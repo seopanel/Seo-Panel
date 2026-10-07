@@ -68,6 +68,69 @@ class ReportController extends Controller {
 				
 		return $positionInfo;
 	}
+
+	// Batch version of __getKeywordSearchReport() for a whole keyword
+	// list at once - showKeywordReportSummary()/showOverallReportSummary()
+	// used to call the single-keyword version once per keyword in their
+	// own per-keyword loop, which itself queries once per search engine -
+	// N keywords x M search engines separate round trips against the
+	// same table for the same from/to dates. One query for the whole
+	// list instead, grouped in PHP into the exact same
+	// [keywordId][searchengineId] shape __getKeywordSearchReport()
+	// already returns for one keyword. Only used by callers that always
+	// pass $apiCall=true to the single-keyword version (both of this
+	// controller's own call sites do) - the HTML-wrapped colored
+	// rank_diff that $apiCall=false would produce is not replicated
+	// here.
+	function __getKeywordSearchReportBatch($keywordIds, $fromTime, $toTime) {
+		$batchResult = array();
+		$keywordIds = array_filter(array_map('intval', $keywordIds));
+		if (empty($keywordIds)) {
+			return $batchResult;
+		}
+
+		if (empty($this->seLIst)) {
+			$seController = New SearchEngineController();
+			$this->seLIst = $seController->__getAllSearchEngines();
+		}
+
+		$fromTimeLabel = date('Y-m-d', $fromTime);
+		$toTimeLabel = date('Y-m-d', $toTime);
+		$keywordIdList = implode(',', $keywordIds);
+		$sql = "select keyword_id, searchengine_id, min(`rank`) as `rank`, result_date from searchresults
+		where keyword_id in ($keywordIdList) and (result_date='$fromTimeLabel' or result_date='$toTimeLabel')
+		group by keyword_id, searchengine_id, result_date
+		order by keyword_id, searchengine_id, result_date DESC";
+		$rows = $this->db->select($sql);
+
+		$grouped = array();
+		foreach ($rows as $row) {
+			// at most 2 rows (fromTime/toTime) per keyword+engine, already
+			// DESC - same "limit 0, 2" the single-keyword version applies
+			if (count($grouped[$row['keyword_id']][$row['searchengine_id']] ?? []) >= 2) {
+				continue;
+			}
+			$grouped[$row['keyword_id']][$row['searchengine_id']][] = $row;
+		}
+
+		foreach ($grouped as $keywordId => $perSe) {
+			foreach ($perSe as $seId => $reportList) {
+				$reportList = array_reverse($reportList);
+				$prevRank = 0;
+				$i = 0;
+				foreach ($reportList as $repInfo) {
+					$rankDiff = ($i > 0) ? ($prevRank - $repInfo['rank']) : '';
+					$batchResult[$keywordId][$seId]['rank_diff'] = empty($rankDiff) ? '' : $rankDiff;
+					$batchResult[$keywordId][$seId]['rank'] = $repInfo['rank'];
+					$batchResult[$keywordId][$seId][$repInfo['result_date']] = $repInfo['rank'];
+					$prevRank = $repInfo['rank'];
+					$i++;
+				}
+			}
+		}
+
+		return $batchResult;
+	}
 	
 
 	# func to show keyword report summary
@@ -179,17 +242,18 @@ class ReportController extends Controller {
 			
 		# set keywords list
 		$list = $this->db->select($sql);
-				
+
+		$positionInfoBatch = $this->__getKeywordSearchReportBatch(array_column($list, 'id'), $fromTime, $toTime);
 		$indexList = array();
 		foreach($list as $keywordInfo){
-			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
-			
+			$positionInfo = $positionInfoBatch[$keywordInfo['id']] ?? [];
+
 			// check whether the sorting search engine is there
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeTxt]) ? 10000 : $positionInfo[$orderCol][$toTimeTxt];
-		    
+
 			$keywordInfo['position_info'] = $positionInfo;
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
-		}		
+		}
 		
 		// sort array according the value
 		if ($orderCol != 'keyword') { 
@@ -1242,9 +1306,10 @@ class ReportController extends Controller {
     		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
     		$this->set('showSearchVolume', $showSearchVolume);
 
+    		$positionInfoBatch = $this->__getKeywordSearchReportBatch(array_column($list, 'id'), $fromTime, $toTime);
     		$indexList = array();
     		foreach($list as $keywordInfo){
-    			$positionInfo = $this->__getKeywordSearchReport($keywordInfo['id'], $fromTime, $toTime, true);
+    			$positionInfo = $positionInfoBatch[$keywordInfo['id']] ?? [];
 
     			// check whether the sorting search engine is there
     		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeShort]) ? 10000 : $positionInfo[$orderCol][$toTimeShort];
