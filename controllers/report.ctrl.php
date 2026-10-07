@@ -1143,7 +1143,18 @@ class ReportController extends Controller {
 		
 		$searchInfo['report_type'] = htmlentities($searchInfo['report_type'], ENT_QUOTES);
 		$this->set('reportTypes', $reportTypes);
-		$urlarg .= "&report_type=".$searchInfo['report_type'];		
+		$urlarg .= "&report_type=".$searchInfo['report_type'];
+		// Website Search/Keyword Search/Sitemap Reports clamp their
+		// actual end date to 2 days ago, and Website Analytics to 1 day
+		// ago (both sections below, independent of this flag) - real
+		// reporting-lag limits of those data sources, not a bug - but
+		// the one "Period" filter above shows the SAME from/to the
+		// visitor picked regardless, with nothing indicating that some
+		// sections silently used a different, earlier end date. Shown
+		// whenever report_type is empty (every section at once) or one
+		// of the 4 affected types specifically.
+		$lagAffectedReportTypes = ['website-search-reports', 'keyword-search-reports', 'sitemap-reports', 'analytics-reports'];
+		$this->set('showDateRangeLagNote', empty($searchInfo['report_type']) || in_array($searchInfo['report_type'], $lagAffectedReportTypes));
 				
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
