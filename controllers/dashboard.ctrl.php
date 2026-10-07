@@ -296,6 +296,12 @@ class DashboardController extends Controller {
 
         // Calculate social media stats comparison
         $socialMediaComparison = $this->calculateComparison($socialMediaStats, $prevSocialMediaStats);
+        // total_links is a live count of currently-active links, not
+        // bounded by $fromTime/$toTime (see getSocialMediaStats()'s own
+        // comment on why) - it's identical in the current and previous
+        // period calls above, so comparing it always produces a dead
+        // "0%, no change" badge, not a real trend.
+        unset($socialMediaComparison['total_links']);
 
         // Pass social media data to view
         $this->set('socialMediaStats', $socialMediaStats);
@@ -360,6 +366,12 @@ class DashboardController extends Controller {
 
         // Calculate review stats comparison
         $reviewComparison = $this->calculateComparison($reviewStats, $prevReviewStats);
+        // total_links is a live count of currently-active links, not
+        // bounded by $fromTime/$toTime (see getReviewStats()'s own
+        // comment on why) - it's identical in the current and previous
+        // period calls above, so comparing it always produces a dead
+        // "0%, no change" badge, not a real trend.
+        unset($reviewComparison['total_links']);
 
         // Pass review data to view
         $this->set('reviewStats', $reviewStats);
