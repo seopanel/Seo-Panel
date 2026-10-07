@@ -270,20 +270,43 @@ if (!function_exists('renderStatTile')) {
 					<div class="row stat-tile-row">
 						<div class="col-md-2">
 							<?php
-							$da = floatval($websiteStats['domain_authority']);
-							renderStatTile($spText['common']['Domain Authority'], 'Domain Authority (0-100). Higher is better.', round($da, 2), getAuthorityColor($da), getAuthorityLabel($da), $websiteComparison['domain_authority'] ?? null);
+							// rank_measured is false when no rankresults row exists yet
+							// for this website in range (brand-new site, or never
+							// checked) - a plain 0 default used to render as a real
+							// measurement: red "Weak" authority, indistinguishable
+							// from a site that was actually checked and is genuinely
+							// weak.
+							if (empty($websiteStats['rank_measured'])) {
+								renderStatTile($spText['common']['Domain Authority'], 'Domain Authority (0-100). Higher is better.', 'N/A', 'muted', 'Not yet measured', null);
+							} else {
+								$da = floatval($websiteStats['domain_authority']);
+								renderStatTile($spText['common']['Domain Authority'], 'Domain Authority (0-100). Higher is better.', round($da, 2), getAuthorityColor($da), getAuthorityLabel($da), $websiteComparison['domain_authority'] ?? null);
+							}
 							?>
 						</div>
 						<div class="col-md-2">
 							<?php
-							$pa = floatval($websiteStats['page_authority']);
-							renderStatTile($spText['common']['Page Authority'], 'Page Authority (0-100). Higher is better.', round($pa, 2), getAuthorityColor($pa), getAuthorityLabel($pa), $websiteComparison['page_authority'] ?? null);
+							if (empty($websiteStats['rank_measured'])) {
+								renderStatTile($spText['common']['Page Authority'], 'Page Authority (0-100). Higher is better.', 'N/A', 'muted', 'Not yet measured', null);
+							} else {
+								$pa = floatval($websiteStats['page_authority']);
+								renderStatTile($spText['common']['Page Authority'], 'Page Authority (0-100). Higher is better.', round($pa, 2), getAuthorityColor($pa), getAuthorityLabel($pa), $websiteComparison['page_authority'] ?? null);
+							}
 							?>
 						</div>
 						<div class="col-md-2">
 							<?php
-							$spamScore = floatval($websiteStats['spam_score']);
-							renderStatTile($spText['common']['Spam Score'], 'Spam likelihood (0-100%). Lower is better.', round($spamScore, 2) . '%', getSpamScoreColor($spamScore), getSpamScoreLabel($spamScore), $websiteComparison['spam_score'] ?? null);
+							// spam score's "not measured" case is the more
+							// important one to get right here: 0 is ALSO the best
+							// possible genuine measurement (0% spam risk), so without
+							// this check an unmeasured site was shown the reassuring
+							// green "Low Risk" badge it hadn't actually earned.
+							if (empty($websiteStats['rank_measured'])) {
+								renderStatTile($spText['common']['Spam Score'], 'Spam likelihood (0-100%). Lower is better.', 'N/A', 'muted', 'Not yet measured', null);
+							} else {
+								$spamScore = floatval($websiteStats['spam_score']);
+								renderStatTile($spText['common']['Spam Score'], 'Spam likelihood (0-100%). Lower is better.', round($spamScore, 2) . '%', getSpamScoreColor($spamScore), getSpamScoreLabel($spamScore), $websiteComparison['spam_score'] ?? null);
+							}
 							?>
 						</div>
 						<div class="col-md-2">

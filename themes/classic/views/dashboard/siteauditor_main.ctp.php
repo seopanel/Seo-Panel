@@ -25,6 +25,30 @@
 	<?php echo $spTextSA['No active projects found'] ?? 'No Site Auditor project found for this website.'?>
 	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=newproject')?>" class="alert-link"><?php echo $spTextSA['Create a new project'] ?? 'Create a new project'?></a>
 </div>
+<?php } elseif (!empty($noCrawlResultsYet)) { ?>
+<form id='siteauditor_dashboard_form' method="post">
+<table class="search">
+	<tr>
+		<th><?php echo $spText['common']['Website']?>: </th>
+		<td>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $websiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+					<?php }else{?>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+					<?php }?>
+				<?php }?>
+			</select>
+		</td>
+	</tr>
+</table>
+</form>
+<div class="alert alert-info mt-4">
+	<i class="fas fa-info-circle"></i>
+	<?php echo $spTextSA['Project created but not crawled yet'] ?? 'This project has been created but has no crawl results yet.'?>
+	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=showrunproject&project_id=' . $projectId)?>" class="alert-link"><?php echo $spTextSA['Run Project'] ?? 'Run the project now'?></a>
+</div>
 <?php } else {
 $crawledVal = isset($crawled) ? $crawled : 1;
 // Helper function to generate seo-tools.php URL with encoded args

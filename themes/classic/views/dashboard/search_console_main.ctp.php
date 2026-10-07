@@ -78,7 +78,10 @@ if (!empty($noWebsites)) {
 							<h6 class="mb-3">
 								<i class="fas fa-percentage text-success"></i> <?php echo $spTextHome['Avg. CTR'] ?? 'Avg. CTR'?>
 							</h6>
-							<?php
+							<?php if (empty($scStats['measured'])): ?>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">N/A</span></h3>
+							<small class="text-muted">Not yet measured</small>
+							<?php else:
 							$ctr = $scStats['avg_ctr'];
 							$ctrColor = $ctr >= 5 ? 'success' : ($ctr >= 2 ? 'warning' : 'danger');
 							?>
@@ -92,12 +95,16 @@ if (!empty($noWebsites)) {
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?>%</strong>
 							</small>
 							<?php endif; ?>
+							<?php endif; ?>
 						</div>
 						<div class="col-md-3 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-sort-numeric-down text-warning"></i> <?php echo $spTextHome['Avg. Position'] ?? 'Avg. Position'?>
 							</h6>
-							<?php
+							<?php if (empty($scStats['measured'])): ?>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">N/A</span></h3>
+							<small class="text-muted">Not yet measured</small>
+							<?php else:
 							$position = $scStats['avg_position'];
 							$posColor = $position <= 10 ? 'success' : ($position <= 30 ? 'warning' : 'danger');
 							?>
@@ -110,6 +117,7 @@ if (!empty($noWebsites)) {
 							<small class="text-<?php echo $color?>">
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 1)?></strong>
 							</small>
+							<?php endif; ?>
 							<?php endif; ?>
 						</div>
 					</div>

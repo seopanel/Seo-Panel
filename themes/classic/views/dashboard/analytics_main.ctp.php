@@ -93,7 +93,10 @@ if (!empty($noWebsites)) {
 							<h6 class="mb-3">
 								<i class="fas fa-sign-out-alt text-warning"></i> <?php echo $spTextHome['Bounce Rate'] ?? 'Bounce Rate'?>
 							</h6>
-							<?php
+							<?php if (empty($waStats['measured'])): ?>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">N/A</span></h3>
+							<small class="text-muted">Not yet measured</small>
+							<?php else:
 							$bounceRate = $waStats['avg_bounce_rate'];
 							$bounceColor = $bounceRate <= 40 ? 'success' : ($bounceRate <= 60 ? 'warning' : 'danger');
 							?>
@@ -106,6 +109,7 @@ if (!empty($noWebsites)) {
 							<small class="text-<?php echo $color?>">
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 1)?>%</strong>
 							</small>
+							<?php endif; ?>
 							<?php endif; ?>
 						</div>
 						<div class="col-md-2 text-center">

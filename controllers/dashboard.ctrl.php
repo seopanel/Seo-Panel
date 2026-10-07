@@ -505,6 +505,14 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        // tracked separately per metric group (each comes from its own
+        // table/tool, so each can independently have never been checked
+        // yet) - a brand-new website with zero rows anywhere defaulted
+        // every one of these to a real 0 via ?? 0 below, which the view
+        // then colored as a genuine (bad) measurement - "0 backlinks",
+        // red "Weak" authority - rather than "not yet checked". Callers
+        // use *_measured to tell the two apart.
+        $stats['backlinks_measured'] = !empty($result);
         $stats['backlinks'] = $result['external_pages_to_page'] ?? 0;
         $stats['external_pages_to_page'] = $result['external_pages_to_page'] ?? 0;
         $stats['external_pages_to_root_domain'] = $result['external_pages_to_root_domain'] ?? 0;
@@ -517,6 +525,7 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        $stats['indexed_measured'] = !empty($result);
         $stats['indexed_pages'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
         $stats['google_indexed'] = $result['google'] ?? 0;
         $stats['msn_indexed'] = $result['msn'] ?? 0;
@@ -529,6 +538,7 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        $stats['rank_measured'] = !empty($result);
         $stats['spam_score'] = $result['spam_score'] ?? 0;
         $stats['domain_authority'] = $result['domain_authority'] ?? 0;
         $stats['page_authority'] = $result['page_authority'] ?? 0;
@@ -778,7 +788,17 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['total_links'] = $result['total_links'] ?? 0;
 
-        // Get latest social media results within the time period
+        // Get latest social media results as of the period end - deliberately
+        // NOT bounded by $fromTime (contrast getSocialMediaDistribution()'s
+        // own, correctly-unbounded "<= $date" below): if a link's last
+        // crawl falls outside the selected window (e.g. period=week but
+        // cron only runs monthly), bounding this by $fromTime excludes it
+        // from the MAX(report_date) lookup entirely, so COALESCE(SUM(...),0)
+        // silently reports 0 total followers/likes here while the
+        // distribution/top-links widgets below (same page, same data) keep
+        // showing the real, just-stale numbers - a direct on-page
+        // contradiction. Using <= $toTime matches getSocialMediaDistribution()'s
+        // own "latest value as of the period end" semantics.
         // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(smlr.followers), 0) as total_followers,
@@ -787,7 +807,7 @@ class DashboardController extends Controller {
                 LEFT JOIN (
                     SELECT sm_link_id, MAX(report_date) as max_date
                     FROM social_media_link_results
-                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    WHERE report_date <= '$toTime'
                     GROUP BY sm_link_id
                 ) latest ON sml.id = latest.sm_link_id
                 LEFT JOIN social_media_link_results smlr
@@ -885,7 +905,13 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['total_links'] = $result['total_links'] ?? 0;
 
-        // Get latest review results within the time period
+        // Get latest review results as of the period end - same fix as
+        // getSocialMediaStats() above: bounding this by $fromTime excluded
+        // a link's last crawl whenever it fell outside the selected
+        // window, silently reporting 0 total reviews here while the
+        // distribution/top-links widgets below (which already use the
+        // correct, unbounded "<= $date") kept showing the real, just-stale
+        // numbers - a direct on-page contradiction.
         // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(rlr.reviews), 0) as total_reviews,
@@ -894,7 +920,7 @@ class DashboardController extends Controller {
                 LEFT JOIN (
                     SELECT review_link_id, MAX(report_date) as max_date
                     FROM review_link_results
-                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    WHERE report_date <= '$toTime'
                     GROUP BY review_link_id
                 ) latest ON rl.id = latest.review_link_id
                 LEFT JOIN review_link_results rlr
@@ -1034,6 +1060,16 @@ class DashboardController extends Controller {
         $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
         $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
 
+        // auditorprojects.score defaults to 0, same as a genuinely awful
+        // real score would be - a project that was just created and has
+        // never actually been crawled (crawled_links==0) rendered as
+        // "Critical 0%" with every metric showing "Not found", completely
+        // indistinguishable from a site that WAS audited and is really
+        // broken. The view uses this to show a "run your first crawl"
+        // state instead, same treatment the no-project-at-all case above
+        // already gets.
+        $this->set('noCrawlResultsYet', $projectInfo['crawled_links'] == 0);
+
         // Status check for crawled filter - default to crawled=1 on first load
         $statusCheck = false;
         $statusVal = 0;
@@ -1082,24 +1118,37 @@ class DashboardController extends Controller {
             $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
         }
 
-        // Modern SEO features
-        $conditions = " and mobile_friendly=1";
-        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // Modern SEO features - a not-yet-crawled auditorreports row
+        // defaults ai_robot_allowed=1/mobile_friendly=1 (optimistic -
+        // counted as passing) but https_secure=0/has_og_tags=0/
+        // has_twitter_cards=0/blocked_by_robots=0 (counted as failing,
+        // except blocked_by_robots=0 which counts as ALLOWED here) - so
+        // selecting "Crawled: --Select--" (crawledVal=-1, $statusCheck
+        // false, no crawled filter applied at all) mixed uncrawled rows
+        // into every one of these counts, for reasons that have nothing
+        // to do with the site's actual SEO state. These 6 feature checks
+        // only have a real answer for pages that were actually crawled,
+        // so they always require crawled=1 regardless of the selected
+        // filter (the filter still applies normally to every OTHER
+        // metric above/below, which don't have this inconsistent-default
+        // problem).
+        $conditions = " and mobile_friendly=1 and crawled=1";
+        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
-        $conditions = " and https_secure=1";
-        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and https_secure=1 and crawled=1";
+        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
-        $conditions = " and ai_robot_allowed=1";
-        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and ai_robot_allowed=1 and crawled=1";
+        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
-        $conditions = " and has_og_tags=1";
-        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and has_og_tags=1 and crawled=1";
+        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
-        $conditions = " and has_twitter_cards=1";
-        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and has_twitter_cards=1 and crawled=1";
+        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
-        $conditions = " and blocked_by_robots=0";
-        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        $conditions = " and blocked_by_robots=0 and crawled=1";
+        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
 
         // Page Authority metrics
         $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
@@ -1359,6 +1408,14 @@ class DashboardController extends Controller {
                 AND report_date BETWEEN '$fromTime' AND '$toTime'";
 
         $result = $this->db->select($sql, true);
+        // same "bare aggregate always returns one row, even with zero
+        // matches" subtlety as getSCStats() - "measured" must check the
+        // raw NULL-ness of an aggregate, not !empty($result). Without
+        // this, a website never connected to Google Analytics (or
+        // connected but not yet synced) got avg_bounce_rate=0 colored
+        // green ("great engagement!"), a confident verdict it hadn't
+        // earned.
+        $stats['measured'] = isset($result['total_users']) && $result['total_users'] !== null;
         $stats['total_users'] = intval($result['total_users'] ?? 0);
         $stats['total_new_users'] = intval($result['total_new_users'] ?? 0);
         $stats['total_sessions'] = intval($result['total_sessions'] ?? 0);
@@ -1548,6 +1605,15 @@ class DashboardController extends Controller {
                 AND report_date BETWEEN '$fromTime' AND '$toTime'";
 
         $result = $this->db->select($sql, true);
+        // a bare aggregate query with no GROUP BY always returns exactly
+        // one row, even when zero rows matched (SUM/AVG of nothing is
+        // SQL NULL, not absence of a row) - so "measured" has to check
+        // the raw NULL-ness of one of the aggregates, not !empty($result).
+        // Without this, a website never connected to Search Console (or
+        // connected but not yet synced by cron) got avg_position=0
+        // colored green ("#1 ranking!") and avg_ctr=0 colored red
+        // ("terrible CTR!") - both read as real, confident verdicts.
+        $stats['measured'] = isset($result['total_clicks']) && $result['total_clicks'] !== null;
         $stats['total_clicks'] = intval($result['total_clicks'] ?? 0);
         $stats['total_impressions'] = intval($result['total_impressions'] ?? 0);
         $stats['avg_ctr'] = floatval($result['avg_ctr'] ?? 0);
