@@ -1100,12 +1100,10 @@ class SiteAuditorController extends Controller{
 	}
 	
 	// function to show reports summary of a project
-    function showReportSummary($data, $exportVersion, $projectInfo) {        
-        
-	    $projectInfo['total_links'] = $this->getCountcrawledLinks($projectInfo['id']);
-	    $projectInfo['crawled_links'] = $this->getCountcrawledLinks($projectInfo['id'], true);
+    function showReportSummary($data, $exportVersion, $projectInfo) {
+
 	    $mainLink = SP_WEBPATH."/siteauditor.php?project_id=".$projectInfo['id']."&sec=showreport&report_type=rp_summary";
-	    
+
 	    // check for page url
         $statusCheck = false;
         $statusVal = 0;
@@ -1114,72 +1112,63 @@ class SiteAuditorController extends Controller{
 		    $statusVal = intval($data['crawled']);
 		    $mainLink .= "&crawled=$statusVal";
 		}
-	    
-		// check for brocken
-		$conditions = " and brocken=1";
-	    $projectInfo['brocken'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 
-		// check for backlinks
+	    // Was ~23 separate getCountcrawledLinks() queries (one SELECT
+	    // COUNT(*) per metric) against the same table/project_id on
+	    // every page view/export - same anti-pattern already folded
+	    // into one query on the dashboard tab's equivalent summary,
+	    // applied here too. Also fixes a correctness bug these shared
+	    // the same root cause as: the 6 "modern SEO feature" checks
+	    // below used WHATEVER crawled filter the viewreports.ctp.php
+	    // filter bar was set to (including "-- Select --", i.e. no
+	    // filter at all) - a not-yet-crawled row defaults
+	    // ai_robot_allowed=1/mobile_friendly=1 (counted as passing) but
+	    // https_secure=0/has_og_tags=0/has_twitter_cards=0/
+	    // blocked_by_robots=0 (counted as failing, except
+	    // blocked_by_robots=0 which counts as ALLOWED) - so "-- Select
+	    // --" mixed uncrawled rows into these 6 counts for reasons that
+	    // have nothing to do with the site's actual SEO state. These 6
+	    // now always require crawled=1 regardless of the selected
+	    // filter, matching the same fix already made to the dashboard
+	    // tab's identical metrics.
+	    $filterCrawled = $statusCheck ? "crawled=$statusVal and " : "";
+	    $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+	    $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+	    $statsSelect = [
+	        "count(*) as total_links",
+	        "sum(case when crawled=1 then 1 else 0 end) as crawled_links",
+	        "sum(case when {$filterCrawled}brocken=1 then 1 else 0 end) as brocken",
+	        "sum(case when {$filterCrawled}google_backlinks=0 then 1 else 0 end) as no_backlinks",
+	        "sum(case when mobile_friendly=1 and crawled=1 then 1 else 0 end) as mobile_friendly",
+	        "sum(case when https_secure=1 and crawled=1 then 1 else 0 end) as https_secure",
+	        "sum(case when ai_robot_allowed=1 and crawled=1 then 1 else 0 end) as ai_robot_allowed",
+	        "sum(case when has_og_tags=1 and crawled=1 then 1 else 0 end) as has_og_tags",
+	        "sum(case when has_twitter_cards=1 and crawled=1 then 1 else 0 end) as has_twitter_cards",
+	        "sum(case when blocked_by_robots=0 and crawled=1 then 1 else 0 end) as allowed_by_robots",
+	        "sum(case when {$filterCrawled}page_authority >= $paLevelSecond then 1 else 0 end) as pa_excellent",
+	        "sum(case when {$filterCrawled}page_authority >= $paLevelFirst and page_authority < $paLevelSecond then 1 else 0 end) as pa_good",
+	        "sum(case when {$filterCrawled}page_authority > 0 and page_authority < $paLevelFirst then 1 else 0 end) as pa_low",
+	        "sum(case when {$filterCrawled}page_authority = 0 then 1 else 0 end) as pa_none",
+	    ];
 	    foreach ($this->seArr as $se) {
-		    $conditions = " and $se"."_backlinks>0";
-		    $projectInfo[$se."_backlinks"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);	        
+	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_backlinks>0 then 1 else 0 end) as {$se}_backlinks";
+	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed>0 then 1 else 0 end) as {$se}_indexed";
+	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed=0 then 1 else 0 end) as {$se}_not_indexed";
+	    }
+	    $statsSql = "select " . implode(", ", $statsSelect) . " from auditorreports where project_id=" . intval($projectInfo['id']);
+	    $stats = $this->db->select($statsSql, true);
+	    foreach ($stats as $key => $val) {
+	        $projectInfo[$key] = intval($val);
 	    }
 
-	    // check for no backlinks
-	    $conditions = " and google_backlinks=0";
-	    $projectInfo['no_backlinks'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-	    
-        // check for indexed
-	    foreach ($this->seArr as $se) {
-		    $conditions = " and $se"."_indexed>0";
-		    $projectInfo[$se."_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-		    // check for NOT indexed
-		    $conditions = " and $se"."_indexed=0";
-		    $projectInfo[$se."_not_indexed"] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-	    }
-	    
-	    // duplicate titles,descriptions and keywords
+	    // duplicate titles,descriptions and keywords - a GROUP BY ...
+	    // HAVING count>1 query per column, not a flat per-row condition,
+	    // so it doesn't fold into the combined query above.
 	    $metaArr = array('page_title' => $this->spTextSA["Duplicate Title"], 'page_description' => $this->spTextSA['Duplicate Description'], 'page_keywords' => $this->spTextSA['Duplicate Keywords']);
 	    foreach ($metaArr as $meta => $val) {
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
 	    }
-
-	    // Modern SEO features - Mobile, HTTPS, AI Robot, Social Media
-	    $conditions = " and mobile_friendly=1";
-	    $projectInfo['mobile_friendly'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and https_secure=1";
-	    $projectInfo['https_secure'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and ai_robot_allowed=1";
-	    $projectInfo['ai_robot_allowed'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and has_og_tags=1";
-	    $projectInfo['has_og_tags'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and has_twitter_cards=1";
-	    $projectInfo['has_twitter_cards'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and blocked_by_robots=0";
-	    $projectInfo['allowed_by_robots'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    // Page Authority metrics based on thresholds
-	    $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
-	    $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
-
-	    $conditions = " and page_authority >= $paLevelSecond";
-	    $projectInfo['pa_excellent'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
-	    $projectInfo['pa_good'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
-	    $projectInfo['pa_low'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-	    $conditions = " and page_authority = 0";
-	    $projectInfo['pa_none'] = $this->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
 
 	    $spTextHome = $this->getLanguageTexts('home', $_SESSION['lang_code']);
 	    $this->set('spTextHome', $spTextHome);	    
