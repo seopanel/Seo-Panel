@@ -59,11 +59,12 @@ class RankController extends Controller{
 	}
 
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo=[]) {		
+	function showGenerateReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
-		$this->set('websiteList', $websiteList);						
+		$this->set('websiteList', $websiteList);
+		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
 		$this->render('rank/generatereport');
 	}
 	

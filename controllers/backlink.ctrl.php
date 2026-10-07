@@ -60,38 +60,14 @@ class BacklinkController extends Controller{
 		$this->render('backlink/findbacklink');
 	}
 
-	function printBacklink($backlinkInfo){
-		$metric = !empty($backlinkInfo['metric']) ? $backlinkInfo['metric'] : 'external_pages_to_page';
-		$backlinkCount = $this->__getBacklinks($backlinkInfo['url'], $metric);
-		echo $backlinkCount;
-	}
-
-	function __getBacklinks ($url, $metric = 'external_pages_to_page') {
-		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
-
-		// Use sample API data if enabled (saves API credits)
-		if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
-			return rand(100, 50000);
-		}
-
-		// Get backlink data from Moz API (matches generateReports logic)
-		include_once(SP_CTRLPATH."/moz.ctrl.php");
-		$mozCtrler = new MozController();
-		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($url));
-
-		// Extract backlink count based on metric
-		$backlinkCount = !empty($mozRankInfo[0][$metric]) ? $mozRankInfo[0][$metric] : 0;
-
-		return $backlinkCount;
-	}
-	
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo=[]) {				
+	function showGenerateReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-						
+		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
+
 		$this->render('backlink/generatereport');
 	}
 	

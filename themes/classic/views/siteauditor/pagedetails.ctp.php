@@ -194,6 +194,10 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	background: #fff3cd;
 	color: #856404;
 }
+.status-badge.neutral {
+	background: #e2e3e5;
+	color: #41464b;
+}
 /* Round Score Gauge */
 .score-circle-container {
 	display: flex;
@@ -695,7 +699,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						<?php if ($reportInfo['has_faq_content']) { ?>
 							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
 						<?php } else { ?>
-							<span class="status-badge danger"><i class="fas fa-times"></i> None Detected</span>
+							<span class="status-badge neutral"><i class="fas fa-minus"></i> None Detected</span>
 						<?php } ?>
 					</div>
 				</div>

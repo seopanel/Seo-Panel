@@ -525,18 +525,6 @@ class AuditorComponent extends Controller{
         return $scoreInfo;
     }
 
-    // function to calculate score as percentage
-    function getScorePercentage($score) {
-        if ($this->maxScore <= 0) {
-            return 0;
-        }
-        // Ensure score is not negative for percentage calculation
-        $score = max(0, $score);
-        $percentage = round(($score / $this->maxScore) * 100, 1);
-        // Cap at 100% in case of any calculation issues
-        return min(100, $percentage);
-    }
-
     // function to find the score of a project
     function updateProjectPageScore($projectId) {        
         $sql = "select sum(score)/count(*) as avgscore from auditorreports where crawled=1 and project_id=$projectId";

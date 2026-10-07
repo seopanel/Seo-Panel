@@ -1150,7 +1150,11 @@ class SiteAuditorController extends Controller{
 	        "sum(case when {$filterCrawled}page_authority > 0 and page_authority < $paLevelFirst then 1 else 0 end) as pa_low",
 	        "sum(case when {$filterCrawled}page_authority = 0 then 1 else 0 end) as pa_none",
 	    ];
-	    foreach ($this->seArr as $se) {
+	    // Only google_* is ever written by the crawler or displayed by
+	    // any view - $this->seArr also lists 'bing' for other methods
+	    // (e.g. showLinksReport()) that do use it, so this loops over a
+	    // local list instead of touching that shared property.
+	    foreach (['google'] as $se) {
 	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_backlinks>0 then 1 else 0 end) as {$se}_backlinks";
 	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed>0 then 1 else 0 end) as {$se}_indexed";
 	        $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed=0 then 1 else 0 end) as {$se}_not_indexed";

@@ -19,8 +19,6 @@
 	$colCount = 5;
 	if(count($list) > 0) {
 		foreach($list as $i => $url) {
-            $debugVar = !empty($_POST['debug']) ? "&debug=1" : "";
-            $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . $_POST['debug_format'] : ""
 			?>
 			<tr>
 				<td><?php echo ($i+1)?></td>

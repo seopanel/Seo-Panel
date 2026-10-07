@@ -1092,8 +1092,6 @@ class DashboardController extends Controller {
             "max(updated) as last_updated",
             "sum(case when {$filterCrawled}brocken=1 then 1 else 0 end) as brocken",
             "sum(case when {$filterCrawled}google_backlinks=0 then 1 else 0 end) as no_backlinks",
-            "sum(case when {$filterCrawled}bing_indexed>0 then 1 else 0 end) as bing_indexed",
-            "sum(case when {$filterCrawled}bing_indexed=0 then 1 else 0 end) as bing_not_indexed",
             "sum(case when mobile_friendly=1 and crawled=1 then 1 else 0 end) as mobile_friendly",
             "sum(case when https_secure=1 and crawled=1 then 1 else 0 end) as https_secure",
             "sum(case when ai_robot_allowed=1 and crawled=1 then 1 else 0 end) as ai_robot_allowed",

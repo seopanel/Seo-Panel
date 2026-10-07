@@ -55,11 +55,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "graphical-reports":
 			$controller->showGraphicalReports($_POST);
 			break;
-		
-		case "backlink":
-			$controller->printBacklink($_POST);
-			break;
-			
+
 		default:
 			if (isQuickCheckerEnabled()) {
 				$controller->findBacklink($_POST);
@@ -72,10 +68,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 }else{
 	switch($_GET['sec']){
 		
-		case "backlink":
-			$controller->printBacklink($_GET);
-			break;		
-			
 		case "generate":
 			$controller->showGenerateReports($_GET);
 			break;
