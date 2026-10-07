@@ -1738,6 +1738,9 @@ class DashboardController extends Controller {
         $this->set('dsAllTimeStats', $dsAllTimeStats);
         $this->set('prevDSStats', $prevDSStats);
         $this->set('dsComparison', $dsComparison);
+        // all-time, not period-scoped - distinguishes "nothing submitted
+        // to any directory yet" from "nothing submitted in this period"
+        $this->set('noSubmissionsYet', $dsAllTimeStats['total_submissions'] == 0);
 
         $this->render('dashboard/directory_submission_main');
     }

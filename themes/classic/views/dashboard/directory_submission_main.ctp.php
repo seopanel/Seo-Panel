@@ -1,7 +1,31 @@
 <?php
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
-} else { ?>
+} elseif (!empty($noSubmissionsYet)) { ?>
+<form id='directory_submission_dashboard_form' method="post">
+<table class="search">
+	<tr>
+		<th><?php echo $spText['common']['Website']?>: </th>
+		<td>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('<?php echo SP_WEBPATH?>/directory_submission_dashboard.php', 'directory_submission_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $websiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+					<?php }else{?>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+					<?php }?>
+				<?php }?>
+			</select>
+		</td>
+	</tr>
+</table>
+</form>
+<div class="alert alert-info mt-4">
+	<i class="fas fa-info-circle"></i>
+	<?php echo $spTextDir['No directory submissions yet'] ?? "This website hasn't been submitted to any directory yet."?>
+	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=directory-submission" class="alert-link"><?php echo $spTextDir['Submit to a directory'] ?? 'Submit to a directory'?></a>
+</div>
+<?php } else { ?>
 <form id='directory_submission_dashboard_form' method="post">
 <table class="search">
 	<tr>
