@@ -125,10 +125,18 @@ class DashboardController extends Controller {
         $this->set('prevToTime', $prevToTime);
         
         // get keyword last generated report date in between $fromTime and $toTime
-        $kwResultLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
-        $kwResultLastDate = !empty($kwResultLastDate) ? $kwResultLastDate : $toTime;
+        $kwResultLastDateRaw = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
+        $kwResultLastDate = !empty($kwResultLastDateRaw) ? $kwResultLastDateRaw : $toTime;
         $kwResultPreLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $prevFromTime, $prevToTime);
         $kwResultPreLastDate = !empty($kwResultPreLastDate) ? $kwResultPreLastDate : $prevToTime;
+        // Top Keywords and Keyword Distribution below both actually show
+        // data as of $kwResultLastDate (the latest real cron-checked
+        // date in range, which can be well before $toTime if the cron
+        // job hasn't run recently) - surfaced to the view so it can show
+        // an "as of" indicator instead of silently implying the numbers
+        // are current as of today. Null (not the $toTime fallback above)
+        // when there's genuinely no checked date in range at all.
+        $this->set('kwResultLastDate', $kwResultLastDateRaw);
         
         // Get detailed keyword distribution by rank ranges        
         $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $kwResultLastDate);        

@@ -449,8 +449,11 @@ if (!function_exists('renderStatTile')) {
 	<div class="row section-gap">
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-blue">
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-chart-pie"></i> <?php echo $spTextDashboard['Keyword Distribution by Rank']?></h4>
+					<?php if (!empty($kwResultLastDate)): ?>
+					<small class="text-white-50">Last checked: <?php echo date('M j, Y', strtotime($kwResultLastDate))?></small>
+					<?php endif; ?>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($keywordDistribution)) { ?>
@@ -937,8 +940,11 @@ if (!function_exists('renderStatTile')) {
 	<div class="row">
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-blue">
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-trophy"></i> <?php echo $spTextKeyword['Top Keywords']?></h4>
+					<?php if (!empty($kwResultLastDate)): ?>
+					<small class="text-white-50">Last checked: <?php echo date('M j, Y', strtotime($kwResultLastDate))?></small>
+					<?php endif; ?>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($topKeywords)) { ?>
