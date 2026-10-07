@@ -16,7 +16,7 @@
 				<div class="login-body">
 					<form name="loginForm" method="post" action="<?php echo SP_WEBPATH?>/login.php">
 						<input type="hidden" name="sec" value="login">
-						<input type="hidden" name="red_referer" value="<?php echo $post['red_referer']?>">
+						<input type="hidden" name="red_referer" value="<?php echo htmlspecialchars($post['red_referer'], ENT_QUOTES)?>">
 
 						<div class="form-group">
 							<label for="userName" class="login-label">

@@ -740,7 +740,17 @@ class UserController extends Controller{
 					# get confirm code
 					if ($utypeCtrler->isEmailActivationEnabledForUserType($utypeId)) {
 						$this->__changeStatus($userId, 0);
-						$cfm = str_shuffle($userId . $userInfo['userName']);
+						// was str_shuffle($userId . $userInfo['userName']) -
+						// just a permutation of already-known/guessable
+						// characters (the registrant's own id + chosen
+						// username), so e.g. a 4-character username gave
+						// only a few dozen possible permutations -
+						// trivially brute-forceable, letting the
+						// registrant activate their own pending account
+						// without ever receiving the confirmation email.
+						// Same cryptographically-secure generator
+						// __generateRandomPassword() already uses.
+						$cfm = $this->__generateRandomPassword(16);
 						$sql = "update users set confirm_code='$cfm' where id=$userId";
 						$this->db->query($sql);
 						$this->set('confirmLink', SP_WEBPATH . "/register.php?sec=confirm&code=$cfm");
@@ -1302,6 +1312,17 @@ class UserController extends Controller{
 		$errMsg['userName'] = formatErrorMsg($this->validate->checkUname($userInfo['userName']));
 		if(!empty($userInfo['password'])){
 			$errMsg['password'] = formatErrorMsg($this->validate->checkPasswords($userInfo['password'], $userInfo['confirmPassword'], $userInfo['userName'] ?? null));
+			// requires re-entering the CURRENT password before accepting a
+			// new one - without this, a hijacked/left-open session alone
+			// (e.g. via an XSS elsewhere, or a shared/unlocked browser) was
+			// enough to silently rotate the account's password and lock
+			// the real owner out permanently, with no proof of the old
+			// password. Same discipline disableTwoFactor() already uses.
+			$existingUserInfo = $this->__getUserInfo($userId);
+			if (!$this->__verifyPassword($userInfo['currentPassword'] ?? '', $existingUserInfo['password'])) {
+				$errMsg['currentPassword'] = formatErrorMsg('Incorrect current password.');
+				$this->validate->flagErr = true;
+			}
 			$passStr = "password = '".addslashes($this->__hashPassword($userInfo['password']))."',";
 		}
 		$errMsg['firstName'] = formatErrorMsg($this->validate->checkBlank($userInfo['firstName']));
@@ -1349,11 +1370,29 @@ class UserController extends Controller{
 	
 	# reset password of user
     function requestPassword($userEmail) {
-        
+
 		$errMsg['email'] = formatErrorMsg($this->validate->checkEmail($userEmail));
 		$errMsg['code'] = formatErrorMsg($this->validate->checkCaptcha());
 		$this->set('post', $_POST);
 		if(!$this->validate->flagErr){
+	        // same fixed-window limiter login() uses for its own
+	        // credential-stuffing protection - this endpoint had none at
+	        // all, so a known/guessable email could be spammed with
+	        // password-reset emails (and have its password repeatedly
+	        // rotated out from under the real owner) with no throttling,
+	        // and reCAPTCHA above is a silent no-op on a stock install
+	        // with no keys configured.
+	        include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+	        $aivCtrler = new AIVisibilityController();
+	        $emailOk = $aivCtrler->__checkRateLimit('pwreset-email:' . strtolower(trim((string) $userEmail)), 5);
+	        $ipOk = $aivCtrler->__checkRateLimit('pwreset-ip:' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'), 20);
+	        if (!$emailOk || !$ipOk) {
+	            $errMsg['email'] = formatErrorMsg('Too many password reset attempts - please wait a minute and try again.');
+	            $this->set('errMsg', $errMsg);
+	            $this->forgotPasswordForm();
+	            return;
+	        }
+
 	        $userId = $this->__checkEmail($userEmail);
 	        if(!empty($userId)){
 	            $userInfo = $this->__getUserInfo($userId);
@@ -1390,7 +1429,18 @@ class UserController extends Controller{
 	           	$this->render('common/forgotconfirm');
 	           	exit;
 	        }else{
-	            $errMsg['email'] = formatErrorMsg($_SESSION['text']['login']['user_email_not_exist']);
+	            // was: a distinct "that email doesn't exist" error here vs
+	            // the success render above - let an anonymous caller
+	            // enumerate every registered email address by trying each
+	            // one and watching which response comes back. Now renders
+	            // the exact same "reset successfully" confirmation either
+	            // way (with $error left unset/falsy, same as the real
+	            // success path above) - no mail is actually sent and no
+	            // password actually changes for an email that doesn't
+	            // exist, but the response is indistinguishable.
+	           	$this->set('error', 0);
+	           	$this->render('common/forgotconfirm');
+	           	exit;
 	        }
 		}
 		$this->set('errMsg', $errMsg);

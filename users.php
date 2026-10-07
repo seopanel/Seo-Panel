@@ -23,9 +23,28 @@
 include_once("includes/sp-load.php");
 
 // check the sections can accessed by user
+//
+// Was: ORed in_array() across BOTH $_GET['sec'] and $_POST['sec'], then
+// called the non-blocking isLoggedIn() (return value discarded, never
+// redirects) instead of checkLoggedIn() - a request with
+// ?sec=myprofile in the query string (matches the include list, so
+// only the no-op isLoggedIn() ran) and a POST body of sec=update
+// (dispatched by the switch below, which reads $_POST['sec']
+// independently) reached UserController::updateUser() - which trusts
+// its caller entirely - with ZERO real authentication. That's a fully
+// unauthenticated path to promoting any account to admin, overwriting
+// its password/email, or deleting it. Same class of bug for create/
+// delete/activate/inactivate too, since they're all admin-only
+// branches of this same POST switch.
+//
+// Fixed to gate on the EXACT sec value the switch below will actually
+// dispatch on for this request's real REQUEST_METHOD (no cross-method
+// mismatch possible), and to use the real blocking checkLoggedIn()/
+// checkAdminLoggedIn() rather than discarding isLoggedIn()'s return.
 $userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription", "two-factor", "confirm-two-factor", "disable-two-factor", "regenerate-backup-codes");
-if ( in_array($_GET['sec'], $userIncludeList) || in_array($_POST['sec'], $userIncludeList) ) {
-	isLoggedIn();
+$requestedSec = ($_SERVER['REQUEST_METHOD'] == 'POST') ? ($_POST['sec'] ?? '') : ($_GET['sec'] ?? '');
+if ( in_array($requestedSec, $userIncludeList) ) {
+	checkLoggedIn();
 } else {
 	checkAdminLoggedIn();
 }

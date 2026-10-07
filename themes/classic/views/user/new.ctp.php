@@ -30,21 +30,21 @@
 	<tr class="blue_row">
 		<td class="td_left_col"><label for="new_firstName"><?php echo $spText['login']['First Name']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" id="new_firstName" name="firstName" value="<?php echo $post['firstName']?>" class="form-control">
+			<input type="text" id="new_firstName" name="firstName" value="<?php echo htmlspecialchars($post['firstName'], ENT_QUOTES)?>" class="form-control">
 			<?php echo $errMsg['firstName']?>
 		</td>
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><label for="new_lastName"><?php echo $spText['login']['Last Name']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" id="new_lastName" name="lastName" value="<?php echo $post['lastName']?>" class="form-control">
+			<input type="text" id="new_lastName" name="lastName" value="<?php echo htmlspecialchars($post['lastName'], ENT_QUOTES)?>" class="form-control">
 			<?php echo $errMsg['lastName']?>
 		</td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><label for="new_email"><?php echo $spText['login']['Email']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" id="new_email" name="email" value="<?php echo $post['email']?>" class="form-control">
+			<input type="text" id="new_email" name="email" value="<?php echo htmlspecialchars($post['email'], ENT_QUOTES)?>" class="form-control">
 			<?php echo $errMsg['email']?>
 		</td>
 	</tr>
