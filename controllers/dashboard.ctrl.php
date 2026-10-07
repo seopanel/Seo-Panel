@@ -388,22 +388,6 @@ class DashboardController extends Controller {
 
         return null;
     }
-    
-    function __getWebsiteLastReportGeneratedDate($websiteId, $fromTime, $toTime) {
-        // Find the latest date within the date range where keywords have results with rank > 0
-        $sql = "SELECT MAX(rr.result_date) as last_report_date
-                FROM rankresults rr
-                WHERE rr.website_id=" . intval($websiteId) . "
-                    AND rr.result_date BETWEEN '$fromTime' AND '$toTime'
-                    AND rr.domain_authority > 0";
-        
-        $result = $this->db->select($sql, true);
-        if ($result && !empty($result['last_report_date'])) {
-            return $result['last_report_date'];
-        }
-        
-        return null;
-    }
 
     // Get keyword statistics
     private function getKeywordStats($websiteId, $fromTime, $toTime) {

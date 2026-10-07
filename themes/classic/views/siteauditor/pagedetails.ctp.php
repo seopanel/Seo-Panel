@@ -529,8 +529,10 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						$scoreValue = round($reportInfo['score'], 2);
 						$isPositive = $scoreValue >= 0;
 
-						// Calculate percentage for circle (max score is 38 from AuditorComponent)
-						$maxScore = 38;
+						// Calculate percentage for circle - AuditorComponent::$maxScore
+						// (was stale at 38 here; bumped to 45 when AI-readiness checks
+						// were added, inflating every displayed percentage)
+						$maxScore = 45;
 						$scorePercentage = $maxScore > 0 ? min(max(0, $scoreValue) / $maxScore * 100, 100) : 0;
 
 						// SVG circle calculations

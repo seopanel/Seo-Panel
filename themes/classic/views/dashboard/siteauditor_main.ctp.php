@@ -600,7 +600,7 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 								<?php
 								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
-								$maxScore = 38; // Maximum possible score from AuditorComponent
+								$maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 								$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 								$circumference = 2 * 3.14159 * 36;
 								$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;

@@ -106,7 +106,7 @@
 				    <?php
 			        $score = $listInfo['score'];
 			        $isPositive = $score >= 0;
-			        $maxScore = 38; // Maximum possible score from AuditorComponent
+			        $maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 			        $scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 			        $circumference = 2 * 3.14159 * 22;
 			        $dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
