@@ -40,7 +40,7 @@ if (!empty($noWebsites)) {
 		<div class="col-md-12">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
-					<h4><?php echo $spTextDashboard['Website Analytics Overview'] ?? 'Website Analytics Overview'?></h4>
+					<h4><?php echo $spTextDashboard['Google Analytics Overview'] ?? 'Google Analytics Overview'?></h4>
 				</div>
 				<div class="card-body">
 					<div class="row stat-row">
