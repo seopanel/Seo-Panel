@@ -215,6 +215,16 @@ class AuditorComponent extends Controller{
 
             // calculate score of each page and update it
             $this->updateProjectPageScore($projectInfo['id']);
+            } else {
+                // Permanently-dead URL guard: getProjectRandomUrl() stops
+                // offering this row back up once fetch_fail_count crosses
+                // its own threshold, so one unreachable page (a real 404,
+                // a DNS failure, anything that never succeeds) can't keep
+                // a project from ever reaching "completed". The row stays
+                // crawled=0 regardless - it still wasn't actually crawled,
+                // and the next retry (while under threshold) still gets a
+                // clean shot via the crawled=0 path above.
+                $this->db->query("update auditorreports set fetch_fail_count=fetch_fail_count+1 where id={$rInfo['id']}");
             } // if (!empty($pageInfo['crawl_status']))
         }
 

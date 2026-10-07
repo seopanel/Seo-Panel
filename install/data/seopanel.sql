@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `heading_structure_ok` tinyint(1) NOT NULL DEFAULT '1',
   `has_faq_content` tinyint(1) NOT NULL DEFAULT '0',
   `word_count` int(11) NOT NULL DEFAULT '0',
+  `fetch_fail_count` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   UNIQUE KEY `project_id_2` (`project_id`,`page_url`),
   KEY `project_id` (`project_id`)

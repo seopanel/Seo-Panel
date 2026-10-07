@@ -560,8 +560,17 @@ class SiteAuditorController extends Controller{
 	}
     
 	// function to get random url of a project
-	function getProjectRandomUrl($projectId) {	    
-	    $sql = "SELECT page_url FROM auditorreports where project_id=$projectId and crawled=0 ORDER BY RAND() LIMIT 1";
+	function getProjectRandomUrl($projectId) {
+	    // A URL that has already failed to fetch SA_MAX_FETCH_RETRIES
+	    // times in a row (a real 404, a DNS failure, anything that
+	    // never succeeds) is excluded here - without this, a single
+	    // permanently-dead page keeps coming back up via ORDER BY
+	    // RAND() forever, and the project never reaches "completed"
+	    // even once every other page has genuinely finished. It's
+	    // still never counted as crawled=1 (that column is untouched),
+	    // so crawl stats stay honest about what was actually fetched.
+	    $maxFetchRetries = defined('SA_MAX_FETCH_RETRIES') ? SA_MAX_FETCH_RETRIES : 3;
+	    $sql = "SELECT page_url FROM auditorreports where project_id=$projectId and crawled=0 and fetch_fail_count<$maxFetchRetries ORDER BY RAND() LIMIT 1";
 		$listInfo = $this->db->select($sql, true);
 		if (empty($listInfo['page_url'])) {
 		    $totalLinks = $this->getCountcrawledLinks($projectId);

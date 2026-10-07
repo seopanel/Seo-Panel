@@ -2138,3 +2138,16 @@ CREATE TABLE IF NOT EXISTS `sp_recommendations_refresh` (
 -- this but isn't necessarily re-imported on every upgrade.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'dashboard', 'Never Checked', 'Never Checked');
+
+-- Site Auditor: a single permanently-dead URL (a real 404, a DNS
+-- failure, anything that never succeeds) kept a project at
+-- crawled=0 forever - getProjectRandomUrl() just keeps picking it
+-- back up via ORDER BY RAND(), runReport() leaves it unconfirmed on
+-- every attempt (by design - see AuditorComponent::runReport()'s own
+-- comment on why a transient failure must stay retryable), and the
+-- project never reports "completed" even once every OTHER page has
+-- genuinely finished. fetch_fail_count lets getProjectRandomUrl()
+-- give up on a URL after repeated failures (excluded from the "is
+-- there more to crawl" check) without ever counting it as crawled=1
+-- (it still wasn't - crawl stats stay honest).
+ALTER TABLE `auditorreports` ADD COLUMN `fetch_fail_count` tinyint(3) UNSIGNED NOT NULL DEFAULT 0;
