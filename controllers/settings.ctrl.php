@@ -136,6 +136,20 @@ class SettingsController extends Controller{
 		// are secrets (SMTP password, API keys) that must never land in
 		// a table other admins can browse
 		$changedSettingNames = [];
+		// Was: each setting was committed to the DB one row at a time,
+		// in $setList's own id order, as the loop went - but the SMTP
+		// validation below (SP_SMTP_HOST/USERNAME/PASSWORD empty while
+		// SP_SMTP_MAIL is enabled) runs AS PART of that same per-row
+		// loop and exit()s on failure. SP_SMTP_MAIL has a lower id than
+		// the 3 fields it validates, so by the time validation caught
+		// the missing host/username/password and exited, SP_SMTP_MAIL=1
+		// had already been committed in its own earlier iteration - the
+		// admin saw "please enter your SMTP details", believed nothing
+		// saved, but SMTP was now permanently enabled with blank
+		// credentials, silently breaking every outbound mail() call
+		// from that point on. Wrapped in a transaction so a mid-loop
+		// exit rolls back everything written so far, not just this one.
+		$this->db->query("START TRANSACTION");
 		foreach($setList as $setInfo){
 		    
 		    // exclude from update
@@ -163,6 +177,7 @@ class SettingsController extends Controller{
 		        case "SP_SMTP_PASSWORD":		            
 			        // if smtp mail enabled then check all smtp details entered
 			        if (empty($postInfo[$setInfo['set_name']]) && !empty($postInfo['SP_SMTP_MAIL'])) {
+			            $this->db->query("ROLLBACK");
 			            $this->set('errorMsg', $this->spTextSettings['entersmtpdetails']);
 	                    $this->showSystemSettings($postInfo['category']);
 	                    exit;
@@ -184,6 +199,7 @@ class SettingsController extends Controller{
 			$sql = "update settings set set_val='".addslashes($postInfo[$setInfo['set_name']])."' where set_name='".addslashes($setInfo['set_name'])."'";
 			$this->db->query($sql);
 		}
+		$this->db->query("COMMIT");
 
 		if (!empty($changedSettingNames)) {
 			$this->logAuditEvent('settings.update', 'settings', null, $postInfo['category'] ?? null, implode(', ', $changedSettingNames));
