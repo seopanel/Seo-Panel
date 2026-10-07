@@ -450,7 +450,11 @@ function urlencode(str) {
 }
 
 function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
-	apiToken = $('input:text[name=SP_MOZ_API_SECRET]').val();
+	// SP_MOZ_API_SECRET is now type=password (an earlier fix this round
+	// masked every secret settings field) - the :text filter no longer
+	// matches it at all, so .val() silently returned undefined and this
+	// button always sent the literal string "undefined" as the token.
+	apiToken = $('input[name=SP_MOZ_API_SECRET]').val();
 	scriptArgs += "&api_token=" + apiToken;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
@@ -462,7 +466,9 @@ function checkGoogleAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 }
 
 function checkSpApiConnection(scriptUrl, scriptPos, scriptArgs) {
-	apiKey = $('input:text[name=SP_SPAPI_KEY]').val();
+	// same :text-selector-no-longer-matches-a-password-field fix as
+	// checkMozConnection() above
+	apiKey = $('input[name=SP_SPAPI_KEY]').val();
 	scriptArgs += "&api_key=" + apiKey;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
@@ -478,7 +484,9 @@ function resetSpApiToken(scriptPos) {
 			dataType: 'json',
 			success: function(response) {
 				if (response.status == 'success') {
-					$('input:text[name=SP_SPAPI_KEY]').val(response.data.api_key);
+					// same fix as checkSpApiConnection() above - the
+					// field is type=password now, :text never matched it
+					$('input[name=SP_SPAPI_KEY]').val(response.data.api_key);
 					$('#' + scriptPos).html('<span class="success">' + response.message + '</span>');
 				} else {
 					$('#' + scriptPos).html('<span class="error">' + response.message + '</span>');
@@ -493,7 +501,10 @@ function resetSpApiToken(scriptPos) {
 
 function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	apiLogin = $('input:text[name=SP_DFS_API_LOGIN]').val();
-	apiPassword = $('input:text[name=SP_DFS_API_PASSWORD]').val();
+	// SP_DFS_API_PASSWORD is now type=password - same :text fix as
+	// checkMozConnection() above (SP_DFS_API_LOGIN itself is a plain
+	// login name, still type=text, untouched)
+	apiPassword = $('input[name=SP_DFS_API_PASSWORD]').val();
 	scriptArgs += "&api_login=" + apiLogin + "&api_password=" + apiPassword;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
