@@ -25,11 +25,64 @@ class DashboardController extends Controller {
     var $pageScriptPath = 'dashboard.php';
         
     function __construct() {
-        parent::__construct();        
+        parent::__construct();
     	$this->set('pageScriptPath', $this->pageScriptPath);
     	$this->set( 'pageNo', $_REQUEST['pageno']);
     }
-    
+
+    /**
+     * Computes a period's [fromTime, toTime] and an equal-length
+     * "previous period" [prevFromTime, prevToTime] for trend comparison.
+     * Every show*Dashboard() tab used to duplicate this switch/date-math
+     * independently (7 copies), and all 7 had the same bug: toTime=today,
+     * fromTime=today-N gives an (N+1)-day inclusive window, but
+     * prevFromTime was computed directly as today-2N - only an N-day
+     * window, one day SHORTER than the current one. Any SUM-based metric
+     * (clicks, sessions, follower counts, keyword checks, ...) then
+     * almost always showed a spurious "up" trend purely from summing one
+     * extra day of data, not real growth - worst case on period=day,
+     * where the "current" window (2 days) was literally double the
+     * "previous" one (1 day). Fixed by deriving prevFromTime from
+     * prevToTime using the SAME offset used for fromTime, so both
+     * windows are always exactly the same length.
+     *
+     * $asTimestamp=true returns raw Unix timestamps (for
+     * showDirectorySubmissionDashboard(), whose dirsubmitinfo.submit_time
+     * column is an unquoted UNIX_TIMESTAMP comparison) instead of the
+     * 'Y-m-d' date strings every other caller uses.
+     */
+    function __getPeriodDateRange($period, $asTimestamp = false) {
+        switch ($period) {
+            case 'day':
+                $offset = '-1 day';
+                break;
+            case 'week':
+                $offset = '-7 days';
+                break;
+            case 'year':
+                $offset = '-1 year';
+                break;
+            case 'month':
+            default:
+                $offset = '-30 days';
+                break;
+        }
+
+        if ($asTimestamp) {
+            $toTime = time();
+            $fromTime = strtotime($offset);
+            $prevToTime = $fromTime - 1;
+            $prevFromTime = strtotime($offset, $prevToTime);
+        } else {
+            $toTime = date('Y-m-d');
+            $fromTime = date('Y-m-d', strtotime($offset));
+            $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+            $prevFromTime = date('Y-m-d', strtotime($prevToTime . ' ' . $offset));
+        }
+
+        return [$fromTime, $toTime, $prevFromTime, $prevToTime];
+    }
+
     function showMainDashboard($info=[]) {
         $userId = isLoggedIn();
 
@@ -64,29 +117,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date (one day before current period start to avoid overlap)
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -247,29 +278,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -333,29 +342,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1175,29 +1162,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1340,29 +1305,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'month':
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'week':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1534,29 +1477,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'month':
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'week':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1742,29 +1663,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = time();
-        switch ($period) {
-            case 'day':
-                $fromTime = strtotime('-1 day');
-                $prevFromTime = strtotime('-2 days');
-                break;
-            case 'month':
-                $fromTime = strtotime('-30 days');
-                $prevFromTime = strtotime('-60 days');
-                break;
-            case 'year':
-                $fromTime = strtotime('-1 year');
-                $prevFromTime = strtotime('-2 years');
-                break;
-            case 'week':
-            default:
-                $fromTime = strtotime('-7 days');
-                $prevFromTime = strtotime('-14 days');
-                break;
-        }
-
-        // Calculate previous period end time
-        $prevToTime = $fromTime - 1;
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period, true);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
