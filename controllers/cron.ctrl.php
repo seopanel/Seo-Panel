@@ -938,15 +938,28 @@ class CronController extends Controller {
 			error_log("backlinkCheckerCron: no data source succeeded for website {$websiteInfo['id']} ($websiteUrl)");
 		}
 
-		// Also save rank data from Moz API
-		$rankCtrler = New RankController();
-		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-		$rankCtrler->saveRankResults($websiteInfo, true);
-		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
-	}	
-	
+		// Also save rank data from Moz API - was unconditional, unlike the
+		// backlink-side save right above it (gated on $mozOk||$dfsOk):
+		// a transient Moz failure here silently wrote spam_score=0/
+		// domain_authority=0/page_authority=0 into rankresults, which
+		// getSpamScoreColor()/getAuthorityColor() (includes/sp-common.php)
+		// render as a real, often misleading, verdict - and there's no
+		// NULL/sentinel to tell "Moz failed" from "really 0" afterward.
+		// This data is 100% Moz-sourced (unlike the backlink fields,
+		// which DFS can also supply), so it's gated on $mozOk alone.
+		if ($mozOk) {
+			$rankCtrler = New RankController();
+			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+			$rankCtrler->saveRankResults($websiteInfo, true);
+			$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+		} else {
+			$this->debugMsg("Skipped saving rank results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+			error_log("backlinkCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - rank-side save skipped");
+		}
+	}
+
 	// func to generate rank reports from cron
 	function rankCheckerCron($websiteId) {
 		include_once(SP_CTRLPATH."/rank.ctrl.php");
@@ -967,11 +980,21 @@ class CronController extends Controller {
 		list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
 		$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
-		$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-		$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-		$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-		$rankCtrler->saveRankResults($websiteInfo, true);
-		$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+		// Was unconditional - the exact same false-zero bug as
+		// backlinkCheckerCron()'s own rank-side save, just the mirror
+		// function: this one's PRIMARY save is 100% Moz-sourced, so it
+		// must be gated too, not just the secondary backlink-side save
+		// right below (which already was).
+		if ($mozOk) {
+			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+			$rankCtrler->saveRankResults($websiteInfo, true);
+			$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+		} else {
+			$this->debugMsg("Skipped saving rank results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+			error_log("rankCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - rank-side save skipped");
+		}
 
 		// Save backlink results from Moz data - only if the call actually
 		// succeeded, not on every pass regardless (see backlinkCheckerCron()).
@@ -1581,12 +1604,19 @@ class CronController extends Controller {
 				error_log("backlinkCheckerCron: no data source succeeded for website {$websiteInfo['id']} ($websiteUrl)");
 			}
 
-			$rankCtrler = New RankController();
-			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-			$rankCtrler->saveRankResults($websiteInfo, true);
-			$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+			// same false-zero fix as the non-queued backlinkCheckerCron()
+			// - was unconditional, unlike the backlink-side save above
+			if ($mozOk) {
+				$rankCtrler = New RankController();
+				$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+				$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+				$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+				$rankCtrler->saveRankResults($websiteInfo, true);
+				$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+			} else {
+				$this->debugMsg("Skipped saving rank results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+				error_log("backlinkCheckerCronQueued: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - rank-side save skipped");
+			}
 		});
 	}
 
@@ -1610,11 +1640,19 @@ class CronController extends Controller {
 			list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
 			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
-			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-			$rankCtrler->saveRankResults($websiteInfo, true);
-			$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+			// same false-zero fix as the non-queued rankCheckerCron() -
+			// this PRIMARY save was unconditional too, not just the
+			// secondary backlink-side save below (which already was).
+			if ($mozOk) {
+				$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+				$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+				$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+				$rankCtrler->saveRankResults($websiteInfo, true);
+				$this->debugMsg("Saved rank results of <b>$websiteUrl</b>.....<br>\n");
+			} else {
+				$this->debugMsg("Skipped saving rank results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
+				error_log("rankCheckerCronQueued: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - rank-side save skipped");
+			}
 
 			if ($mozOk) {
 				$backlinkCtrler = New BacklinkController();
@@ -1624,7 +1662,7 @@ class CronController extends Controller {
 				$this->debugMsg("Saved backlink results of <b>$websiteUrl</b>.....<br>\n");
 			} else {
 				$this->debugMsg("Skipped saving backlink results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
-				error_log("rankCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - backlink-side save skipped");
+				error_log("rankCheckerCronQueued: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - backlink-side save skipped");
 			}
 		});
 	}
