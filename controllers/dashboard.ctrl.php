@@ -1059,21 +1059,6 @@ class DashboardController extends Controller {
         $projectId = $projectInfo['id'];
         $this->set('projectId', $projectId);
 
-        // Get project statistics
-        $projectInfo['total_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id']);
-        $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
-        $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
-
-        // auditorprojects.score defaults to 0, same as a genuinely awful
-        // real score would be - a project that was just created and has
-        // never actually been crawled (crawled_links==0) rendered as
-        // "Critical 0%" with every metric showing "Not found", completely
-        // indistinguishable from a site that WAS audited and is really
-        // broken. The view uses this to show a "run your first crawl"
-        // state instead, same treatment the no-project-at-all case above
-        // already gets.
-        $this->set('noCrawlResultsYet', $projectInfo['crawled_links'] == 0);
-
         // Status check for crawled filter - default to crawled=1 on first load
         $statusCheck = false;
         $statusVal = 0;
@@ -1085,37 +1070,65 @@ class DashboardController extends Controller {
         }
         $this->set('crawled', $crawledVal);
 
-        // Broken links
-        $conditions = " and brocken=1";
-        $projectInfo['brocken'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // Page Authority metrics
+        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
 
-        // Backlinks
+        // Get project statistics - was ~20 separate getCountcrawledLinks()
+        // round trips (one SELECT COUNT(*) per metric) against the same
+        // table/project_id on every single dashboard load. Each metric
+        // still needs its own crawl-filter condition (either the UI's
+        // $statusCheck/$statusVal, always crawled=1 for the "modern SEO
+        // features" group - see that group's own comment below for why -
+        // or no crawl filter at all for total_links), so this folds them
+        // all into one query: one conditional SUM(CASE WHEN ...) per
+        // metric, each embedding whatever crawl condition THAT metric
+        // needs, over a single pass through auditorreports.
+        $filterCrawled = $statusCheck ? "crawled=$statusVal and " : "";
         $seArr = ['google'];
+        $statsSelect = [
+            "count(*) as total_links",
+            "sum(case when crawled=1 then 1 else 0 end) as crawled_links",
+            "max(updated) as last_updated",
+            "sum(case when {$filterCrawled}brocken=1 then 1 else 0 end) as brocken",
+            "sum(case when {$filterCrawled}google_backlinks=0 then 1 else 0 end) as no_backlinks",
+            "sum(case when {$filterCrawled}bing_indexed>0 then 1 else 0 end) as bing_indexed",
+            "sum(case when {$filterCrawled}bing_indexed=0 then 1 else 0 end) as bing_not_indexed",
+            "sum(case when mobile_friendly=1 and crawled=1 then 1 else 0 end) as mobile_friendly",
+            "sum(case when https_secure=1 and crawled=1 then 1 else 0 end) as https_secure",
+            "sum(case when ai_robot_allowed=1 and crawled=1 then 1 else 0 end) as ai_robot_allowed",
+            "sum(case when has_og_tags=1 and crawled=1 then 1 else 0 end) as has_og_tags",
+            "sum(case when has_twitter_cards=1 and crawled=1 then 1 else 0 end) as has_twitter_cards",
+            "sum(case when blocked_by_robots=0 and crawled=1 then 1 else 0 end) as allowed_by_robots",
+            "sum(case when {$filterCrawled}page_authority >= $paLevelSecond then 1 else 0 end) as pa_excellent",
+            "sum(case when {$filterCrawled}page_authority >= $paLevelFirst and page_authority < $paLevelSecond then 1 else 0 end) as pa_good",
+            "sum(case when {$filterCrawled}page_authority > 0 and page_authority < $paLevelFirst then 1 else 0 end) as pa_low",
+            "sum(case when {$filterCrawled}page_authority = 0 then 1 else 0 end) as pa_none",
+        ];
         foreach ($seArr as $se) {
-            $conditions = " and $se"."_backlinks>0";
-            $projectInfo[$se."_backlinks"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_backlinks>0 then 1 else 0 end) as {$se}_backlinks";
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed>0 then 1 else 0 end) as {$se}_indexed";
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed=0 then 1 else 0 end) as {$se}_not_indexed";
+        }
+        $statsSql = "select " . implode(", ", $statsSelect) . " from auditorreports where project_id=" . intval($projectInfo['id']);
+        $stats = $this->db->select($statsSql, true);
+        foreach ($stats as $key => $val) {
+            $projectInfo[$key] = ($key === 'last_updated') ? (empty($val) ? "Not Started" : $val) : intval($val);
         }
 
-        // No backlinks
-        $conditions = " and google_backlinks=0";
-        $projectInfo['no_backlinks'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // auditorprojects.score defaults to 0, same as a genuinely awful
+        // real score would be - a project that was just created and has
+        // never actually been crawled (crawled_links==0) rendered as
+        // "Critical 0%" with every metric showing "Not found", completely
+        // indistinguishable from a site that WAS audited and is really
+        // broken. The view uses this to show a "run your first crawl"
+        // state instead, same treatment the no-project-at-all case above
+        // already gets.
+        $this->set('noCrawlResultsYet', $projectInfo['crawled_links'] == 0);
 
-        // Indexed status
-        foreach ($seArr as $se) {
-            $conditions = " and $se"."_indexed>0";
-            $projectInfo[$se."_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-            $conditions = " and $se"."_indexed=0";
-            $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-        }
-
-        // Bing indexed
-        $conditions = " and bing_indexed>0";
-        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-        $conditions = " and bing_indexed=0";
-        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        // Duplicate meta info
+        // Duplicate meta info - a GROUP BY ... HAVING count>1 query per
+        // column, not a flat per-row condition, so it doesn't fold into
+        // the combined SUM(CASE...) query above.
         $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
         $auditorComp = $siteAuditorCtrl->createComponent('AuditorComponent');
         foreach ($metaArr as $meta => $val) {
@@ -1135,40 +1148,7 @@ class DashboardController extends Controller {
         // so they always require crawled=1 regardless of the selected
         // filter (the filter still applies normally to every OTHER
         // metric above/below, which don't have this inconsistent-default
-        // problem).
-        $conditions = " and mobile_friendly=1 and crawled=1";
-        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        $conditions = " and https_secure=1 and crawled=1";
-        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        $conditions = " and ai_robot_allowed=1 and crawled=1";
-        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        $conditions = " and has_og_tags=1 and crawled=1";
-        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        $conditions = " and has_twitter_cards=1 and crawled=1";
-        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        $conditions = " and blocked_by_robots=0 and crawled=1";
-        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], false, 0, $conditions);
-
-        // Page Authority metrics
-        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
-        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
-
-        $conditions = " and page_authority >= $paLevelSecond";
-        $projectInfo['pa_excellent'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
-        $projectInfo['pa_good'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
-        $projectInfo['pa_low'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority = 0";
-        $projectInfo['pa_none'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // problem). (Computed above, in $statsSelect.)
 
         $this->set('projectInfo', $projectInfo);
         $this->set('metaArr', $metaArr);
