@@ -16200,6 +16200,7 @@ INSERT INTO `texts` (`id`, `lang_code`, `category`, `label`, `content`, `changed
 (15339, 'en', 'dashboard', 'Top 3', 'Top 3', '2025-10-27 13:18:04'),
 (15340, 'en', 'dashboard', 'Top 10', 'Top 10', '2025-10-27 13:18:04'),
 (15341, 'en', 'dashboard', 'Not Ranked', 'Not Ranked', '2025-10-27 13:18:04'),
+(39654, 'en', 'dashboard', 'Never Checked', 'Never Checked', '2026-10-07 00:00:00'),
 (15342, 'en', 'dashboard', 'Keyword Distribution by Rank', 'Keyword Distribution by Rank', '2025-10-27 13:18:04'),
 (15343, 'en', 'dashboard', 'Keywords by Ranking Position', 'Keywords by Ranking Position', '2025-10-27 13:18:04'),
 (15344, 'en', 'dashboard', 'Ranking Volatility', 'Ranking Volatility', '2025-10-27 13:18:04'),

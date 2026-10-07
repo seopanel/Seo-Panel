@@ -2127,3 +2127,14 @@ CREATE TABLE IF NOT EXISTS `sp_recommendations_refresh` (
   `refreshed_at` datetime NOT NULL,
   PRIMARY KEY (`website_id`,`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci ;
+
+--
+-- Main dashboard's Keyword Statistics row reused the "Not Ranked" label
+-- for total-tracked (keywords with zero searchresults rows at all in the
+-- period) while the Keyword Distribution pie chart/tabs below it use the
+-- SAME label for a different metric (checked on the latest report date
+-- but rank is null/0/>100) - two different numbers, same name, same
+-- screen. New label for the first one only; textlang.sql already carries
+-- this but isn't necessarily re-imported on every upgrade.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'dashboard', 'Never Checked', 'Never Checked');
