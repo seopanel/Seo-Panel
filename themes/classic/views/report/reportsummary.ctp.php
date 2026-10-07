@@ -10,7 +10,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
     		<tr>
     			<th><?php echo $spText['common']['Website']?>:</th>
         		<td>
-        			<?php echo $websiteUrl; ?>
+        			<?php echo htmlspecialchars($websiteUrl); ?>
     			</td>
     		</tr>
 		<?php }?>
@@ -39,9 +39,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<option value="">-- <?php echo $spText['common']['All']?> --</option>
 					<?php foreach($websiteList as $websiteInfo){?>
 						<?php if($websiteInfo['id'] == $websiteId){?>
-							<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+							<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 						<?php }else{?>
-							<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+							<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 						<?php }?>
 					<?php }?>
 				</select>
@@ -161,11 +161,11 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				}
 				?>
 				<?php if (empty($websiteId)) {?>
-					<td><?php echo $listInfo['name'] . $serpKwIcon ?></td>
-					<td><?php echo $listInfo['webname']; ?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon ?></td>
+					<td><?php echo htmlspecialchars($listInfo['webname']); ?></td>
 				<?php } else { ?>
-					<td><?php echo $listInfo['name'] . $serpKwIcon; ?></td>
-				<?php }?>				
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon; ?></td>
+				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
 					$rankInfo = $positionInfo[$seInfo['id']];

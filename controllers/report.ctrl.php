@@ -222,24 +222,24 @@ class ReportController extends Controller {
 			    $listInfo = $keywordList[$keywordId];
 				$positionInfo = $listInfo['position_info'];
 				
-				$valueList = array($listInfo['weburl'], $listInfo['name']);
+				$valueList = array(neutralizeCsvFormula($listInfo['weburl']), neutralizeCsvFormula($listInfo['name']));
 				foreach ($this->seLIst as $index => $seInfo){
-					
+
 					$rankInfo = $positionInfo[$seInfo['id']];
 					$prevRank = isset($rankInfo[$fromTimeTxt]) ? $rankInfo[$fromTimeTxt] : "";
 					$currRank = isset($rankInfo[$toTimeTxt]) ? $rankInfo[$toTimeTxt] : "";
 					$rankDiff = "";
-						
+
 					// if both ranks are existing
 					if ($prevRank != '' && $currRank != '') {
 						$rankDiff = $prevRank - $currRank;
 					}
-					
+
 					$valueList[] = $currRank;
 					$valueList[] = $prevRank;
 					$valueList[] = $rankDiff;
 				}
-				
+
 				$exportContent .= createExportContent( $valueList);
 			}
 			exportToCsv('keyword_report_summary', $exportContent);
@@ -292,7 +292,21 @@ class ReportController extends Controller {
 
 		$keywordList = $keywordController->__getAllKeywords($userId, $websiteId, true);
 		$this->set('keywordList', $keywordList);
-		$keywordId = empty ($searchInfo['keyword_id']) ? $keywordList[0]['id'] : $searchInfo['keyword_id'];
+		// a caller-supplied keyword_id must be intval'd (it previously
+		// only was inside the $searchInfo['rep'] branch above, leaving
+		// it to flow unescaped into the raw SQL $conditions below
+		// otherwise - a live SQL injection surface) and must belong to
+		// this user's own keywords for a non-admin - otherwise fall back
+		// to their own first keyword. Previously neither check existed,
+		// so any logged-in user could read any other tenant's full
+		// rank/SERP history just by varying keyword_id.
+		$keywordId = empty($searchInfo['keyword_id']) ? 0 : intval($searchInfo['keyword_id']);
+		if (!empty($keywordId) && !$this->__verifyKeywordOwnership($keywordId)) {
+			$keywordId = 0;
+		}
+		if (empty($keywordId)) {
+			$keywordId = $keywordList[0]['id'] ?? '';
+		}
 		$this->set('keywordId', $keywordId);
 
 		$seController = New SearchEngineController();
@@ -363,10 +377,21 @@ class ReportController extends Controller {
 
 	# func to show reports in a time
 	function showTimeReport($searchInfo = '') {
-		
+
 		$fromTime = addslashes($searchInfo['time']);
 		$toTime = $fromTime + (3600 * 24);
 		$keywordId = intval($searchInfo['keyId']);
+		// a keyword_id that doesn't belong to this (non-admin) caller was
+		// never checked - same IDOR class as showReports() above. There's
+		// no natural "fall back to the caller's own first keyword" here
+		// (this is a single drill-down view, not a dropdown-driven
+		// report), so an unowned id is denied outright rather than
+		// silently widened to "no keyword filter", which would leak
+		// every keyword's results for the time window instead of just
+		// one.
+		if (!empty($keywordId) && !$this->__verifyKeywordOwnership($keywordId)) {
+			$keywordId = -1;
+		}
 		$seId = intval($searchInfo['seId']);
 		$seController = New SearchEngineController();
 		$this->set('seInfo', $seController->__getsearchEngineInfo($seId));
@@ -436,10 +461,17 @@ class ReportController extends Controller {
 
 	# function to show graph
 	function showGraph($searchInfo = '') {
-		
+
 		$fromTimeDate = date('Y-m-d', $searchInfo['fromTime']);
 		$toTimeDate = date('Y-m-d', $searchInfo['toTime']);
-		$conditions = empty ($searchInfo['keywordId']) ? "" : " and s.keyword_id=".intval($searchInfo['keywordId']);
+		// same IDOR fix as showTimeReport() above - deny an unowned
+		// keywordId outright rather than silently widening the chart to
+		// every keyword's results.
+		$keywordId = intval($searchInfo['keywordId'] ?? 0);
+		if (!empty($keywordId) && !$this->__verifyKeywordOwnership($keywordId)) {
+			$keywordId = -1;
+		}
+		$conditions = empty ($keywordId) ? "" : " and s.keyword_id=$keywordId";
 		$conditions .= empty ($searchInfo['seId']) ? "" : " and s.searchengine_id=".intval($searchInfo['seId']);
 		$sql = "select s.*,se.domain from searchresults s,searchengines se  
 		where s.searchengine_id=se.id and result_date>='$fromTimeDate' and result_date<='$toTimeDate'
@@ -1250,9 +1282,9 @@ class ReportController extends Controller {
     				$listInfo = $keywordList[$keywordId];
     				$positionInfo = $listInfo['position_info'];
     			
-    				$valueList = array($listInfo['weburl'], $listInfo['name']);
+    				$valueList = array(neutralizeCsvFormula($listInfo['weburl']), neutralizeCsvFormula($listInfo['name']));
     				foreach ($this->seLIst as $index => $seInfo){
-    						
+
     					$rankInfo = $positionInfo[$seInfo['id']];
     					$prevRank = isset($rankInfo[$fromTimeShort]) ? $rankInfo[$fromTimeShort] : "";
     					$currRank = isset($rankInfo[$toTimeShort]) ? $rankInfo[$toTimeShort] : "";
@@ -1388,7 +1420,7 @@ class ReportController extends Controller {
 				$exportContent .= createExportContent( $headList);
 				foreach ($websiteRankList as $websiteInfo) {
 					$valueList = array(
-						$websiteInfo['url'],
+						neutralizeCsvFormula($websiteInfo['url']),
 						strip_tags($websiteInfo['mozrank']),
 						strip_tags($websiteInfo['domain_authority']),
 						strip_tags($websiteInfo['page_authority']),
