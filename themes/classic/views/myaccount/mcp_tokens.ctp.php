@@ -25,8 +25,8 @@
 	<input type="text" name="label" class="form-control" style="max-width:300px;display:inline-block;" placeholder="<?php echo $spTextMyAccount['Token Label'] ?? 'Token Label'?>">
 	<select name="expires_in" class="custom-select" style="max-width:180px;display:inline-block;">
 		<option value="never"><?php echo $spTextMyAccount['Never expires'] ?? 'Never expires'?></option>
-		<option value="30d">30 <?php echo $spTextMyAccount['30 days'] ?? '30 days'?></option>
-		<option value="90d">90 <?php echo $spTextMyAccount['90 days'] ?? '90 days'?></option>
+		<option value="30d"><?php echo $spTextMyAccount['30 days'] ?? '30 days'?></option>
+		<option value="90d"><?php echo $spTextMyAccount['90 days'] ?? '90 days'?></option>
 		<option value="1y"><?php echo $spTextMyAccount['1 year'] ?? '1 year'?></option>
 	</select>
 	<a href="javascript:void(0);" onclick="scriptDoLoadPost('mcp-access.php', 'mcp_create_form', 'content')" class="btn btn-secondary">
