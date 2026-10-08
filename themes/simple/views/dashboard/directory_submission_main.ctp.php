@@ -1,7 +1,31 @@
 <?php
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
-} else { ?>
+} elseif (!empty($noSubmissionsYet)) { ?>
+<form id='directory_submission_dashboard_form' method="post">
+<table class="search">
+	<tr>
+		<th><?php echo $spText['common']['Website']?>: </th>
+		<td>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('<?php echo SP_WEBPATH?>/directory_submission_dashboard.php', 'directory_submission_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $websiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+					<?php }else{?>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+					<?php }?>
+				<?php }?>
+			</select>
+		</td>
+	</tr>
+</table>
+</form>
+<div class="alert alert-info mt-4">
+	<i class="fas fa-info-circle"></i>
+	<?php echo $spTextDir['No directory submissions yet'] ?? "This website hasn't been submitted to any directory yet."?>
+	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=directory-submission" class="alert-link"><?php echo $spTextDir['Submit to a directory'] ?? 'Submit to a directory'?></a>
+</div>
+<?php } else { ?>
 <form id='directory_submission_dashboard_form' method="post">
 <table class="search">
 	<tr>
@@ -43,7 +67,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Directory Submission Overview'] ?? 'Directory Submission Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-paper-plane text-primary"></i> <?php echo $spTextDir['Total Submissions'] ?? 'Total Submissions'?>
@@ -334,6 +358,16 @@ function drawAllCharts() {
 	drawSubmissionTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spDirSubmissionChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spDirSubmissionChartResizeTimer);
+		spDirSubmissionChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw submission status pie chart (Approved vs Pending)
 function drawSubmissionStatusChart() {
 	var data = google.visualization.arrayToDataTable([
@@ -344,6 +378,7 @@ function drawSubmissionStatusChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Approved vs Pending'] ?? 'Approved vs Pending'?>',
+		width: spChartWidth('submission_status_chart'),
 		height: 300,
 		colors: ['#28a745', '#ffc107'],
 		chartArea: { width: '90%', height: '80%' },
@@ -363,7 +398,7 @@ function drawSuccessRateGauge() {
 	]);
 
 	var options = {
-		width: '100%',
+		width: spChartWidth('success_rate_gauge'),
 		height: 300,
 		redFrom: 0, redTo: 25,
 		yellowFrom: 25, yellowTo: 50,
@@ -386,6 +421,7 @@ function drawAllTimeStatusChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['All Time Status'] ?? 'All Time Status'?>',
+		width: spChartWidth('alltime_status_chart'),
 		height: 300,
 		colors: ['#28a745', '#ffc107'],
 		chartArea: { width: '90%', height: '80%' },
@@ -413,6 +449,7 @@ function drawSubmissionTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Submissions Over Time'] ?? 'Submissions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('submission_trends_chart'),
 		height: 400,
 		colors: ['#007bff', '#28a745', '#ffc107'],
 		legend: { position: 'bottom' },

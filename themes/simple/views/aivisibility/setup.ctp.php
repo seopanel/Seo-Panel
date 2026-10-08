@@ -2,7 +2,7 @@
 <?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
 
 <form id='search_form'>
-<table class="search" style="width: 60%">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
@@ -130,6 +130,15 @@
 		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" style="font-weight:600;">
 			<?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i>
 		</a>
+	</span>
+</div>
+
+<div class="aiv-note">
+	<i class="fas fa-robot"></i>
+	<span>
+		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
+		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
 	</span>
 </div>
 

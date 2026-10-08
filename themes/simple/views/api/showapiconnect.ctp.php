@@ -14,15 +14,41 @@ echo showSectionHead($spTextPanel['API Connection']);
 				</tr>
 				<tr>
 					<td class="bg-light"><strong><?php echo $spTextSettings['SP_API_KEY']?>:</strong></td>
-					<td><code><?php echo SP_DEMO? "*********" : $apiInfo['SP_API_KEY']?></code></td>
+					<td>
+						<code><?php echo SP_DEMO? "*********" : htmlspecialchars($apiInfo['SP_API_KEY'])?></code>
+						<?php if (!SP_DEMO) { ?>
+							<form id="regen_api_key_form" onsubmit="return false;" style="display:inline;">
+								<input type="hidden" name="sec" value="regenerate_api_key">
+							</form>
+							<a onclick="confirmSubmit('apimanager.php', 'regen_api_key_form', 'content')" href="javascript:void(0);" class="btn btn-sm btn-secondary">
+								<i class="fas fa-sync"></i> <?php echo $spTextAPI['Regenerate'] ?? 'Regenerate'?>
+							</a>
+						<?php } ?>
+					</td>
 				</tr>
 				<tr>
 					<td class="bg-light"><strong><?php echo $spTextSettings['API_SECRET']?>:</strong></td>
 					<td>
-						<div id="api_secret" style="display: none;"><code><?php echo SP_DEMO? "*********" : $apiInfo['API_SECRET']?></code></div>
+						<div id="api_secret" style="display: none;"><code><?php echo SP_DEMO? "*********" : htmlspecialchars($apiInfo['API_SECRET'])?></code></div>
 						<a href="javascript:void(0);" onclick="showDiv('api_secret');hideDiv('secret_link');" id='secret_link' class="btn btn-sm btn-secondary">
 							<i class="fas fa-eye"></i> Show
 						</a>
+						<?php if (!SP_DEMO) { ?>
+							<form id="regen_api_secret_form" onsubmit="return false;" style="display:inline;">
+								<input type="hidden" name="sec" value="regenerate_api_secret">
+							</form>
+							<a onclick="confirmSubmit('apimanager.php', 'regen_api_secret_form', 'content')" href="javascript:void(0);" class="btn btn-sm btn-secondary">
+								<i class="fas fa-sync"></i> <?php echo $spTextAPI['Regenerate'] ?? 'Regenerate'?>
+							</a>
+						<?php } ?>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<div class="alert alert-warning mb-0">
+							<i class="fas fa-exclamation-triangle"></i>
+							<?php echo $spTextAPI['api_regenerate_warning'] ?? 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.'?>
+						</div>
 					</td>
 				</tr>
 				<tr>

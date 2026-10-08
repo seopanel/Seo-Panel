@@ -1,38 +1,27 @@
 <?php
-$upgradeReason = !empty($spapiCheckResult) ? $spapiCheckResult : '';
-if ($upgradeReason === 'expired') {
-    $upgradeTitle    = 'API Subscription Expired';
-    $upgradeIcon     = 'fa-calendar-times';
-    $upgradeAlertMsg = 'Your Seo Panel API subscription has <strong>expired</strong>.';
-    $upgradeSubMsg   = 'Upgrade your plan to restore access to the Seo Panel API.';
-} elseif ($upgradeReason === 'monthly_limit') {
-    $upgradeTitle    = 'API Monthly Limit Reached';
-    $upgradeIcon     = 'fa-tachometer-alt';
-    $upgradeAlertMsg = 'You have reached your <strong>monthly API request limit</strong>.';
-    $upgradeSubMsg   = 'Upgrade your plan to continue using the Seo Panel API without interruption.';
-} else {
-    $upgradeTitle    = 'Upgrade Seo Panel API Plan';
-    $upgradeIcon     = 'fa-rocket';
-    $upgradeAlertMsg = 'Upgrade your Seo Panel API plan to unlock more features and higher limits.';
-    $upgradeSubMsg   = 'Choose a plan that fits your needs and get the most out of the Seo Panel API.';
-}
+// Content (title/icon/messages) is no longer computed here at page-render
+// time - this popup's trigger (checkDailyNotices(), an AJAX call fired
+// after the page has already loaded - see default.ctp.php's own comment)
+// does the once-a-day live check that decides WHICH of these variants
+// applies, and passes the already-computed text in as JSON. This markup
+// just needs placeholder ids for JS to fill in before showing.
 ?>
 <div class="sp-confirm-overlay" id="spapi_upgrade_overlay" style="display:none;">
 	<div class="sp-confirm-box" style="max-width: 1100px; width: 95%">
 		<div class="sp-confirm-header">
-			<i class="fas <?php echo $upgradeIcon?>"></i>
-			<span>Seo Panel <?php echo $upgradeTitle?></span>
+			<i class="fas fa-rocket" id="spapi_upgrade_header_icon"></i>
+			<span>Seo Panel <span id="spapi_upgrade_header_title">Upgrade Seo Panel API Plan</span></span>
 		</div>
 		<div class="sp-confirm-body">
 			<div id="spapi_upgrade_message"></div>
 			<div id="spapi_upgrade_intro">
 				<div class="spapi-upgrade-alert-box">
 					<div class="spapi-upgrade-alert-icon">
-						<i class="fas <?php echo $upgradeIcon?>"></i>
+						<i class="fas fa-rocket" id="spapi_upgrade_alert_icon"></i>
 					</div>
 					<div class="spapi-upgrade-alert-text">
-						<div><?php echo $upgradeAlertMsg?></div>
-						<div class="spapi-upgrade-alert-sub"><?php echo $upgradeSubMsg?></div>
+						<div id="spapi_upgrade_alert_msg"></div>
+						<div class="spapi-upgrade-alert-sub" id="spapi_upgrade_sub_msg"></div>
 					</div>
 				</div>
 			</div>
@@ -60,7 +49,13 @@ if ($upgradeReason === 'expired') {
 	</div>
 </div>
 <script type="text/javascript">
-window.spapiShowUpgradePopup = function() {
+window.spapiShowUpgradePopup = function(data) {
+	data = data || {};
+	$('#spapi_upgrade_header_title').text(data.title || 'Upgrade Seo Panel API Plan');
+	$('#spapi_upgrade_header_icon').attr('class', 'fas ' + (data.icon || 'fa-rocket'));
+	$('#spapi_upgrade_alert_icon').attr('class', 'fas ' + (data.icon || 'fa-rocket'));
+	$('#spapi_upgrade_alert_msg').html(data.alertMsg || 'Upgrade your Seo Panel API plan to unlock more features and higher limits.');
+	$('#spapi_upgrade_sub_msg').html(data.subMsg || 'Choose a plan that fits your needs and get the most out of the Seo Panel API.');
 	$('#spapi_upgrade_message').html('');
 	$('#spapi_upgrade_intro').show();
 	$('#spapi_upgrade_plans').hide();

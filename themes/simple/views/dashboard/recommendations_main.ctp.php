@@ -119,6 +119,10 @@
     color: #888;
 }
 .rec-empty i { font-size: 28px; color: #667eea; display: block; margin-bottom: 10px; }
+.rec-empty.rec-clear { border-color: #38ef7d; }
+.rec-empty.rec-clear i { color: #11998e; }
+.rec-empty.rec-error-banner { border-color: #e74c3c; color: #c0392b; }
+.rec-empty.rec-error-banner i { color: #e74c3c; }
 </style>
 
 <div class="rec-container">
@@ -136,7 +140,7 @@
             </select>
 
             <button type="button" class="rec-btn"
-                onclick="scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
+                onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
 
@@ -146,10 +150,22 @@
         </div>
     </form>
 
-    <?php if (empty($recommendations)) { ?>
+    <?php if (!empty($refreshError)) { ?>
+        <div class="rec-empty rec-error-banner">
+            <i class="fas fa-exclamation-triangle"></i>
+            <?php echo htmlspecialchars($refreshError) ?>
+        </div>
+    <?php } ?>
+
+    <?php if (empty($recommendations) && empty($refreshedAt)) { ?>
         <div class="rec-empty">
             <i class="fas fa-info-circle"></i>
             No AI insights yet. Click <strong>Refresh AI Insights</strong> to analyse your SEO data.
+        </div>
+    <?php } elseif (empty($recommendations)) { ?>
+        <div class="rec-empty rec-clear">
+            <i class="fas fa-check-circle"></i>
+            All clear - no issues found as of <?php echo htmlspecialchars($refreshedAt) ?>.
         </div>
     <?php } else { ?>
 
@@ -203,6 +219,7 @@
                 <?php echo $meta['label'] ?>
                 <span class="rec-count-badge"><?php echo $count ?></span>
             </div>
+            <div class="table-responsive">
             <table class="rec-table">
                 <thead>
                     <tr>
@@ -237,20 +254,30 @@
                             <?php echo htmlspecialchars($rec['description']) ?>
                         </td>
                         <?php if (!empty($seoDiaryPluginId)) {
-                            // Opt-in only - never auto-created. A plain full-page link
-                            // (not an AJAX scriptDoLoad) so it works regardless of
-                            // whatever admin-panel.php section this dashboard happens to
-                            // be embedded in. newDiary() reads title/description straight
-                            // off $_REQUEST into the New Diary form's prefilled fields -
-                            // the user still picks a project/category/due date and
-                            // confirms before anything is actually created.
-                            $addToDiaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
+                            // Opt-in only - never auto-created. newDiary() reads
+                            // title/description straight off $_REQUEST into the New
+                            // Diary form's prefilled fields - the user still picks a
+                            // project/category/due date and confirms before anything
+                            // is actually created.
+                            //
+                            // Opens in the app's existing modal dialog mechanism
+                            // (scriptDoLoadDialog(), js/popup.js - the same one used
+                            // elsewhere for "open a plugin action in a popup") rather
+                            // than navigating away. This ALSO sidesteps the layout/
+                            // jQuery bug a plain full-page link to seo-plugins.php used
+                            // to hit (every plugin controller hardcodes $layout='ajax' -
+                            // a bare fragment with no jQuery, fine when AJAX-loaded like
+                            // this, fatal as a full top-level navigation) without
+                            // depending on admin-panel.php's start_script mechanism at
+                            // all - we never leave the current page.
+                            $diaryArgs = "&pid=" . intval($seoDiaryPluginId)
                                 . "&action=newDiary"
                                 . "&title=" . urlencode($rec['title'])
                                 . "&description=" . urlencode($rec['description']);
+                            $diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
                             ?>
                         <td>
-                            <a href="<?php echo htmlspecialchars($addToDiaryUrl) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
+                            <a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
                                 <i class="fas fa-book"></i>
                             </a>
                         </td>
@@ -259,6 +286,7 @@
                     <?php } ?>
                 </tbody>
             </table>
+            </div>
         </div>
         <?php } ?>
 

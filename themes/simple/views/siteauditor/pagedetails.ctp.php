@@ -1,5 +1,15 @@
 <?php
-$backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno={$post['pageno']}&order_col={$post['order_col']}&order_val={$post['order_val']}')";
+// pageno/order_col/order_val previously went straight into this
+// onclick attribute with no validation or escaping, reached via GET
+// sec=pagedetails - a single quote broke out of the JS string and ran
+// arbitrary JS for whoever loaded that response. Same whitelist
+// showLinksReport() itself validates order_col/order_val against
+// before using them in SQL.
+$validBackLinkOrderCols = array('page_url', 'page_authority', 'score', 'brocken', 'external_links', 'total_links', 'google_backlinks', 'indexed', 'crawled', 'page_title', 'page_description', 'page_keywords', 'comments');
+$backLinkPageno = intval($post['pageno'] ?? 0);
+$backLinkOrderCol = (!empty($post['order_col']) && in_array($post['order_col'], $validBackLinkOrderCols)) ? $post['order_col'] : 'page_url';
+$backLinkOrderVal = (strtoupper($post['order_val'] ?? '') === 'ASC') ? 'ASC' : 'DESC';
+$backLink = "scriptDoLoadPost('siteauditor.php', 'search_form', 'subcontent', '&sec=showreport&pageno=$backLinkPageno&order_col=$backLinkOrderCol&order_val=$backLinkOrderVal')";
 
 // Calculate link statistics
 $totalLinks = count($linkList);
@@ -179,6 +189,14 @@ $dofollowCount = $totalLinks - $nofollowCount;
 .status-badge.danger {
 	background: #f8d7da;
 	color: #721c24;
+}
+.status-badge.warning {
+	background: #fff3cd;
+	color: #856404;
+}
+.status-badge.neutral {
+	background: #e2e3e5;
+	color: #41464b;
 }
 /* Round Score Gauge */
 .score-circle-container {
@@ -481,8 +499,8 @@ $dofollowCount = $totalLinks - $nofollowCount;
 	<!-- Page URL Banner -->
 	<div class="page-url-banner">
 		<h4><i class="fas fa-globe"></i> Analyzing Page</h4>
-		<a href="<?php echo $reportInfo['page_url']?>" target="_blank">
-			<?php echo $reportInfo['page_url']?>
+		<a href="<?php echo htmlspecialchars($reportInfo['page_url'], ENT_QUOTES)?>" target="_blank">
+			<?php echo htmlspecialchars($reportInfo['page_url'])?>
 			<i class="fas fa-external-link-alt" style="margin-left: 8px; font-size: 12px;"></i>
 		</a>
 	</div>
@@ -515,8 +533,10 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						$scoreValue = round($reportInfo['score'], 2);
 						$isPositive = $scoreValue >= 0;
 
-						// Calculate percentage for circle (max score is 38 from AuditorComponent)
-						$maxScore = 38;
+						// Calculate percentage for circle - AuditorComponent::$maxScore
+						// (was stale at 38 here; bumped to 45 when AI-readiness checks
+						// were added, inflating every displayed percentage)
+						$maxScore = 45;
 						$scorePercentage = $maxScore > 0 ? min(max(0, $scoreValue) / $maxScore * 100, 100) : 0;
 
 						// SVG circle calculations
@@ -653,6 +673,50 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						<?php } ?>
 					</div>
 				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-project-diagram"></i> <?php echo $spTextSA['Structured Data'] ?? 'Structured Data'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['has_structured_data']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
+						<?php } else { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Missing</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-heading"></i> <?php echo $spTextSA['Heading Structure'] ?? 'Heading Structure'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['heading_structure_ok']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Good</span>
+						<?php } else { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Needs Work</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-question-circle"></i> <?php echo $spTextSA['FAQ-Style Content'] ?? 'FAQ-Style Content'?></div>
+					<div class="detail-value">
+						<?php if ($reportInfo['has_faq_content']) { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Found</span>
+						<?php } else { ?>
+							<span class="status-badge neutral"><i class="fas fa-minus"></i> None Detected</span>
+						<?php } ?>
+					</div>
+				</div>
+				<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-align-justify"></i> <?php echo $spTextSA['Content Depth'] ?? 'Content Depth'?></div>
+					<div class="detail-value">
+						<?php $wordCount = intval($reportInfo['word_count'] ?? 0); ?>
+						<span class="metric-value"><?php echo number_format($wordCount)?></span>
+						<?php if ($wordCount < 150) { ?>
+							<span class="status-badge danger"><i class="fas fa-times"></i> Thin</span>
+						<?php } else if ($wordCount < 300) { ?>
+							<span class="status-badge warning"><i class="fas fa-exclamation"></i> Moderate</span>
+						<?php } else { ?>
+							<span class="status-badge success"><i class="fas fa-check"></i> Substantial</span>
+						<?php } ?>
+					</div>
+				</div>
 			</div>
 		</div>
 
@@ -703,7 +767,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 				<div class="detail-card full-width">
 					<div class="detail-label"><i class="fas fa-link"></i> <?php echo $spTextSA['Canonical URL'] ?? 'Canonical URL'?></div>
 					<div class="detail-value">
-						<a href="<?php echo $reportInfo['canonical_url']?>" target="_blank"><?php echo $reportInfo['canonical_url']?></a>
+						<a href="<?php echo htmlspecialchars($reportInfo['canonical_url'], ENT_QUOTES)?>" target="_blank"><?php echo htmlspecialchars($reportInfo['canonical_url'])?></a>
 					</div>
 				</div>
 				<?php } ?>
@@ -810,6 +874,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 
 		<!-- Links Table -->
 		<div class="links-table-container">
+			<div style="overflow-x:auto;">
 			<table class="links-table" id="linksTable">
 				<thead>
 					<tr>
@@ -854,6 +919,7 @@ $dofollowCount = $totalLinks - $nofollowCount;
 					<?php } ?>
 				</tbody>
 			</table>
+			</div>
 		</div>
 		<?php } else { ?>
 		<div class="empty-state">

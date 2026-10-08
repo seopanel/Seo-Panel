@@ -186,6 +186,7 @@ foreach($menuList as $i => $menuInfo){
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=local_ai', 'content')"><?php echo $spTextPanel['Local AI Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=mail', 'content')"><?php echo $spTextPanel['Mail Settings']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=test_email', 'content')"><?php echo $spTextPanel['Test Email Settings']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=auditlog', 'content')"><?php echo $spTextPanel['Audit Log'] ?? 'Audit Log'; ?></a></li>
 			</ul>
 			<?php
 			break;

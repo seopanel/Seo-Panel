@@ -7,9 +7,9 @@
 			<select name="website_id" id="website_id" onchange="doLoad('website_id', 'keywords.php', 'keyword_area', 'sec=keywordbox')" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>
@@ -103,9 +103,9 @@
 			<tr class="<?php echo $class?>">
 				<td><?php echo $dateLink; ?></td>
 				<td id='seresult'>
-					<a href='<?php echo $listInfo['url']?>' target='_blank'><?php echo stripslashes($listInfo['title']);?></a>
-					<p><?php echo stripslashes($listInfo['description']);?><p>
-					<label><?php echo $listInfo['url']?></label>
+					<a href='<?php echo htmlspecialchars($listInfo['url'])?>' target='_blank'><?php echo htmlspecialchars(stripslashes($listInfo['title']));?></a>
+					<p><?php echo htmlspecialchars(stripslashes($listInfo['description']));?><p>
+					<label><?php echo htmlspecialchars($listInfo['url'])?></label>
 				</td>
 				<td class="fw-bold"><?php echo $listInfo['rank'].'</b> '. $listInfo['rank_diff']?></td>
 				<td style="font-size:0.85rem;">

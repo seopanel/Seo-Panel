@@ -19,6 +19,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<th><?php echo $spText['common']['Period']?>:</th>
     		<td>
     			<?php echo $fromTime?> - <?php echo $toTime?>
+    			<?php if (!empty($showDateRangeLagNote)) { ?>
+    				<br><small>Website/Keyword Search and Sitemap data reflects up to 2 days ago; Website Analytics up to 1 day ago (reporting lag at the data source) - other sections reflect the period above exactly.</small>
+    			<?php } ?>
 			</td>
 		</tr>
 	</table>
@@ -40,6 +43,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				    $( "#from_time_summary, #to_time_summary").datepicker({dateFormat: "yy-mm-dd"});
 				  } );
 			  	</script>
+    			<?php if (!empty($showDateRangeLagNote)) { ?>
+    				<br><small class="text-muted">Website/Keyword Search and Sitemap data reflects up to 2 days ago; Website Analytics up to 1 day ago (reporting lag at the data source) - other sections reflect the period above exactly.</small>
+    			<?php } ?>
     		</td>
     	<tr>
     	<tr>
@@ -345,6 +351,15 @@ if (!empty($reviewReport)) {
     ?>
     <br>
 	<div class="table-responsive"><?php echo $reviewReport;?></div>
+	<?php
+}
+?>
+
+<?php
+if (!empty($aiVisibilityReport)) {
+    ?>
+    <br>
+	<div class="table-responsive"><?php echo $aiVisibilityReport;?></div>
 	<?php
 }
 ?>

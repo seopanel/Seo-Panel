@@ -70,7 +70,7 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 	$colCount = 6;
 	if(count($list) > 0) {
 		foreach($list as $listInfo){
-		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", "{$listInfo['name']}");
+		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", htmlspecialchars($listInfo['name']));
 			?>
 			<tr>
 				<td><?php echo $projectLink?></td>
@@ -78,8 +78,8 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 					<i class="fab fa-<?php echo $serviceList[$listInfo['type']]['icon']?>"></i>
 					<?php echo $serviceList[$listInfo['type']]['label']?>
 				</td>
-				<td style="text-align: left;"><?php echo $listInfo['url']?></td>
-				<td><?php echo $listInfo['website_name']?></td>
+				<td style="text-align: left;"><?php echo htmlspecialchars($listInfo['url'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['website_name'])?></td>
 				<td><?php echo showStatusBadge($listInfo['status']);?></td>
 				<td>
 					<?php

@@ -130,6 +130,20 @@
     <?php endif; ?>
 
     <div class="sh-card">
+        <div class="sh-card-title"><i class="fas fa-layer-group"></i> <?php echo $spTextPanel['Resumable job queue'] ?? 'Resumable job queue'; ?></div>
+        <p style="color:#666; font-size:13px; margin-top:0;">
+            <?php echo $spTextPanel['jobqueuedesc'] ?? 'The chunked scheduler processes each tool in small, resumable steps instead of one long-running pass - faster to recover from an interruption, and the only mode this page\'s backlog/failure details below apply to. Fresh installs have this on by default; an install that upgraded from an older version may still have it off. There is no downside to enabling it.'; ?>
+        </p>
+        <form method="post" action="cron.php">
+            <input type="hidden" name="sec" value="save_job_queue_settings">
+            <div class="sh-form-row">
+                <label><input type="checkbox" name="job_queue_enabled" value="1" <?php echo !empty($jobQueueEnabled) ? 'checked' : ''; ?>> <?php echo $spTextPanel['Enable resumable job queue'] ?? 'Enable resumable job queue'; ?></label>
+                <button type="submit" class="sh-btn"><?php echo $spText['button']['Save'] ?? 'Save'; ?></button>
+            </div>
+        </form>
+    </div>
+
+    <div class="sh-card">
         <div class="sh-card-title"><i class="fas fa-history"></i> <?php echo $spTextPanel['Recent runs'] ?? 'Recent runs'; ?></div>
         <?php if (!empty($recentRuns)): ?>
         <table class="sh-table">

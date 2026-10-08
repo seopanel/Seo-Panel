@@ -59,9 +59,9 @@
 <table class="list">
     <tr class="listHead">
         <td><?php echo $spText['common']['Website']?></td>
-        <td class="text-center">PR</td>
         <td class="text-center"><?php echo $spText['common']['Domain Authority']?></td>
         <td class="text-center"><?php echo $spText['common']['Page Authority']?></td>
+        <td class="text-center" title="Google discontinued PageRank in 2016 - shown for legacy data only, no longer meaningful for ranking a directory's quality">PR <small class="text-muted">(legacy)</small></td>
         <td class="text-center"><?php echo $spTextDir['Captcha']?></td>
         <td><?php echo $spText['common']['lang']?></td>
         <td class="text-center"><?php echo $spText['common']['Status']?></td>
@@ -79,9 +79,9 @@
             ?>
             <tr>
                 <td><a target="_blank" href="<?php echo $listInfo['submit_url']?>"><?php echo str_replace('http://', '', $listInfo['domain']); ?></a></td>
-                <td class="text-center" id="pr_<?php echo $listInfo['id']?>"><?php echo $prVal?></td>
                 <td class="text-center" id="da_<?php echo $listInfo['id']?>"><?php echo $daVal?></td>
                 <td class="text-center" id="pa_<?php echo $listInfo['id']?>"><?php echo $paVal?></td>
+                <td class="text-center text-muted" id="pr_<?php echo $listInfo['id']?>"><?php echo $prVal?></td>
                 <td class="text-center" id="captcha_<?php echo $listInfo['id']?>">
                     <?php echo showStatusBadge($listInfo['is_captcha'], "yesno");?>
                 </td>

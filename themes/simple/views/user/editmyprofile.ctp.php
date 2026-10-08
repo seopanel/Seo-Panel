@@ -11,28 +11,34 @@
 		<td class="right">&nbsp;</td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Username']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="userName" value="<?php echo $post['userName']?>" class="form-control"><?php echo $errMsg['userName']?></td>
+		<td class="td_left_col"><label for="myprofile_userName"><strong><?php echo $spText['login']['Username']?>:</strong></label></td>
+		<td class="td_right_col"><input type="text" id="myprofile_userName" name="userName" value="<?php echo $post['userName']?>" class="form-control"><?php echo $errMsg['userName']?></td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Password']?>:</strong></td>
-		<td class="td_right_col"><input type="password" name="password" value="" class="form-control"><?php echo $errMsg['password']?></td>
+		<td class="td_left_col"><label for="myprofile_password"><strong><?php echo $spText['login']['Password']?>:</strong></label></td>
+		<td class="td_right_col"><input type="password" id="myprofile_password" name="password" value="" class="form-control"><?php echo $errMsg['password']?></td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Confirm Password']?>:</strong></td>
-		<td class="td_right_col"><input type="password" name="confirmPassword" value="" class="form-control"><?php echo $errMsg['confirmPassword']?></td>
+		<td class="td_left_col"><label for="myprofile_confirmPassword"><strong><?php echo $spText['login']['Confirm Password']?>:</strong></label></td>
+		<td class="td_right_col"><input type="password" id="myprofile_confirmPassword" name="confirmPassword" value="" class="form-control"><?php echo $errMsg['confirmPassword']?></td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['First Name']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="firstName" value="<?php echo $post['firstName']?>" class="form-control"><?php echo $errMsg['firstName']?></td>
+		<td class="td_left_col"><label for="myprofile_currentPassword"><strong><?php echo $spText['login']['Current Password'] ?? 'Current Password'?>:</strong></label></td>
+		<td class="td_right_col"><input type="password" id="myprofile_currentPassword" name="currentPassword" value="" class="form-control"><?php echo $errMsg['currentPassword']?>
+			<small class="form-text text-muted"><?php echo $spText['login']['Current password hint'] ?? 'Required to change your password above - a hijacked or left-open session alone isn\'t enough.'?></small>
+		</td>
+	</tr>
+	<tr class="blue_row">
+		<td class="td_left_col"><label for="myprofile_firstName"><strong><?php echo $spText['login']['First Name']?>:</strong></label></td>
+		<td class="td_right_col"><input type="text" id="myprofile_firstName" name="firstName" value="<?php echo htmlspecialchars($post['firstName'], ENT_QUOTES)?>" class="form-control"><?php echo $errMsg['firstName']?></td>
 	</tr>
 	<tr class="white_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Last Name']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="lastName" value="<?php echo $post['lastName']?>" class="form-control"><?php echo $errMsg['lastName']?></td>
+		<td class="td_left_col"><label for="myprofile_lastName"><strong><?php echo $spText['login']['Last Name']?>:</strong></label></td>
+		<td class="td_right_col"><input type="text" id="myprofile_lastName" name="lastName" value="<?php echo htmlspecialchars($post['lastName'], ENT_QUOTES)?>" class="form-control"><?php echo $errMsg['lastName']?></td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Email']?>:</strong></td>
-		<td class="td_right_col"><input type="text" name="email" value="<?php echo $post['email']?>" class="form-control"><?php echo $errMsg['email']?></td>
+		<td class="td_left_col"><label for="myprofile_email"><strong><?php echo $spText['login']['Email']?>:</strong></label></td>
+		<td class="td_right_col"><input type="text" id="myprofile_email" name="email" value="<?php echo htmlspecialchars($post['email'], ENT_QUOTES)?>" class="form-control"><?php echo $errMsg['email']?></td>
 	</tr>
 </table>
 <table class="actionSec mt-2 float-right">

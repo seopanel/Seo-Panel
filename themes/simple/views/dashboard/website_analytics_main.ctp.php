@@ -79,7 +79,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Website Analytics'] ?? 'Website Analytics'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<?php echo $spText['common']['Domain Authority']?>
@@ -393,6 +393,16 @@ function drawAllCharts() {
 	drawSaturationTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spWebsiteAnalyticsChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spWebsiteAnalyticsChartResizeTimer);
+		spWebsiteAnalyticsChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw authority trends line chart
 function drawAuthorityTrendsChart() {
 	<?php if (!empty($analyticsTrends)) { ?>
@@ -409,6 +419,7 @@ function drawAuthorityTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Authority & Spam Score Over Time'] ?? 'Authority & Spam Score Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('authority_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853', '#EA4335'],
 		legend: { position: 'bottom' },
@@ -446,6 +457,7 @@ function drawBacklinkTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Backlinks Over Time'] ?? 'Backlinks Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('backlink_trends_chart'),
 		height: 350,
 		colors: ['#17a2b8', '#28a745'],
 		legend: { position: 'bottom' },
@@ -482,6 +494,7 @@ function drawSaturationTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Indexed Pages Over Time'] ?? 'Indexed Pages Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('saturation_trends_chart'),
 		height: 350,
 		colors: ['#dc3545', '#007bff'],
 		legend: { position: 'bottom' },

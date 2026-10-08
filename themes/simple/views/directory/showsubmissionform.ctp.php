@@ -1,6 +1,10 @@
 <?php if(!empty($msg)){
     $msgClass = empty($error) ? "alert-success" : "alert-danger";
-    echo "<div class='alert $msgClass'>$msg</div>";
+    // $msg can be text extracted directly from a third-party directory
+    // site's own HTML response (submitSite()'s regex match on its
+    // success message) - genuinely untrusted external content, same bug
+    // class as the already-fixed printSearchEngineSaturation() XSS
+    echo "<div class='alert $msgClass'>" . htmlspecialchars($msg, ENT_QUOTES) . "</div>";
 }
 ?>
 <form id="submissionForm" name="submissionForm">
@@ -16,14 +20,14 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <span class="font-weight-bold"><?php echo $spTextTools['directory-submission']?></span>
         <div>
-            <?php if(!empty($dirInfo['pagerank'])){ ?>
-                <span class="badge badge-secondary mr-1">PR <?php echo $dirInfo['pagerank']?></span>
-            <?php } ?>
             <?php if(!empty($dirInfo['domain_authority'])){ ?>
                 <span class="badge badge-info mr-1">DA <?php echo $dirInfo['domain_authority']?></span>
             <?php } ?>
             <?php if(!empty($dirInfo['page_authority'])){ ?>
-                <span class="badge badge-primary">PA <?php echo $dirInfo['page_authority']?></span>
+                <span class="badge badge-primary mr-1">PA <?php echo $dirInfo['page_authority']?></span>
+            <?php } ?>
+            <?php if(!empty($dirInfo['pagerank'])){ ?>
+                <span class="badge badge-secondary" title="Google discontinued PageRank in 2016 - shown for legacy data only">PR <?php echo $dirInfo['pagerank']?> <small>(legacy)</small></span>
             <?php } ?>
         </div>
     </div>
@@ -73,7 +77,7 @@
                         <?php if(!empty($imageHash)){?>
                             <input type="hidden" name="<?php echo $dirInfo['imagehash_col']?>" value="<?php echo $imageHash?>">
                         <?php }?>
-                        <img src='<?php echo $captchaUrl?>' class="mb-2 d-block border rounded">
+                        <img src='<?php echo $captchaUrl?>' class="mb-2 d-block border rounded" alt="<?php echo htmlspecialchars($spTextDir['Enter the code shown'])?>">
                         <?php
                         $captchaCodeError = "";
                         if (stristr($captchaCode, 'Error:')) {

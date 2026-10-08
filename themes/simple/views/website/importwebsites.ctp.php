@@ -47,7 +47,7 @@ if(!empty($validationMsg)){
 		<td><?php echo $spTextWeb['Website CSV File']?>:</td>
 		<td>
 			<div class="custom-file">
-				<input type="file" name="website_csv_file" class="custom-file-input">
+				<input type="file" name="website_csv_file" id="customFile" class="custom-file-input">
               	<label class="custom-file-label" for="customFile">Choose file</label>
             </div>				
 			<br>
@@ -87,8 +87,8 @@ if(!empty($validationMsg)){
     		<a onclick="scriptDoLoad('websites.php', 'content')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>&nbsp;
-         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : 'projectform.submit();'; ?>
-         	<a onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
+         	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : 'startWebsiteImport();'; ?>
+         	<a id="website_import_proceed_btn" onclick="<?php echo $actFun?>" href="javascript:void(0);" class="btn btn-primary">
          		<?php echo $spText['button']['Proceed']?>
          	</a>
     	</td>
@@ -96,4 +96,41 @@ if(!empty($validationMsg)){
 </table>
 </form>
 </div>
-<div><iframe style="border:none;" name="website_import_frame" id="website_import_frame"></iframe></div>
+<div id="website_import_status" style="display:none; margin:15px 0; color:#666;">
+	<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextWeb['Importing, please wait...'] ?? 'Importing, please wait...'; ?>
+</div>
+<div id="website_import_frame_wrap" style="display:none; border:1px solid #ddd; border-radius:4px; margin-top:10px; padding:10px;">
+	<iframe style="border:none; width:100%; min-height:200px;" name="website_import_frame" id="website_import_frame"></iframe>
+</div>
+<script type="text/javascript">
+// bug fix: this form previously gave zero progress/completion feedback -
+// the "Proceed" button stayed clickable (real double-submit risk while an
+// import was still running) and the response rendered into a bare,
+// borderless iframe with no min-height, easy to miss entirely below the
+// fold. The iframe's own load event (fires once for the initial blank
+// frame, then again when the real response arrives) is what actually
+// signals "done" - not a fixed timeout, since a large CSV can take a
+// while.
+var websiteImportFrameLoadCount = 0;
+function startWebsiteImport() {
+	var btn = document.getElementById('website_import_proceed_btn');
+	btn.classList.add('disabled');
+	btn.onclick = null;
+	document.getElementById('website_import_status').style.display = '';
+	document.getElementById('website_import_frame_wrap').style.display = 'none';
+	document.getElementById('projectform').submit();
+}
+document.getElementById('website_import_frame').onload = function() {
+	websiteImportFrameLoadCount++;
+	// the first load is this iframe's own initial empty document, before
+	// any submit has happened - ignore it, only react to a real response
+	if (websiteImportFrameLoadCount < 2) { return; }
+	document.getElementById('website_import_status').style.display = 'none';
+	var wrap = document.getElementById('website_import_frame_wrap');
+	wrap.style.display = '';
+	wrap.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+	var btn = document.getElementById('website_import_proceed_btn');
+	btn.classList.remove('disabled');
+	btn.onclick = function() { startWebsiteImport(); };
+};
+</script>

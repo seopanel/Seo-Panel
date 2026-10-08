@@ -2,7 +2,7 @@
 <?php echo showSectionHead($spTextAIV['AI Overview'] ?? 'AI Overview'); ?>
 
 <form id='search_form'>
-<table class="search" style="width: 60%">
+<table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
@@ -18,7 +18,7 @@
 
 <div id='subcontent'>
 
-<div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:20px;margin-bottom:24px;">
+<div class="aiv-stat-grid aiv-stat-grid-3">
 	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
 		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($summary['measured'])?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Measured Keywords'] ?? 'Measured Keywords'?></div>
@@ -108,20 +108,30 @@
 			<th><?php echo $spTextAIV['Domain'] ?? 'Domain'?></th>
 			<th class="aiv-num"><?php echo $spText['common']['Keywords']?></th>
 			<th class="aiv-num"><?php echo $spTextAIV['Citations'] ?? 'Citations'?></th>
+			<th class="aiv-num"><?php echo $spTextAIV['Share of Voice'] ?? 'Share of Voice'?></th>
 		</tr>
 		<?php if (!empty($competitorDomains)) { ?>
 			<?php foreach ($competitorDomains as $domainInfo) { ?>
 				<?php $isTracked = !empty($trackedDomain) && AIOverviewController::isDomainCited($domainInfo['domain'], $trackedDomain, $subdomainPolicy); ?>
+				<?php $sov = !empty($summary['measured']) ? round((intval($domainInfo['keyword_count']) / intval($summary['measured'])) * 100) : 0; ?>
 				<tr <?php echo $isTracked ? "style='background:#fdf8e8;'" : ''?>>
 					<td><?php echo htmlspecialchars($domainInfo['domain'])?> <?php echo $isTracked ? '<strong>(' . ($spTextAIV['you'] ?? 'you') . ')</strong>' : ''?></td>
 					<td class="aiv-num"><?php echo intval($domainInfo['keyword_count'])?></td>
-					<td class="aiv-num"><?php echo intval($domainInfo['citation_count'])?></td>
+					<td class="aiv-num">
+						<?php if ($isTracked) { ?>
+							<?php echo intval($domainInfo['citation_count'])?>
+						<?php } else { ?>
+							<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiocompetitorkeywords&website_id={$websiteId}&domain=" . urlencode($domainInfo['domain']), intval($domainInfo['citation_count'])); ?>
+						<?php } ?>
+					</td>
+					<td class="aiv-num"><?php echo $sov?>%</td>
 				</tr>
 			<?php } ?>
 		<?php } else { ?>
 			<?php echo showNoRecordsList(0); ?>
 		<?php } ?>
 	</table>
+	<p style="font-size:12px;color:#8a8ea3;margin:10px 0 0;"><?php echo $spTextAIV['Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'] ?? 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'?></p>
 </div>
 
 </div>

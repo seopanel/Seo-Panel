@@ -59,9 +59,9 @@
 					<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $userId){?>
-							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
+							<option value="<?php echo $userInfo['id']?>" selected><?php echo htmlspecialchars($userInfo['username'])?></option>
 						<?php }else{?>
-							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
+							<option value="<?php echo $userInfo['id']?>"><?php echo htmlspecialchars($userInfo['username'])?></option>
 						<?php }?>
 					<?php }?>
 				</select>
@@ -90,13 +90,13 @@
 	$colCount = empty($isAdmin) ? 10 : 11; 
 	if(count($list) > 0) {
 		foreach($list as $listInfo) {
-            $websiteLink = scriptAJAXLinkHref('siteauditor.php', 'content', "sec=edit&project_id={$listInfo['id']}", "{$listInfo['name']}")
+            $websiteLink = scriptAJAXLinkHref('siteauditor.php', 'content', "sec=edit&project_id={$listInfo['id']}", htmlspecialchars($listInfo['name']))
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td class="text-left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
-					<td><?php echo $listInfo['username']?></td>
+					<td><?php echo htmlspecialchars($listInfo['username'])?></td>
 				<?php } ?>
 				<td><?php echo $listInfo['max_links']?></td>
 				<td><?php echo $listInfo['total_links']?></td>
@@ -106,7 +106,7 @@
 				    <?php
 			        $score = $listInfo['score'];
 			        $isPositive = $score >= 0;
-			        $maxScore = 38; // Maximum possible score from AuditorComponent
+			        $maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 			        $scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 			        $circumference = 2 * 3.14159 * 22;
 			        $dashOffset = $circumference - ($scorePercentage / 100) * $circumference;

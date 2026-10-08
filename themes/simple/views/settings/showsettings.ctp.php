@@ -157,6 +157,9 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 				}
 				?>
 				</strong>
+				<?php if ($listInfo['set_name'] == 'SP_SENDGRID_API') { ?>
+					<br><small class="text-muted">Also set SMTP Host to <code>smtp.sendgrid.net</code> and SMTP Password to your Sendgrid API key below - this toggle alone does not send mail via Sendgrid.</small>
+				<?php } ?>
 			</td>
 			<td class="td_right_col">
 				<?php if($listInfo['set_type'] != 'text'){?>
@@ -225,13 +228,21 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 								?>
 							</select>
 						<?php } else if ($listInfo['set_name'] == 'SP_DFS_BALANCE') {?>
-							<label id='sp_dfs_balance'><?php echo stripslashes($listInfo['set_val'])?></label>
+							<label id='sp_dfs_balance'><?php echo htmlspecialchars(stripslashes($listInfo['set_val']))?></label>
 						<?php } else {
-							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET');
+							// extended beyond just SMTP/API_SECRET - every
+							// other secret-bearing field (Moz/Google/
+							// DataForSEO/Seo Panel API/reCAPTCHA) used to
+							// render as plain type="text", in cleartext,
+							// masked with "********" only when SP_DEMO is
+							// true - exposed via browser autofill history,
+							// shoulder-surfing, or a shared screenshot of
+							// this page on every real install
+							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET', 'SP_MOZ_API_SECRET', 'SP_GOOGLE_API_CLIENT_SECRET', 'SP_DFS_API_PASSWORD', 'SP_SPAPI_KEY', 'SP_RECAPTCHA_SECRET_KEY');
 						    $type = in_array($listInfo['set_name'], $passTypeList) ? "password" : "text";
 						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'"
 						    ?>
-							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo stripslashes($listInfo['set_val'])?>" <?php echo $styleOpt?>>
+							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" <?php echo $styleOpt?>>
 							<?php if ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {?>
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>

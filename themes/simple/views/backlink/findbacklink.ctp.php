@@ -23,13 +23,13 @@
 					<?php
 					$backlinkCount = !empty($mozRankList[$i]['external_pages_to_page']) ? intval($mozRankList[$i]['external_pages_to_page']) : 0;
 					?>
-					<?php echo $backlinkCount > 0 ? number_format($backlinkCount) : '-'; ?>
+					<?php echo empty($mozOk) ? 'Failed' : ($backlinkCount > 0 ? number_format($backlinkCount) : '-'); ?>
 				</td>
 				<td width="150px" class="rankarea">
 					<?php
 					$domainBacklinkCount = !empty($mozRankList[$i]['external_pages_to_root_domain']) ? intval($mozRankList[$i]['external_pages_to_root_domain']) : 0;
 					?>
-					<?php echo $domainBacklinkCount > 0 ? number_format($domainBacklinkCount) : '-'; ?>
+					<?php echo empty($mozOk) ? 'Failed' : ($domainBacklinkCount > 0 ? number_format($domainBacklinkCount) : '-'); ?>
 				</td>
 			</tr>
 			<?php

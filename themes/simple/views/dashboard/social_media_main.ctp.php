@@ -59,7 +59,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextSocialMedia['Social Media Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-4 text-center">
 							<h6 class="mb-3"><?php echo $spTextSocialMedia['Total Social Media Links']?></h6>
 							<h3>
@@ -251,6 +251,16 @@ function drawAllCharts() {
 	drawSocialMediaComparisonChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spSocialMediaChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spSocialMediaChartResizeTimer);
+		spSocialMediaChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw followers distribution pie chart
 function drawSocialMediaFollowersChart() {
 	<?php if (!empty($socialMediaDistribution)) { ?>
@@ -266,6 +276,7 @@ function drawSocialMediaFollowersChart() {
 	var options = {
 		title: 'Followers Distribution by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('social_media_followers_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -298,6 +309,7 @@ function drawSocialMediaLikesChart() {
 	var options = {
 		title: 'Likes Distribution by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('social_media_likes_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -330,6 +342,7 @@ function drawSocialMediaTrendsChart() {
 
 	var options = {
 		title: 'Social Media Growth Over Time',
+		width: spChartWidth('social_media_trends_chart'),
 		height: 400,
 		colors: ['#17a2b8', '#28a745'],
 		legend: { position: 'bottom' },
@@ -367,6 +380,7 @@ function drawSocialMediaComparisonChart() {
 
 	var options = {
 		title: 'Top 10 Social Media Profiles by Followers',
+		width: spChartWidth('social_media_comparison_chart'),
 		height: 400,
 		legend: { position: 'none' },
 		chartArea: { width: '70%', height: '80%' },

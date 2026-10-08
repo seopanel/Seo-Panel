@@ -62,8 +62,8 @@
 				<td><input type="checkbox" name="ids[]" value="<?php echo $userInfo['id']?>"></td>
 				<td><?php echo $usernameLink?></td>
 				<td><?php echo $userTypeList[$userInfo['utype_id']]['user_type']?></td>
-				<td><?php echo $userInfo['first_name']." ".$userInfo['last_name']?></td>
-				<td><?php echo $userInfo['email']?></td>
+				<td><?php echo htmlspecialchars($userInfo['first_name']." ".$userInfo['last_name'], ENT_QUOTES)?></td>
+				<td><?php echo htmlspecialchars($userInfo['email'], ENT_QUOTES)?></td>
 				<td><?php echo formatDate($userInfo['expiry_date']); ?></td>
 				<td class="text-center">					
 					<?php echo showStatusBadge($userInfo['status']);?>
