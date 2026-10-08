@@ -308,6 +308,9 @@ foreach($menuList as $i => $menuInfo){
 				<?php if (isAdmin()) { ?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=platforms', 'content')"><?php echo $spTextAIV['Manage AI Platforms'] ?? 'Manage AI Platforms'?></a></li>
 				<?php } ?>
+				<?php if (!SP_CUSTOM_DEV) { ?>
+					<li><a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextPanel['MCP Access'] ?? 'MCP Access'?></a></li>
+				<?php } ?>
 			</ul>
 			<?php
 			break;
