@@ -463,7 +463,7 @@ class SPAPIController extends Controller {
         if (!empty($svData) && is_array($svData)) {
             $searchVolume      = isset($svData['search_volume']) ? intval($svData['search_volume']) : null;
             $cpc               = isset($svData['cpc']) ? (float)$svData['cpc'] : null;
-            $competition       = isset($svData['competition']) ? (float)$svData['competition'] : null;
+            $competition       = isset($svData['competition']) ? self::__normalizeCompetition($svData['competition']) : null;
             $keywordDifficulty = isset($svData['keyword_difficulty']) ? (float)$svData['keyword_difficulty'] : null;
             $monthlySearches   = !empty($svData['monthly_searches']) ? json_encode($svData['monthly_searches']) : null;
         }
@@ -496,6 +496,30 @@ class SPAPIController extends Controller {
             $dataList['source']         = $source;
             $dataList['created_at']     = 'NOW()';
             $this->dbHelper->insertRow('keyword_search_volume', $dataList);
+        }
+    }
+
+    /**
+     * keyword_search_volume.competition is a float column, but DataForSEO's
+     * search volume endpoint returns competition as a string label
+     * ("LOW"/"MEDIUM"/"HIGH") for both google and bing sources - confirmed
+     * against a real live DataForSEO response, not just the sandbox/sample
+     * data. A plain (float) cast on that string silently collapses every
+     * label to 0.0, indistinguishable from a genuine zero-competition
+     * keyword. Maps the known labels to the same 0/0.5/1 thresholds
+     * __parseSearchVolumeResults()'s own bing branch already uses in
+     * reverse (>=0.9 HIGH, >=0.5 MEDIUM), and still accepts a raw numeric
+     * value directly in case a future/other source ever sends one.
+     */
+    static function __normalizeCompetition($competition) {
+        if (is_numeric($competition)) {
+            return (float)$competition;
+        }
+        switch (strtoupper((string)$competition)) {
+            case 'HIGH':   return 1.0;
+            case 'MEDIUM': return 0.5;
+            case 'LOW':    return 0.0;
+            default:       return null;
         }
     }
 
