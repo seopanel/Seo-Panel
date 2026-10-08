@@ -66,7 +66,14 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 30;
-        $response = $spider->getContent($this->apiUrl . '/account', false, false);
+        // $allowPrivateTarget=true: apiUrl is a fixed constant
+        // (SP_SPAPI_URL), normally the real api.seopanel.org host in
+        // production - never caller-supplied input - so this carries the
+        // same trust reasoning as LocalAIController's Ollama calls. Only
+        // actually matters in a local dev setup where SP_SPAPI_URL is
+        // overridden to point at a local mock (e.g. localhost), which the
+        // SSRF guard would otherwise block.
+        $response = $spider->getContent($this->apiUrl . '/account', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -136,7 +143,8 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 30;
-        $response = $spider->getContent($this->apiUrl . '/reset-token', false, false);
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/reset-token', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -310,7 +318,8 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 120;
-        $response = $spider->getContent($this->apiUrl . '/SERP', false, false);
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/SERP', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -387,7 +396,8 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 60;
-        $response = $spider->getContent($this->apiUrl . '/search-volume', false, false);
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/search-volume', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
