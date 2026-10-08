@@ -1317,7 +1317,11 @@ class CronController extends Controller {
 					if ($matchCount > 0) {
 						$this->debugMsg("SP API: Found $matchCount matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
 					} else {
-						// API succeeded but no matches - store rank 0
+						// API succeeded but no matches - store rank 0, still
+						// keeping the full organic result set (same reasoning
+						// as the matched-row fix just above this call) so
+						// "SERP Results Archive" can show the page even when
+						// this website isn't on it at all.
 						$repCtrler = New ReportController();
 						$matchInfo = [
 							'keyword_id' => $keywordInfo['id'],
@@ -1327,7 +1331,14 @@ class CronController extends Controller {
 							'title' => '',
 							'description' => '',
 						];
-						$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+						$noMatchSerpResults = null;
+						foreach ($apiResult['data']['searchengine_mappings'] ?? [] as $seMapping) {
+							if (intval($seMapping['searchengine_id']) === $seId && !empty($seMapping['crawled_result'])) {
+								$noMatchSerpResults = $seMapping['crawled_result'];
+								break;
+							}
+						}
+						$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate, $noMatchSerpResults);
 						$this->debugMsg("SP API: No matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, stored rank 0.....<br>\n");
 					}
 
@@ -2028,6 +2039,10 @@ class CronController extends Controller {
 					if ($matchCount > 0) {
 						$this->debugMsg("SP API: Found $matchCount matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}.....<br>\n");
 					} else {
+						// Still keep the full organic result set (same reasoning
+						// as keywordPositionCheckerCronSPAPI()'s identical fix)
+						// so "SERP Results Archive" can show the page even when
+						// this website isn't on it at all.
 						$repCtrler = New ReportController();
 						$matchInfo = [
 							'keyword_id' => $keywordInfo['id'],
@@ -2037,7 +2052,14 @@ class CronController extends Controller {
 							'title' => '',
 							'description' => '',
 						];
-						$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate);
+						$noMatchSerpResults = null;
+						foreach ($apiResult['data']['searchengine_mappings'] ?? [] as $seMapping) {
+							if (intval($seMapping['searchengine_id']) === $seId && !empty($seMapping['crawled_result'])) {
+								$noMatchSerpResults = $seMapping['crawled_result'];
+								break;
+							}
+						}
+						$repCtrler->saveMatchedKeywordInfo($matchInfo, true, $reportDate, $noMatchSerpResults);
 						$this->debugMsg("SP API: No matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, stored rank 0.....<br>\n");
 					}
 

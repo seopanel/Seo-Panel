@@ -1945,12 +1945,26 @@ class ReportController extends Controller {
 			return;
 		}
 
+		// GROUP BY sr.searchengine_id used to sit here, selecting
+		// sr.serp_results/se.domain alongside it without aggregating
+		// either - a real SQL error under ONLY_FULL_GROUP_BY (the
+		// default in modern MySQL), so this query failed outright
+		// wherever that mode is on, db->select() returned false, and
+		// the popup showed "No SERP data available" even for a keyword
+		// that genuinely had it. It went unnoticed because serp_results
+		// was never actually populated for an SP-API-tracked keyword
+		// until the fix alongside this one - this WHERE clause already
+		// guarantees at most one non-null-serp_results row per
+		// (keyword_id, searchengine_id, result_date): saveMatchedKeywordInfo()
+		// only ever receives that 4th param on the first match of a
+		// batch (confirmed: zero (keyword,engine,date) combos currently
+		// have more than one such row), so the GROUP BY was never
+		// actually needed to deduplicate anything.
 		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain
 				FROM searchresults sr
 				JOIN searchengines se ON sr.searchengine_id = se.id
 				WHERE sr.keyword_id = $keywordId AND sr.result_date = '$date'
 				AND sr.serp_results IS NOT NULL
-				GROUP BY sr.searchengine_id
 				ORDER BY se.domain";
 		$serpList = $this->db->select($sql);
 

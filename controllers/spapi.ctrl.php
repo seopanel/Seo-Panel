@@ -568,7 +568,19 @@ class SPAPIController extends Controller {
                         $matchInfo['se_id'] = $seId;
                         $matchInfo['keyword_id'] = $keywordInfo['id'];
 
-                        $reportCtrler->saveMatchedKeywordInfo($matchInfo, $firstMatch, $reportDate);
+                        // The 4th param persists the full organic result set to
+                        // searchresults.serp_results - without it, "SERP Results
+                        // Archive" (report/serp_results_archive.ctp.php, which
+                        // requires serp_results IS NOT NULL) never has anything
+                        // to show for an SP-API-tracked keyword, even though
+                        // every result needed for it (url/rank per item) is
+                        // already sitting right here in $seResult['crawled_result'].
+                        // Only needs passing once per keyword+SE+day, same as the
+                        // DataForSEO/crawl tiers' own $matchList['all'] pattern -
+                        // saveMatchedKeywordInfo() only writes it on the row it
+                        // actually receives it on, same as those other tiers.
+                        $serpResults = $firstMatch ? $seResult['crawled_result'] : null;
+                        $reportCtrler->saveMatchedKeywordInfo($matchInfo, $firstMatch, $reportDate, $serpResults);
                         $firstMatch = false;
                         $matchCount++;
                     }
