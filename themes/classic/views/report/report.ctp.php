@@ -141,7 +141,7 @@
 				</td>
 				<td style="font-size:0.85rem;">
 					<?php if ($aioSupported && !empty($listInfo['aio_reference_count'])): ?>
-						<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiosources&keyword_id={$listInfo['keyword_id']}", intval($listInfo['aio_reference_count']))?>
+						<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id={$listInfo['keyword_id']}", intval($listInfo['aio_reference_count']))?>
 					<?php else: ?>
 						<span class="text-muted">0</span>
 					<?php endif; ?>

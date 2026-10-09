@@ -84,7 +84,7 @@
 					</td>
 					<td>
 						<?php if ($supported && !empty($row['aio_reference_count'])) { ?>
-							<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiosources&keyword_id={$row['keyword_id']}", intval($row['aio_reference_count'])); ?>
+							<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id={$row['keyword_id']}", intval($row['aio_reference_count'])); ?>
 						<?php } else { ?>
 							0
 						<?php } ?>
@@ -121,7 +121,7 @@
 						<?php if ($isTracked) { ?>
 							<?php echo intval($domainInfo['citation_count'])?>
 						<?php } else { ?>
-							<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiocompetitorkeywords&website_id={$websiteId}&domain=" . urlencode($domainInfo['domain']), intval($domainInfo['citation_count'])); ?>
+							<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiocompetitorkeywords&website_id={$websiteId}&domain=" . urlencode($domainInfo['domain']), intval($domainInfo['citation_count'])); ?>
 						<?php } ?>
 					</td>
 					<td class="aiv-num"><?php echo $sov?>%</td>
