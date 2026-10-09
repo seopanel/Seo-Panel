@@ -175,6 +175,7 @@ class ReportController extends Controller {
 		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
 		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
 		$this->set('showSearchVolume', $showSearchVolume);
+		$this->set('spTextKeyword', $this->getLanguageTexts('keyword', $_SESSION['lang_code']));
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
 						

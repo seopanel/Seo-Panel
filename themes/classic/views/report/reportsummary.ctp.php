@@ -126,7 +126,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<?php
 		}
 		if (!empty($showSearchVolume)): ?>
-		<th id="head" rowspan="2" class="text-center"><?php echo $spText['keyword']['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
 		<?php endif; ?>
 	</tr>
 	<tr>
