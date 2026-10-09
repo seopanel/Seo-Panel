@@ -82,8 +82,9 @@
 											<?php endif; ?>
 											<a href="<?php echo htmlspecialchars($result['url'])?>" target="_blank" rel="noopener"
 											   <?php echo $isMatch ? 'style="font-weight:600;"' : ''?>>
-												<?php echo htmlspecialchars($result['url'])?>
+												<?php echo htmlspecialchars(!empty($result['title']) ? $result['title'] : $result['url'])?>
 											</a>
+											<br><a href="<?php echo htmlspecialchars($result['url'])?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:13px;"><?php echo htmlspecialchars($result['url'])?></a>
 										</td>
 									</tr>
 								<?php endforeach; ?>

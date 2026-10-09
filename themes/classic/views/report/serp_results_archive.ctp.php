@@ -123,8 +123,9 @@
 									<?php endif; ?>
 									<a href="<?php echo htmlspecialchars($resultUrl)?>" target="_blank" rel="noopener"
 									   <?php echo $isMatch ? 'style="font-weight:600;"' : ''?>>
-										<?php echo htmlspecialchars($resultUrl)?>
+										<?php echo htmlspecialchars($result['title'] ?: $resultUrl)?>
 									</a>
+									<br><a href="<?php echo htmlspecialchars($resultUrl)?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:13px;"><?php echo htmlspecialchars($resultUrl)?></a>
 								</td>
 							</tr>
 							<?php endforeach; ?>
