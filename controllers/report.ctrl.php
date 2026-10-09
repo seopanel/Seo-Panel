@@ -143,23 +143,31 @@ class ReportController extends Controller {
 			return $batchResult;
 		}
 
-		// a correlated subquery (rather than GROUP BY keyword_id) picks exactly
-		// one deterministic row per keyword - same reasoning as the GROUP BY
-		// removed from showSerpResults() elsewhere in this file: selecting
-		// these non-aggregated columns alongside a GROUP BY is a hard error
-		// under ONLY_FULL_GROUP_BY
+		// a correlated subquery (rather than GROUP BY) picks exactly one
+		// deterministic row per (keyword, search engine) pair - same
+		// ONLY_FULL_GROUP_BY reasoning as the GROUP BY removed from
+		// showSerpResults() elsewhere in this file. Scoped per search engine
+		// (not just per keyword) so a keyword measured on more than one
+		// engine - e.g. Google AND Bing, both of which can carry their own
+		// AI Overview since spAPI stopped restricting that to Google - gets
+		// each engine's own status back, instead of one arbitrarily
+		// overwriting the other's in a single per-keyword row.
 		$keywordIdList = implode(',', $keywordIds);
-		$sql = "SELECT sr.keyword_id, sr.aio_present, sr.aio_cited, sr.aio_cited_position, sr.aio_reference_count
+		$sql = "SELECT sr.keyword_id, sr.searchengine_id, se.domain AS se_domain,
+				       sr.aio_present, sr.aio_cited, sr.aio_cited_position, sr.aio_reference_count
 				FROM searchresults sr
+				JOIN searchengines se ON se.id = sr.searchengine_id
 				WHERE sr.keyword_id IN ($keywordIdList) AND sr.aio_checked_at IS NOT NULL
 				AND sr.id = (
 					SELECT sr2.id FROM searchresults sr2
-					WHERE sr2.keyword_id = sr.keyword_id AND sr2.aio_checked_at IS NOT NULL
+					WHERE sr2.keyword_id = sr.keyword_id AND sr2.searchengine_id = sr.searchengine_id
+					AND sr2.aio_checked_at IS NOT NULL
 					ORDER BY sr2.result_date DESC, sr2.id DESC
 					LIMIT 1
-				)";
+				)
+				ORDER BY se.domain";
 		foreach ($this->db->select($sql) as $row) {
-			$batchResult[$row['keyword_id']] = $row;
+			$batchResult[$row['keyword_id']][] = $row;
 		}
 
 		return $batchResult;
@@ -291,7 +299,8 @@ class ReportController extends Controller {
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeTxt]) ? 10000 : $positionInfo[$orderCol][$toTimeTxt];
 
 			$keywordInfo['position_info'] = $positionInfo;
-			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? null;
+			// one entry per search engine that has AI Overview data for this keyword
+			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? [];
 
 			if ($showSearchVolume) {
 				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
