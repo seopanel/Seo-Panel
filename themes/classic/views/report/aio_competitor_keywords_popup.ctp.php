@@ -13,6 +13,7 @@
 			<td><?php echo $spText['common']['Keyword'] ?? 'Keyword' ?></td>
 			<td><?php echo $spText['common']['Search Engine'] ?? 'Search Engine' ?></td>
 			<td><?php echo $spTextAIV['You Cited?'] ?? 'You Cited?' ?></td>
+			<td><?php echo $spTextAIV['Citation'] ?? 'Citation' ?></td>
 		</tr>
 		<?php foreach ($rows as $i => $row): ?>
 			<tr class="<?php echo ($i % 2) ? 'blue_row' : 'white_row' ?>">
@@ -23,6 +24,14 @@
 						<i class="fas fa-check-circle" style="color:#28a745;"></i> <?php echo $spText['common']['Yes'] ?? 'Yes'?>
 					<?php else: ?>
 						<i class="fas fa-times-circle" style="color:#dc3545;"></i> <?php echo $spText['common']['No'] ?? 'No'?>
+					<?php endif; ?>
+				</td>
+				<td style="font-size:0.85rem; word-break:break-all;">
+					<?php if (!empty($row['ref_url'])): ?>
+						#<?php echo intval($row['ref_position']) ?>
+						<a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['ref_title'] ?: $row['ref_url']) ?></a>
+					<?php else: ?>
+						<span class="text-muted">&mdash;</span>
 					<?php endif; ?>
 				</td>
 			</tr>

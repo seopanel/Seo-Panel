@@ -2034,7 +2034,8 @@ class ReportController extends Controller {
 		}
 
 		$domainSql = addslashes($domain);
-		$sql = "SELECT k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited
+		$sql = "SELECT k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited,
+					ar.ref_position, ar.url AS ref_url, ar.title AS ref_title, ar.checked_date AS ref_checked_date
 				FROM keywords k
 				JOIN searchresults s ON s.keyword_id = k.id AND s.aio_checked_at IS NOT NULL
 					AND s.id = (
@@ -2048,9 +2049,10 @@ class ReportController extends Controller {
 					AND ar.domain = '$domainSql'
 					AND ar.checked_date = (
 						SELECT MAX(ar2.checked_date) FROM aio_references ar2 WHERE ar2.keyword_id = k.id
+						AND ar2.domain = '$domainSql'
 					)
 				WHERE k.website_id = $websiteId AND k.status = 1
-				ORDER BY k.name";
+				ORDER BY k.name, ar.ref_position";
 		$rows = $this->db->select($sql);
 
 		$this->set('rows', $rows);
