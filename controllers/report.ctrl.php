@@ -131,7 +131,40 @@ class ReportController extends Controller {
 
 		return $batchResult;
 	}
-	
+
+	// func to get the most recent AI Overview read per keyword (any search
+	// engine, most recently checked) - used by the Keyword Position Summary
+	// page's small AI Overview indicator icon, same spirit as the SERP
+	// Results icon right next to it: a quick-glance status, not a full report
+	function __getLatestAIOverviewBatch($keywordIds) {
+		$batchResult = array();
+		$keywordIds = array_filter(array_map('intval', $keywordIds));
+		if (empty($keywordIds)) {
+			return $batchResult;
+		}
+
+		// a correlated subquery (rather than GROUP BY keyword_id) picks exactly
+		// one deterministic row per keyword - same reasoning as the GROUP BY
+		// removed from showSerpResults() elsewhere in this file: selecting
+		// these non-aggregated columns alongside a GROUP BY is a hard error
+		// under ONLY_FULL_GROUP_BY
+		$keywordIdList = implode(',', $keywordIds);
+		$sql = "SELECT sr.keyword_id, sr.aio_present, sr.aio_cited, sr.aio_cited_position, sr.aio_reference_count
+				FROM searchresults sr
+				WHERE sr.keyword_id IN ($keywordIdList) AND sr.aio_checked_at IS NOT NULL
+				AND sr.id = (
+					SELECT sr2.id FROM searchresults sr2
+					WHERE sr2.keyword_id = sr.keyword_id AND sr2.aio_checked_at IS NOT NULL
+					ORDER BY sr2.result_date DESC, sr2.id DESC
+					LIMIT 1
+				)";
+		foreach ($this->db->select($sql) as $row) {
+			$batchResult[$row['keyword_id']] = $row;
+		}
+
+		return $batchResult;
+	}
+
 
 	# func to show keyword report summary
 	function showKeywordReportSummary($searchInfo = '') {
@@ -244,6 +277,7 @@ class ReportController extends Controller {
 		$list = $this->db->select($sql);
 
 		$positionInfoBatch = $this->__getKeywordSearchReportBatch(array_column($list, 'id'), $fromTime, $toTime);
+		$aioBatch = $this->__getLatestAIOverviewBatch(array_column($list, 'id'));
 		$indexList = array();
 		foreach($list as $keywordInfo){
 			$positionInfo = $positionInfoBatch[$keywordInfo['id']] ?? [];
@@ -252,6 +286,7 @@ class ReportController extends Controller {
 		    $indexList[$keywordInfo['id']] = empty($positionInfo[$orderCol][$toTimeTxt]) ? 10000 : $positionInfo[$orderCol][$toTimeTxt];
 
 			$keywordInfo['position_info'] = $positionInfo;
+			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? null;
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
 		}
 		

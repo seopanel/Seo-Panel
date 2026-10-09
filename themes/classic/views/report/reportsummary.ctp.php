@@ -155,16 +155,33 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<tr>				
 				<?php
 				$serpKwIcon = '';
+				$aioKwIcon = '';
 				if (empty($pdfVersion) && empty($printVersion)) {
 					$serpKwUrl = SP_WEBPATH . "/reports.php?sec=serpresults&keyword_id={$listInfo['id']}&date=$toTime";
 					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#d35400; font-size:0.75rem;"></i></a>';
+
+					$aioInfo = $listInfo['aio_info'];
+					if (!empty($aioInfo)) {
+						if (!empty($aioInfo['aio_cited'])) {
+							$aioColor = '#2e7d32';
+							$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
+						} elseif (!empty($aioInfo['aio_present'])) {
+							$aioColor = '#b8790a';
+							$aioTitle = 'AI Overview: present, not cited';
+						} else {
+							$aioColor = '#9296a8';
+							$aioTitle = 'AI Overview: not present';
+						}
+						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
+						$aioKwIcon = ' <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle) . '"><i class="fas fa-robot" style="color:' . $aioColor . '; font-size:0.75rem;"></i></a>';
+					}
 				}
 				?>
 				<?php if (empty($websiteId)) {?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon ?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIcon ?></td>
 					<td><?php echo htmlspecialchars($listInfo['webname']); ?></td>
 				<?php } else { ?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon; ?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIcon; ?></td>
 				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
