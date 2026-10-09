@@ -164,16 +164,19 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					if (!empty($aioInfo)) {
 						if (!empty($aioInfo['aio_cited'])) {
 							$aioColor = '#2e7d32';
+							$aioLabel = 'Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
 							$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
 						} elseif (!empty($aioInfo['aio_present'])) {
 							$aioColor = '#b8790a';
+							$aioLabel = 'Not cited';
 							$aioTitle = 'AI Overview: present, not cited';
 						} else {
 							$aioColor = '#9296a8';
+							$aioLabel = 'Not present';
 							$aioTitle = 'AI Overview: not present';
 						}
 						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
-						$aioKwIcon = ' <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle) . '"><i class="fas fa-robot" style="color:' . $aioColor . '; font-size:0.75rem;"></i></a>';
+						$aioKwIcon = ' <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle) . '" style="color:' . $aioColor . '; font-size:0.72rem; font-weight:500; text-decoration:none;"><i class="fas fa-robot" style="font-size:0.75rem;"></i> ' . htmlspecialchars($aioLabel) . '</a>';
 					}
 				}
 				?>
