@@ -165,13 +165,19 @@ class AIOverviewController extends Controller {
      * Map the SEO Panel API's already-normalised ai_overview response into
      * the same internal struct used for the DataForSEO path.
      *
-     * @param array  $spapiData   The 'data' object from POST /v1/SERP
-     * @param string $checkedDate Fallback data date (Y-m-d)
+     * @param array    $spapiData      The 'data' object from POST /v1/SERP
+     * @param string   $checkedDate    Fallback data date (Y-m-d)
+     * @param int|null $searchEngineId Local search engine ID to read AI Overview for. AI Overview
+     *                                 is no longer Google-only - DataForSEO also returns it for
+     *                                 Bing's Copilot-backed SERP - so when spAPI's response includes
+     *                                 a per-engine 'ai_overview_by_engine' map, this reads that
+     *                                 engine's entry; null keeps the old behaviour of reading the
+     *                                 single top-level 'ai_overview' key (Google-preferred).
      * @return array|null Normalised struct, or null when the archive has not
-     *                     crawled this keyword's Google mapping yet (pending -
+     *                     crawled this keyword's mapping for that search engine yet (pending -
      *                     caller should skip saving rather than treat as "absent")
      */
-    public static function mapSpApi($spapiData, $checkedDate) {
+    public static function mapSpApi($spapiData, $checkedDate, $searchEngineId = null) {
         $capabilities = !empty($spapiData['capabilities']) && is_array($spapiData['capabilities'])
             ? $spapiData['capabilities'] : [];
 
@@ -185,12 +191,22 @@ class AIOverviewController extends Controller {
             ];
         }
 
-        // supported, but this keyword's Google mapping has not been crawled yet
-        if (!isset($spapiData['ai_overview']) || !is_array($spapiData['ai_overview'])) {
-            return null;
+        $aio = null;
+        if ($searchEngineId !== null) {
+            // A specific engine was requested: use ONLY that engine's entry, even if absent -
+            // falling through to the top-level (Google) key here would misattribute Google's AI
+            // Overview to a different engine (e.g. Yahoo) that was never actually crawled for it.
+            if (isset($spapiData['ai_overview_by_engine'][$searchEngineId]) && is_array($spapiData['ai_overview_by_engine'][$searchEngineId])) {
+                $aio = $spapiData['ai_overview_by_engine'][$searchEngineId];
+            }
+        } elseif (isset($spapiData['ai_overview']) && is_array($spapiData['ai_overview'])) {
+            $aio = $spapiData['ai_overview'];
         }
 
-        $aio = $spapiData['ai_overview'];
+        // supported, but this keyword's mapping for this search engine has not been crawled yet
+        if ($aio === null) {
+            return null;
+        }
         $collectedAt = !empty($aio['collected_at']) ? $aio['collected_at'] : $checkedDate;
         $dataDate = date('Y-m-d', strtotime($collectedAt) ?: strtotime($checkedDate));
 

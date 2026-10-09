@@ -1342,18 +1342,16 @@ class CronController extends Controller {
 						$this->debugMsg("SP API: No matches for <b>{$keywordInfo['name']}</b> on {$reportController->seList[$seId]['domain']}, stored rank 0.....<br>\n");
 					}
 
-					// AI Overview is a Google-only SERP feature and is only present in the
-					// spAPI response once the Google-domain mapping has actually been crawled.
+					// AI Overview is present in the spAPI response (ai_overview_by_engine)
+					// once that search engine's mapping has actually been crawled - not
+					// Google-only, DataForSEO also returns it for Bing's Copilot-backed SERP.
 					// A failure here must not abort the rest of the batch, so it is isolated.
 					try {
-						include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
-						if (DataForSEOController::getSERPDomainCategory($reportController->seList[$seId]['domain']) == 'google') {
-							include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
-							$aioCtrler = new AIOverviewController();
-							$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
-							$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate);
-							$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
-						}
+						include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+						$aioCtrler = new AIOverviewController();
+						$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+						$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate, intval($seId));
+						$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
 					} catch (Exception $e) {
 						// bug fix: debugMsg() only prints when $this->debug is
 						// on, never true for a real cron run - this failure
@@ -2064,14 +2062,11 @@ class CronController extends Controller {
 					}
 
 					try {
-						include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
-						if (DataForSEOController::getSERPDomainCategory($reportController->seList[$seId]['domain']) == 'google') {
-							include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
-							$aioCtrler = new AIOverviewController();
-							$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
-							$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate);
-							$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
-						}
+						include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+						$aioCtrler = new AIOverviewController();
+						$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+						$normalized = AIOverviewController::mapSpApi($apiResult['data'], $reportDate, intval($seId));
+						$aioCtrler->saveResult($keywordInfo['id'], $seId, $reportDate, 'spapi', $normalized, $websiteUrl, $subdomainPolicy);
 					} catch (Exception $e) {
 						// bug fix: debugMsg() only prints when $this->debug is
 						// on, never true for a real cron run - this failure

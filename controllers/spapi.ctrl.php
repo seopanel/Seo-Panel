@@ -228,16 +228,14 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['status'] = true;
         }
 
-        // AI Overview is a single field on the response, tied to whichever
-        // requested search engine is Google - not per search engine like
-        // crawled_result, and independent of that SE's own crawl state
+        // AI Overview is returned per search engine (response's
+        // ai_overview_by_engine) - not Google-only, DataForSEO also returns
+        // it for Bing's Copilot-backed SERP - independent of that SE's own
+        // crawl state
         if ($includeAio) {
-            include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
             include_once(SP_CTRLPATH."/aioverview.ctrl.php");
             foreach ($seIds as $seInfoId) {
-                if (DataForSEOController::getSERPDomainCategory($seList[$seInfoId]['domain']) == 'google') {
-                    $crawlResult[$seInfoId]['aio'] = AIOverviewController::mapSpApi($apiResult['data'], date('Y-m-d'));
-                }
+                $crawlResult[$seInfoId]['aio'] = AIOverviewController::mapSpApi($apiResult['data'], date('Y-m-d'), intval($seInfoId));
             }
         }
 
