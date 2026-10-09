@@ -14,13 +14,13 @@
 	<table width="100%" class="list">
 		<tr class="listHead">
 			<td width="10%">#</td>
-			<td><?php echo $spText['common']['Website'] ?? 'Domain' ?></td>
-			<td>URL</td>
+			<td style="text-align:left;"><?php echo $spText['common']['Website'] ?? 'Domain' ?></td>
+			<td style="text-align:left;">URL</td>
 		</tr>
 		<?php foreach ($sources as $i => $src): ?>
 			<tr class="<?php echo ($i % 2) ? 'blue_row' : 'white_row' ?>" <?php echo !empty($src['is_tracked']) ? 'style="background:#fffbe6;"' : '' ?>>
 				<td><?php echo intval($src['ref_position']) ?></td>
-				<td>
+				<td style="text-align:left;">
 					<?php if (!empty($src['is_tracked'])): ?>
 						<i class="fas fa-star" style="color:#f0ad4e;" title="Your website"></i>
 					<?php endif; ?>
@@ -28,7 +28,7 @@
 				</td>
 				<td style="font-size:0.85rem; word-break:break-all; text-align:left;">
 					<a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($src['title'] ?: $src['url']) ?></a>
-					<br><small class="text-muted"><?php echo htmlspecialchars($src['url']) ?></small>
+					<br><small class="text-muted"><a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($src['url']) ?></a></small>
 				</td>
 			</tr>
 		<?php endforeach; ?>
