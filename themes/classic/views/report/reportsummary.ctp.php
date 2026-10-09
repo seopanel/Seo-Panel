@@ -164,15 +164,15 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					if (!empty($aioInfo)) {
 						if (!empty($aioInfo['aio_cited'])) {
 							$aioColor = '#2e7d32';
-							$aioLabel = 'Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
+							$aioLabel = 'AI: Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
 							$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
 						} elseif (!empty($aioInfo['aio_present'])) {
 							$aioColor = '#b8790a';
-							$aioLabel = 'Not cited';
+							$aioLabel = 'AI: Not cited';
 							$aioTitle = 'AI Overview: present, not cited';
 						} else {
 							$aioColor = '#9296a8';
-							$aioLabel = 'Not present';
+							$aioLabel = 'AI: Not present';
 							$aioTitle = 'AI Overview: not present';
 						}
 						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
@@ -181,10 +181,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				}
 				?>
 				<?php if (empty($websiteId)) {?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIcon ?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon ?><?php echo $aioKwIcon ? '<br>' . $aioKwIcon : ''?></td>
 					<td><?php echo htmlspecialchars($listInfo['webname']); ?></td>
 				<?php } else { ?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIcon; ?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon ?><?php echo $aioKwIcon ? '<br>' . $aioKwIcon : ''?></td>
 				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
