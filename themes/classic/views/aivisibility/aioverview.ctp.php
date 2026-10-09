@@ -68,7 +68,7 @@
 							<span class="text-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
 						<?php } else { ?>
 							<span class="<?php echo $present ? 'text-success' : 'text-muted'?>"><?php echo $present ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?></span>
-							<br><small><?php echo htmlspecialchars($providerLabel)?>, <?php echo htmlspecialchars($row['aio_data_date'])?></small>
+							<br><small title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">via <?php echo htmlspecialchars($providerLabel)?> &middot; checked <?php echo htmlspecialchars($row['aio_data_date'])?></small>
 						<?php } ?>
 					</td>
 					<td>

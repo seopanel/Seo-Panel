@@ -120,8 +120,8 @@
 							<?php echo $aioPresent ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent') ?>
 						</span>
 						<br>
-						<small class="text-muted">
-							<?php echo htmlspecialchars($aioProviderLabel)?>, <?php echo htmlspecialchars($listInfo['aio_data_date'])?>
+						<small class="text-muted" title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">
+							via <?php echo htmlspecialchars($aioProviderLabel)?> &middot; checked <?php echo htmlspecialchars($listInfo['aio_data_date'])?>
 							<?php if ($aioStale): ?>
 								<span class="text-warning" title="<?php echo $spTextKeyword['Data older than the configured freshness threshold'] ?? 'Data older than the configured freshness threshold'?>">
 									(<?php echo $spTextKeyword['stale'] ?? 'stale' ?>)
