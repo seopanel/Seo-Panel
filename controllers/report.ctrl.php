@@ -1887,6 +1887,8 @@ class ReportController extends Controller {
 		$engines = [];
 		if (!empty($keywordId)) {
 			$sql = "SELECT sr.searchengine_id, sr.rank, sr.result_date, sr.serp_results,
+			               sr.aio_present, sr.aio_supported, sr.aio_cited, sr.aio_cited_position,
+			               sr.aio_reference_count, sr.aio_checked_at, sr.aio_data_date, sr.provider,
 			               se.domain AS se_domain
 			        FROM searchresults sr
 			        JOIN searchengines se ON sr.searchengine_id = se.id
@@ -1901,10 +1903,19 @@ class ReportController extends Controller {
 			        ORDER BY se.domain";
 			foreach ($this->db->select($sql) as $row) {
 				$engines[] = [
-					'domain'    => $row['se_domain'],
-					'rank'      => $row['rank'],
-					'date'      => $row['result_date'],
-					'serp_data' => json_decode($row['serp_results'], true) ?: [],
+					'searchengine_id'     => $row['searchengine_id'],
+					'domain'              => $row['se_domain'],
+					'rank'                => $row['rank'],
+					'date'                => $row['result_date'],
+					'serp_data'           => json_decode($row['serp_results'], true) ?: [],
+					'aio_present'         => $row['aio_present'],
+					'aio_supported'       => $row['aio_supported'],
+					'aio_cited'           => $row['aio_cited'],
+					'aio_cited_position'  => $row['aio_cited_position'],
+					'aio_reference_count' => $row['aio_reference_count'],
+					'aio_checked_at'      => $row['aio_checked_at'],
+					'aio_data_date'       => $row['aio_data_date'],
+					'provider'            => $row['provider'],
 				];
 			}
 		}
@@ -1960,7 +1971,9 @@ class ReportController extends Controller {
 		// batch (confirmed: zero (keyword,engine,date) combos currently
 		// have more than one such row), so the GROUP BY was never
 		// actually needed to deduplicate anything.
-		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain
+		$sql = "SELECT sr.serp_results, sr.searchengine_id, se.domain,
+					sr.aio_present, sr.aio_supported, sr.aio_cited, sr.aio_cited_position,
+					sr.aio_reference_count, sr.aio_checked_at, sr.aio_data_date, sr.provider
 				FROM searchresults sr
 				JOIN searchengines se ON sr.searchengine_id = se.id
 				WHERE sr.keyword_id = $keywordId AND sr.result_date = '$date'
@@ -1971,6 +1984,7 @@ class ReportController extends Controller {
 		foreach ($serpList as &$item) {
 			$item['serp_data'] = json_decode($item['serp_results'], true);
 		}
+		unset($item);
 
 		$websiteUrl = '';
 		if (!empty($keyword['website_id'])) {
@@ -1979,8 +1993,10 @@ class ReportController extends Controller {
 		}
 		$this->set('serpList', $serpList);
 		$this->set('keyword', !empty($keyword['name']) ? $keyword['name'] : '');
+		$this->set('keywordId', $keywordId);
 		$this->set('date', $date);
 		$this->set('websiteUrl', $websiteUrl);
+		$this->set('spTextKeyword', $this->getLanguageTexts('keyword', $_SESSION['lang_code']));
 		$this->render('report/serp_results_popup', '');
 	}
 

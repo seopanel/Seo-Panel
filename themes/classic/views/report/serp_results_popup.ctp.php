@@ -27,6 +27,39 @@
 		<?php foreach ($serpList as $i => $seInfo): ?>
 			<div class="tab-pane fade <?php echo $i == 0 ? 'show active' : ''?>"
 			     id="serp-sp-tab-<?php echo intval($seInfo['searchengine_id'])?>">
+				<?php if (!empty($seInfo['aio_checked_at'])): ?>
+					<div class="mb-2" style="font-size:0.82rem;">
+						<strong><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?>:</strong>
+						<?php if (empty($seInfo['aio_supported'])): ?>
+							<span class="text-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
+						<?php else: ?>
+							<span class="<?php echo !empty($seInfo['aio_present']) ? 'text-success' : 'text-muted'?>">
+								<?php echo !empty($seInfo['aio_present']) ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?>
+							</span>
+							<?php if (!empty($seInfo['aio_present'])): ?>
+								&nbsp;&middot;&nbsp;
+								<?php echo $spTextKeyword['Cited'] ?? 'Cited'?>:
+								<?php if (!empty($seInfo['aio_cited'])): ?>
+									<span class="text-success"><?php echo $spText['common']['Yes'] ?? 'Yes'?><?php echo !empty($seInfo['aio_cited_position']) ? ' (#' . intval($seInfo['aio_cited_position']) . ')' : ''?></span>
+								<?php else: ?>
+									<span class="text-muted"><?php echo $spText['common']['No'] ?? 'No'?></span>
+								<?php endif; ?>
+								&nbsp;&middot;&nbsp;
+								<?php echo $spTextKeyword['Sources'] ?? 'Sources'?>:
+								<?php if (!empty($seInfo['aio_reference_count'])): ?>
+									<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id=" . intval($keywordId), intval($seInfo['aio_reference_count']))?>
+								<?php else: ?>
+									0
+								<?php endif; ?>
+							<?php endif; ?>
+							&nbsp;&middot;&nbsp;
+							<small class="text-muted" title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">
+								<?php $aioProviderLabel = $seInfo['provider'] === 'dataforseo' ? 'DataForSEO' : ($seInfo['provider'] === 'spapi' ? 'SEO Panel API' : $seInfo['provider']); ?>
+								via <?php echo htmlspecialchars($aioProviderLabel)?> &middot; checked <?php echo htmlspecialchars($seInfo['aio_data_date'])?>
+							</small>
+						<?php endif; ?>
+					</div>
+				<?php endif; ?>
 				<?php if (!empty($seInfo['serp_data'])): ?>
 					<div style="max-height: 400px; overflow-y: auto;">
 						<table class="table table-sm table-striped table-hover mb-0">
