@@ -478,8 +478,14 @@ class SPAPIController extends Controller {
         if (!is_null($svMappingId)) {
             $dataList['sv_mapping_id|int'] = $svMappingId;
         }
-        $dataList['crawled_time'] = !empty($crawledTime) ? $crawledTime : 'NOW()';
         if (!is_null($searchVolume)) {
+            // Only stamp crawled_time when a crawl actually produced data.
+            // searchVolumeCheckerCron() re-selects keywords whose crawled_time
+            // is NULL or older than 30 days - if we stamped it on every
+            // response (including an async 'pending' job that hasn't
+            // resolved yet, or a transient 'fail'), that keyword would be
+            // skipped for the next 30 days without ever getting real data.
+            $dataList['crawled_time']             = !empty($crawledTime) ? $crawledTime : 'NOW()';
             $dataList['search_volume|int']        = $searchVolume;
             $dataList['cpc|float']                = $cpc;
             $dataList['competition|float']        = $competition;
