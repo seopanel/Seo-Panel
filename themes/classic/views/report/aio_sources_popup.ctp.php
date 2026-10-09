@@ -26,8 +26,9 @@
 					<?php endif; ?>
 					<?php echo htmlspecialchars($src['domain']) ?>
 				</td>
-				<td style="font-size:0.85rem; word-break:break-all;">
+				<td style="font-size:0.85rem; word-break:break-all; text-align:left;">
 					<a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($src['title'] ?: $src['url']) ?></a>
+					<br><small class="text-muted"><?php echo htmlspecialchars($src['url']) ?></small>
 				</td>
 			</tr>
 		<?php endforeach; ?>
