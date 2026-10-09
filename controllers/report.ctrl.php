@@ -171,6 +171,10 @@ class ReportController extends Controller {
 		
 		$userId = isLoggedIn();
 		$keywordController = New KeywordController();
+		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
+		$this->set('showSearchVolume', $showSearchVolume);
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
 						
@@ -287,6 +291,13 @@ class ReportController extends Controller {
 
 			$keywordInfo['position_info'] = $positionInfo;
 			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? null;
+
+			if ($showSearchVolume) {
+				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
+				$keywordInfo['search_volume'] = isset($svRow['search_volume']) ? $svRow['search_volume'] : null;
+				$keywordInfo['sv_status']     = !empty($svRow['last_crawl_status']) ? $svRow['last_crawl_status'] : null;
+			}
+
 			$keywordList[$keywordInfo['id']] = $keywordInfo;
 		}
 		
