@@ -141,7 +141,7 @@
 				</td>
 				<td style="font-size:0.85rem;">
 					<?php if ($aioSupported && !empty($listInfo['aio_reference_count'])): ?>
-						<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id={$listInfo['keyword_id']}", intval($listInfo['aio_reference_count']))?>
+						<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($listInfo['keyword_id'])?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')"><?php echo intval($listInfo['aio_reference_count'])?></a>
 					<?php else: ?>
 						<span class="text-muted">0</span>
 					<?php endif; ?>

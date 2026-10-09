@@ -356,6 +356,26 @@
 
     <div id="tmp"><form name="tmp" id="tmp"></form></div>
     <div id="dialogContent" style="display:none;"></div>
+    <!-- Generic Bootstrap-modal content loader (openAjaxModalSP() in popup.js) -
+         used for popups that may themselves be triggered from inside another
+         Bootstrap modal (e.g. AI Overview Sources from within the SERP
+         Results modal), where the jQuery UI #dialogContent dialog stacks
+         incorrectly on top of an already-open Bootstrap modal. -->
+    <div class="modal fade" id="ajaxModalSP" tabindex="-1" role="dialog" aria-labelledby="ajaxModalSPLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ajaxModalSPLabel">&nbsp;</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="ajaxModalSPBody">
+                    <div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
     <?php
     $spGdprEnabled = defined('SP_GDPR_COOKIE_BANNER') && SP_GDPR_COOKIE_BANNER;
     $spGaCode      = defined('SP_GOOGLE_ANALYTICS_TRACK_CODE') ? SP_GOOGLE_ANALYTICS_TRACK_CODE : '';

@@ -8,6 +8,22 @@ function openSerpModalSP(url) {
 	});
 }
 
+// Generic Bootstrap-modal content loader - unlike scriptDoLoadDialog()'s
+// jQuery UI #dialogContent (which stacks incorrectly when triggered from
+// inside an already-open Bootstrap modal, e.g. SERP Results), this uses
+// Bootstrap's own modal() so it nests cleanly on top of another Bootstrap
+// modal instead of rendering as unstyled content behind/inside it.
+function openAjaxModalSP(url, title) {
+	$('#ajaxModalSPLabel').html(title || '');
+	$('#ajaxModalSPBody').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+	$('#ajaxModalSP').modal('show');
+	$.get(url, function(response) {
+		$('#ajaxModalSPBody').html(response);
+	}).fail(function() {
+		$('#ajaxModalSPBody').html('<div class="alert alert-danger">Failed to load.</div>');
+	});
+}
+
 function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVal) {
 	var screenWidth, screenHeight;
     screenWidth = $(window).width();

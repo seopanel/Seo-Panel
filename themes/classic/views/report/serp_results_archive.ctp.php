@@ -87,7 +87,7 @@
 								&nbsp;&middot;&nbsp;
 								<?php echo $spTextKeyword['Sources'] ?? 'Sources'?>:
 								<?php if (!empty($seInfo['aio_reference_count'])): ?>
-									<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id=" . intval($keywordId), intval($seInfo['aio_reference_count']))?>
+									<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($keywordId)?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')"><?php echo intval($seInfo['aio_reference_count'])?></a>
 								<?php else: ?>
 									0
 								<?php endif; ?>

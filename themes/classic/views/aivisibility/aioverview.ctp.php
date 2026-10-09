@@ -84,7 +84,7 @@
 					</td>
 					<td>
 						<?php if ($supported && !empty($row['aio_reference_count'])) { ?>
-							<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiosources&keyword_id={$row['keyword_id']}", intval($row['aio_reference_count'])); ?>
+							<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($row['keyword_id'])?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')"><?php echo intval($row['aio_reference_count'])?></a>
 						<?php } else { ?>
 							0
 						<?php } ?>
@@ -121,7 +121,7 @@
 						<?php if ($isTracked) { ?>
 							<?php echo intval($domainInfo['citation_count'])?>
 						<?php } else { ?>
-							<?php echo scriptAJAXLinkHrefDialog('reports.php', 'content', "sec=aiocompetitorkeywords&website_id={$websiteId}&domain=" . urlencode($domainInfo['domain']), intval($domainInfo['citation_count'])); ?>
+							<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiocompetitorkeywords&website_id=<?php echo intval($websiteId)?>&domain=<?php echo urlencode($domainInfo['domain'])?>', '<i class=&quot;fas fa-users&quot;></i> Competitor Citations')"><?php echo intval($domainInfo['citation_count'])?></a>
 						<?php } ?>
 					</td>
 					<td class="aiv-num"><?php echo $sov?>%</td>
