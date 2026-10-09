@@ -28,7 +28,7 @@
 				</td>
 				<td style="font-size:0.85rem; word-break:break-all; text-align:left;">
 					<a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($src['title'] ?: $src['url']) ?></a>
-					<br><small><a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400;"><?php echo htmlspecialchars($src['url']) ?></a></small>
+					<br><a href="<?php echo htmlspecialchars($src['url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:0.9rem;"><?php echo htmlspecialchars($src['url']) ?></a>
 				</td>
 			</tr>
 		<?php endforeach; ?>

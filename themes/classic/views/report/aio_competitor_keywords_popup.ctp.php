@@ -25,7 +25,7 @@
 						<?php if (!empty($row['own_url'])): ?>
 							<br>#<?php echo intval($row['own_position']) ?>
 							<a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['own_title'] ?: $row['own_url']) ?></a>
-							<br><small><a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400;"><?php echo htmlspecialchars($row['own_url']) ?></a></small>
+							<br><a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:0.9rem;"><?php echo htmlspecialchars($row['own_url']) ?></a>
 						<?php endif; ?>
 					<?php else: ?>
 						<i class="fas fa-times-circle" style="color:#dc3545;"></i> <?php echo $spText['common']['No'] ?? 'No'?>
@@ -35,7 +35,7 @@
 					<?php if (!empty($row['ref_url'])): ?>
 						#<?php echo intval($row['ref_position']) ?>
 						<a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['ref_title'] ?: $row['ref_url']) ?></a>
-						<br><small><a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400;"><?php echo htmlspecialchars($row['ref_url']) ?></a></small>
+						<br><a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:0.9rem;"><?php echo htmlspecialchars($row['ref_url']) ?></a>
 					<?php else: ?>
 						<span class="text-muted">&mdash;</span>
 					<?php endif; ?>
