@@ -58,6 +58,19 @@
 		<?php endforeach; ?>
 	</ul>
 
+	<?php if (!empty($showSearchVolume)): ?>
+		<div class="px-3 py-2" style="font-size:0.82rem; border:1px solid #dee2e6; border-top:none; border-bottom:none; background:#f8f9fa;">
+			<strong><?php echo $spTextKeyword['Search Volume'] ?? 'Search Volume'?> (Google):</strong>
+			<?php if (!is_null($searchVolume ?? null)): ?>
+				<span class="fw-bold"><?php echo number_format($searchVolume)?></span>
+			<?php elseif (!empty($searchVolumeStatus)): ?>
+				<span class="badge badge-secondary"><?php echo htmlspecialchars($searchVolumeStatus)?></span>
+			<?php else: ?>
+				<span class="text-muted">&mdash;</span>
+			<?php endif; ?>
+		</div>
+	<?php endif; ?>
+
 	<div class="tab-content" style="border:1px solid #dee2e6; border-top:none; border-radius:0 0 4px 4px;">
 		<?php foreach ($engines as $i => $seInfo): ?>
 			<div class="tab-pane fade <?php echo $i == 0 ? 'show active' : ''?>"

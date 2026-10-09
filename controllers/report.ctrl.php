@@ -1968,6 +1968,17 @@ class ReportController extends Controller {
 		}
 
 		$this->set('engines', $engines);
+
+		include_once(SP_CTRLPATH . "/settings.ctrl.php");
+		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
+		$this->set('showSearchVolume', $showSearchVolume);
+		if ($showSearchVolume && !empty($keywordId)) {
+			$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id=$keywordId AND source='google'", 'search_volume, last_crawl_status');
+			$this->set('searchVolume', isset($svRow['search_volume']) ? $svRow['search_volume'] : null);
+			$this->set('searchVolumeStatus', !empty($svRow['last_crawl_status']) ? $svRow['last_crawl_status'] : null);
+		}
+		$this->set('spTextKeyword', $this->getLanguageTexts('keyword', $_SESSION['lang_code']));
+
 		$this->render('report/serp_results_archive');
 	}
 
