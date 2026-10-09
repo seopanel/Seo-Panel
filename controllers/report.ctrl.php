@@ -2034,7 +2034,7 @@ class ReportController extends Controller {
 		}
 
 		$domainSql = addslashes($domain);
-		$sql = "SELECT k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited,
+		$sql = "SELECT k.id AS keyword_id, k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited,
 					ar.ref_position, ar.url AS ref_url, ar.title AS ref_title, ar.checked_date AS ref_checked_date
 				FROM keywords k
 				JOIN searchresults s ON s.keyword_id = k.id AND s.aio_checked_at IS NOT NULL
@@ -2054,6 +2054,41 @@ class ReportController extends Controller {
 				WHERE k.website_id = $websiteId AND k.status = 1
 				ORDER BY k.name, ar.ref_position";
 		$rows = $this->db->select($sql);
+
+		// Also resolve, per keyword, which reference row is OUR OWN citation
+		// (tracked_cited only says yes/no - it doesn't carry the URL) so the
+		// popup can link straight to it next to the competitor's own link.
+		// Domain matching has to go through isDomainCited()'s subdomain-aware
+		// comparison (same policy used everywhere else AI Overview citations
+		// are matched), not a plain SQL equality, hence the PHP-side lookup.
+		if (!empty($rows)) {
+			$website = $this->dbHelper->getRow('websites', "id = $websiteId");
+			$websiteUrl = !empty($website['url']) ? rtrim($website['url'], '/') : '';
+			if (!empty($websiteUrl)) {
+				include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+				$aioCtrler = new AIOverviewController();
+				$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+				$panelCache = [];
+				foreach ($rows as &$row) {
+					if (empty($row['tracked_cited'])) {
+						continue;
+					}
+					$kwId = $row['keyword_id'];
+					if (!array_key_exists($kwId, $panelCache)) {
+						$panelCache[$kwId] = $aioCtrler->getCompetitorPanel($kwId, $websiteUrl, $subdomainPolicy);
+					}
+					foreach ($panelCache[$kwId] as $ref) {
+						if (!empty($ref['is_tracked'])) {
+							$row['own_url'] = $ref['url'];
+							$row['own_title'] = $ref['title'];
+							$row['own_position'] = $ref['ref_position'];
+							break;
+						}
+					}
+				}
+				unset($row);
+			}
+		}
 
 		$this->set('rows', $rows);
 		$this->set('domain', $domain);

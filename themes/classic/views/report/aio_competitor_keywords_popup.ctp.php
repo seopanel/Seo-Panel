@@ -13,15 +13,19 @@
 			<td><?php echo $spText['common']['Keyword'] ?? 'Keyword' ?></td>
 			<td><?php echo $spText['common']['Search Engine'] ?? 'Search Engine' ?></td>
 			<td><?php echo $spTextAIV['You Cited?'] ?? 'You Cited?' ?></td>
-			<td><?php echo $spTextAIV['Citation'] ?? 'Citation' ?></td>
+			<td><?php echo $spTextAIV["Competitor's Citation"] ?? "Competitor's Citation" ?></td>
 		</tr>
 		<?php foreach ($rows as $i => $row): ?>
 			<tr class="<?php echo ($i % 2) ? 'blue_row' : 'white_row' ?>">
 				<td><?php echo htmlspecialchars($row['keyword_name']) ?></td>
 				<td><?php echo htmlspecialchars($row['se_domain']) ?></td>
-				<td>
+				<td style="font-size:0.85rem; word-break:break-all;">
 					<?php if (!empty($row['tracked_cited'])): ?>
 						<i class="fas fa-check-circle" style="color:#28a745;"></i> <?php echo $spText['common']['Yes'] ?? 'Yes'?>
+						<?php if (!empty($row['own_url'])): ?>
+							<br>#<?php echo intval($row['own_position']) ?>
+							<a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['own_title'] ?: $row['own_url']) ?></a>
+						<?php endif; ?>
 					<?php else: ?>
 						<i class="fas fa-times-circle" style="color:#dc3545;"></i> <?php echo $spText['common']['No'] ?? 'No'?>
 					<?php endif; ?>
