@@ -210,9 +210,16 @@ class AIOverviewController extends Controller {
         $collectedAt = !empty($aio['collected_at']) ? $aio['collected_at'] : $checkedDate;
         $dataDate = date('Y-m-d', strtotime($collectedAt) ?: strtotime($checkedDate));
 
+        // spAPI marks each engine's entry 'supported' => false when that engine can't actually
+        // return AI Overview data at all right now (e.g. Bing/Yahoo - DataForSEO rejects the
+        // request field for them, see spAPI commit 21b16cf 2026-10-12) rather than it genuinely
+        // being absent for this query. Default true for older spAPI responses that predate this
+        // field, matching this function's previous unconditional behavior.
+        $supported = !array_key_exists('supported', $aio) || !empty($aio['supported']);
+
         $normalized = [
-            'supported'  => true,
-            'present'    => !empty($aio['present']),
+            'supported'  => $supported,
+            'present'    => $supported && !empty($aio['present']),
             'async'      => !empty($aio['asynchronous']),
             'references' => [],
             'data_date'  => $dataDate,

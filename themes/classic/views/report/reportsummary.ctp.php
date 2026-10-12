@@ -125,7 +125,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<th id="head" colspan="3"><?php echo $linkName; ?></th>
 			<?php
 		}
-		if (!empty($showSearchVolume)): ?>
+		if (!empty($showAiOverview)): ?>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?></th>
+		<?php endif; ?>
+		<?php if (!empty($showSearchVolume)): ?>
 		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
 		<?php endif; ?>
 	</tr>
@@ -144,7 +147,8 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	</tr>
 	<?php
 	$svExtra = !empty($showSearchVolume) ? 1 : 0;
-	$colCount = empty($websiteId) ? ($seCount * 3) + 2 + $svExtra : ($seCount * 3) + 1 + $svExtra; 
+	$aioExtra = !empty($showAiOverview) ? 1 : 0;
+	$colCount = empty($websiteId) ? ($seCount * 3) + 2 + $svExtra + $aioExtra : ($seCount * 3) + 1 + $svExtra + $aioExtra;
 	if (count($list) > 0) {
 		foreach($indexList as $keywordId => $rankValue){
 		    $listInfo = $list[$keywordId];
@@ -155,39 +159,55 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<tr>				
 				<?php
 				$serpKwIcon = '';
-				$aioKwIconLines = '';
 				if (empty($pdfVersion) && empty($printVersion)) {
 					$serpKwUrl = SP_WEBPATH . "/reports.php?sec=serpresults&keyword_id={$listInfo['id']}&date=$toTime";
 					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#d35400; font-size:0.75rem;"></i></a>';
+				}
 
-					// one line per search engine that has AI Overview data for
-					// this keyword - a keyword can be measured on more than one
-					// (e.g. Google AND Bing), each with its own citation status
-					foreach ($listInfo['aio_info'] as $aioInfo) {
-						if (!empty($aioInfo['aio_cited'])) {
-							$aioColor = '#2e7d32';
-							$aioLabel = 'Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
-							$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
-						} elseif (!empty($aioInfo['aio_present'])) {
-							$aioColor = '#b8790a';
-							$aioLabel = 'Not cited';
-							$aioTitle = 'AI Overview: present, not cited';
-						} else {
-							$aioColor = '#9296a8';
-							$aioLabel = 'Not present';
-							$aioTitle = 'AI Overview: not present';
-						}
-						$seLabel = str_replace(['www.', '.com'], '', $aioInfo['se_domain']);
-						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
-						$aioKwIconLines .= '<br> <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle . ' (' . $aioInfo['se_domain'] . ')') . '" style="color:' . $aioColor . '; font-size:0.72rem; font-weight:500; text-decoration:none;"><i class="fas fa-robot" style="font-size:0.75rem;"></i> AI (' . htmlspecialchars(ucfirst($seLabel)) . '): ' . htmlspecialchars($aioLabel) . '</a>';
+				// one line per search engine that has AI Overview data for this keyword -
+				// a keyword can be measured on more than one (e.g. Google AND Bing), each
+				// with its own citation status - rendered into its own column, same as
+				// Search Volume, rather than crammed under the keyword name.
+				$aioColumnLines = '';
+				foreach ($listInfo['aio_info'] as $aioInfo) {
+					$seLabel = htmlspecialchars(ucfirst(str_replace(['www.', '.com'], '', $aioInfo['se_domain'])));
+					if (empty($aioInfo['aio_supported'])) {
+						// this engine can't return AI Overview data via the current
+						// integration at all (e.g. Bing/Yahoo - DataForSEO rejects the
+						// request field for them) - distinct from a genuine "checked,
+						// not present" so it isn't mistaken for a confirmed absence.
+						$aioColumnLines .= '<div style="font-size:0.78rem; color:#9296a8;" title="AI Overview is not available for ' . $seLabel . ' on your current data source">' . $seLabel . ': ' . ($spTextKeyword['Not available'] ?? 'Not available') . '</div>';
+						continue;
 					}
+					if (!empty($aioInfo['aio_cited'])) {
+						$aioColor = '#2e7d32';
+						$aioLabel = 'Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
+						$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
+					} elseif (!empty($aioInfo['aio_present'])) {
+						$aioColor = '#b8790a';
+						$aioLabel = 'Not cited';
+						$aioTitle = 'AI Overview: present, not cited';
+					} else {
+						$aioColor = '#9296a8';
+						$aioLabel = 'Not present';
+						$aioTitle = 'AI Overview: not present';
+					}
+					if (empty($pdfVersion) && empty($printVersion)) {
+						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
+						$aioColumnLines .= '<div> <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle . ' (' . $aioInfo['se_domain'] . ')') . '" style="color:' . $aioColor . '; font-size:0.78rem; font-weight:500; text-decoration:none;">' . $seLabel . ': ' . htmlspecialchars($aioLabel) . '</a></div>';
+					} else {
+						$aioColumnLines .= '<div style="font-size:0.78rem; color:' . $aioColor . ';">' . $seLabel . ': ' . htmlspecialchars($aioLabel) . '</div>';
+					}
+				}
+				if ($aioColumnLines === '') {
+					$aioColumnLines = '&mdash;';
 				}
 				?>
 				<?php if (empty($websiteId)) {?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIconLines?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon?></td>
 					<td><?php echo htmlspecialchars($listInfo['webname']); ?></td>
 				<?php } else { ?>
-					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon . $aioKwIconLines?></td>
+					<td><?php echo htmlspecialchars($listInfo['name']) . $serpKwIcon?></td>
 				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
@@ -226,6 +246,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<?php
 				}
 				?>
+				<?php if (!empty($showAiOverview)): ?>
+				<td class="text-center"><?php echo $aioColumnLines?></td>
+				<?php endif; ?>
 				<?php if (!empty($showSearchVolume)): ?>
 				<td class="text-center">
 					<?php if (!is_null($listInfo['search_volume'])): ?>

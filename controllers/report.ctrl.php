@@ -154,7 +154,7 @@ class ReportController extends Controller {
 		// overwriting the other's in a single per-keyword row.
 		$keywordIdList = implode(',', $keywordIds);
 		$sql = "SELECT sr.keyword_id, sr.searchengine_id, se.domain AS se_domain,
-				       sr.aio_present, sr.aio_cited, sr.aio_cited_position, sr.aio_reference_count
+				       sr.aio_present, sr.aio_cited, sr.aio_cited_position, sr.aio_reference_count, sr.aio_supported
 				FROM searchresults sr
 				JOIN searchengines se ON se.id = sr.searchengine_id
 				WHERE sr.keyword_id IN ($keywordIdList) AND sr.aio_checked_at IS NOT NULL
@@ -183,6 +183,11 @@ class ReportController extends Controller {
 		include_once(SP_CTRLPATH . "/spapi.ctrl.php");
 		$showSearchVolume = SettingsController::isSpApiEnabled('search_volume') || SettingsController::isDFSEnabled('search_volume');
 		$this->set('showSearchVolume', $showSearchVolume);
+		// AI Overview rides the same crawl as organic rank (see __getLatestAIOverviewBatch()),
+		// so it's gated on the same 'serp' capability check as the rank crawl itself, not its
+		// own separate feature flag.
+		$showAiOverview = SettingsController::isSpApiEnabled('serp') || SettingsController::isDFSEnabled('serp');
+		$this->set('showAiOverview', $showAiOverview);
 		$this->set('spTextKeyword', $this->getLanguageTexts('keyword', $_SESSION['lang_code']));
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
