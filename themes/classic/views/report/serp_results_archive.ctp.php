@@ -45,6 +45,18 @@
 	$matchBase = preg_replace('#^https?://(www\.)?#i', '', $websiteUrl);
 	$matchBase = rtrim($matchBase, '/');
 	?>
+	<div class="form-group" style="max-width:300px;margin-bottom:10px;">
+		<input type="text" id="serp_archive_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
+	</div>
+	<script>
+	function spQuickFilterRows(rowClass, query) {
+		query = query.toLowerCase();
+		var rows = document.getElementsByClassName(rowClass);
+		for (var i = 0; i < rows.length; i++) {
+			rows[i].style.display = (rows[i].getAttribute('data-txt').indexOf(query) !== -1) ? '' : 'none';
+		}
+	}
+	</script>
 	<ul class="nav nav-tabs mb-0" role="tablist" style="border-bottom:1px solid #dee2e6;">
 		<?php foreach ($engines as $i => $seInfo): ?>
 			<li class="nav-item">
@@ -128,7 +140,7 @@
 								$resultBase = preg_replace('#^https?://(www\.)?#i', '', $resultUrl);
 								$isMatch    = !empty($matchBase) && (stripos($resultBase, $matchBase) === 0);
 							?>
-							<tr <?php echo $isMatch ? 'style="background:#fffbe6;"' : ''?>>
+							<tr class="serp-archive-row" data-txt="<?php echo htmlspecialchars(strtolower(($result['title'] ?: '') . ' ' . $resultUrl))?>" <?php echo $isMatch ? 'style="background:#fffbe6;"' : ''?>>
 								<td class="text-center text-muted"><?php echo intval($result['rank'])?></td>
 								<td style="font-size:0.85rem; word-break:break-all;">
 									<?php if ($isMatch): ?>
