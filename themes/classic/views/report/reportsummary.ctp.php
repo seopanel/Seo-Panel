@@ -126,7 +126,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<?php
 		}
 		if (!empty($showAiOverview)): ?>
-		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?></th>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
 		<?php endif; ?>
 		<?php if (!empty($showSearchVolume)): ?>
 		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
@@ -164,26 +164,24 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					$serpKwIcon = ' <a href="javascript:void(0);" onclick="openSerpModalSP(\'' . addslashes($serpKwUrl) . '\')" title="View SERP Results"><i class="fas fa-list-ol" style="color:#d35400; font-size:0.75rem;"></i></a>';
 				}
 
-				// one line per search engine that has AI Overview data for this keyword -
-				// a keyword can be measured on more than one (e.g. Google AND Bing), each
-				// with its own citation status - rendered into its own column, same as
-				// Search Volume, rather than crammed under the keyword name.
-				$aioColumnLines = '';
+				// Google only, same as the Search Volume column - Bing/Yahoo can't actually
+				// return AI Overview data via the current integration at all right now
+				// (DataForSEO rejects the request field for them), so showing their
+				// permanently-"Not available" rows here would just be noise.
+				$aioGoogleInfo = null;
 				foreach ($listInfo['aio_info'] as $aioInfo) {
-					$seLabel = htmlspecialchars(ucfirst(str_replace(['www.', '.com'], '', $aioInfo['se_domain'])));
-					if (empty($aioInfo['aio_supported'])) {
-						// this engine can't return AI Overview data via the current
-						// integration at all (e.g. Bing/Yahoo - DataForSEO rejects the
-						// request field for them) - distinct from a genuine "checked,
-						// not present" so it isn't mistaken for a confirmed absence.
-						$aioColumnLines .= '<div style="font-size:0.78rem; color:#9296a8;" title="AI Overview is not available for ' . $seLabel . ' on your current data source">' . $seLabel . ': ' . ($spTextKeyword['Not available'] ?? 'Not available') . '</div>';
-						continue;
+					if (stristr($aioInfo['se_domain'], 'google')) {
+						$aioGoogleInfo = $aioInfo;
+						break;
 					}
-					if (!empty($aioInfo['aio_cited'])) {
+				}
+				$aioColumnLines = '&mdash;';
+				if ($aioGoogleInfo !== null && !empty($aioGoogleInfo['aio_supported'])) {
+					if (!empty($aioGoogleInfo['aio_cited'])) {
 						$aioColor = '#2e7d32';
-						$aioLabel = 'Cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
-						$aioTitle = 'AI Overview: present, cited' . (!empty($aioInfo['aio_cited_position']) ? ' (#' . intval($aioInfo['aio_cited_position']) . ')' : '');
-					} elseif (!empty($aioInfo['aio_present'])) {
+						$aioLabel = 'Cited' . (!empty($aioGoogleInfo['aio_cited_position']) ? ' (#' . intval($aioGoogleInfo['aio_cited_position']) . ')' : '');
+						$aioTitle = 'AI Overview: present, cited' . (!empty($aioGoogleInfo['aio_cited_position']) ? ' (#' . intval($aioGoogleInfo['aio_cited_position']) . ')' : '');
+					} elseif (!empty($aioGoogleInfo['aio_present'])) {
 						$aioColor = '#b8790a';
 						$aioLabel = 'Not cited';
 						$aioTitle = 'AI Overview: present, not cited';
@@ -194,13 +192,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					}
 					if (empty($pdfVersion) && empty($printVersion)) {
 						$aioKwUrl = SP_WEBPATH . "/reports.php?sec=aiosources&keyword_id={$listInfo['id']}";
-						$aioColumnLines .= '<div> <a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle . ' (' . $aioInfo['se_domain'] . ')') . '" style="color:' . $aioColor . '; font-size:0.78rem; font-weight:500; text-decoration:none;">' . $seLabel . ': ' . htmlspecialchars($aioLabel) . '</a></div>';
+						$aioColumnLines = '<a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($aioKwUrl) . '\', \'<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources\')" title="' . htmlspecialchars($aioTitle) . '" style="color:' . $aioColor . '; font-weight:500; text-decoration:none;">' . htmlspecialchars($aioLabel) . '</a>';
 					} else {
-						$aioColumnLines .= '<div style="font-size:0.78rem; color:' . $aioColor . ';">' . $seLabel . ': ' . htmlspecialchars($aioLabel) . '</div>';
+						$aioColumnLines = '<span style="color:' . $aioColor . ';">' . htmlspecialchars($aioLabel) . '</span>';
 					}
-				}
-				if ($aioColumnLines === '') {
-					$aioColumnLines = '&mdash;';
 				}
 				?>
 				<?php if (empty($websiteId)) {?>
