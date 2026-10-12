@@ -87,6 +87,21 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	<?php echo $pagingDiv?>
 <?php }?>
 
+<?php if (empty($printVersion) && empty($pdfVersion)): ?>
+<div class="form-group" style="max-width:300px;margin-bottom:10px;">
+	<input type="text" id="cust_tab_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterTable('cust_tab', this.value)">
+</div>
+<script>
+function spQuickFilterTable(tableId, query) {
+	query = query.toLowerCase();
+	var rows = document.querySelectorAll('#' + tableId + ' tbody tr[data-kw], #' + tableId + ' > tr[data-kw]');
+	for (var i = 0; i < rows.length; i++) {
+		rows[i].style.display = (rows[i].getAttribute('data-kw').indexOf(query) !== -1) ? '' : 'none';
+	}
+}
+</script>
+<?php endif; ?>
+
 <div id='subcontent' class="table-responsive">
 
 <table id="cust_tab">
@@ -154,9 +169,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		    $listInfo = $list[$keywordId];
 			$positionInfo = $listInfo['position_info'];
             $rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
-            $scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";          
+            $scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 			?>
-			<tr>				
+			<tr data-kw="<?php echo htmlspecialchars(strtolower($listInfo['name']))?>">
 				<?php
 				$serpKwIcon = '';
 				if (empty($pdfVersion) && empty($printVersion)) {
