@@ -96,7 +96,11 @@ class UserTokenController extends Controller {
 		if (!empty($keyInfo['id']) || $this->db->select("select id from settings where set_name='SP_TOKEN_ENCRYPTION_KEY'", true)) {
 			$this->db->query("update settings set set_val='$encoded' where set_name='SP_TOKEN_ENCRYPTION_KEY'");
 		} else {
-			$this->db->query("insert into settings(set_label,set_name,set_val,set_type) values('Token Encryption Key','SP_TOKEN_ENCRYPTION_KEY','$encoded','large')");
+			// display=0: this is raw key material, not a user-facing setting - it has no
+			// text label (so it rendered as a blank ":" row) and, worse, was fully visible
+			// AND editable in cleartext on the System Settings page, where a stray edit
+			// would silently break decryption of every already-stored access/refresh token.
+			$this->db->query("insert into settings(set_label,set_name,set_val,set_type,display) values('Token Encryption Key','SP_TOKEN_ENCRYPTION_KEY','$encoded','large',0)");
 		}
 		return $key;
 	}

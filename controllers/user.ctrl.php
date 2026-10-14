@@ -247,7 +247,12 @@ class UserController extends Controller{
 		if (!empty($keyInfo['id']) || $this->db->select("select id from settings where set_name='SP_TOTP_ENCRYPTION_KEY'", true)) {
 			$this->db->query("update settings set set_val='$encoded' where set_name='SP_TOTP_ENCRYPTION_KEY'");
 		} else {
-			$this->db->query("insert into settings(set_label,set_name,set_val,set_type) values('TOTP Encryption Key','SP_TOTP_ENCRYPTION_KEY','$encoded','large')");
+			// display=0: raw key material, not a user-facing setting - see
+			// UserTokenController::__getTokenEncryptionKey()'s matching fix. Was fully
+			// visible AND editable in cleartext on the System Settings page (blank label,
+			// since it has no text entry either); a stray edit there would silently break
+			// decryption of every already-enrolled user's TOTP secret, locking them out.
+			$this->db->query("insert into settings(set_label,set_name,set_val,set_type,display) values('TOTP Encryption Key','SP_TOTP_ENCRYPTION_KEY','$encoded','large',0)");
 		}
 		return $key;
 	}
