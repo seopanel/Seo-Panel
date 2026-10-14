@@ -97,21 +97,6 @@ $inlineMsg        = $spapiCheckResult === 'expired'
     </a>
 </div>
 <?php endif; ?>
-<script>
-function spToggleSecretVisibility(fieldId, iconLink) {
-	var field = document.getElementById(fieldId);
-	var icon = iconLink.querySelector('i');
-	if (field.type === 'password') {
-		field.type = 'text';
-		icon.classList.remove('fa-eye');
-		icon.classList.add('fa-eye-slash');
-	} else {
-		field.type = 'password';
-		icon.classList.remove('fa-eye-slash');
-		icon.classList.add('fa-eye');
-	}
-}
-</script>
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
 <input type="hidden" value="<?php echo $category?>" name="category">

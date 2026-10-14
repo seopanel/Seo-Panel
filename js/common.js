@@ -449,6 +449,20 @@ function urlencode(str) {
 	  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
 }
 
+function spToggleSecretVisibility(fieldId, iconLink) {
+	var field = document.getElementById(fieldId);
+	var icon = iconLink.querySelector('i');
+	if (field.type === 'password') {
+		field.type = 'text';
+		icon.classList.remove('fa-eye');
+		icon.classList.add('fa-eye-slash');
+	} else {
+		field.type = 'password';
+		icon.classList.remove('fa-eye-slash');
+		icon.classList.add('fa-eye');
+	}
+}
+
 function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
 	// SP_MOZ_API_SECRET is now type=password (an earlier fix this round
 	// masked every secret settings field) - the :text filter no longer
