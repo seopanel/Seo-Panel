@@ -97,6 +97,21 @@ $inlineMsg        = $spapiCheckResult === 'expired'
     </a>
 </div>
 <?php endif; ?>
+<script>
+function spToggleSecretVisibility(fieldId, iconLink) {
+	var field = document.getElementById(fieldId);
+	var icon = iconLink.querySelector('i');
+	if (field.type === 'password') {
+		field.type = 'text';
+		icon.classList.remove('fa-eye');
+		icon.classList.add('fa-eye-slash');
+	} else {
+		field.type = 'password';
+		icon.classList.remove('fa-eye-slash');
+		icon.classList.add('fa-eye');
+	}
+}
+</script>
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
 <input type="hidden" value="<?php echo $category?>" name="category">
@@ -239,10 +254,21 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 							// shoulder-surfing, or a shared screenshot of
 							// this page on every real install
 							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET', 'SP_MOZ_API_SECRET', 'SP_GOOGLE_API_CLIENT_SECRET', 'SP_DFS_API_PASSWORD', 'SP_SPAPI_KEY', 'SP_RECAPTCHA_SECRET_KEY');
-						    $type = in_array($listInfo['set_name'], $passTypeList) ? "password" : "text";
-						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'"
+						    $isSecretField = in_array($listInfo['set_name'], $passTypeList);
+						    $type = $isSecretField ? "password" : "text";
+						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'";
+						    $fieldId = 'sp_secret_' . strtolower($listInfo['set_name']);
 						    ?>
-							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" <?php echo $styleOpt?>>
+							<?php if ($isSecretField) {?>
+								<div style="position:relative; display:inline-block; <?php echo ($width == 'large') ? 'width:100%;' : "width: {$width}px;"?>">
+									<input type="<?php echo $type?>" id="<?php echo $fieldId?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" class='form-control' style="padding-right:34px; width:100%;">
+									<a href="javascript:void(0);" onclick="spToggleSecretVisibility('<?php echo $fieldId?>', this)" title="<?php echo $spText['common']['Show/Hide'] ?? 'Show/Hide'?>" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#8a8ea3;">
+										<i class="fas fa-eye"></i>
+									</a>
+								</div>
+							<?php } else { ?>
+								<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" <?php echo $styleOpt?>>
+							<?php } ?>
 							<?php if ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {?>
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>
