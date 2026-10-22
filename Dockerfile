@@ -1,10 +1,6 @@
-FROM php:7.4-apache
+FROM php:8.2-apache
 
-RUN sed -i \
-        -e '/bullseye-security/d' \
-        -e 's|deb.debian.org/debian|archive.debian.org/debian|g' \
-        /etc/apt/sources.list \
-    && apt-get -o Acquire::Check-Valid-Until=false update \
+RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         libzip-dev \
         libpng-dev \
