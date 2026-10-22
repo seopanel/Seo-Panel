@@ -31,6 +31,14 @@ define( 'SP_ABSPATH', $abspath );
 // global variable for sp db connection id
 $SP_DB_CONN_OBJ = false;
 
+// since PHP 8.1, mysqli defaults to throwing mysqli_sql_exception on any SQL
+// error instead of returning false - but the whole app (select()/query() in
+// mysqlihelper.class.php, and every caller's `if (!$result)` check) is built
+// around the pre-8.1 false-return behavior. Without this, a bad query is an
+// uncaught fatal error instead of the graceful false + error_log() the app
+// expects.
+mysqli_report(MYSQLI_REPORT_OFF);
+
 if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 	
 	# loads seo panel main config file
