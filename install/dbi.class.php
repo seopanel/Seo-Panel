@@ -30,6 +30,14 @@ class DBI{
 	
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
 
+		// since PHP 8.1, mysqli defaults to throwing mysqli_sql_exception on
+		// any SQL error instead of returning false - this class (and every
+		// caller checking $db->error / a query's return value) is built
+		// around the pre-8.1 false-return behavior. Unlike the main app,
+		// this installer has no sp-load.php bootstrap of its own to set
+		// this once, so it's set here directly.
+		mysqli_report(MYSQLI_REPORT_OFF);
+
 		try {
 			$this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
 
