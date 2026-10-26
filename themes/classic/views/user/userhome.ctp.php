@@ -72,11 +72,6 @@
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $dbTabClass?>" href="<?php echo SP_WEBPATH?>/?dashboard=reports" onclick="return navigateDashboardTab(this, 'reports');">
-            		<i class="fas fa-chart-line"></i> <span class="nav-label"><?php echo $spText['common']['Reports']?></span>
-            	</a>
-            </li>
-            <li class="nav-item">
             	<a class="nav-link <?php echo $waTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=website_analytics" onclick="return navigateDashboardTab(this, 'website_analytics');">
             		<i class="fas fa-globe"></i> <span class="nav-label"><?php echo $spText['label']['Website'] ?? 'Website'?></span>
             	</a>
