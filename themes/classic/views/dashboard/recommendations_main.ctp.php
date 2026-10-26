@@ -130,7 +130,7 @@
     <form id="recommendations_dashboard_form" method="post">
         <div class="rec-controls">
             <label><?php echo $spText['common']['Website'] ?? 'Website' ?>:</label>
-            <select name="website_id" id="website_id" class="custom-select"
+            <select name="website_id" id="website_id" class="custom-select" style="width:auto;max-width:280px;"
                 onchange="scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php', 'recommendations_dashboard_form', 'content')">
                 <?php foreach ($websiteList as $ws) { ?>
                     <option value="<?php echo $ws['id'] ?>" <?php echo ($ws['id'] == $websiteId) ? 'selected' : '' ?>>
