@@ -129,11 +129,21 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'stale', 'stale'),
 ('en', 'keyword', 'present in', 'present in'),
 ('en', 'keyword', 'of last observations', 'of last observations'),
-('en', 'keyword', 'AI Overview is not available on your current data source', 'AI Overview is not available on your current data source.'),
-('en', 'keyword', 'Configure DataForSEO credentials to enable this feature immediately', 'Configure DataForSEO credentials to enable this feature immediately.'),
+('en', 'keyword', 'AI Overview is not available on your current data source', 'AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured.'),
+('en', 'keyword', 'Configure DataForSEO credentials to enable this feature immediately', ''),
 ('en', 'keyword', 'Data older than the configured freshness threshold', 'Data older than the configured freshness threshold'),
 ('en', 'keyword', 'AI Overview Cited Sources', 'AI Overview Cited Sources'),
 ('en', 'keyword', 'No AI Overview citations recorded for this keyword yet', 'No AI Overview citations recorded for this keyword yet.');
+
+-- Correct the wording above for installs that already ran this migration
+-- (INSERT IGNORE above never touches an existing row) - the original text
+-- told users that configuring DataForSEO credentials would unlock AI
+-- Overview for Bing/Yahoo. Confirmed against the real API (2026-10-12):
+-- DataForSEO itself rejects the fields AI Overview needs for Bing and
+-- Yahoo entirely, so that was never true regardless of credentials - it's
+-- no longer shown as a second, actionable-sounding sentence at all.
+UPDATE `texts` SET `content` = 'AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured.' WHERE `lang_code` = 'en' AND `category` = 'keyword' AND `label` = 'AI Overview is not available on your current data source';
+UPDATE `texts` SET `content` = '' WHERE `lang_code` = 'en' AND `category` = 'keyword' AND `label` = 'Configure DataForSEO credentials to enable this feature immediately';
 
 -- Quick Keyword Position Checker: distinguish "SP API archive hasn't crawled
 -- this keyword yet" from a genuine zero-match result
