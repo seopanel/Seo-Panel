@@ -228,32 +228,45 @@ if (!empty($noWebsites)) {
 	</div>
 	<?php } ?>
 
-	<!-- Backlinks and Indexed Pages Trends -->
+	<!-- Backlinks and Indexed Pages Trends - both cards always render (not
+	     just when their own chart has data) so an empty one doesn't leave
+	     a blank gap next to a populated sibling; each shows a plain
+	     "no data yet" placeholder in its own card-body instead. -->
 	<div class="row mb-4">
-		<?php if (!empty($backlinkTrends)) { ?>
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spTextDashboard['Backlink Trends'] ?? 'Backlink Trends'?></h4>
 				</div>
 				<div class="card-body">
+					<?php if (!empty($backlinkTrends)) { ?>
 					<div id="backlink_trends_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+					<div class="text-center text-muted" style="padding:60px 20px;">
+						<i class="fas fa-link" style="font-size:28px;display:block;margin-bottom:10px;color:#9296a8;"></i>
+						<?php echo $spTextDashboard['No backlink trend data yet'] ?? 'No backlink trend data yet.'?>
+					</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
-		<?php } ?>
-		<?php if (!empty($saturationTrends)) { ?>
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spTextDashboard['Indexed Pages Trends'] ?? 'Indexed Pages Trends'?></h4>
 				</div>
 				<div class="card-body">
+					<?php if (!empty($saturationTrends)) { ?>
 					<div id="saturation_trends_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+					<div class="text-center text-muted" style="padding:60px 20px;">
+						<i class="fas fa-server" style="font-size:28px;display:block;margin-bottom:10px;color:#9296a8;"></i>
+						<?php echo $spTextDashboard['No indexed pages trend data yet'] ?? 'No indexed pages trend data yet.'?>
+					</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
-		<?php } ?>
 	</div>
 
 	<!-- Detailed Statistics Table -->
