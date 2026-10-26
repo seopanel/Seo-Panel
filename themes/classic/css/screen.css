@@ -3906,13 +3906,22 @@ body {
    the standard mobile "kebab menu" pattern. Targets both .collapsing (the
    mid-animation state) and .show (fully open) so the whole open/close
    transition happens in the floating position, not a page-push that then
-   snaps into a corner once the animation finishes. */
+   snaps into a corner once the animation finishes.
+
+   Scoped to #navbarSupportedContent specifically (not the generic
+   .navbar.navbar-expand-md .navbar-collapse selector this started as) -
+   seotools/index.ctp.php, seoplugins/showseoplugins.ctp.php and
+   adminpanel/adminpanel.ctp.php each have their own separate
+   .navbar.navbar-expand-md wrapping a left-menu toggle (#navbarLeftMenu),
+   positioned mid-page rather than fixed at the top. The generic selector
+   floated THAT collapse panel the same way, anchored to its own narrow
+   nav rather than the actual hamburger buttons on a phone. */
 @media screen and (max-width: 767px) {
     .navbar.navbar-expand-md {
         position: relative;
     }
-    .navbar.navbar-expand-md .navbar-collapse.show,
-    .navbar.navbar-expand-md .navbar-collapse.collapsing {
+    #navbarSupportedContent.show,
+    #navbarSupportedContent.collapsing {
         position: absolute;
         top: 100%;
         right: 12px;
@@ -3939,20 +3948,20 @@ body {
        language <select> still lands on its own row below regardless,
        since Bootstrap's .form-control is already display:block;
        width:100% on its own. */
-    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline,
-    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline {
+    #navbarSupportedContent.show form.form-inline,
+    #navbarSupportedContent.collapsing form.form-inline {
         display: block;
         margin-top: 8px;
         padding-top: 8px;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
     }
-    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline a,
-    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline a {
+    #navbarSupportedContent.show form.form-inline a,
+    #navbarSupportedContent.collapsing form.form-inline a {
         display: inline;
         color: #d7dbe0;
     }
-    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline select,
-    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline select {
+    #navbarSupportedContent.show form.form-inline select,
+    #navbarSupportedContent.collapsing form.form-inline select {
         margin-top: 8px;
     }
     /* .sp-tour-menu-link is normally display:inline-flex (its pill
@@ -3962,8 +3971,8 @@ body {
        fragments across the line wrap (a stray rounded sliver after
        "Support", the rest of the pill orphaned below). Restoring
        inline-flex here makes it wrap as one atomic unit instead. */
-    .navbar.navbar-expand-md .navbar-collapse.show form.form-inline a.sp-tour-menu-link,
-    .navbar.navbar-expand-md .navbar-collapse.collapsing form.form-inline a.sp-tour-menu-link {
+    #navbarSupportedContent.show form.form-inline a.sp-tour-menu-link,
+    #navbarSupportedContent.collapsing form.form-inline a.sp-tour-menu-link {
         display: inline-flex;
         margin-top: 8px;
     }
