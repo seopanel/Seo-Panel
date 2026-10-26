@@ -36,21 +36,42 @@
 
 <?php $hasAnyData = $referralTotal > 0 || $botTotal > 0 || !empty($aioSummary['present']); ?>
 
+<?php
+	// presentation only, no effect on the actual score - a quick visual
+	// read of the same number already shown below (red/amber/green)
+	$scoreVal = intval($aiVisibilityScore['overall'] ?? 0);
+	$scoreGradient = $scoreVal >= 67 ? '#1f9d55 0%, #34d399 100%' : ($scoreVal >= 34 ? '#e0a23b 0%, #f5c161 100%' : '#e05353 0%, #f0847f 100%');
+
+	// per-component accent (icon + measured color) - purely visual, keyed
+	// off the same $component['label'] strings __getAiVisibilityScore()
+	// already returns, with a safe neutral fallback for any future component
+	$componentAccents = [
+		'AI Bot Crawling' => ['color' => '#0d9488', 'icon' => 'fa-robot'],
+		'AI Overview Citation' => ['color' => '#764ba2', 'icon' => 'fa-layer-group'],
+		'LLM Mention Rate' => ['color' => '#d6336c', 'icon' => 'fa-comment-dots'],
+		'AI Referral Traffic' => ['color' => '#c9820f', 'icon' => 'fa-mouse-pointer'],
+	];
+	$defaultAccent = ['color' => '#4a4e69', 'icon' => 'fa-chart-bar'];
+?>
 <?php if ($aiVisibilityScore['overall'] !== null) { ?>
 	<div class="aiv-card" style="text-align:center; padding:28px; margin-bottom:24px;">
 		<div style="font-size:13px; color:#8a8ea3; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
 			<?php echo $spTextAIV['AI Visibility Score'] ?? 'AI Visibility Score'?>
 		</div>
-		<div style="font-size:56px; font-weight:800; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1;">
-			<?php echo intval($aiVisibilityScore['overall'])?>
+		<div style="font-size:56px; font-weight:800; background:linear-gradient(135deg, <?php echo $scoreGradient?>); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1;">
+			<?php echo $scoreVal?>
 		</div>
 		<div style="font-size:12px; color:#b3b6c4; margin-top:6px;">
 			<?php echo $spTextAIV['out of 100 - blends every AI-era signal this panel tracks into one number'] ?? 'out of 100 - blends every AI-era signal this panel tracks into one number'?>
 		</div>
 		<div style="display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-top:20px;">
 			<?php foreach ($aiVisibilityScore['components'] as $component) { ?>
+				<?php $accent = $componentAccents[$component['label']] ?? $defaultAccent; ?>
 				<div style="min-width:150px; text-align:center;">
-					<div style="font-size:22px; font-weight:700; color:<?php echo $component['measured'] ? '#4a4e69' : '#c5c8d4'; ?>;">
+					<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'?>;">
+						<i class="fas <?php echo htmlspecialchars($accent['icon'])?>"></i>
+					</div>
+					<div style="font-size:22px; font-weight:700; color:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'; ?>;">
 						<?php echo $component['measured'] ? intval($component['score']) . '%' : '&mdash;'; ?>
 					</div>
 					<div style="font-size:12px; font-weight:600; color:#8a8ea3; margin-top:2px;"><?php echo htmlspecialchars($spTextAIV[$component['label']] ?? $component['label']); ?></div>
@@ -62,8 +83,9 @@
 <?php } ?>
 
 <div class="aiv-stat-grid aiv-stat-grid-4">
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($referralTotal)?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #3b82f6;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#3b82f6;"><i class="fas fa-mouse-pointer"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#3b82f6;"><?php echo intval($referralTotal)?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Referral Clicks'] ?? 'AI Referral Clicks'?></div>
 		<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['visits arriving from an AI platform link'] ?? 'visits arriving from an AI platform link'?></div>
 	</div>
@@ -77,21 +99,25 @@
 	// measured state, same as the citation-rate card below), so this
 	// reflects the current snapshot, not a sum over the period.
 	?>
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($aioSummary['present'] ?? 0)?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #764ba2;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#764ba2;"><i class="fas fa-eye"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#764ba2;"><?php echo intval($aioSummary['present'] ?? 0)?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Overview Impressions'] ?? 'AI Overview Impressions'?></div>
 		<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['keywords where this site appeared in an AI Overview, of'] ?? 'keywords where this site appeared in an AI Overview, of'?> <?php echo intval($aioSummary['measured'] ?? 0)?> <?php echo $spTextAIV['measured'] ?? 'measured'?></div>
 	</div>
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($botTotal)?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #0d9488;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#0d9488;"><i class="fas fa-robot"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#0d9488;"><?php echo intval($botTotal)?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Bot Crawls'] ?? 'AI Bot Crawls'?></div>
 	</div>
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid <?php echo !empty($aioSummary['present']) ? '#1f9d55' : '#c5c8d4'?>;">
 		<?php if (!empty($aioSummary['present'])) { ?>
-			<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo round((intval($aioSummary['cited']) / intval($aioSummary['present'])) * 100)?>%</div>
+			<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#1f9d55;"><i class="fas fa-check-circle"></i></div>
+			<div style="font-size:30px;font-weight:800;color:#1f9d55;"><?php echo round((intval($aioSummary['cited']) / intval($aioSummary['present'])) * 100)?>%</div>
 			<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Overview Citation Rate'] ?? 'AI Overview Citation Rate'?></div>
 			<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['overviewaiocaption'] ?? 'of keywords where Google AI Overview cited this site, among keywords where an AI Overview appeared'?></div>
 		<?php } else { ?>
+			<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#c5c8d4;"><i class="fas fa-check-circle"></i></div>
 			<div style="font-size:20px;font-weight:700;color:#c5c8d4;">—</div>
 			<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['AI Overview Citation Rate'] ?? 'AI Overview Citation Rate'?></div>
 			<div style="font-size:11px;color:#b3b6c4;margin-top:6px;"><?php echo $spTextAIV['No AI Overview data measured yet for this website.'] ?? 'No AI Overview data measured yet for this website.'?></div>
