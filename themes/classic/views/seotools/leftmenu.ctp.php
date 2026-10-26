@@ -299,12 +299,12 @@ foreach($menuList as $i => $menuInfo){
 		case "ai-visibility":
 			?>
 			<ul id='subui'>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=overview', 'content')"><?php echo $spTextAIV['Overview'] ?? 'Overview'?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php', 'content')"><?php echo $spTextTools['Setup'] ?? 'Setup'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=overview', 'content')"><?php echo $spTextAIV['Overview'] ?? 'Summary'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=setup', 'content')"><?php echo $spTextTools['Setup'] ?? 'Setup'?></a></li>
 				<?php if (isAdmin()) { ?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=platforms', 'content')"><?php echo $spTextAIV['Manage AI Platforms'] ?? 'Manage AI Platforms'?></a></li>
 				<?php } ?>

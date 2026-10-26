@@ -774,7 +774,7 @@ INSERT IGNORE INTO `ai_platforms` (`platform`,`hostname`,`display_name`,`is_acti
 -- bot crawl totals, and AI Overview citation rate in one screen - no new
 -- storage, purely new queries over ai_referrals/ai_bot_hits/searchresults.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'aivisibility', 'Overview', 'Overview'),
+('en', 'aivisibility', 'Overview', 'Summary'),
 ('en', 'aivisibility', 'AI Referrals (30 days)', 'AI Referrals (30 days)'),
 ('en', 'aivisibility', 'AI Bot Crawls (30 days)', 'AI Bot Crawls (30 days)'),
 ('en', 'aivisibility', 'AI Overview Citation Rate', 'AI Overview Citation Rate'),
@@ -785,6 +785,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'View full report', 'View full report'),
 ('en', 'aivisibility', 'No AI Overview data measured yet for this website.', 'No AI Overview data measured yet for this website.'),
 ('en', 'aivisibility', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.', 'No AI traffic recorded yet - install the snippet and collector script from the Setup tab.');
+
+-- Rename the AI Visibility left menu's "Overview" item to "Summary" - for
+-- installs that already ran the INSERT IGNORE above (which never touches
+-- an existing row).
+UPDATE `texts` SET `content` = 'Summary' WHERE `lang_code` = 'en' AND `category` = 'aivisibility' AND `label` = 'Overview';
 
 -- AI Visibility: week-over-week traffic anomaly alerts (referral + bot
 -- crawl totals per website) - reuses the existing AlertController/

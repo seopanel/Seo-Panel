@@ -120,6 +120,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showOverview($_GET);
 			break;
 
+		case "setup":
+			$controller->showSetup($_GET);
+			break;
+
 		case "export-overview":
 			$controller->exportOverviewCsv($_GET);
 			break;
@@ -134,7 +138,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit;
 
 		default:
-			$controller->showSetup($_GET);
+			// Overview is the first item in this tool's own left menu and
+			// the natural landing page (it's where seo-tools.php lands by
+			// default when AI Visibility is the top-priority tool) - Setup
+			// is a one-time config step, not something a user should land
+			// on silently every time they open this tool.
+			$controller->showOverview($_GET);
 			break;
 	}
 }
