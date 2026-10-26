@@ -369,15 +369,6 @@ if (!empty($reviewReport)) {
 }
 ?>
 
-<?php
-if (!empty($aiVisibilityReport)) {
-    ?>
-    <br>
-	<div class="table-responsive"><?php echo $aiVisibilityReport;?></div>
-	<?php
-}
-?>
-
 </div>
 <br>
 <?php
