@@ -26,7 +26,7 @@
 <?php $advancedNeedsAttention = !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
 <div class="aiv-tabs" id="aivTabs" role="tablist" aria-label="<?php echo $spTextAIV['AI Visibility settings'] ?? 'AI Visibility settings'?>">
 	<button type="button" class="aiv-tab-btn" id="aivTabBtnSetup" data-tab="setup" role="tab" aria-selected="false" aria-controls="aivPanelSetup" tabindex="-1">
-		<i class="fas fa-rocket" aria-hidden="true"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+		<i class="fas fa-rocket" aria-hidden="true"></i> <?php echo $spTextAIV['Setup'] ?? 'AI Setup'?>
 	</button>
 	<button type="button" class="aiv-tab-btn" id="aivTabBtnAdvanced" data-tab="advanced" role="tab" aria-selected="false" aria-controls="aivPanelAdvanced" tabindex="-1">
 		<i class="fas fa-sliders-h" aria-hidden="true"></i> <?php echo $spTextAIV['Advanced'] ?? 'Advanced'?>

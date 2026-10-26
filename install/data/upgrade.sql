@@ -267,7 +267,7 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'AIV_RATE_LIMIT_PER_IP', 'Rate limit per source IP (requests/min)'),
 ('en', 'seotools', 'ai-visibility', 'AI Visibility'),
 ('en', 'seotools', 'AI Visibility', 'AI Visibility'),
-('en', 'seotools', 'Setup', 'Setup'),
+('en', 'seotools', 'Setup', 'AI Setup'),
 ('en', 'seotools', 'AI Referral Report', 'AI Referral Report'),
 ('en', 'aivisibility', 'AI Visibility', 'AI Visibility'),
 ('en', 'aivisibility', 'Privacy note', 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'),
@@ -744,7 +744,7 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- persisted in localStorage since every action on this page reloads the
 -- whole view via AJAX.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
-('en', 'aivisibility', 'Setup', 'Setup'),
+('en', 'aivisibility', 'Setup', 'AI Setup'),
 ('en', 'aivisibility', 'Advanced', 'Advanced');
 
 -- Setup tab: a link to the Advanced tab, for users who'd otherwise never
@@ -790,6 +790,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- for installs that already ran the INSERT IGNORE above (which never
 -- touches an existing row).
 UPDATE `texts` SET `content` = 'AI Summary' WHERE `lang_code` = 'en' AND `category` = 'aivisibility' AND `label` = 'Overview';
+
+-- Same, for the AI Visibility left menu's "Setup" item -> "AI Setup"
+-- (menu label + page heading, two separate text rows/categories).
+UPDATE `texts` SET `content` = 'AI Setup' WHERE `lang_code` = 'en' AND `category` = 'seotools' AND `label` = 'Setup';
+UPDATE `texts` SET `content` = 'AI Setup' WHERE `lang_code` = 'en' AND `category` = 'aivisibility' AND `label` = 'Setup';
 
 -- AI Visibility: week-over-week traffic anomaly alerts (referral + bot
 -- crawl totals per website) - reuses the existing AlertController/
