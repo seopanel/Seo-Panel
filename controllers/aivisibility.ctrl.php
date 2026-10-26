@@ -1124,11 +1124,19 @@ PHP;
 	function __summarizeAioRows($rowList) {
 		$summary = ['measured' => 0, 'present' => 0, 'cited' => 0, 'unsupported' => 0];
 		foreach ($rowList as $row) {
-			$summary['measured']++;
 			if (intval($row['aio_supported']) === 0) {
 				$summary['unsupported']++;
 				continue;
 			}
+			// "measured" only counts rows that could actually produce a
+			// result (aio_supported=1) - an unsupported engine is excluded
+			// from the AI Overview table entirely (see showAIOverviewReport()),
+			// so counting it here would make this number not match the
+			// visible row count, and would understate the real citation
+			// rate/Share of Voice by diluting the denominator with
+			// combinations that could never be present/cited in the first
+			// place.
+			$summary['measured']++;
 			if (!empty($row['aio_present'])) $summary['present']++;
 			if (!empty($row['aio_cited'])) $summary['cited']++;
 		}
