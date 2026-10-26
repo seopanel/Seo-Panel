@@ -23,7 +23,7 @@
 					<?php if (!empty($row['tracked_cited'])): ?>
 						<i class="fas fa-check-circle" style="color:#28a745;"></i> <?php echo $spText['common']['Yes'] ?? 'Yes'?>
 						<?php if (!empty($row['own_url'])): ?>
-							<br>#<?php echo intval($row['own_position']) ?>
+							<br><span style="font-size:11px;color:#8a8ea3;font-weight:600;" title="<?php echo htmlspecialchars($spTextAIV['Position in the AI Overview\'s cited sources list'] ?? "Position in the AI Overview's cited sources list") ?>"><?php echo $spTextAIV['Position'] ?? 'Position'?> #<?php echo intval($row['own_position']) ?></span>
 							<a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['own_title'] ?: $row['own_url']) ?></a>
 							<br><a href="<?php echo htmlspecialchars($row['own_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:13px;"><?php echo htmlspecialchars($row['own_url']) ?></a>
 						<?php endif; ?>
@@ -33,7 +33,7 @@
 				</td>
 				<td style="font-size:0.85rem; word-break:break-all; text-align:left;">
 					<?php if (!empty($row['ref_url'])): ?>
-						#<?php echo intval($row['ref_position']) ?>
+						<div style="font-size:11px;color:#8a8ea3;font-weight:600;" title="<?php echo htmlspecialchars($spTextAIV['Position in the AI Overview\'s cited sources list'] ?? "Position in the AI Overview's cited sources list") ?>"><?php echo $spTextAIV['Position'] ?? 'Position'?> #<?php echo intval($row['ref_position']) ?></div>
 						<a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener"><?php echo htmlspecialchars($row['ref_title'] ?: $row['ref_url']) ?></a>
 						<br><a href="<?php echo htmlspecialchars($row['ref_url']) ?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:13px;"><?php echo htmlspecialchars($row['ref_url']) ?></a>
 					<?php else: ?>
