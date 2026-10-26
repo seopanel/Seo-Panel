@@ -19,16 +19,19 @@
 <div id='subcontent'>
 
 <div class="aiv-stat-grid aiv-stat-grid-3">
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($summary['measured'])?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #3b82f6;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#3b82f6;"><i class="fas fa-key"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#3b82f6;"><?php echo intval($summary['measured'])?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Measured Keywords'] ?? 'Measured Keywords'?></div>
 	</div>
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($summary['present'])?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #764ba2;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#764ba2;"><i class="fas fa-layer-group"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#764ba2;"><?php echo intval($summary['present'])?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?> <?php echo $spTextKeyword['Present'] ?? 'Present'?></div>
 	</div>
-	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;">
-		<div style="font-size:30px;font-weight:800;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;"><?php echo intval($summary['cited'])?></div>
+	<div class="aiv-card" style="text-align:center;margin-bottom:0;padding:22px;border-top:3px solid #1f9d55;">
+		<div style="width:30px;height:30px;border-radius:9px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:#1f9d55;"><i class="fas fa-check-circle"></i></div>
+		<div style="font-size:30px;font-weight:800;color:#1f9d55;"><?php echo intval($summary['cited'])?></div>
 		<div style="font-size:13px;color:#8a8ea3;font-weight:600;margin-top:4px;"><?php echo $spTextAIV['Cited Keywords'] ?? 'Cited Keywords'?></div>
 	</div>
 </div>
@@ -73,9 +76,9 @@
 					<td>
 						<?php if ($supported && $present) { ?>
 							<?php if (!empty($row['aio_cited'])) { ?>
-								<?php echo $spTextKeyword['Yes'] ?? 'Yes'?> (#<?php echo intval($row['aio_cited_position'])?>)
+								<span class="text-success"><i class="fas fa-check-circle"></i> <?php echo $spTextKeyword['Yes'] ?? 'Yes'?> (#<?php echo intval($row['aio_cited_position'])?>)</span>
 							<?php } else { ?>
-								<?php echo $spTextKeyword['No'] ?? 'No'?>
+								<span class="text-muted"><?php echo $spTextKeyword['No'] ?? 'No'?></span>
 							<?php } ?>
 						<?php } else { ?>
 							&mdash;
