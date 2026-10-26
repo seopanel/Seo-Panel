@@ -1358,8 +1358,18 @@ PHP;
 				)
 				ORDER BY k.name";
 		$rowList = $this->db->select($sql);
-		$this->set('rowList', $rowList);
 		$this->set('summary', $this->__summarizeAioRows($rowList));
+
+		// the summary above (and its "N keywords on an unsupported data
+		// source" note) still counts every row, but the table itself has no
+		// use for a row that will forever read "Not available" - a search
+		// engine with aio_supported=0 can never return AI Overview data via
+		// the current integration, so listing it here is just noise, not a
+		// result to act on.
+		$rowList = array_values(array_filter($rowList, function($row) {
+			return intval($row['aio_supported']) === 1;
+		}));
+		$this->set('rowList', $rowList);
 
 		// which domains get cited across this website's keywords instead of
 		// (or alongside) the tracked site, from each keyword's latest check

@@ -2123,6 +2123,7 @@ class ReportController extends Controller {
 
 		$domainSql = addslashes($domain);
 		$sql = "SELECT k.id AS keyword_id, k.name AS keyword_name, se.domain AS se_domain, s.aio_cited AS tracked_cited,
+					s.aio_supported,
 					ar.ref_position, ar.url AS ref_url, ar.title AS ref_title, ar.checked_date AS ref_checked_date
 				FROM keywords k
 				JOIN searchresults s ON s.keyword_id = k.id AND s.aio_checked_at IS NOT NULL
@@ -2142,6 +2143,14 @@ class ReportController extends Controller {
 				WHERE k.website_id = $websiteId AND k.status = 1
 				ORDER BY k.name, ar.ref_position";
 		$rows = $this->db->select($sql);
+
+		// same reasoning as the main AI Overview table: a search engine
+		// with aio_supported=0 can never return AI Overview data via the
+		// current integration, so a citation row for it here is noise, not
+		// a real competitor result.
+		$rows = array_values(array_filter($rows, function($row) {
+			return intval($row['aio_supported']) === 1;
+		}));
 
 		// Also resolve, per keyword, which reference row is OUR OWN citation
 		// (tracked_cited only says yes/no - it doesn't carry the URL) so the
