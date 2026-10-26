@@ -362,7 +362,7 @@
          Results modal), where the jQuery UI #dialogContent dialog stacks
          incorrectly on top of an already-open Bootstrap modal. -->
     <div class="modal fade" id="ajaxModalSP" tabindex="-1" role="dialog" aria-labelledby="ajaxModalSPLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-dialog modal-xl" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="ajaxModalSPLabel">&nbsp;</h5>
