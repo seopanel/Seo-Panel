@@ -61,7 +61,7 @@
 		<div style="font-size:56px; font-weight:800; background:linear-gradient(135deg, <?php echo $scoreGradient?>); -webkit-background-clip:text; background-clip:text; color:transparent; line-height:1;">
 			<?php echo $scoreVal?>
 		</div>
-		<div style="font-size:12px; color:#b3b6c4; margin-top:6px;">
+		<div style="font-size:14px; color:#6b7084; margin-top:6px;">
 			<?php echo $spTextAIV['out of 100 - blends every AI-era signal this panel tracks into one number'] ?? 'out of 100 - blends every AI-era signal this panel tracks into one number'?>
 		</div>
 		<div style="display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-top:20px;">
@@ -75,7 +75,7 @@
 						<?php echo $component['measured'] ? intval($component['score']) . '%' : '&mdash;'; ?>
 					</div>
 					<div style="font-size:12px; font-weight:600; color:#8a8ea3; margin-top:2px;"><?php echo htmlspecialchars($spTextAIV[$component['label']] ?? $component['label']); ?></div>
-					<div style="font-size:11px; color:#b3b6c4; margin-top:2px;"><?php echo htmlspecialchars($component['detail']); ?></div>
+					<div style="font-size:13px; color:#6b7084; margin-top:4px;"><?php echo htmlspecialchars($component['detail']); ?></div>
 				</div>
 			<?php } ?>
 		</div>
