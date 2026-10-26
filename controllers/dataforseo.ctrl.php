@@ -132,9 +132,14 @@ class DataForSEOController extends Controller {
             "depth" => __assign($keywordInfo, "depth", 100),
         );
         
-        // exceptions for baidu
+        // exceptions for baidu - and for yahoo: confirmed against the real API
+        // (2026-10-12) that Yahoo's organic task_post rejects this field outright
+        // ("Invalid Field: 'se_domain'"), a Google/Bing-only regional-domain
+        // concept DataForSEO never generalized to Yahoo. Sending it doesn't just
+        // skip something, it fails the ENTIRE task - see the per-task status_code
+        // check below this function for why that would otherwise go unnoticed.
         $seDomianCat = DataForSEOController::getSERPDomainCategory($seachEngine);
-        if ($seDomianCat != "baidu") {
+        if ($seDomianCat != "baidu" && $seDomianCat != "yahoo") {
             if (stristr($seachEngine, ".")) {
                 $searchInfo['se_domain'] = $seachEngine;
             }
@@ -1140,8 +1145,14 @@ class DataForSEOController extends Controller {
             'priority' => 1,
         ];
 
-        // Add search engine domain for non-baidu
-        if ($seDomainCat != "baidu" && stristr($seUrl, ".")) {
+        // Add search engine domain for non-baidu, non-yahoo - confirmed against
+        // the real API (2026-10-12) that Yahoo's organic task_post rejects this
+        // field outright ("Invalid Field: 'se_domain'"), a Google/Bing-only
+        // regional-domain concept DataForSEO never generalized to Yahoo. Sending
+        // it doesn't just skip something, it fails the ENTIRE task - every Yahoo
+        // SERP task posted through this function would otherwise be rejected
+        // outright by __postSERPTaskToAPI()'s own (correct) per-task status check.
+        if ($seDomainCat != "baidu" && $seDomainCat != "yahoo" && stristr($seUrl, ".")) {
             $params['se_domain'] = $seUrl;
         }
 
