@@ -274,7 +274,7 @@ function tourText($key, $default) {
                         <?php echo tourText('tour_step2_already_set', "You're all set - nothing to do here.") ?>
                     </div>
                     <?php if ($tourFirstWebsite) { ?>
-                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/websites.php" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/overview.php?website_id=<?php echo intval($tourFirstWebsite['id']) ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-globe"></i></span>
                             <span class="sp-tour-link-text"><strong><?php echo htmlspecialchars($tourFirstWebsite['name']) ?></strong><small><?php echo htmlspecialchars($tourFirstWebsite['url']) ?></small></span>
                             <?php if ($tourFirstWebsiteKeywordCount > 0) { ?>
