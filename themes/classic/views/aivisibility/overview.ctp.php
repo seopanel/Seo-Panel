@@ -214,12 +214,12 @@
 <div class="aiv-note">
 	<i class="fas fa-chart-line"></i>
 	<span>
+		<?php echo $spTextAIV['View full report'] ?? 'View full report'?>:
 		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a>
 		&nbsp;&middot;&nbsp;
 		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a>
 		&nbsp;&middot;&nbsp;
 		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a>
-		&nbsp;&mdash; <?php echo $spTextAIV['View full report'] ?? 'View full report'?>
 	</span>
 </div>
 
@@ -228,7 +228,7 @@
 	<span>
 		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
 		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
-		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
+		(<?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>)
 	</span>
 </div>
 
@@ -237,7 +237,7 @@
 	<span>
 		<?php echo $spTextAIV['Curious what ChatGPT or Claude actually says about your site?'] ?? 'Curious what ChatGPT or Claude actually says about your site?'?>
 		<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Run an AI Perception Check'] ?? 'Run an AI Perception Check'?></a>
-		&mdash; <?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?>
+		(<?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?>)
 	</span>
 </div>
 
@@ -246,6 +246,6 @@
 	<span>
 		<?php echo $spTextAIV['Give AI answer engines a clean fact layer to cite'] ?? 'Give AI answer engines a clean fact layer to cite'?>
 		<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Generate Schema Markup'] ?? 'Generate Schema Markup'?></a>
-		&mdash; <?php echo $spTextAIV['Organization, LocalBusiness, Article, FAQPage'] ?? 'Organization, LocalBusiness, Article, FAQPage'?>
+		(<?php echo $spTextAIV['Organization, LocalBusiness, Article, FAQPage'] ?? 'Organization, LocalBusiness, Article, FAQPage'?>)
 	</span>
 </div>
