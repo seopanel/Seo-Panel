@@ -129,6 +129,16 @@
 
     <form id="recommendations_dashboard_form" method="post">
         <div class="rec-controls">
+            <!-- Website selection now lives in the shared filter bar above
+                 #main_dashboard_nav (userhome.ctp.php) - this select is kept
+                 (hidden, not removed) since the Refresh button below still
+                 submits this whole form, website_id included; the shared
+                 bar drives its own reloads directly via GET instead, and
+                 this field's "selected" option always reflects whichever
+                 website that last reload actually used. Refresh/Last
+                 updated stay visible - those aren't redundant with the
+                 shared bar. -->
+            <span style="display:none;">
             <label><?php echo $spText['common']['Website'] ?? 'Website' ?>:</label>
             <select name="website_id" id="website_id" class="custom-select" style="width:auto;max-width:280px;"
                 onchange="scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php', 'recommendations_dashboard_form', 'content')">
@@ -138,6 +148,7 @@
                     </option>
                 <?php } ?>
             </select>
+            </span>
 
             <button type="button" class="rec-btn"
                 onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">

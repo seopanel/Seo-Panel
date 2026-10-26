@@ -68,6 +68,78 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
      });
 }
 
+// Shared Website/Period selector bar above #main_dashboard_nav
+// (userhome.ctp.php) - drives whichever dashboard tab is currently active,
+// replacing each tab's own duplicate "Website:"/"Period:" controls. Always
+// reloads via a plain GET scriptDoLoad() with explicit website_id/period
+// query args rather than resubmitting each tab's own POST form - every
+// dashboard tab controller already reads these from $_GET as happily as
+// $_POST, so one reload mechanism works uniformly across every tab
+// instead of needing to know each one's own form id/field quirks.
+//
+// periodMode: 'preset' (the common day/week/month/year select, shown),
+// 'dates' (Keywords tab's own raw from_time/to_time range - no period
+// control shown here, left to that tab's own defaults), or 'none' (no
+// date-range concept on this tab - Site Auditor, AI Visibility).
+function spInitSharedFilterBar(scriptUrl, periodMode) {
+	var $websiteSel = $('#sp_shared_website_id');
+	var $periodSel = $('#sp_shared_period');
+	if (!$websiteSel.length) return;
+
+	function doReload() {
+		var websiteId = $websiteSel.val();
+		if (!websiteId) return;
+		sessionStorage.setItem('sp_selected_website_id', websiteId);
+
+		// Keywords tab (overview.php) is not like the other tabs: its own
+		// controller always sets $layout='default' (a real full-page
+		// response, never an ajax fragment) because its own "Website:"
+		// control reloads via a genuine form POST/page navigation, not
+		// scriptDoLoad. An AJAX GET here would stuff a second full page
+		// (header, nav, this bar, everything) inside #content. Do a real
+		// navigation instead, same as navigateDashboardTab() already does
+		// for tab switches.
+		if (periodMode === 'dates') {
+			window.location.href = scriptUrl + '?website_id=' + websiteId;
+			return;
+		}
+
+		var args = '&website_id=' + websiteId;
+		if (periodMode === 'preset' && $periodSel.length) {
+			var period = $periodSel.val();
+			sessionStorage.setItem('sp_selected_period', period);
+			args += '&period=' + period;
+		}
+		scriptDoLoad(scriptUrl, 'content', args);
+	}
+
+	// restore any previously-chosen website/period, since the tab content
+	// that's already on the page (loaded by userhome.ctp.php's own
+	// dispatch <script>, before this ever runs) has no stored selection
+	// baked in yet - only reload if restoring actually changes anything,
+	// so a fresh session (nothing stored) or a selection that already
+	// matches the page's own default doesn't trigger a pointless reload.
+	var needsReload = false;
+	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
+	if (storedWebsiteId && $websiteSel.find('option[value="' + storedWebsiteId + '"]').length && $websiteSel.val() !== storedWebsiteId) {
+		$websiteSel.val(storedWebsiteId);
+		needsReload = true;
+	}
+	if (periodMode === 'preset' && $periodSel.length) {
+		var storedPeriod = sessionStorage.getItem('sp_selected_period');
+		if (storedPeriod && $periodSel.find('option[value="' + storedPeriod + '"]').length && $periodSel.val() !== storedPeriod) {
+			$periodSel.val(storedPeriod);
+			needsReload = true;
+		}
+	}
+	if (needsReload) {
+		doReload();
+	}
+
+	$websiteSel.off('change.spShared').on('change.spShared', doReload);
+	$periodSel.off('change.spShared').on('change.spShared', doReload);
+}
+
 function createCookie(name,value,days) {
 	if (days) {
 		var date = new Date();

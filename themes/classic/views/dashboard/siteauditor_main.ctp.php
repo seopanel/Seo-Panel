@@ -2,7 +2,7 @@
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 ?>
 <?php } elseif (!empty($noProjectForWebsite)) { ?>
-<form id='siteauditor_dashboard_form' method="post">
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -26,7 +26,7 @@
 	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=newproject')?>" class="alert-link"><?php echo $spTextSA['Create a new project'] ?? 'Create a new project'?></a>
 </div>
 <?php } elseif (!empty($noCrawlResultsYet)) { ?>
-<form id='siteauditor_dashboard_form' method="post">
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -526,7 +526,7 @@ function saToolsUrl($args) {
 }
 </style>
 
-<form id='siteauditor_dashboard_form' method="post">
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -1055,31 +1055,8 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 </div>
 
 <script type="text/javascript">
-// On page load, sync website selection with other tabs
-$(document).ready(function() {
-	// Prevent multiple auto-loads
-	if (sessionStorage.getItem('sp_sa_auto_loading')) {
-		sessionStorage.removeItem('sp_sa_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	// If stored website differs from current and exists in dropdown, auto-select it
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_sa_auto_loading', '1');
-			scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	// Store current website ID
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

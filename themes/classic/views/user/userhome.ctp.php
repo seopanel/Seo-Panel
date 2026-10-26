@@ -59,7 +59,56 @@
                     break;
             }
         }
+
+        // shared Website/Period selector bar (below the tab nav) - drives
+        // whichever tab is currently active instead of each tab keeping
+        // its own duplicate "Website:"/"Period:" controls. Reload target
+        // and period support both vary per tab, so both are resolved here
+        // once rather than re-deriving them in every view.
+        if ($ovTabView == "active") {
+            $spSharedScript = "overview.php";
+            $spSharedPeriodMode = "dates"; // raw from_time/to_time, not a preset
+        } else if ($saTabView == "active" || $rcTabView == "active") {
+            $spSharedScript = $saTabView == "active" ? "siteauditor_dashboard.php" : "recommendations_dashboard.php";
+            $spSharedPeriodMode = "none"; // no date-range concept on this tab
+        } else if ($dbTabClass == "active") {
+            $spSharedScript = "archive.php";
+            $spSharedPeriodMode = "none"; // archive.php has its own separate date-range UI
+        } else {
+            $spSharedPeriodMode = "preset"; // the common day/week/month/year select
+            if ($smTabView == "active") { $spSharedScript = "social_media_dashboard.php"; }
+            else if ($rvTabView == "active") { $spSharedScript = "review_dashboard.php"; }
+            else if ($waTabView == "active") { $spSharedScript = "website_analytics_dashboard.php"; }
+            else if ($anTabView == "active") { $spSharedScript = "analytics_dashboard.php"; }
+            else if ($scTabView == "active") { $spSharedScript = "search_console_dashboard.php"; }
+            else if ($dsTabView == "active") { $spSharedScript = "directory_submission_dashboard.php"; }
+            else { $spSharedScript = "dashboard.php"; } // Overview (default/$mainTabClass)
+        }
+        $spSharedWebsiteList = $siteList ?? [];
         ?>
+
+        <div id="sp_shared_filter_bar" style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        	<label style="font-weight:600;color:#444;font-size:13px;margin:0;"><?php echo $spText['common']['Website']?>:</label>
+        	<select id="sp_shared_website_id" class="custom-select" style="width:auto;max-width:280px;">
+        		<?php foreach ($spSharedWebsiteList as $spSharedWs) { ?>
+        			<option value="<?php echo intval($spSharedWs['id'])?>"><?php echo htmlspecialchars($spSharedWs['name'])?></option>
+        		<?php } ?>
+        	</select>
+        	<?php if ($spSharedPeriodMode == "preset") { ?>
+        	<label style="font-weight:600;color:#444;font-size:13px;margin:0;"><?php echo $spText['common']['Period']?>:</label>
+        	<select id="sp_shared_period" class="custom-select" style="width:auto;max-width:180px;">
+        		<option value="day"><?php echo $spText['label']['Day']?></option>
+        		<option value="week"><?php echo $spText['label']['Week']?></option>
+        		<option value="month" selected><?php echo $spText['label']['Month']?></option>
+        		<option value="year"><?php echo $spText['label']['Year']?></option>
+        	</select>
+        	<?php } ?>
+        </div>
+        <script>
+        $(function() {
+        	spInitSharedFilterBar(<?php echo json_encode($spSharedScript)?>, <?php echo json_encode($spSharedPeriodMode)?>);
+        });
+        </script>
 		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
             	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/" onclick="return navigateDashboardTab(this, '');">
@@ -114,7 +163,7 @@
         </ul>
     	<?php
     }?>
-    
+
     <?php if ($showOverview && !empty($custSubMenu)) {?>
     	<?php if (!empty($noWebsites)) {
     		include(SP_VIEWPATH."/dashboard/no_websites.ctp.php");
@@ -162,8 +211,15 @@
 function getCurrentWebsiteId() {
     var websiteId = null;
 
+    // The shared filter bar (always present, above #main_dashboard_nav)
+    // is now the single source of truth - covers every tab uniformly,
+    // including Keywords (#ov_search_form), which this chain's per-tab
+    // fallbacks below never included even before the shared bar existed.
+    if ($('#sp_shared_website_id').length) {
+        websiteId = $('#sp_shared_website_id').val();
+    }
     // Try to get from main dashboard form
-    if ($('#dashboard_form select[name="website_id"]').length) {
+    else if ($('#dashboard_form select[name="website_id"]').length) {
         websiteId = $('#dashboard_form select[name="website_id"]').val();
     }
     // Try to get from social media dashboard form

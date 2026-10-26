@@ -1,9 +1,17 @@
 <div id="content">
     <form id='ov_search_form' method="post">
-        <table class="search">	
+        <table class="search">
         	<tr>
-        	    <th><?php echo $spText['common']['Website']?>: </th>
-        		<td>
+        	    <!-- Website selection now lives in the shared filter bar above
+        	         #main_dashboard_nav (userhome.ctp.php) - this select is kept
+        	         (hidden, not removed) since the Search button below still
+        	         submits this whole form, website_id included; the shared
+        	         bar drives its own reloads directly via GET instead. The
+        	         date range to its right stays visible - it's a real,
+        	         separate control the shared bar doesn't push a value into
+        	         (periodMode="dates" for this tab). -->
+        	    <th style="display:none;"><?php echo $spText['common']['Website']?>: </th>
+        		<td style="display:none;">
         			<select name="website_id" id="website_id" onchange="$('#ov_search_form').submit()" class="custom-select">
         				<?php foreach($siteList as $websiteInfo){?>
         					<?php if($websiteInfo['id'] == $websiteId){?>

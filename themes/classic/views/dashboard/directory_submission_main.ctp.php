@@ -2,7 +2,7 @@
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 } elseif (!empty($noSubmissionsYet)) { ?>
-<form id='directory_submission_dashboard_form' method="post">
+<form id='directory_submission_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -26,7 +26,7 @@ if (!empty($noWebsites)) {
 	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=directory-submission" class="alert-link"><?php echo $spTextDir['Submit to a directory'] ?? 'Submit to a directory'?></a>
 </div>
 <?php } else { ?>
-<form id='directory_submission_dashboard_form' method="post">
+<form id='directory_submission_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -470,33 +470,8 @@ function drawSubmissionTrendsChart() {
 	<?php } ?>
 }
 
-// Sync website selection with other tabs
-$(document).ready(function() {
-	// Save website selection when dropdown changes
-	$('#website_id').on('change', function() {
-		sessionStorage.setItem('sp_selected_website_id', $(this).val());
-	});
-
-	if (sessionStorage.getItem('sp_ds_auto_loading')) {
-		sessionStorage.removeItem('sp_ds_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_ds_auto_loading', '1');
-			scriptDoLoadPost('<?php echo SP_WEBPATH?>/directory_submission_dashboard.php', 'directory_submission_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>
