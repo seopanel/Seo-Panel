@@ -37,7 +37,7 @@
 	<div class="aiv-note">
 		<i class="fas fa-info-circle"></i>
 		<span>
-			<?php echo intval($summary['unsupported'])?> <?php echo $spTextKeyword['keyword / search engine combination(s) hidden above'] ?? "keyword / search engine combination(s) hidden above" ?>. <?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured." ?>
+			<?php echo intval($summary['unsupported'])?> <?php echo $spTextKeyword['keyword / search engine combination(s) hidden above'] ?? "keyword / search engine combination(s) hidden above" ?>. <?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>
 		</span>
 	</div>
 <?php } ?>

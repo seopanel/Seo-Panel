@@ -2,7 +2,7 @@
 <div class="alert <?php echo $aio['supported'] ? ($aio['present'] ? 'alert-warning' : 'alert-secondary') : 'alert-info' ?>">
 	<strong><?php echo $spTextKeyword['AI Overview']?>:</strong>
 	<?php if (empty($aio['supported'])): ?>
-		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured." ?>
+		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>
 	<?php else: ?>
 		<?php echo !empty($aio['present']) ? $spTextKeyword['Present'] : $spTextKeyword['Absent'] ?>
 		<?php if (!empty($aio['present'])): ?>

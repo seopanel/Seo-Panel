@@ -55,7 +55,7 @@
 <?php if (!empty($showAioUpsellHint)): ?>
 	<div class="alert alert-info py-2 mb-2" style="font-size:0.85rem;">
 		<i class="fas fa-info-circle"></i>
-		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured." ?>
+		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>
 	</div>
 <?php endif; ?>
 
@@ -111,7 +111,7 @@
 					<?php if (!$aioMeasured): ?>
 						<span class="text-muted">&mdash;</span>
 					<?php elseif (!$aioSupported): ?>
-						<span class="text-muted" title="<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google - DataForSEO does not return it for Bing or Yahoo, regardless of which API credentials are configured." ?>">
+						<span class="text-muted" title="<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>">
 							<?php echo $spTextKeyword['Not available'] ?? 'Not available' ?>
 						</span>
 					<?php else: ?>
