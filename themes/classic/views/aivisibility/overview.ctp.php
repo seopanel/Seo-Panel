@@ -1,5 +1,5 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['Overview'] ?? 'Summary'); ?>
+<?php echo showSectionHead($spTextAIV['Overview'] ?? 'AI Summary'); ?>
 <?php $submitAction = "scriptDoLoadPost('aivisibility.php?sec=overview', 'search_form', 'content')"; ?>
 
 <form id='search_form'>
