@@ -46,6 +46,19 @@ class RecommendationsController extends Controller {
             $this->set('recommendations', array());
         }
 
+        // this dashboard tab now doubles as the main AI Visibility summary
+        // (reordered/renamed to sit right after Overview) - reuses the same
+        // scoring helper the dedicated AI Visibility tool's own Overview
+        // page calls, so the two stay numerically identical rather than
+        // this becoming a second, slightly-different implementation.
+        $aiVisibilitySummary = null;
+        if (!empty($websiteId)) {
+            include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+            $aivCtrler = new AIVisibilityController();
+            $aiVisibilitySummary = $aivCtrler->__getAiVisibilityScore($websiteId, date('Y-m-d', strtotime('-30 days')), date('Y-m-d'));
+        }
+        $this->set('aiVisibilitySummary', $aiVisibilitySummary);
+
         include_once(SP_CTRLPATH . "/settings.ctrl.php");
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
         $this->set('spTextRec', $this->getLanguageTexts('recommendations', $_SESSION['lang_code']));

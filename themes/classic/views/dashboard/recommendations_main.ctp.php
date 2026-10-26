@@ -150,6 +150,43 @@
         </div>
     </form>
 
+    <?php if (!empty($aiVisibilitySummary) && $aiVisibilitySummary['overall'] !== null) {
+        $avScore = intval($aiVisibilitySummary['overall']);
+        $avGradient = $avScore >= 67 ? '#1f9d55 0%, #34d399 100%' : ($avScore >= 34 ? '#e0a23b 0%, #f5c161 100%' : '#e05353 0%, #f0847f 100%');
+        $avAccents = array(
+            'AI Bot Crawling' => array('color' => '#0d9488', 'icon' => 'fa-robot'),
+            'AI Overview Citation' => array('color' => '#764ba2', 'icon' => 'fa-layer-group'),
+            'LLM Mention Rate' => array('color' => '#d6336c', 'icon' => 'fa-comment-dots'),
+            'AI Referral Traffic' => array('color' => '#c9820f', 'icon' => 'fa-mouse-pointer'),
+        );
+        $avDefaultAccent = array('color' => '#4a4e69', 'icon' => 'fa-chart-bar');
+    ?>
+    <div class="rec-card" style="padding:22px 26px;">
+        <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
+            <div style="text-align:center;flex-shrink:0;">
+                <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">AI Visibility Score</div>
+                <div style="font-size:44px;font-weight:800;background:linear-gradient(135deg, <?php echo $avGradient?>);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1;"><?php echo $avScore?></div>
+            </div>
+            <div style="display:flex;gap:22px;flex-wrap:wrap;flex:1;">
+                <?php foreach ($aiVisibilitySummary['components'] as $component) {
+                    $accent = isset($avAccents[$component['label']]) ? $avAccents[$component['label']] : $avDefaultAccent;
+                ?>
+                <div style="min-width:130px;text-align:center;">
+                    <div style="width:26px;height:26px;border-radius:8px;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'?>;">
+                        <i class="fas <?php echo htmlspecialchars($accent['icon'])?>"></i>
+                    </div>
+                    <div style="font-size:18px;font-weight:700;color:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'?>;"><?php echo $component['measured'] ? intval($component['score']) . '%' : '&mdash;'?></div>
+                    <div style="font-size:11px;color:#999;font-weight:600;margin-top:2px;"><?php echo htmlspecialchars($component['label'])?></div>
+                </div>
+                <?php } ?>
+            </div>
+            <a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=ai-visibility" class="rec-btn" style="text-decoration:none;flex-shrink:0;">
+                <i class="fas fa-eye"></i> View full AI Visibility report
+            </a>
+        </div>
+    </div>
+    <?php } ?>
+
     <?php if (!empty($refreshError)) { ?>
         <div class="rec-empty rec-error-banner">
             <i class="fas fa-exclamation-triangle"></i>
@@ -260,21 +297,27 @@
                             // project/category/due date and confirms before anything
                             // is actually created.
                             //
-                            // Opens in the app's existing modal dialog mechanism
-                            // (scriptDoLoadDialog(), js/popup.js - the same one used
-                            // elsewhere for "open a plugin action in a popup") rather
-                            // than navigating away. This ALSO sidesteps the layout/
-                            // jQuery bug a plain full-page link to seo-plugins.php used
-                            // to hit (every plugin controller hardcodes $layout='ajax' -
-                            // a bare fragment with no jQuery, fine when AJAX-loaded like
-                            // this, fatal as a full top-level navigation) without
-                            // depending on admin-panel.php's start_script mechanism at
-                            // all - we never leave the current page.
-                            $diaryArgs = "&pid=" . intval($seoDiaryPluginId)
+                            // Opens via the shared Bootstrap #ajaxModalSP (js/popup.js)
+                            // rather than navigating away or using the jQuery UI
+                            // #dialogContent dialog (scriptDoLoadDialog()) - that one
+                            // wraps every popup in its own generic "Seo Panel" title
+                            // bar on top of the content's own heading, a redundant
+                            // second header this content doesn't need (the New Diary
+                            // form already has its own icon+title). #ajaxModalSP has
+                            // no such wrapper chrome, matching the rest of this app's
+                            // popups (AI Overview Cited Sources, Competitor Citations).
+                            // This ALSO sidesteps the layout/jQuery bug a plain
+                            // full-page link to seo-plugins.php used to hit (every
+                            // plugin controller hardcodes $layout='ajax' - a bare
+                            // fragment with no jQuery, fine when AJAX-loaded like this,
+                            // fatal as a full top-level navigation) without depending
+                            // on admin-panel.php's start_script mechanism at all - we
+                            // never leave the current page.
+                            $diaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
                                 . "&action=newDiary"
                                 . "&title=" . urlencode($rec['title'])
                                 . "&description=" . urlencode($rec['description']);
-                            $diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
+                            $diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> " . addslashes($spTextRec['Add to SEO Diary'] ?? 'Add to SEO Diary') . "')";
                             ?>
                         <td>
                             <a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">

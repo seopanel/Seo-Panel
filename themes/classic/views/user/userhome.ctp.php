@@ -67,6 +67,11 @@
             	</a>
             </li>
             <li class="nav-item">
+            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
+            		<i class="fas fa-eye"></i> <span class="nav-label">AI Visibility</span>
+            	</a>
+            </li>
+            <li class="nav-item">
             	<a class="nav-link <?php echo $dbTabClass?>" href="<?php echo SP_WEBPATH?>/?dashboard=reports" onclick="return navigateDashboardTab(this, 'reports');">
             		<i class="fas fa-chart-line"></i> <span class="nav-label"><?php echo $spText['common']['Reports']?></span>
             	</a>
@@ -109,11 +114,6 @@
             <li class="nav-item">
             	<a class="nav-link <?php echo $dsTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=directory_submission" onclick="return navigateDashboardTab(this, 'directory_submission');">
             		<i class="fas fa-folder-open"></i> <span class="nav-label"><?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?></span>
-            	</a>
-            </li>
-            <li class="nav-item">
-            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
-            		<i class="fas fa-lightbulb"></i> <span class="nav-label">AI Insights</span>
             	</a>
             </li>
         </ul>
