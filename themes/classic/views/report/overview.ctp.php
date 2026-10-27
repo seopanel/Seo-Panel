@@ -12,19 +12,19 @@
 	<?php
 	$baseUrl = "overview.php?website_id=$websiteId&from_time=$fromTime&to_time=$toTime";
 	?>
-	<div class="mt-4">	
-    	<?php echo showSectionHead($spTextHome["Page Overview Report"]);?>
-    	<div id="page_overview_tab">
-        	<script type="text/javascript">
-               	scriptDoLoad('<?php echo $baseUrl?>', 'page_overview_tab', 'sec=page-overview');
-        	</script>
-    	</div>
-    	<br>
-    	
+	<div class="mt-4">
     	<?php echo showSectionHead($spTextHome["Keyword Overview Report"]);?>
     	<div id="keyword_overview_tab">
         	<script type="text/javascript">
                	scriptDoLoad('<?php echo $baseUrl?>', 'keyword_overview_tab', 'sec=keyword-overview');
+        	</script>
+    	</div>
+    	<br>
+
+    	<?php echo showSectionHead($spTextHome["Page Overview Report"]);?>
+    	<div id="page_overview_tab">
+        	<script type="text/javascript">
+               	scriptDoLoad('<?php echo $baseUrl?>', 'page_overview_tab', 'sec=page-overview');
         	</script>
     	</div>
 	</div>
