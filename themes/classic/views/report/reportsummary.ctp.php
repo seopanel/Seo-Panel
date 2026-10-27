@@ -87,15 +87,6 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	<?php echo $pagingDiv?>
 <?php }?>
 
-<?php if (empty($printVersion) && empty($pdfVersion)): ?>
-<div class="form-group" style="max-width:300px;margin-bottom:10px;">
-	<input type="text" id="cust_tab_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterTable('cust_tab', this.value)">
-</div>
-<!-- spQuickFilterTable() lives in js/common.js now - this view loads via
-     AJAX innerHTML-swap, which never executes an inline <script> tag, so
-     defining it here meant the quick filter silently did nothing. -->
-<?php endif; ?>
-
 <div id='subcontent' class="table-responsive">
 
 <table id="cust_tab">
@@ -165,7 +156,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
             $rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
             $scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 			?>
-			<tr data-kw="<?php echo htmlspecialchars(strtolower($listInfo['name']))?>">
+			<tr>
 				<?php
 				$serpKwIcon = '';
 				if (empty($pdfVersion) && empty($printVersion)) {
