@@ -150,7 +150,7 @@
             </select>
             </span>
 
-            <button type="button" class="rec-btn"
+            <button type="button" class="rec-btn" style="margin-left:auto;"
                 onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
