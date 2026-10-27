@@ -8,7 +8,19 @@
     $spTitle = empty($spTitle) ? SP_TITLE : $spTitle;
     $spDescription = empty($spDescription) ? SP_DESCRIPTION : $spDescription;
     $spKeywords = empty($spKeywords) ? SP_KEYWORDS : $spKeywords;
-    $spKey = "v" . substr(SP_INSTALLED, 2);
+    // appending the newest mtime among the core shared JS files (not just
+    // the app version) so editing common.js/popup.js during development
+    // actually busts the browser cache - a version-only key stays
+    // identical across every edit within a release, so a browser that
+    // already cached an older common.js keeps serving it indefinitely
+    // until SP_INSTALLED itself changes. Confirmed cause of a live bug:
+    // a stale cached common.js silently ignored a new 3rd function
+    // argument another file started passing, since JS just ignores
+    // extra arguments instead of erroring.
+    $spKey = "v" . substr(SP_INSTALLED, 2) . "." . max(
+        @filemtime(SP_ABSPATH . '/js/common.js') ?: 0,
+        @filemtime(SP_ABSPATH . '/js/popup.js') ?: 0
+    );
     $userInfo = @Session::readSession('userInfo');
     $userType = empty($userInfo['userType']) ? "guest" : $userInfo['userType'];
     
