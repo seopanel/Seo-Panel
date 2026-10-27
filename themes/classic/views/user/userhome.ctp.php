@@ -65,9 +65,17 @@
         // its own duplicate "Website:"/"Period:" controls. Reload target
         // and period support both vary per tab, so both are resolved here
         // once rather than re-deriving them in every view.
+        // navMode: "ajax" (scriptDoLoad into #content, every tab but one) or
+        // "page" (a real window.location.href navigation) - Keywords
+        // (overview.php) always renders the full page layout server-side
+        // (never an ajax fragment), so it needs a real navigation even
+        // though it now uses the same day/week/month/year preset as
+        // everything else.
+        $spSharedNavMode = "ajax";
         if ($ovTabView == "active") {
             $spSharedScript = "overview.php";
-            $spSharedPeriodMode = "dates"; // raw from_time/to_time, not a preset
+            $spSharedPeriodMode = "preset"; // was raw from_time/to_time; now the same preset as every other tab
+            $spSharedNavMode = "page";
         } else if ($saTabView == "active" || $rcTabView == "active") {
             $spSharedScript = $saTabView == "active" ? "siteauditor_dashboard.php" : "recommendations_dashboard.php";
             $spSharedPeriodMode = "none"; // no date-range concept on this tab
@@ -121,7 +129,7 @@
         </div>
         <script>
         $(function() {
-        	spInitSharedFilterBar(<?php echo json_encode($spSharedScript)?>, <?php echo json_encode($spSharedPeriodMode)?>);
+        	spInitSharedFilterBar(<?php echo json_encode($spSharedScript)?>, <?php echo json_encode($spSharedPeriodMode)?>, <?php echo json_encode($spSharedNavMode)?>);
         });
         </script>
 		<ul class="nav nav-tabs" id="main_dashboard_nav">

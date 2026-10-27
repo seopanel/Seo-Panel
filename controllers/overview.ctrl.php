@@ -41,8 +41,21 @@ class OverviewController extends Controller {
 	    $websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : $websiteList[0]['id'];
 	    $this->set('websiteId', $websiteId);
 
-	    $fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-14 days'));
-	    $toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+	    // this tab used to have its own raw from_time/to_time date pickers;
+	    // now driven by the shared filter bar's day/week/month/year preset
+	    // like every other dashboard tab, via the same helper those tabs
+	    // already use. An explicit from_time/to_time is still honored if
+	    // ever passed directly (e.g. a future deep link), since it's a
+	    // strictly more specific request than a period preset.
+	    if (!empty($searchInfo['from_time']) || !empty($searchInfo['to_time'])) {
+	        $fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-30 days'));
+	        $toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+	    } else {
+	        include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+	        $period = !empty($searchInfo['period']) ? $searchInfo['period'] : 'month';
+	        list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
+	        $this->set('period', $period);
+	    }
 	    $this->set('fromTime', $fromTime);
 	    $this->set('toTime', $toTime);
 
