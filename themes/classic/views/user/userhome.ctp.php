@@ -93,21 +93,31 @@
             else { $spSharedScript = "dashboard.php"; } // Overview (default/$mainTabClass)
         }
         $spSharedWebsiteList = $siteList ?? [];
-        // pre-select whatever period actually carried over via the URL
-        // (navigateDashboardTab() on a tab switch, or a direct link) -
-        // without this the select always defaulted to "month" regardless,
-        // so spInitSharedFilterBar()'s own restore-from-sessionStorage
-        // check would see a mismatch against the real carried-over period
-        // and fire a redundant extra reload even when the content already
+        // pre-select whatever website/period actually carried over, so
+        // spInitSharedFilterBar()'s own restore-from-sessionStorage check
+        // doesn't see a false mismatch and fire a pointless (or, worse,
+        // infinite - see below) extra reload when the content already
         // rendered correctly.
-        $spSharedCurrentPeriod = (isset($post) && !empty($post['period'])) ? $post['period'] : 'month';
-        // same reasoning as period above, for website_id - without this
-        // the select always defaulted to the first website regardless of
-        // what actually carried over via the URL, so a normal tab switch
-        // (which DOES correctly forward website_id already) still looked
-        // like a mismatch to spInitSharedFilterBar() and fired a pointless
-        // extra reload on every single tab switch.
-        $spSharedCurrentWebsiteId = (isset($post) && !empty($post['website_id'])) ? intval($post['website_id']) : (!empty($spSharedWebsiteList[0]['id']) ? intval($spSharedWebsiteList[0]['id']) : 0);
+        //
+        // Two different render paths set this differently:
+        // - Keywords (overview.php) renders this whole page synchronously
+        //   via OverviewController::showOverView(), which resolves
+        //   website_id/period itself and exposes them as $websiteId/
+        //   $period directly - the authoritative values actually used.
+        //   $post is never set on this path at all (only index.ctrl.php's
+        //   index() sets it), so checking $post here unconditionally
+        //   silently fell back to the wrong defaults (first website,
+        //   "month") EVERY time regardless of what was requested - a
+        //   permanent mismatch that triggered doReload() -> same URL
+        //   again -> same wrong defaults -> infinite reload loop.
+        // - Every other tab renders this shell via index.ctrl.php's own
+        //   index() (which sets $post from the request) and loads its
+        //   actual content afterward via a separate AJAX call - $websiteId
+        //   isn't resolved at shell-render time at all here, so $post's
+        //   website_id/period (forwarded by navigateDashboardTab() on a
+        //   tab switch) is the best available signal.
+        $spSharedCurrentPeriod = isset($period) ? $period : ((isset($post) && !empty($post['period'])) ? $post['period'] : 'month');
+        $spSharedCurrentWebsiteId = isset($websiteId) ? intval($websiteId) : ((isset($post) && !empty($post['website_id'])) ? intval($post['website_id']) : (!empty($spSharedWebsiteList[0]['id']) ? intval($spSharedWebsiteList[0]['id']) : 0));
         ?>
 
         <div id="sp_shared_filter_bar" style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
