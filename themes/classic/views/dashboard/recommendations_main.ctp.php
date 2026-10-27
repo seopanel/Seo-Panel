@@ -150,14 +150,14 @@
             </select>
             </span>
 
-            <button type="button" class="rec-btn" style="margin-left:auto;"
+            <?php if (!empty($refreshedAt)) { ?>
+            <span class="rec-last-updated" style="margin-left:auto;">Last updated: <?php echo htmlspecialchars($refreshedAt) ?></span>
+            <?php } ?>
+
+            <button type="button" class="rec-btn" <?php echo empty($refreshedAt) ? 'style="margin-left:auto;"' : ''?>
                 onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
-
-            <?php if (!empty($refreshedAt)) { ?>
-            <span class="rec-last-updated">Last updated: <?php echo htmlspecialchars($refreshedAt) ?></span>
-            <?php } ?>
         </div>
     </form>
 
