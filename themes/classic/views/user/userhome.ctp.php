@@ -85,22 +85,37 @@
             else { $spSharedScript = "dashboard.php"; } // Overview (default/$mainTabClass)
         }
         $spSharedWebsiteList = $siteList ?? [];
+        // pre-select whatever period actually carried over via the URL
+        // (navigateDashboardTab() on a tab switch, or a direct link) -
+        // without this the select always defaulted to "month" regardless,
+        // so spInitSharedFilterBar()'s own restore-from-sessionStorage
+        // check would see a mismatch against the real carried-over period
+        // and fire a redundant extra reload even when the content already
+        // rendered correctly.
+        $spSharedCurrentPeriod = (isset($post) && !empty($post['period'])) ? $post['period'] : 'month';
+        // same reasoning as period above, for website_id - without this
+        // the select always defaulted to the first website regardless of
+        // what actually carried over via the URL, so a normal tab switch
+        // (which DOES correctly forward website_id already) still looked
+        // like a mismatch to spInitSharedFilterBar() and fired a pointless
+        // extra reload on every single tab switch.
+        $spSharedCurrentWebsiteId = (isset($post) && !empty($post['website_id'])) ? intval($post['website_id']) : (!empty($spSharedWebsiteList[0]['id']) ? intval($spSharedWebsiteList[0]['id']) : 0);
         ?>
 
         <div id="sp_shared_filter_bar" style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         	<label style="font-weight:600;color:#444;font-size:13px;margin:0;"><?php echo $spText['common']['Website']?>:</label>
         	<select id="sp_shared_website_id" class="custom-select" style="width:auto;max-width:280px;">
         		<?php foreach ($spSharedWebsiteList as $spSharedWs) { ?>
-        			<option value="<?php echo intval($spSharedWs['id'])?>"><?php echo htmlspecialchars($spSharedWs['name'])?></option>
+        			<option value="<?php echo intval($spSharedWs['id'])?>" <?php echo (intval($spSharedWs['id']) == $spSharedCurrentWebsiteId) ? 'selected' : ''?>><?php echo htmlspecialchars($spSharedWs['name'])?></option>
         		<?php } ?>
         	</select>
         	<?php if ($spSharedPeriodMode == "preset") { ?>
         	<label style="font-weight:600;color:#444;font-size:13px;margin:0;"><?php echo $spText['common']['Period']?>:</label>
         	<select id="sp_shared_period" class="custom-select" style="width:auto;max-width:180px;">
-        		<option value="day"><?php echo $spText['label']['Day']?></option>
-        		<option value="week"><?php echo $spText['label']['Week']?></option>
-        		<option value="month" selected><?php echo $spText['label']['Month']?></option>
-        		<option value="year"><?php echo $spText['label']['Year']?></option>
+        		<option value="day" <?php echo $spSharedCurrentPeriod == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+        		<option value="week" <?php echo $spSharedCurrentPeriod == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+        		<option value="month" <?php echo $spSharedCurrentPeriod == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+        		<option value="year" <?php echo $spSharedCurrentPeriod == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
         	</select>
         	<?php } ?>
         </div>
@@ -275,16 +290,32 @@ function getCurrentWebsiteId() {
 function navigateDashboardTab(linkElement, tabType) {
     var websiteId = getCurrentWebsiteId();
     var baseUrl = linkElement.href;
+    var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+    var newUrl = baseUrl;
+    var addedParam = false;
 
     // Add website_id parameter to URL if it exists
     if (websiteId) {
-        var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
-        var newUrl = baseUrl + separator + 'website_id=' + websiteId;
-        window.location.href = newUrl;
-    } else {
-        // No website selected, use default navigation
-        window.location.href = baseUrl;
+        newUrl += separator + 'website_id=' + websiteId;
+        separator = '&';
+        addedParam = true;
     }
+
+    // Carry the period preset forward too, same as website_id - read from
+    // sessionStorage (kept in sync by spInitSharedFilterBar() on every
+    // change) rather than the live #sp_shared_period select, since that
+    // select only exists in the DOM on tabs that actually show a period
+    // control; sessionStorage still has the last-chosen value regardless
+    // of which tab you're navigating away from. Harmless to pass along
+    // even to a tab that ignores it (Site Auditor, AI Visibility,
+    // Keywords) - those controllers simply never read it.
+    var period = sessionStorage.getItem('sp_selected_period');
+    if (period) {
+        newUrl += separator + 'period=' + period;
+        addedParam = true;
+    }
+
+    window.location.href = addedParam ? newUrl : baseUrl;
 
     return false; // Prevent default link behavior
 }
