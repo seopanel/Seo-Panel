@@ -1948,7 +1948,7 @@ class ReportController extends Controller {
 			        ) latest ON sr.searchengine_id = latest.searchengine_id
 			                 AND sr.result_date = latest.max_date
 			        WHERE sr.keyword_id = $keywordId AND sr.serp_results IS NOT NULL
-			        ORDER BY se.domain";
+			        ORDER BY (se.domain NOT LIKE '%google%'), se.domain";
 			foreach ($this->db->select($sql) as $row) {
 				$engines[] = [
 					'searchengine_id'     => $row['searchengine_id'],
@@ -2037,7 +2037,7 @@ class ReportController extends Controller {
 				JOIN searchengines se ON sr.searchengine_id = se.id
 				WHERE sr.keyword_id = $keywordId AND sr.result_date = '$date'
 				AND sr.serp_results IS NOT NULL
-				ORDER BY se.domain";
+				ORDER BY (se.domain NOT LIKE '%google%'), se.domain";
 		$serpList = $this->db->select($sql);
 
 		foreach ($serpList as &$item) {
