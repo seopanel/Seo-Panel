@@ -91,15 +91,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 <div class="form-group" style="max-width:300px;margin-bottom:10px;">
 	<input type="text" id="cust_tab_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterTable('cust_tab', this.value)">
 </div>
-<script>
-function spQuickFilterTable(tableId, query) {
-	query = query.toLowerCase();
-	var rows = document.querySelectorAll('#' + tableId + ' tbody tr[data-kw], #' + tableId + ' > tr[data-kw]');
-	for (var i = 0; i < rows.length; i++) {
-		rows[i].style.display = (rows[i].getAttribute('data-kw').indexOf(query) !== -1) ? '' : 'none';
-	}
-}
-</script>
+<!-- spQuickFilterTable() lives in js/common.js now - this view loads via
+     AJAX innerHTML-swap, which never executes an inline <script> tag, so
+     defining it here meant the quick filter silently did nothing. -->
 <?php endif; ?>
 
 <div id='subcontent' class="table-responsive">

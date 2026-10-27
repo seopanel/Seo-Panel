@@ -48,15 +48,9 @@
 	<div class="form-group" style="max-width:300px;margin-bottom:10px;">
 		<input type="text" id="serp_archive_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
 	</div>
-	<script>
-	function spQuickFilterRows(rowClass, query) {
-		query = query.toLowerCase();
-		var rows = document.getElementsByClassName(rowClass);
-		for (var i = 0; i < rows.length; i++) {
-			rows[i].style.display = (rows[i].getAttribute('data-txt').indexOf(query) !== -1) ? '' : 'none';
-		}
-	}
-	</script>
+	<!-- spQuickFilterRows() lives in js/common.js now - this view loads via
+	     AJAX innerHTML-swap, which never executes an inline <script> tag,
+	     so defining it here meant the quick filter silently did nothing. -->
 	<ul class="nav nav-tabs mb-0" role="tablist" style="border-bottom:1px solid #dee2e6;">
 		<?php foreach ($engines as $i => $seInfo): ?>
 			<li class="nav-item">

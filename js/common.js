@@ -521,6 +521,29 @@ function urlencode(str) {
 	  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
 }
 
+// Quick-filter boxes on report pages (Keyword Position Summary, SERP
+// Results Archive) - both were originally defined as inline <script> tags
+// inside their own views, which load via AJAX innerHTML-swap and never
+// execute embedded <script> tags (same gotcha spToggleSecretVisibility
+// below was already moved here to fix). Typing in either box silently did
+// nothing, since the onkeyup handler called a function that was never
+// actually defined.
+function spQuickFilterTable(tableId, query) {
+	query = query.toLowerCase();
+	var rows = document.querySelectorAll('#' + tableId + ' tbody tr[data-kw], #' + tableId + ' > tr[data-kw]');
+	for (var i = 0; i < rows.length; i++) {
+		rows[i].style.display = (rows[i].getAttribute('data-kw').indexOf(query) !== -1) ? '' : 'none';
+	}
+}
+
+function spQuickFilterRows(rowClass, query) {
+	query = query.toLowerCase();
+	var rows = document.getElementsByClassName(rowClass);
+	for (var i = 0; i < rows.length; i++) {
+		rows[i].style.display = (rows[i].getAttribute('data-txt').indexOf(query) !== -1) ? '' : 'none';
+	}
+}
+
 function spToggleSecretVisibility(fieldId, iconLink) {
 	var field = document.getElementById(fieldId);
 	var icon = iconLink.querySelector('i');
