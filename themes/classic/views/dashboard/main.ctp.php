@@ -371,23 +371,27 @@ if (!function_exists('renderStatTile')) {
 				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-robot"></i> AI Visibility</h4>
 					<div>
-					<a href="javascript:void(0);" onclick="scriptDoLoadDialog('mcp-access.php', 'content')" class="btn btn-sm btn-light" title="Connect your own AI agent (Claude Desktop or any MCP client) to this data">
+					<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/mcp-access.php', '<i class=&quot;fas fa-plug&quot;></i> Connect via MCP')" class="btn btn-sm btn-light" title="Connect your own AI agent (Claude Desktop or any MCP client) to this data">
 						<i class="fas fa-plug"></i> Connect via MCP
 					</a>
 					<?php if (!empty($seoDiaryPluginId)) {
 						// Opt-in only - never auto-created, same pattern as
 						// RecommendationsController's own "Add to SEO Diary"
-						// action. Opens in the app's existing modal dialog
-						// mechanism (scriptDoLoadDialog(), js/popup.js) rather
-						// than navigating away - see recommendations_main.ctp.php's
-						// own comment on this for the full rationale (also
-						// sidesteps the layout/jQuery bug a plain full-page
-						// link to seo-plugins.php used to hit).
-						$diaryArgs = "&pid=" . intval($seoDiaryPluginId)
+						// action. Opens via the shared Bootstrap #ajaxModalSP
+						// (js/popup.js) rather than the jQuery UI #dialogContent
+						// dialog (scriptDoLoadDialog()) - that one wraps every
+						// popup in its own generic "Seo Panel" title bar on top
+						// of the content's own heading, a redundant second
+						// header neither this form nor the MCP Access panel
+						// needs. See recommendations_main.ctp.php's own comment
+						// on this for the full rationale (also sidesteps the
+						// layout/jQuery bug a plain full-page link to
+						// seo-plugins.php used to hit).
+						$diaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
 							. "&action=newDiary"
 							. "&title=" . urlencode($aiFindingTitle)
 							. "&description=" . urlencode($aiFindingDesc);
-						$diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
+						$diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> Add to SEO Diary')";
 					?>
 					<a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
 						<i class="fas fa-book"></i> Add to SEO Diary
