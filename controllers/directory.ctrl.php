@@ -295,8 +295,9 @@ class DirectoryController extends Controller{
 		if($ret['error']){
 			$this->set('error', 1);
 			$this->set('msg', $ret['errmsg']);
+			$this->set('trustedMsg', false);
 		}
-		
+
 		$page = $ret['page'];
 		if(!empty($page)){
 			$matches = $this->isCategoryExists($page, $dirInfo['category_col']);		
@@ -401,6 +402,12 @@ class DirectoryController extends Controller{
 		}else{
 			$this->set('error', 1);
 			$this->set('msg', $this->spTextDir['nocatnote']);
+			// our own trusted translation string (texts table), not
+			// third-party content - intentionally contains real <b>
+			// markup ("click Reload or Skip"), unlike $ret['errmsg']/
+			// submitSite()'s regex-matched third-party HTML above/below,
+			// which must stay escaped by default.
+			$this->set('trustedMsg', true);
 		}
 		
 		$this->render('directory/showsubmissionform');				
