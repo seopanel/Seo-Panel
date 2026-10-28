@@ -207,6 +207,17 @@
         </div>
     </form>
 
+    <!-- The score card + AI Overview Tracking card duplicate what's
+         already on the dedicated "AI Visibility Summary" page
+         (aivisibility.php?sec=overview) - they belong on the Dashboard's
+         "AI Visibility" tab (this same view, different name/context,
+         where a score summary fits), not on the "AI Insights" page
+         reached via the Tools menu, whose own name promises only the
+         insights/recommendations list below. Hidden by the inline
+         script after this block using the same #sp_shared_filter_bar
+         presence check as the Website selector above - present on the
+         Dashboard tab, absent on the standalone Tools-menu page. -->
+    <div id="recScoreSummaryWrap">
     <?php if (!empty($aiVisibilitySummary) && $aiVisibilitySummary['overall'] !== null) {
         $avScore = intval($aiVisibilitySummary['overall']);
         $avColor1 = $avScore >= 67 ? '#1f9d55' : ($avScore >= 34 ? '#e0a23b' : '#e05353');
@@ -309,6 +320,16 @@
         <?php } ?>
     </div>
     <?php } ?>
+    </div>
+    <script>
+    // see the comment at the top of #recScoreSummaryWrap - hide the score/
+    // tracking summary when this page is NOT the Dashboard's AI Visibility
+    // tab (i.e. reached directly via Tools -> AI Visibility -> AI Insights),
+    // so "AI Insights" shows only the insights list it's named for.
+    if (!document.getElementById('sp_shared_filter_bar')) {
+        document.getElementById('recScoreSummaryWrap').style.display = 'none';
+    }
+    </script>
 
     <?php if (!empty($refreshError)) { ?>
         <div class="rec-empty rec-error-banner">
