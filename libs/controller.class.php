@@ -31,6 +31,14 @@ class Controller extends Seopanel{
 	var $paging;
 	var $layout = 'default';
 	var $sessionCats = array('common','login','button','label');
+	// set()'s own `$this->data[$varName] = $varValue;` already assumed
+	// this was always an array (PHP auto-vivifies null into one on first
+	// write) - but a controller action that renders a view with zero
+	// prior set() calls (e.g. a plugin's static aboutus() page) left it
+	// genuinely null, and View::getPluginViewContent()'s count($this->
+	// data) is a TypeError on PHP 8+ given null. Declaring the intended
+	// default explicitly closes that gap for every such path at once.
+	var $data = array();
 
 	function __construct(){
 		
