@@ -76,9 +76,19 @@
             $spSharedScript = "overview.php";
             $spSharedPeriodMode = "preset"; // was raw from_time/to_time; now the same preset as every other tab
             $spSharedNavMode = "page";
-        } else if ($saTabView == "active" || $rcTabView == "active") {
-            $spSharedScript = $saTabView == "active" ? "siteauditor_dashboard.php" : "recommendations_dashboard.php";
+        } else if ($saTabView == "active") {
+            $spSharedScript = "siteauditor_dashboard.php";
             $spSharedPeriodMode = "none"; // no date-range concept on this tab
+        } else if ($rcTabView == "active") {
+            $spSharedScript = "recommendations_dashboard.php";
+            // AI Bot Crawling/AI Referral Traffic are genuinely period-
+            // scoped counts; AI Overview Citation/LLM Mention Rate are
+            // always "latest measured state" with no date filtering at
+            // all (see showRecommendationsDashboard()'s own comment) -
+            // the period preset still applies here (drives the two that
+            // can respond to it), the view labels the other two as a
+            // current snapshot rather than implying they'd change too.
+            $spSharedPeriodMode = "preset";
         } else if ($dbTabClass == "active") {
             $spSharedScript = "archive.php";
             $spSharedPeriodMode = "none"; // archive.php has its own separate date-range UI

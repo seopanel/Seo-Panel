@@ -1162,6 +1162,43 @@ PHP;
 		return $this->__summarizeAioRows($this->db->select($sql));
 	}
 
+	// the single domain most often cited in place of this website, across
+	// its latest-measured AI Overviews - a trimmed version of
+	// showAIOverviewReport()'s own $competitorDomains query (same table,
+	// same "latest checked_date per keyword" scoping), for the lighter
+	// Overview dashboard's own AI Overview Tracking card. Unlike that
+	// report (which lists every cited domain, the tracked site included,
+	// for full transparency), this one is framed as "instead of you" -
+	// so the tracked site's own domain is explicitly excluded here, same
+	// isDomainCited()/registrableDomain() comparison showAIOverviewReport()
+	// already uses. Returns null when nothing else has been cited yet.
+	function __getTopAioCompetitorDomain($websiteId) {
+		$websiteId = intval($websiteId);
+		$websiteInfo = $this->dbHelper->getRow('websites', "id=$websiteId");
+		if (empty($websiteInfo['url'])) return null;
+
+		include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+		$trackedDomain = AIOverviewController::registrableDomain($websiteInfo['url']);
+		$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
+
+		$sql = "SELECT ar.domain, COUNT(DISTINCT ar.keyword_id) AS keyword_count
+				FROM aio_references ar
+				JOIN keywords k ON k.id = ar.keyword_id
+				WHERE k.website_id = $websiteId AND k.status = 1
+				AND ar.checked_date = (
+					SELECT MAX(ar2.checked_date) FROM aio_references ar2 WHERE ar2.keyword_id = ar.keyword_id
+				)
+				GROUP BY ar.domain
+				ORDER BY keyword_count DESC, COUNT(*) DESC
+				LIMIT 10";
+		foreach ($this->db->select($sql) as $row) {
+			if (!AIOverviewController::isDomainCited($row['domain'], $trackedDomain, $subdomainPolicy)) {
+				return $row;
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * A single, explainable 0-100 "AI Visibility Score" combining the 4
 	 * signals this app already tracks separately (AI bot crawling, AI
@@ -1197,6 +1234,7 @@ PHP;
 			'label' => 'AI Bot Crawling',
 			'score' => min(100, (int) round(($distinctPlatforms / 5) * 100)),
 			'measured' => true,
+			'periodAware' => true,
 			'detail' => $distinctPlatforms . ' AI platform' . ($distinctPlatforms == 1 ? '' : 's') . ' crawling you',
 		];
 
@@ -1209,6 +1247,7 @@ PHP;
 				'label' => 'AI Overview Citation',
 				'score' => $rate,
 				'measured' => true,
+				'periodAware' => false,
 				'detail' => 'cited in ' . intval($aioSummary['cited']) . ' of ' . intval($aioSummary['present']) . ' AI Overviews seen',
 			];
 		} else {
@@ -1216,6 +1255,7 @@ PHP;
 				'label' => 'AI Overview Citation',
 				'score' => null,
 				'measured' => false,
+				'periodAware' => false,
 				'detail' => 'no AI Overview seen yet for your tracked keywords',
 			];
 		}
@@ -1230,6 +1270,7 @@ PHP;
 				'label' => 'LLM Mention Rate',
 				'score' => (int) $shareOfVoice,
 				'measured' => true,
+				'periodAware' => false,
 				'detail' => 'mentioned in ' . intval($shareOfVoice) . '% of tracked AI Perception checks',
 			];
 		} else {
@@ -1237,6 +1278,7 @@ PHP;
 				'label' => 'LLM Mention Rate',
 				'score' => null,
 				'measured' => false,
+				'periodAware' => false,
 				'detail' => 'no AI Perception Check configured/run yet',
 			];
 		}
@@ -1250,6 +1292,7 @@ PHP;
 			'label' => 'AI Referral Traffic',
 			'score' => min(100, (int) round(($referralTotal / 50) * 100)),
 			'measured' => true,
+			'periodAware' => true,
 			'detail' => $referralTotal . ' visit' . ($referralTotal == 1 ? '' : 's') . ' from AI platforms',
 		];
 

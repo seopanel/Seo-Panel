@@ -34,14 +34,22 @@
 .rec-controls {
     background: #fff;
     border: 1px solid #e0e0e0;
+    border-left: 4px solid #667eea;
     border-radius: 10px;
-    padding: 18px 22px;
+    padding: 16px 22px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
+}
+.rec-site-badge {
+    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.35);
 }
 .rec-controls label { font-weight: 600; color: #444; font-size: 13px; margin: 0; }
 .rec-controls select.custom-select { min-width: 220px; }
@@ -148,7 +156,34 @@
                     </option>
                 <?php } ?>
             </select>
+            <!-- same reasoning as website_id above - the shared bar drives
+                 its own reloads via GET, this just keeps the Refresh
+                 button's own POST (serializes this whole form) carrying
+                 whichever period that last reload actually used, instead
+                 of silently dropping back to the default every refresh. -->
+            <input type="hidden" name="period" value="<?php echo htmlspecialchars($period ?? 'month')?>">
             </span>
+
+            <?php
+            // this row otherwise has nothing saying which site/range the
+            // score below is actually for - filled in with what's already
+            // computed above (no new query), rather than leaving it blank.
+            $recCurrentSite = null;
+            foreach ($websiteList as $ws) { if ($ws['id'] == $websiteId) { $recCurrentSite = $ws; break; } }
+            if (!empty($recCurrentSite)) { ?>
+            <span style="display:flex; align-items:center; gap:12px;">
+                <span class="rec-site-badge"><i class="fas fa-globe"></i></span>
+                <span style="display:flex; flex-direction:column; line-height:1.3;">
+                    <strong style="font-size:15px; color:#2d2d3a;"><?php echo htmlspecialchars($recCurrentSite['name']) ?></strong>
+                    <span style="font-size:12px; color:#999;">
+                        <?php if (!empty($recCurrentSite['url'])) { ?>
+                            <?php echo htmlspecialchars($recCurrentSite['url']) ?> &middot;
+                        <?php } ?>
+                        last 30 days
+                    </span>
+                </span>
+            </span>
+            <?php } ?>
 
             <?php if (!empty($refreshedAt)) { ?>
             <span class="rec-last-updated" style="margin-left:auto;">Last updated: <?php echo htmlspecialchars($refreshedAt) ?></span>
@@ -163,7 +198,9 @@
 
     <?php if (!empty($aiVisibilitySummary) && $aiVisibilitySummary['overall'] !== null) {
         $avScore = intval($aiVisibilitySummary['overall']);
-        $avGradient = $avScore >= 67 ? '#1f9d55 0%, #34d399 100%' : ($avScore >= 34 ? '#e0a23b 0%, #f5c161 100%' : '#e05353 0%, #f0847f 100%');
+        $avColor1 = $avScore >= 67 ? '#1f9d55' : ($avScore >= 34 ? '#e0a23b' : '#e05353');
+        $avColor2 = $avScore >= 67 ? '#34d399' : ($avScore >= 34 ? '#f5c161' : '#f0847f');
+        $avGradient = "$avColor1 0%, $avColor2 100%";
         $avAccents = array(
             'AI Bot Crawling' => array('color' => '#0d9488', 'icon' => 'fa-robot'),
             'AI Overview Citation' => array('color' => '#764ba2', 'icon' => 'fa-layer-group'),
@@ -172,22 +209,28 @@
         );
         $avDefaultAccent = array('color' => '#4a4e69', 'icon' => 'fa-chart-bar');
     ?>
-    <div class="rec-card" style="padding:22px 26px;">
+    <div class="rec-card" style="padding:22px 26px; border-left:4px solid transparent; border-image:linear-gradient(180deg, <?php echo $avGradient?>) 1;">
         <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
             <div style="text-align:center;flex-shrink:0;">
-                <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">AI Visibility Score</div>
-                <div style="font-size:44px;font-weight:800;background:linear-gradient(135deg, <?php echo $avGradient?>);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1;"><?php echo $avScore?></div>
+                <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">AI Visibility Score</div>
+                <div style="width:88px;height:88px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle, #fff 58%, transparent 60%), conic-gradient(<?php echo htmlspecialchars($avColor1)?> 0%, <?php echo htmlspecialchars($avColor2)?> <?php echo $avScore?>%, #eef0f5 <?php echo $avScore?>% 100%);box-shadow:0 2px 10px rgba(0,0,0,0.06);">
+                    <span style="font-size:32px;font-weight:800;background:linear-gradient(135deg, <?php echo $avGradient?>);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;"><?php echo $avScore?></span>
+                </div>
             </div>
+            <div style="align-self:stretch;width:1px;background:linear-gradient(180deg, transparent, #e5e7eb, transparent);flex-shrink:0;"></div>
             <div style="display:flex;gap:22px;flex-wrap:wrap;flex:1;">
                 <?php foreach ($aiVisibilitySummary['components'] as $component) {
                     $accent = isset($avAccents[$component['label']]) ? $avAccents[$component['label']] : $avDefaultAccent;
                 ?>
-                <div style="min-width:130px;text-align:center;">
+                <div style="min-width:130px;text-align:center;" title="<?php echo htmlspecialchars($component['detail'])?>">
                     <div style="width:26px;height:26px;border-radius:8px;margin:0 auto 5px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;background:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'?>;">
                         <i class="fas <?php echo htmlspecialchars($accent['icon'])?>"></i>
                     </div>
                     <div style="font-size:18px;font-weight:700;color:<?php echo $component['measured'] ? htmlspecialchars($accent['color']) : '#c5c8d4'?>;"><?php echo $component['measured'] ? intval($component['score']) . '%' : '&mdash;'?></div>
                     <div style="font-size:11px;color:#999;font-weight:600;margin-top:2px;"><?php echo htmlspecialchars($component['label'])?></div>
+                    <?php if (empty($component['periodAware'])) { ?>
+                    <div style="font-size:9px;color:#b0b4c0;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;margin-top:1px;">current</div>
+                    <?php } ?>
                 </div>
                 <?php } ?>
             </div>
@@ -195,6 +238,64 @@
                 <i class="fas fa-eye"></i> View full AI Visibility report
             </a>
         </div>
+    </div>
+    <?php } ?>
+
+    <?php if (!empty($aioSummary) && !empty($aioSummary['measured'])) {
+        $aioRate = !empty($aioSummary['present']) ? (int) round((intval($aioSummary['cited']) / intval($aioSummary['present'])) * 100) : null;
+        $aioMissed = intval($aioSummary['present']) - intval($aioSummary['cited']);
+        $aioTiles = array(
+            array('icon' => 'fa-key', 'color' => '#4a4e69', 'value' => intval($aioSummary['measured']), 'label' => 'Keyword-Engine Pairs Tracked'),
+            array('icon' => 'fa-robot', 'color' => '#667eea', 'value' => intval($aioSummary['present']), 'label' => 'AI Overviews Seen'),
+            array('icon' => 'fa-check-circle', 'color' => '#11998e', 'value' => intval($aioSummary['cited']), 'label' => 'Times You Were Cited', 'suffix' => $aioRate !== null ? " ($aioRate%)" : ''),
+            array('icon' => 'fa-times-circle', 'color' => '#e05353', 'value' => max(0, $aioMissed), 'label' => 'AI Overviews You Missed'),
+        );
+    ?>
+    <div class="rec-card" style="padding:22px 26px; margin-bottom:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:34px;height:34px;border-radius:8px;background:#764ba2;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div>
+                    <div style="font-size:14px;font-weight:700;color:#333;">AI Overview Tracking</div>
+                    <div style="font-size:9px;color:#b0b4c0;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;" title="AI Overview presence is each keyword's latest measured state, not a historical count - doesn't change with the Period selector above">current snapshot</div>
+                </div>
+            </div>
+            <a href="<?php echo SP_WEBPATH?>/aivisibility.php?sec=aioverview&website_id=<?php echo intval($websiteId)?>" class="rec-btn" style="text-decoration:none;">
+                <i class="fas fa-search"></i> View full AI Overview report
+            </a>
+        </div>
+
+        <div style="display:flex;gap:28px;flex-wrap:wrap;">
+            <?php foreach ($aioTiles as $tile) { ?>
+            <div style="min-width:140px;text-align:center;">
+                <div style="width:30px;height:30px;border-radius:8px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;background:<?php echo htmlspecialchars($tile['color'])?>;">
+                    <i class="fas <?php echo htmlspecialchars($tile['icon'])?>"></i>
+                </div>
+                <div style="font-size:22px;font-weight:800;color:<?php echo htmlspecialchars($tile['color'])?>;"><?php echo $tile['value'] . ($tile['suffix'] ?? '')?></div>
+                <div style="font-size:11px;color:#999;font-weight:600;margin-top:2px;"><?php echo htmlspecialchars($tile['label'])?></div>
+            </div>
+            <?php } ?>
+        </div>
+
+        <?php if (!empty($aioTopCompetitor) || !empty($aioSummary['unsupported'])) { ?>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid #eee;display:flex;gap:24px;flex-wrap:wrap;font-size:13px;color:#555;">
+            <?php if (!empty($aioTopCompetitor)) { ?>
+            <div>
+                <i class="fas fa-crosshairs" style="color:#e0a23b;margin-right:6px;"></i>
+                Most often cited instead of you: <strong><?php echo htmlspecialchars($aioTopCompetitor['domain'])?></strong>
+                (<?php echo intval($aioTopCompetitor['keyword_count'])?> keyword<?php echo intval($aioTopCompetitor['keyword_count']) == 1 ? '' : 's'?>)
+            </div>
+            <?php } ?>
+            <?php if (!empty($aioSummary['unsupported'])) { ?>
+            <div style="color:#999;">
+                <i class="fas fa-info-circle" style="margin-right:6px;"></i>
+                <?php echo intval($aioSummary['unsupported'])?> keyword&middot;engine combo<?php echo intval($aioSummary['unsupported']) == 1 ? '' : 's'?> on a search engine AI Overview checking doesn't support yet
+            </div>
+            <?php } ?>
+        </div>
+        <?php } ?>
     </div>
     <?php } ?>
 

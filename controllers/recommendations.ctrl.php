@@ -51,13 +51,38 @@ class RecommendationsController extends Controller {
         // scoring helper the dedicated AI Visibility tool's own Overview
         // page calls, so the two stay numerically identical rather than
         // this becoming a second, slightly-different implementation.
+        //
+        // period now drives this like every other tab's shared filter bar
+        // (was hardcoded to the last 30 days) - but only 2 of the 4 score
+        // components (AI Bot Crawling, AI Referral Traffic) are actually
+        // date-ranged queries underneath; AI Overview Citation and LLM
+        // Mention Rate are always "latest measured state" with no date
+        // filtering at all (see __getAiVisibilityScore()'s own comments on
+        // each), so the period preset can't change those two - the view
+        // labels them as a current snapshot instead of implying otherwise.
         $aiVisibilitySummary = null;
+        $aioSummary = null;
         if (!empty($websiteId)) {
+            include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+            $period = !empty($data['period']) ? $data['period'] : 'month';
+            $this->set('period', $period);
+            list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
+
             include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
             $aivCtrler = new AIVisibilityController();
-            $aiVisibilitySummary = $aivCtrler->__getAiVisibilityScore($websiteId, date('Y-m-d', strtotime('-30 days')), date('Y-m-d'));
+            $aiVisibilitySummary = $aivCtrler->__getAiVisibilityScore($websiteId, $fromTime, $toTime);
+            // raw measured/present/cited counts behind the single
+            // "AI Overview Citation" % above - already computed as part of
+            // that same call (same helper, cached nowhere, cheap single
+            // query), just not returned in a display-ready shape - used
+            // for its own dedicated AI Overview Tracking card below,
+            // linking out to the full per-keyword report.
+            $aioSummary = $aivCtrler->__getAioSummaryForWebsite($websiteId);
+            $aioTopCompetitor = $aivCtrler->__getTopAioCompetitorDomain($websiteId);
         }
         $this->set('aiVisibilitySummary', $aiVisibilitySummary);
+        $this->set('aioSummary', $aioSummary);
+        $this->set('aioTopCompetitor', $aioTopCompetitor ?? null);
 
         include_once(SP_CTRLPATH . "/settings.ctrl.php");
         $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
