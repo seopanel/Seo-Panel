@@ -1033,7 +1033,15 @@ if (!function_exists('renderStatTile')) {
 							</table>
 						</div>
 						<div style="text-align:right;margin-top:10px;">
-							<a href="<?php echo SP_WEBPATH?>/reports.php?sec=serparchive&website_id=<?php echo intval($websiteId)?>" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
+							<!-- reports.php (SERP Results Archive's own front controller)
+							     hardcodes layout='ajax' for every action - a real browser
+							     navigation there renders a bare, unstyled fragment with no
+							     page chrome at all. seo-tools.php?menu_sec=... is a real
+							     full page (same pattern "View full AI Visibility report"
+							     above already uses) - lands on the Keyword Position
+							     Checker tool, where SERP Results Archive is one click away
+							     in its own left menu. -->
+							<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=keyword-position-checker" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
 								More details <i class="fas fa-arrow-right"></i>
 							</a>
 						</div>
