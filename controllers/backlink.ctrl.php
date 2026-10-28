@@ -207,7 +207,22 @@ class BacklinkController extends Controller{
 		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
 			$websiteId = '';
 		}
-		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
+		if (empty($websiteId)) {
+			// defaulting to the caller's very first website (by id) is
+			// usually an empty/useless report - a brand new site has no
+			// backlink history yet, while an older one checked regularly
+			// does. Prefer whichever of the caller's own websites most
+			// recently has a result in range, falling back to the
+			// original first-website behavior if none do.
+			$websiteId = $websiteList[0]['id'] ?? '';
+			$ownedIds = implode(',', array_map('intval', array_column($websiteList, 'id')));
+			if ($ownedIds !== '') {
+				$defaultRow = $this->db->select("select website_id from backlinkresults where website_id in ($ownedIds) and result_date >= '$fromTime' and result_date <= '$toTime' order by result_date desc limit 1", true);
+				if (!empty($defaultRow['website_id'])) {
+					$websiteId = $defaultRow['website_id'];
+				}
+			}
+		}
 		$this->set('websiteId', $websiteId);
 
 		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
