@@ -310,7 +310,7 @@ foreach($menuList as $i => $menuInfo){
 				     button once already inside AI Perception Check/Tracking -
 				     added alongside it, same as every other AI area having
 				     its own settings entry (AI Setup, Manage AI Platforms). -->
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')"><?php echo $spTextAIV['AI Perception Keys'] ?? 'AI Perception Keys'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')"><?php echo $spTextAIV['AI API Keys'] ?? 'AI API Keys'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=setup', 'content')"><?php echo $spTextTools['Setup'] ?? 'AI Setup'?></a></li>
 				<?php if (isAdmin()) { ?>
