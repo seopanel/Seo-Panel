@@ -1,5 +1,5 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Overview'] ?? 'AI Overview'); ?>
+<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
 
 <form id='search_form'>
 <table class="search">

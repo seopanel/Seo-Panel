@@ -32473,7 +32473,7 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'Advanced', 'Advanced'),
 ('en', 'aivisibility', 'advancedlinknotice', 'Need document root access, custom crawler rules, or AI-bot response headers?'),
 ('en', 'aivisibility', 'Go to Advanced settings', 'Go to Advanced settings'),
-('en', 'aivisibility', 'Overview', 'Overview'),
+('en', 'aivisibility', 'Overview', 'AI Visibility Summary'),
 ('en', 'aivisibility', 'AI Referrals (30 days)', 'AI Referrals (30 days)'),
 ('en', 'aivisibility', 'AI Bot Crawls (30 days)', 'AI Bot Crawls (30 days)'),
 ('en', 'aivisibility', 'AI Overview Citation Rate', 'AI Overview Citation Rate'),
