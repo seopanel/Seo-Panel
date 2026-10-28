@@ -20,17 +20,17 @@
 .rec-banner {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    padding: 25px 30px;
+    padding: 14px 24px;
     border-radius: 10px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
 }
 .rec-banner.rec-clear { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-.rec-banner-icon { font-size: 42px; opacity: 0.9; }
-.rec-banner-text h2 { margin: 0 0 6px 0; font-size: 21px; font-weight: 600; }
-.rec-banner-text p { margin: 0; opacity: 0.92; font-size: 13px; }
+.rec-banner-icon { font-size: 28px; opacity: 0.9; }
+.rec-banner-text h2 { margin: 0 0 2px 0; font-size: 17px; font-weight: 600; }
+.rec-banner-text p { margin: 0; opacity: 0.92; font-size: 12px; }
 .rec-controls {
     background: #fff;
     border: 1px solid #e0e0e0;
