@@ -137,16 +137,18 @@
 
     <form id="recommendations_dashboard_form" method="post">
         <div class="rec-controls">
-            <!-- Website selection now lives in the shared filter bar above
-                 #main_dashboard_nav (userhome.ctp.php) - this select is kept
-                 (hidden, not removed) since the Refresh button below still
-                 submits this whole form, website_id included; the shared
-                 bar drives its own reloads directly via GET instead, and
-                 this field's "selected" option always reflects whichever
-                 website that last reload actually used. Refresh/Last
-                 updated stay visible - those aren't redundant with the
-                 shared bar. -->
-            <span style="display:none;">
+            <!-- Website selection lives in the shared filter bar above
+                 #main_dashboard_nav (userhome.ctp.php) when this page is
+                 reached as the Dashboard's AI Visibility tab - but this
+                 same view is ALSO reached directly from Tools -> AI
+                 Visibility -> AI Insights (leftmenu.ctp.php), a different
+                 page shell with no shared bar at all, where this would be
+                 the only way to switch websites. Visible by default, then
+                 hidden by the inline script below only when the shared
+                 bar's own container is actually present on the page
+                 (confirmed to be the Dashboard-tab context), rather than
+                 assuming one context unconditionally. -->
+            <span id="recWebsiteSelectWrap">
             <label><?php echo $spText['common']['Website'] ?? 'Website' ?>:</label>
             <select name="website_id" id="website_id" class="custom-select" style="width:auto;max-width:280px;"
                 onchange="scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php', 'recommendations_dashboard_form', 'content')">
@@ -163,6 +165,15 @@
                  of silently dropping back to the default every refresh. -->
             <input type="hidden" name="period" value="<?php echo htmlspecialchars($period ?? 'month')?>">
             </span>
+            <script>
+            // hide the Website select only when the Dashboard's shared
+            // filter bar is actually present (see the comment above) -
+            // on the Tools -> AI Insights entry point it stays visible,
+            // since nothing else on that page lets you switch websites.
+            if (document.getElementById('sp_shared_filter_bar')) {
+                document.getElementById('recWebsiteSelectWrap').style.display = 'none';
+            }
+            </script>
 
             <?php
             // this row otherwise has nothing saying which site/range the
