@@ -121,13 +121,17 @@ class AIVisibilityController extends Controller {
 		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
 		$this->set('websiteId', $websiteId);
 
-		// date range: matches the AI Referral/AI Bot Crawler reports'
-		// from_time/to_time pattern - AI Overview citation rate below is
-		// deliberately NOT range-filtered (it's each keyword's LATEST
-		// measured state, not a time series, same as aioverview.ctp.php's
-		// own report has no date range either)
-		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
-		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		// day/week/month/year preset, same as every dashboard tab's shared
+		// filter bar - was raw from_time/to_time date-text-inputs (own
+		// jQuery UI datepicker), the only AI Visibility page still using
+		// that pattern instead of a period select. AI Overview citation
+		// rate below is deliberately NOT range-filtered either way (it's
+		// each keyword's LATEST measured state, not a time series, same as
+		// aioverview.ctp.php's own report has no date range either).
+		include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+		$period = !empty($info['period']) ? $info['period'] : 'month';
+		$this->set('period', $period);
+		list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 
@@ -1025,8 +1029,13 @@ PHP;
 		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
 		$this->set('websiteId', $websiteId);
 
-		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
-		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		// day/week/month/year preset, same as every dashboard tab's shared
+		// filter bar and now AI Summary (showOverview() above) - was raw
+		// from_time/to_time date-text-inputs/datepicker.
+		include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+		$period = !empty($info['period']) ? $info['period'] : 'month';
+		$this->set('period', $period);
+		list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 
@@ -1460,8 +1469,13 @@ PHP;
 		$websiteId = $this->__resolveWebsiteId($info, $websiteList);
 		$this->set('websiteId', $websiteId);
 
-		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
-		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		// day/week/month/year preset, same as every dashboard tab's shared
+		// filter bar and now AI Summary/AI Referral Report - was raw
+		// from_time/to_time date-text-inputs/datepicker.
+		include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+		$period = !empty($info['period']) ? $info['period'] : 'month';
+		$this->set('period', $period);
+		list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 
