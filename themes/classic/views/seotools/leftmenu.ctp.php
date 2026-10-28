@@ -304,6 +304,7 @@ foreach($menuList as $i => $menuInfo){
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
 				<!-- the API key management page (ai-perception.php, no sec -
 				     settings.ctp.php) had no left-menu entry of its own at
 				     all, only reachable via the in-page sub-nav's "Setup"
@@ -311,7 +312,6 @@ foreach($menuList as $i => $menuInfo){
 				     added alongside it, same as every other AI area having
 				     its own settings entry (AI Setup, Manage AI Platforms). -->
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')"><?php echo $spTextAIV['AI API Keys'] ?? 'AI API Keys'?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=setup', 'content')"><?php echo $spTextTools['Setup'] ?? 'AI Setup'?></a></li>
 				<?php if (isAdmin()) { ?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=platforms', 'content')"><?php echo $spTextAIV['Manage AI Platforms'] ?? 'Manage AI Platforms'?></a></li>
