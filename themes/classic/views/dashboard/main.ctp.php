@@ -13,10 +13,15 @@
 	overflow: hidden;
 }
 
+/* Card headers: the flat navy this page used instead of the shared
+   diagonal gradient (screen.css's own .card-header-gradient-blue) read
+   as plainer/duller next to every other tab's header, which all keep
+   the real gradient - restored it here too so this page matches the
+   rest of the app's "classic" look instead of standing out as flatter. */
 .sp-dashboard .card-header-gradient-blue {
-	background: #1e3a5f !important;
-	box-shadow: none !important;
-	border-bottom: 2px solid #16304d;
+	background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%) !important;
+	box-shadow: 0 4px 12px rgba(30, 58, 95, 0.5) !important;
+	border-bottom: none;
 	padding: 0.85rem 1.25rem !important;
 }
 .sp-dashboard .card-header-gradient-blue h4 {
