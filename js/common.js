@@ -25,8 +25,15 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 	}
 	
 	if(!scriptArgs){ var scriptArgs = ''; }
-	
-	scriptArgs = jQuery('#'+scriptForm).serialize() + scriptArgs;
+
+	// a '&' is required between the two halves below - without it, e.g.
+	// a non-empty "userid=" from the form merges directly into
+	// "project_id=50..." with no separator, silently swallowing
+	// project_id (and everything after it on the overall field) into
+	// userid's own value instead of its own POST field. Found via
+	// Auditor Projects "Run Project" (confirmSubmit() -> this function)
+	// failing with "Access denied" - project_id never actually arrived.
+	scriptArgs = jQuery('#'+scriptForm).serialize() + '&' + scriptArgs;
 	showLoadingIcon(scriptPos, noLoading);
 	jQuery.ajax({
 		type: "POST",
@@ -171,12 +178,13 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
 	hideDiv('proceed');
 	showDiv('message');
 	if(!scriptArgs){ var scriptArgs = ''; }
-	scriptArgs = jQuery('#'+scriptForm).serialize() + scriptArgs;
+	// same missing-separator issue fixed in scriptDoLoadPost() above
+	scriptArgs = jQuery('#'+scriptForm).serialize() + '&' + scriptArgs;
 	showLoadingIcon(scriptPos, noLoading);
     jQuery.ajax({
          type: "POST",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {

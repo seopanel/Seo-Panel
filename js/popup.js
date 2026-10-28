@@ -92,7 +92,8 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
     	heightVal = heightVal ? heightVal : 600;
     }
     
-    formData = $('#'+scriptForm).serialize() + scriptArgs + "&fromPopUp=1";
+    // same missing-separator issue fixed in common.js's scriptDoLoadPost()
+    formData = $('#'+scriptForm).serialize() + '&' + scriptArgs + "&fromPopUp=1";
 	
 	$('#dialogContent').dialog({
 	    autoOpen : false,
@@ -150,7 +151,8 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             "method" : "post",
             "dataType" : "html",
             "url" : scriptUrl,
-            "data" : $('#dialogContent #'+scriptForm).serialize() + scriptArgs + "&fromPopUp=1",
+            // same missing-separator issue fixed in common.js's scriptDoLoadPost()
+            "data" : $('#dialogContent #'+scriptForm).serialize() + '&' + scriptArgs + "&fromPopUp=1",
             beforeSend: function(){
             	$(scriptPos).html(loadingContent);
             },
