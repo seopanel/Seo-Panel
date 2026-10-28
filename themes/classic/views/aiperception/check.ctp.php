@@ -1,6 +1,19 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <?php echo showSectionHead($spTextAIV['AI Perception Check'] ?? 'AI Perception Check'); ?>
 
+<!-- same 3-way sub-nav as settings.ctp.php/tracking.ctp.php -->
+<div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')" class="btn btn-outline-primary">
+		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+	</a>
+	<span class="btn btn-primary disabled" style="cursor:default;">
+		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Ask'] ?? 'Ask'?>
+	</span>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="btn btn-outline-primary">
+		<i class="fas fa-calendar-check"></i> <?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?>
+	</a>
+</div>
+
 <?php if (!empty($noWebsites)) { ?>
 	<?php echo showNoRecordsList(0); ?>
 <?php } else { ?>

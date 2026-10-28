@@ -1,6 +1,22 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <?php echo showSectionHead($spTextAIV['AI Perception Check'] ?? 'AI Perception Check'); ?>
 
+<!-- 3-way sub-nav shared across settings/check/tracking.ctp.php - each
+     page previously only linked forward to the next step (settings ->
+     check -> tracking), with no way back except a conditional "Add an
+     API key" link, and no direct settings <-> tracking link at all. -->
+<div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
+	<span class="btn btn-primary disabled" style="cursor:default;">
+		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+	</span>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')" class="btn btn-outline-primary">
+		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Ask'] ?? 'Ask'?>
+	</a>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content')" class="btn btn-outline-primary">
+		<i class="fas fa-calendar-check"></i> <?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?>
+	</a>
+</div>
+
 <div class="alert alert-warning">
 	<?php echo $spTextAIV['perceptionprivacynotice'] ?? 'Unlike the rest of AI Visibility, this feature sends your website\'s name and URL directly to the AI provider you choose below, using the API key you enter. It only runs when you click "Ask", using a key you supply - nothing is sent automatically, and SEO Panel never sees or pays for these calls.'?>
 </div>
@@ -72,9 +88,3 @@ foreach ($providers as $p) { $configuredByProvider[$p['provider']] = $p; }
 		<?php } ?>
 	<?php } ?>
 </table>
-
-<p style="margin-top:15px;">
-	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')" class="btn btn-outline-primary">
-		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Go to AI Perception Check'] ?? 'Go to AI Perception Check'?>
-	</a>
-</p>
