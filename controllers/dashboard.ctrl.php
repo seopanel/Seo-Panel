@@ -427,54 +427,38 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['tracked'] = $result['tracked'];
 
-        // Top 10 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top10
+        // Keywords with NO result ever, any date - was wrongly computed
+        // as total - tracked (period-scoped), which counted a keyword
+        // last checked before the selected period as "never checked"
+        // even though it has real history, just not in this window.
+        $sql = "SELECT COUNT(*) as never_checked
+                FROM keywords k
+                WHERE k.website_id=" . intval($websiteId) . "
+                    AND NOT EXISTS (SELECT 1 FROM searchresults sr WHERE sr.keyword_id = k.id)";
+        $result = $this->db->select($sql, true);
+        $stats['never_checked'] = $result['never_checked'];
+
+        // Rank-bucket counts for $toTime - previously 5 separate COUNT
+        // queries hitting the identical FROM/JOIN/date condition, just
+        // with a different rank range each time; collapsed into one
+        // pass since COUNT(DISTINCT CASE WHEN...) can bucket all 5
+        // independently (top3 is a subset of top10, so both still need
+        // their own CASE WHEN, not a shared running total).
+        $sql = "SELECT
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 10 AND sr.rank > 0 THEN k.id END) as top10,
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 3 AND sr.rank > 0 THEN k.id END) as top3,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 11 AND 20 THEN k.id END) as top20,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 21 AND 50 THEN k.id END) as top50,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 51 AND 100 THEN k.id END) as top100
                 FROM keywords k
                     INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank <= 10 AND sr.rank > 0";
+                    AND sr.result_date='$toTime'";
         $result = $this->db->select($sql, true);
         $stats['top10'] = $result['top10'];
-
-        // Top 3 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top3
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank <= 3 AND sr.rank > 0";
-        $result = $this->db->select($sql, true);
         $stats['top3'] = $result['top3'];
-
-        // Top 11-20 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top20
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 11 AND 20";
-        $result = $this->db->select($sql, true);
         $stats['top20'] = $result['top20'];
-
-        // Top 21-50 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top50
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 21 AND 50";
-        $result = $this->db->select($sql, true);
         $stats['top50'] = $result['top50'];
-
-        // Top 51-100 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top100
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 51 AND 100";
-        $result = $this->db->select($sql, true);
         $stats['top100'] = $result['top100'];
 
         return $stats;

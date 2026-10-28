@@ -451,7 +451,7 @@ if (!function_exists('renderStatTile')) {
 							<?php renderStatTile($spTextDashboard['Top 10'] . ' ' . $spText['common']['Rankings'], null, $keywordStats['top10'], 'info', null, $keywordComparison['top10'] ?? null); ?>
 						</div>
 						<div class="col-md-2">
-							<?php renderStatTile($spTextDashboard['Never Checked'], null, $keywordStats['total'] - $keywordStats['tracked'], 'secondary'); ?>
+							<?php renderStatTile($spTextDashboard['Never Checked'], null, $keywordStats['never_checked'], 'secondary'); ?>
 						</div>
 					</div>
 				</div>
