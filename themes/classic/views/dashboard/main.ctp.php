@@ -719,9 +719,9 @@ if (!function_exists('renderStatTile')) {
 
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-blue">
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-chart-bar"></i> <?php echo $spTextDashboard['Ranking Volatility']?></h4>
-					<small class="text-white"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
+					<small class="text-white-50"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($rankingVolatility)) { ?>
