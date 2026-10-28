@@ -13,21 +13,22 @@
 	overflow: hidden;
 }
 
-/* Card headers: the flat navy this page used instead of the shared
-   diagonal gradient (screen.css's own .card-header-gradient-blue) read
-   as plainer/duller next to every other tab's header, which all keep
-   the real gradient - restored it here too so this page matches the
-   rest of the app's "classic" look instead of standing out as flatter. */
+/* Card headers: match #main_dashboard_nav's own active-tab gradient
+   (screen.css) instead of the darker navy/.card-header-gradient-blue
+   default, and sit shorter/more compact - closer to that same tab bar's
+   own padding - rather than the taller default <h4>-based header. */
 .sp-dashboard .card-header-gradient-blue {
-	background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%) !important;
-	box-shadow: 0 4px 12px rgba(30, 58, 95, 0.5) !important;
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%) !important;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35) !important;
 	border-bottom: none;
-	padding: 0.85rem 1.25rem !important;
+	padding: 0.5rem 1.25rem !important;
 }
 .sp-dashboard .card-header-gradient-blue h4 {
 	font-size: 0.95rem !important;
 	font-weight: 600 !important;
 	letter-spacing: 0.02em;
+	margin: 0 !important;
+	line-height: 1.4;
 }
 .sp-dashboard .card-header-gradient-blue small {
 	opacity: 0.75;
@@ -159,7 +160,7 @@
 	/* tighter card padding - desktop-sized 1.5rem eats a lot of a
 	   360-400px-wide screen */
 	.sp-dashboard .card-body { padding: 1rem; }
-	.sp-dashboard .card-header-gradient-blue { padding: 0.7rem 1rem !important; }
+	.sp-dashboard .card-header-gradient-blue { padding: 0.45rem 1rem !important; }
 	.sp-dashboard .card-header-gradient-blue h4 { font-size: 0.88rem !important; }
 
 	/* distribution tabs scroll horizontally instead of wrapping to
