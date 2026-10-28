@@ -175,11 +175,11 @@ class DashboardController extends Controller {
         $this->set('rankingTrends', $rankingTrends);
 
         // Get top keywords
-        $topKeywords = $this->getTopKeywords($websiteId, $kwResultLastDate, 15);
+        $topKeywords = $this->getTopKeywords($websiteId, $kwResultLastDate, 10);
         $this->set('topKeywords', $topKeywords);
 
         // Get recent activity
-        $recentActivity = $this->getRecentActivity($websiteId, 15);
+        $recentActivity = $this->getRecentActivity($websiteId, 10);
         $this->set('recentActivity', $recentActivity);
 
         // Get search engine distribution stats

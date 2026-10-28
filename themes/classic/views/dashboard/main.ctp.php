@@ -989,6 +989,11 @@ if (!function_exists('renderStatTile')) {
 								</tbody>
 							</table>
 						</div>
+						<div style="text-align:right;margin-top:10px;">
+							<a href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
+								More details <i class="fas fa-arrow-right"></i>
+							</a>
+						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
 							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
@@ -1026,6 +1031,11 @@ if (!function_exists('renderStatTile')) {
 									<?php } ?>
 								</tbody>
 							</table>
+						</div>
+						<div style="text-align:right;margin-top:10px;">
+							<a href="<?php echo SP_WEBPATH?>/reports.php?sec=serparchive&website_id=<?php echo intval($websiteId)?>" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
+								More details <i class="fas fa-arrow-right"></i>
+							</a>
 						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
