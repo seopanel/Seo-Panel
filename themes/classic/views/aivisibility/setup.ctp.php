@@ -158,23 +158,26 @@
 	</div>
 </div>
 
-<div class="aiv-note">
-	<i class="fas fa-sliders-h"></i>
-	<span>
-		<?php echo $spTextAIV['advancedlinknotice'] ?? 'Need document root access, custom crawler rules, or AI-bot response headers?'?>
-		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" style="font-weight:600;">
-			<?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i>
-		</a>
-	</span>
-</div>
+<div class="aiv-card">
+	<div class="aiv-card-header">
+		<div class="aiv-card-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-compass"></i></div>
+		<div class="aiv-card-title"><?php echo $spTextAIV['Discover More'] ?? 'Discover More'?></div>
+	</div>
 
-<div class="aiv-note">
-	<i class="fas fa-robot"></i>
-	<span>
-		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
-		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
-		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
-	</span>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#4a8fc7;"><i class="fas fa-sliders-h"></i></div>
+		<div class="aiv-discover-text"><?php echo $spTextAIV['advancedlinknotice'] ?? 'Need document root access, custom crawler rules, or AI-bot response headers?'?></div>
+		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" class="aiv-discover-cta"><?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
+
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#764ba2;"><i class="fas fa-robot"></i></div>
+		<div class="aiv-discover-text">
+			<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
+			<small><?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?></small>
+		</div>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')" class="aiv-discover-cta"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
 </div>
 
 </div>
