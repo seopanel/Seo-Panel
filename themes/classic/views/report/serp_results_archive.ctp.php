@@ -92,9 +92,6 @@
 	$matchBase = preg_replace('#^https?://(www\.)?#i', '', $websiteUrl);
 	$matchBase = rtrim($matchBase, '/');
 	?>
-	<div class="form-group" style="max-width:300px;margin-bottom:14px;">
-		<input type="text" id="serp_archive_quick_filter" class="form-control" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
-	</div>
 	<!-- spQuickFilterRows() lives in js/common.js now - this view loads via
 	     AJAX innerHTML-swap, which never executes an inline <script> tag,
 	     so defining it here meant the quick filter silently did nothing. -->
@@ -111,8 +108,9 @@
 		<?php endforeach; ?>
 	</ul>
 
-	<?php if (!empty($showSearchVolume)): ?>
-		<div class="sra-stat-row">
+	<div class="sra-stat-row" style="justify-content:space-between;">
+		<span style="display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;">
+		<?php if (!empty($showSearchVolume)): ?>
 			<i class="fas fa-chart-line" style="color:#667eea;"></i>
 			<strong><?php echo $spTextKeyword['Search Volume'] ?? 'Search Volume'?> (Google):</strong>
 			<?php if (!is_null($searchVolume ?? null)): ?>
@@ -122,8 +120,10 @@
 			<?php else: ?>
 				<span class="text-muted">&mdash;</span>
 			<?php endif; ?>
-		</div>
-	<?php endif; ?>
+		<?php endif; ?>
+		</span>
+		<input type="text" id="serp_archive_quick_filter" class="form-control" style="max-width:220px;" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
+	</div>
 
 	<div class="aiv-card" style="padding:0; overflow:hidden;">
 		<?php foreach ($engines as $i => $seInfo): ?>
