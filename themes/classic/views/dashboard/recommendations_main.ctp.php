@@ -8,130 +8,88 @@
     }
     $totalCount = count($recommendations);
 
+    // Extended with 'color'/'bg' here (not just class/icon/label) so the
+    // category card headers below can use real icon badges + tinted
+    // backgrounds instead of the old flat .rec-card-header.TYPE bars.
     $typeMeta = array(
-        'error'   => array('class' => 'error',   'icon' => 'fa-times-circle',         'label' => 'Errors'),
-        'warning' => array('class' => 'warning', 'icon' => 'fa-exclamation-triangle', 'label' => 'Warnings'),
-        'todo'    => array('class' => 'todo',    'icon' => 'fa-tasks',                'label' => 'To-Do'),
+        'error'   => array('icon' => 'fa-times-circle',         'label' => 'Errors',   'color' => '#e05353', 'textColor' => '#c0392b', 'bg' => '#fdeaea'),
+        'warning' => array('icon' => 'fa-exclamation-triangle', 'label' => 'Warnings', 'color' => '#e0a23b', 'textColor' => '#b8790a', 'bg' => '#fef6e6'),
+        'todo'    => array('icon' => 'fa-tasks',                'label' => 'To-Do',    'color' => '#4a8fc7', 'textColor' => '#2f6fce', 'bg' => '#eaf2fd'),
     );
     ?>
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 
 <style>
+/* Most of this page's own styling (.rec-card/.rec-btn/.rec-table/etc.)
+   has been retired in favor of the shared .aiv-card/.aiv-btn/.aiv-table
+   design system already used across the rest of AI Visibility, so this
+   page matches it instead of having its own separate, older look. Only
+   what's genuinely unique to this page - the status banner, the
+   controls bar, and small table-cell text helpers - stays here. */
 .rec-container { width: 100%; }
 .rec-banner {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 14px 24px;
-    border-radius: 10px;
+    color: #fff;
+    padding: 20px 26px;
+    border-radius: 14px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 18px;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.28);
 }
-.rec-banner.rec-clear { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-.rec-banner-icon { font-size: 28px; opacity: 0.9; }
-.rec-banner-text h2 { margin: 0 0 2px 0; font-size: 17px; font-weight: 600; }
-.rec-banner-text p { margin: 0; opacity: 0.92; font-size: 12px; }
+.rec-banner.rec-clear { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); box-shadow: 0 4px 16px rgba(17,153,142,0.28); }
+.rec-banner-icon {
+    flex: 0 0 auto;
+    width: 46px; height: 46px; border-radius: 13px;
+    background: rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+}
+.rec-banner-text h2 { margin: 0 0 2px 0; font-size: 17px; font-weight: 700; }
+.rec-banner-text p { margin: 0; opacity: 0.92; font-size: 12.5px; }
 .rec-controls {
     background: #fff;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgba(0,0,0,0.06);
     border-left: 4px solid #667eea;
-    border-radius: 10px;
+    border-radius: 14px;
     padding: 16px 22px;
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
+    box-shadow: 0 2px 14px rgba(20,20,43,0.06);
 }
 .rec-site-badge {
-    width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-size: 13px;
-    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.35);
+    box-shadow: 0 2px 6px rgba(102,126,234,0.35);
 }
 .rec-controls label { font-weight: 600; color: #444; font-size: 13px; margin: 0; }
 .rec-controls select.custom-select { min-width: 220px; }
-.rec-btn {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 9px 18px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-.rec-btn:hover { background: #5a6fd8; color: white; }
-.rec-last-updated { color: #888; font-size: 12px; margin-left: auto; }
-.rec-card {
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-.rec-card-header {
-    padding: 16px 22px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    font-weight: 600;
-}
-.rec-card-header.error   { background: #fdeaea; color: #c0392b; }
-.rec-card-header.warning { background: #fef6e6; color: #b8790a; }
-.rec-card-header.todo    { background: #eaf2fd; color: #2f6fce; }
-.rec-count-badge {
-    background: rgba(255,255,255,0.7);
-    border-radius: 12px;
-    padding: 2px 11px;
-    font-size: 12px;
-}
-.rec-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.rec-table th {
-    text-align: left;
-    padding: 10px 22px;
-    color: #999;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 11px;
-    border-bottom: 1px solid #eee;
-    background: #fafafa;
-}
-.rec-table th.rec-num { text-align: right; }
-.rec-table td {
-    padding: 14px 22px;
-    border-bottom: 1px solid #f2f2f2;
-    vertical-align: top;
-}
-.rec-table td.rec-num { text-align: right; white-space: nowrap; }
-.rec-table tr:last-child td { border-bottom: none; }
-.rec-table tr:hover td { background: #fafbff; }
-.rec-title { font-weight: 600; color: #333; }
-.rec-desc { color: #777; font-size: 12px; margin-top: 4px; line-height: 1.5; }
+.rec-last-updated { color: #8a8ea3; font-size: 12px; margin-left: auto; }
+.rec-title { font-weight: 700; color: #2a2a3d; font-size: 13.5px; }
+.rec-desc { color: #8a8ea3; font-size: 12.5px; margin-top: 4px; line-height: 1.5; }
 .rec-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
-.rec-stat { font-size: 12px; color: #555; }
-.rec-stat b { color: #333; }
+.rec-stat { font-size: 12px; color: #5a5e78; }
+.rec-stat b { color: #2a2a3d; }
 .rec-empty {
     background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 10px;
-    padding: 30px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 36px 30px;
     text-align: center;
-    color: #888;
+    color: #8a8ea3;
+    box-shadow: 0 2px 14px rgba(20,20,43,0.06);
 }
-.rec-empty i { font-size: 28px; color: #667eea; display: block; margin-bottom: 10px; }
-.rec-empty.rec-clear { border-color: #38ef7d; }
-.rec-empty.rec-clear i { color: #11998e; }
-.rec-empty.rec-error-banner { border-color: #e74c3c; color: #c0392b; }
-.rec-empty.rec-error-banner i { color: #e74c3c; }
+.rec-empty i { font-size: 30px; color: #667eea; display: block; margin-bottom: 12px; }
+.rec-empty.rec-clear { color: #1f9d55; }
+.rec-empty.rec-clear i { color: #1f9d55; }
+.rec-empty.rec-error-banner { color: #c0392b; }
+.rec-empty.rec-error-banner i { color: #e05353; }
 </style>
 
 <div class="rec-container">
@@ -256,7 +214,7 @@
                  "Remove" button on AI Perception's API key list) - shows
                  the standard "Do you really want to proceed?" dialog, and
                  only calls scriptDoLoadPost() if the user agrees. -->
-            <button type="button" class="rec-btn" <?php echo empty($refreshedAt) ? 'style="margin-left:auto;"' : ''?>
+            <button type="button" class="aiv-btn aiv-btn-primary" <?php echo empty($refreshedAt) ? 'style="margin-left:auto;"' : ''?>
                 onclick="confirmSubmit('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
@@ -287,7 +245,7 @@
         );
         $avDefaultAccent = array('color' => '#4a4e69', 'icon' => 'fa-chart-bar');
     ?>
-    <div class="rec-card" style="padding:22px 26px; border-left:4px solid transparent; border-image:linear-gradient(180deg, <?php echo $avGradient?>) 1;">
+    <div class="aiv-card" style="padding:22px 26px; margin-bottom:20px; border-left:4px solid transparent; border-image:linear-gradient(180deg, <?php echo $avGradient?>) 1;">
         <div style="display:flex;align-items:center;gap:28px;flex-wrap:wrap;">
             <div style="text-align:center;flex-shrink:0;">
                 <div style="font-size:11px;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">AI Visibility Score</div>
@@ -312,7 +270,7 @@
                 </div>
                 <?php } ?>
             </div>
-            <a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=ai-visibility" class="rec-btn" style="text-decoration:none;flex-shrink:0;">
+            <a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=ai-visibility" class="aiv-btn aiv-btn-outline" style="text-decoration:none;flex-shrink:0;">
                 <i class="fas fa-eye"></i> View full AI Visibility report
             </a>
         </div>
@@ -329,18 +287,18 @@
             array('icon' => 'fa-times-circle', 'color' => '#e05353', 'value' => max(0, $aioMissed), 'label' => 'AI Overviews You Missed'),
         );
     ?>
-    <div class="rec-card" style="padding:22px 26px; margin-bottom:20px;">
+    <div class="aiv-card" style="padding:22px 26px; margin-bottom:20px;">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
             <div style="display:flex;align-items:center;gap:10px;">
-                <div style="width:34px;height:34px;border-radius:8px;background:#764ba2;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;">
+                <div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;box-shadow:0 3px 8px rgba(118,75,162,0.3);">
                     <i class="fas fa-layer-group"></i>
                 </div>
                 <div>
-                    <div style="font-size:14px;font-weight:700;color:#333;">AI Overview Tracking</div>
+                    <div style="font-size:14px;font-weight:700;color:#2a2a3d;">AI Overview Tracking</div>
                     <div style="font-size:9px;color:#b0b4c0;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;" title="AI Overview presence is each keyword's latest measured state, not a historical count - doesn't change with the Period selector above">current snapshot</div>
                 </div>
             </div>
-            <a href="<?php echo SP_WEBPATH?>/aivisibility.php?sec=aioverview&website_id=<?php echo intval($websiteId)?>" class="rec-btn" style="text-decoration:none;">
+            <a href="<?php echo SP_WEBPATH?>/aivisibility.php?sec=aioverview&website_id=<?php echo intval($websiteId)?>" class="aiv-btn aiv-btn-outline" style="text-decoration:none;">
                 <i class="fas fa-search"></i> View full AI Overview report
             </a>
         </div>
@@ -419,14 +377,22 @@
         </div>
 
         <?php if (!empty($localAiAvailable)) { ?>
-        <div class="rec-card" style="padding:18px 22px;">
-            <button type="button" class="rec-btn" id="aiSummaryBtn" onclick="aivGenerateAISummary(<?php echo intval($websiteId)?>)">
+        <div class="aiv-card" style="padding:18px 22px; margin-bottom:20px;">
+            <button type="button" class="aiv-btn aiv-btn-primary" id="aiSummaryBtn" onclick="aivGenerateAISummary(<?php echo intval($websiteId)?>)">
                 <i class="fas fa-robot"></i> <?php echo $spTextRec['Generate AI summary'] ?? 'Generate AI summary'?>
             </button>
             <p id="aiSummaryText" style="display:none;margin-top:12px;color:#444;line-height:1.6;"></p>
         </div>
         <script>
-        function aivGenerateAISummary(websiteId) {
+        // Assigned onto window explicitly (not declared as a plain function)
+        // since it's invoked from an inline onclick="..." HTML attribute,
+        // which only resolves names via the global scope - this page only
+        // ever loads through scriptDoLoad()'s direct eval() of its <script>
+        // tags, nested inside its own function scope, so a plain
+        // `function aivGenerateAISummary(){}` would be scoped to that
+        // internal callback, not to window (same class of bug fixed on the
+        // intro card's close button and several other pages this session).
+        window.aivGenerateAISummary = function(websiteId) {
             var btn = document.getElementById('aiSummaryBtn');
             var el = document.getElementById('aiSummaryText');
             btn.disabled = true;
@@ -442,7 +408,7 @@
                     el.textContent = '<?php echo addslashes($spTextRec['ai-summary-unavailable'] ?? 'Local AI summary is not available right now.')?>';
                     el.style.display = 'block';
                 });
-        }
+        };
         </script>
         <?php } ?>
 
@@ -450,14 +416,16 @@
             if (empty($grouped[$type])) continue;
             $count = count($grouped[$type]);
             ?>
-        <div class="rec-card">
-            <div class="rec-card-header <?php echo $meta['class'] ?>">
-                <i class="fas <?php echo $meta['icon'] ?>"></i>
-                <?php echo $meta['label'] ?>
-                <span class="rec-count-badge"><?php echo $count ?></span>
+        <div class="aiv-card" style="padding:0; overflow:hidden;">
+            <div style="display:flex;align-items:center;gap:12px;padding:16px 22px;background:<?php echo $meta['bg']?>;">
+                <div style="width:34px;height:34px;border-radius:9px;background:<?php echo $meta['color']?>;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">
+                    <i class="fas <?php echo $meta['icon'] ?>"></i>
+                </div>
+                <div style="font-size:15px;font-weight:700;color:<?php echo $meta['textColor']?>;"><?php echo $meta['label'] ?></div>
+                <span class="aiv-pill" style="background:rgba(255,255,255,0.65);color:<?php echo $meta['textColor']?>;margin-left:auto;"><?php echo $count ?></span>
             </div>
             <div class="table-responsive">
-            <table class="rec-table">
+            <table class="aiv-table" style="margin:0;">
                 <thead>
                     <tr>
                         <th style="width:45%">Recommendation</th>
@@ -520,7 +488,7 @@
                             $diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> " . addslashes($spTextRec['Add to SEO Diary'] ?? 'Add to SEO Diary') . "')";
                             ?>
                         <td>
-                            <a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES) ?>" class="rec-btn" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
+                            <a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES) ?>" class="aiv-btn aiv-btn-outline" style="text-decoration:none; display:inline-block;" title="Add to SEO Diary">
                                 <i class="fas fa-book"></i>
                             </a>
                         </td>
