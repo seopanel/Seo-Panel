@@ -251,8 +251,13 @@
             <span class="rec-last-updated" style="margin-left:auto;">Last updated: <?php echo htmlspecialchars($refreshedAt) ?></span>
             <?php } ?>
 
+            <!-- confirmSubmit() is the same confirm-then-POST helper used for
+                 every other state-changing action in this app (e.g. the
+                 "Remove" button on AI Perception's API key list) - shows
+                 the standard "Do you really want to proceed?" dialog, and
+                 only calls scriptDoLoadPost() if the user agrees. -->
             <button type="button" class="rec-btn" <?php echo empty($refreshedAt) ? 'style="margin-left:auto;"' : ''?>
-                onclick="this.disabled=true; scriptDoLoadPost('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
+                onclick="confirmSubmit('<?php echo SP_WEBPATH?>/recommendations_dashboard.php?sec=refresh', 'recommendations_dashboard_form', 'content')">
                 <i class="fas fa-sync-alt"></i> Refresh AI Insights
             </button>
         </div>
