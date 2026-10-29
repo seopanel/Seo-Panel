@@ -1404,7 +1404,25 @@ PHP;
 		$this->set('trackedDomain', $trackedDomain);
 		$this->set('subdomainPolicy', defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable');
 
-		// latest measured (keyword, search engine) rows for this website
+		// day/week/month/year preset - unlike the AI Visibility Summary/AI
+		// Insights pages' own AI Overview numbers (always the single latest
+		// measured state, genuinely has no history to range over), this
+		// report's "latest" picks were always the single latest check ever
+		// made for each keyword/engine, even though searchresults/
+		// aio_references actually do hold real history spanning weeks here
+		// (confirmed: this site's own keywords have 6-10 distinct
+		// aio_checked_at dates each). So the period is real here: it bounds
+		// which "latest" check counts as "latest" - a keyword with nothing
+		// checked inside a narrow period (e.g. "Day") simply won't appear,
+		// same as every other period-scoped report in this app.
+		include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+		$period = !empty($info['period']) ? $info['period'] : 'month';
+		$this->set('period', $period);
+		list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
+		$fromTimeSql = addslashes($fromTime);
+		$toTimeSql = addslashes($toTime);
+
+		// latest-within-period measured (keyword, search engine) rows
 		$sql = "SELECT k.id AS keyword_id, k.name AS keyword_name, se.domain AS se_domain, s.*
 				FROM searchresults s
 				JOIN keywords k ON k.id = s.keyword_id
@@ -1414,6 +1432,7 @@ PHP;
 					SELECT s2.id FROM searchresults s2
 					WHERE s2.keyword_id = s.keyword_id AND s2.searchengine_id = s.searchengine_id
 					AND s2.aio_checked_at IS NOT NULL
+					AND s2.result_date >= '$fromTimeSql' AND s2.result_date <= '$toTimeSql'
 					ORDER BY s2.result_date DESC, s2.id DESC LIMIT 1
 				)
 				ORDER BY k.name";
@@ -1432,13 +1451,16 @@ PHP;
 		$this->set('rowList', $rowList);
 
 		// which domains get cited across this website's keywords instead of
-		// (or alongside) the tracked site, from each keyword's latest check
+		// (or alongside) the tracked site, from each keyword's latest
+		// within-period check
 		$sql2 = "SELECT ar.domain, COUNT(DISTINCT ar.keyword_id) AS keyword_count, COUNT(*) AS citation_count
 				 FROM aio_references ar
 				 JOIN keywords k ON k.id = ar.keyword_id
 				 WHERE k.website_id = $websiteId AND k.status = 1
 				 AND ar.checked_date = (
-					 SELECT MAX(ar2.checked_date) FROM aio_references ar2 WHERE ar2.keyword_id = ar.keyword_id
+					 SELECT MAX(ar2.checked_date) FROM aio_references ar2
+					 WHERE ar2.keyword_id = ar.keyword_id
+					 AND ar2.checked_date >= '$fromTimeSql' AND ar2.checked_date <= '$toTimeSql'
 				 )
 				 GROUP BY ar.domain
 				 ORDER BY keyword_count DESC, citation_count DESC

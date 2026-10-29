@@ -6,15 +6,29 @@
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" class="custom-select" onchange="scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id='+this.value)">
+			<select name="website_id" id="aioWebsiteId" class="custom-select" onchange="aioReload()">
 				<?php foreach ($websiteList as $websiteInfo) { ?>
 					<option value="<?php echo $websiteInfo['id']?>" <?php echo ($websiteInfo['id'] == $websiteId) ? 'selected' : ''?>><?php echo $websiteInfo['name']?></option>
 				<?php } ?>
 			</select>
 		</td>
+		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
+		<td>
+			<select name="period" id="aioPeriod" class="custom-select" onchange="aioReload()">
+				<option value="day" <?php echo ($period ?? 'month') == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+				<option value="week" <?php echo ($period ?? 'month') == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+				<option value="month" <?php echo ($period ?? 'month') == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+				<option value="year" <?php echo ($period ?? 'month') == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
+			</select>
+		</td>
 	</tr>
 </table>
 </form>
+<script>
+function aioReload() {
+	scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id=' + document.getElementById('aioWebsiteId').value + '&period=' + document.getElementById('aioPeriod').value);
+}
+</script>
 
 <div id='subcontent'>
 
