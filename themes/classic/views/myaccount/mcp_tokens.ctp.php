@@ -10,7 +10,11 @@
 	<div class="aiv-intro-icon"><i class="fas fa-key"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextPanel['MCP Access'] ?? 'MCP Access'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextMyAccount['mcpaccessnotice'] ?? 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#mcpHelpModal" class="aiv-intro-cta"><?php echo $spTextMyAccount['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextMyAccount['Let your own AI agent - like Claude Desktop - query your SEO Panel data directly.'] ?? 'Let your own AI agent - like Claude Desktop - query your SEO Panel data directly.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextMyAccount['Keyword rankings, backlinks, AI Visibility stats and more - entirely self-hosted, nothing ever leaves your server.'] ?? 'Keyword rankings, backlinks, AI Visibility stats and more - entirely self-hosted, nothing ever leaves your server.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#mcpHelpModal" class="aiv-intro-cta"><?php echo $spTextMyAccount['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
 	</div>
 </div>
 
