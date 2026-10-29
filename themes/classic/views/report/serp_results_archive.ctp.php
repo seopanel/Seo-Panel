@@ -122,7 +122,7 @@
 			<?php endif; ?>
 		<?php endif; ?>
 		</span>
-		<input type="text" id="serp_archive_quick_filter" class="form-control" style="max-width:220px;" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
+		<input type="text" id="serp_archive_quick_filter" class="form-control" style="max-width:220px;font-size:13px;" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
 	</div>
 
 	<div class="aiv-card" style="padding:0; overflow:hidden;">
@@ -136,36 +136,44 @@
 					<?php echo $spText['common']['Rank'] ?? 'Rank'?>: <strong><?php echo intval($seInfo['rank'])?></strong>
 				</div>
 				<?php if (!empty($seInfo['aio_checked_at'])): ?>
-					<div class="sra-stat-row" style="padding:0 22px 14px;">
-						<strong><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?>:</strong>
-						<?php if (empty($seInfo['aio_supported'])): ?>
-							<span class="aiv-pill aiv-pill-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
-						<?php else: ?>
-							<span class="aiv-pill <?php echo !empty($seInfo['aio_present']) ? 'aiv-pill-success' : 'aiv-pill-muted'?>">
-								<?php echo !empty($seInfo['aio_present']) ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?>
-							</span>
-							<?php if (!empty($seInfo['aio_present'])): ?>
-								<span class="sep">&middot;</span>
-								<?php echo $spTextKeyword['Cited'] ?? 'Cited'?>:
-								<?php if (!empty($seInfo['aio_cited'])): ?>
-									<span class="aiv-pill aiv-pill-success"><?php echo $spText['common']['Yes'] ?? 'Yes'?><?php echo !empty($seInfo['aio_cited_position']) ? ' (#' . intval($seInfo['aio_cited_position']) . ')' : ''?></span>
+					<div style="margin:0 22px 16px; padding:14px 16px; background:linear-gradient(135deg, rgba(118,75,162,0.06) 0%, rgba(102,126,234,0.06) 100%); border:1px solid rgba(118,75,162,0.16); border-radius:12px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+						<div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%); display:flex; align-items:center; justify-content:center; color:#fff; font-size:16px; flex-shrink:0;">
+							<i class="fas fa-layer-group"></i>
+						</div>
+						<div style="flex:1; min-width:220px;">
+							<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:13.5px;">
+								<strong style="color:#2a2a3d;"><?php echo $spTextKeyword['AI Overview'] ?? 'AI Overview'?></strong>
+								<?php if (empty($seInfo['aio_supported'])): ?>
+									<span class="aiv-pill aiv-pill-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
 								<?php else: ?>
-									<span class="aiv-pill aiv-pill-muted"><?php echo $spText['common']['No'] ?? 'No'?></span>
+									<span class="aiv-pill <?php echo !empty($seInfo['aio_present']) ? 'aiv-pill-success' : 'aiv-pill-muted'?>">
+										<?php echo !empty($seInfo['aio_present']) ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?>
+									</span>
+									<?php if (!empty($seInfo['aio_present'])): ?>
+										<span class="sep">&middot;</span>
+										<span style="color:#5a5e78;"><?php echo $spTextKeyword['Cited'] ?? 'Cited'?>:</span>
+										<?php if (!empty($seInfo['aio_cited'])): ?>
+											<span class="aiv-pill aiv-pill-success"><?php echo $spText['common']['Yes'] ?? 'Yes'?><?php echo !empty($seInfo['aio_cited_position']) ? ' (#' . intval($seInfo['aio_cited_position']) . ')' : ''?></span>
+										<?php else: ?>
+											<span class="aiv-pill aiv-pill-muted"><?php echo $spText['common']['No'] ?? 'No'?></span>
+										<?php endif; ?>
+										<span class="sep">&middot;</span>
+										<span style="color:#5a5e78;"><?php echo $spTextKeyword['Sources'] ?? 'Sources'?>:</span>
+										<?php if (!empty($seInfo['aio_reference_count'])): ?>
+											<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($keywordId)?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')" class="aiv-pill aiv-pill-muted" style="text-decoration:none;"><?php echo intval($seInfo['aio_reference_count'])?></a>
+										<?php else: ?>
+											<span class="aiv-pill aiv-pill-muted">0</span>
+										<?php endif; ?>
+									<?php endif; ?>
 								<?php endif; ?>
-								<span class="sep">&middot;</span>
-								<?php echo $spTextKeyword['Sources'] ?? 'Sources'?>:
-								<?php if (!empty($seInfo['aio_reference_count'])): ?>
-									<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($keywordId)?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')"><?php echo intval($seInfo['aio_reference_count'])?></a>
-								<?php else: ?>
-									0
-								<?php endif; ?>
-							<?php endif; ?>
-							<span class="sep">&middot;</span>
-							<small class="text-muted" title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">
+							</div>
+							<?php if (!empty($seInfo['aio_supported'])) { ?>
+							<div style="font-size:11px; color:#8a8ea3; margin-top:3px;" title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">
 								<?php $aioProviderLabel = $seInfo['provider'] === 'dataforseo' ? 'DataForSEO' : ($seInfo['provider'] === 'spapi' ? 'SEO Panel API' : $seInfo['provider']); ?>
 								via <?php echo htmlspecialchars($aioProviderLabel)?> &middot; checked <?php echo htmlspecialchars($seInfo['aio_data_date'])?>
-							</small>
-						<?php endif; ?>
+							</div>
+							<?php } ?>
+						</div>
 					</div>
 				<?php endif; ?>
 				<?php if (!empty($seInfo['serp_data'])): ?>
