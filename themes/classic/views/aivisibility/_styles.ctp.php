@@ -476,11 +476,22 @@
 // hidden forever. Keyed by the page's help-modal id, so dismissing the
 // (identical) card on any of the 3 AI Perception pages hides it on all
 // 3, while every other AI tool page's card is dismissed independently.
-function spDismissIntro(id, btn) {
+//
+// Assigned onto window explicitly rather than declared as a plain
+// `function spDismissIntro(){}` - this whole block only ever runs
+// through scriptDoLoad()'s manual `eval($(this).text())` on the AJAX
+// response (js/common.js), which is a DIRECT eval nested inside that
+// function's own .each() callback. Per spec, a plain function
+// declaration evaluated that way is scoped to that callback, not to
+// window, so the inline onclick="spDismissIntro(...)" below would
+// throw "spDismissIntro is not defined" - an explicit window.X =
+// assignment is immune to that scoping, since it's a property write
+// on the global object itself rather than a hoisted declaration.
+window.spDismissIntro = function(id, btn) {
 	var card = btn.closest('.aiv-intro-card');
 	if (card) card.style.display = 'none';
 	createCookie('sp_intro_dismissed_' + id, '1', 14);
-}
+};
 document.querySelectorAll('.aiv-intro-card[data-intro-id]').forEach(function(card) {
 	if (readCookie('sp_intro_dismissed_' + card.getAttribute('data-intro-id')) === '1') {
 		card.style.display = 'none';
