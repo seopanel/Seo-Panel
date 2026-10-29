@@ -20,6 +20,12 @@
 	</a>
 </div>
 
+<!-- quick at-a-glance summary, visible without clicking "What does this do?" -->
+<div class="aiv-note">
+	<i class="fas fa-comment-dots"></i>
+	<span><?php echo $spTextAIV['AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?></a></span>
+</div>
+
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="aipHelpModal" tabindex="-1" role="dialog" aria-labelledby="aipHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
@@ -56,8 +62,9 @@
 	</div>
 </div>
 
-<div class="alert alert-warning">
-	<?php echo $spTextAIV['perceptionprivacynotice'] ?? 'Unlike the rest of AI Visibility, this feature sends your website\'s name and URL directly to the AI provider you choose below, using the API key you enter. It only runs when you click "Ask", using a key you supply - nothing is sent automatically, and SEO Panel never sees or pays for these calls.'?>
+<div class="aiv-note aiv-note-warn">
+	<i class="fas fa-shield-alt"></i>
+	<span><?php echo $spTextAIV['perceptionprivacynotice'] ?? 'Unlike the rest of AI Visibility, this feature sends your website\'s name and URL directly to the AI provider you choose below, using the API key you enter. It only runs when you click "Ask", using a key you supply - nothing is sent automatically, and SEO Panel never sees or pays for these calls.'?></span>
 </div>
 
 <?php

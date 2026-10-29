@@ -17,6 +17,12 @@
 	</a>
 </div>
 
+<!-- quick at-a-glance summary, visible without clicking "What does this do?" -->
+<div class="aiv-note">
+	<i class="fas fa-comment-dots"></i>
+	<span><?php echo $spTextAIV['AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?></a></span>
+</div>
+
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="aipHelpModal" tabindex="-1" role="dialog" aria-labelledby="aipHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
