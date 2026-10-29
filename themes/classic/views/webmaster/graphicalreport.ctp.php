@@ -1,4 +1,42 @@
-<?php echo showSectionHead($spTextTools['Graphical Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Graphical Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#wmKwGraphHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="wmKwGraphHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('wmKwGraphHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-chart-area"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">Graphical Reports (Keyword)</div>
+		<div class="aiv-intro-desc">The same per-keyword Search Console history as Keyword Search Reports, drawn as a chart instead of a table. <a href="javascript:void(0);" data-toggle="modal" data-target="#wmKwGraphHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="wmKwGraphHelpModal" tabindex="-1" role="dialog" aria-labelledby="wmKwGraphHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-chart-area"></i></div>
+				<h5 class="modal-title" id="wmKwGraphHelpModalLabel">About Graphical Reports (Keyword)</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Charts one or more Search Console metrics (clicks, impressions, CTR, average position) over time for a keyword, instead of a table.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads already-saved Search Console data, synced daily - no live API call.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
