@@ -6,13 +6,13 @@
      check -> tracking), with no way back except a conditional "Add an
      API key" link, and no direct settings <-> tracking link at all. -->
 <div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
-	<span class="btn btn-primary disabled" style="cursor:default;">
+	<span class="aiv-subnav-pill aiv-subnav-active">
 		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
 	</span>
-	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')" class="btn btn-outline-primary">
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')" class="aiv-subnav-pill">
 		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Ask'] ?? 'Ask'?>
 	</a>
-	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content')" class="btn btn-outline-primary">
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content')" class="aiv-subnav-pill">
 		<i class="fas fa-calendar-check"></i> <?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?>
 	</a>
 </div>

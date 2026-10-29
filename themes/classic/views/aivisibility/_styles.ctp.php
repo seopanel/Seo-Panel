@@ -260,6 +260,24 @@
 .aiv-pill-muted { background: #f1f2f6; color: #8a8ea3; }
 .aiv-pill-warn { background: #fdf2da; color: #a9700f; margin-left: 4px; }
 
+/* 3-way sub-nav shared by ai-perception's settings/check/tracking.ctp.php
+   (Setup/Ask/Scheduled Tracking) - was plain Bootstrap btn-outline-
+   primary/btn-primary, same icon-pill treatment as the Schema
+   Generator's type selector for visual consistency across AI Visibility. */
+.aiv-subnav-pill {
+	display: inline-flex; align-items: center; gap: 7px;
+	padding: 8px 16px; border-radius: 9px;
+	font-size: 13.5px; font-weight: 600; text-decoration: none;
+	border: 1px solid #d8dee8; background: #fff; color: #4a4e69;
+	transition: all 0.15s ease;
+}
+.aiv-subnav-pill:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+.aiv-subnav-pill.aiv-subnav-active {
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);
+	border-color: #4a8fc7; color: #fff;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35); cursor: default;
+}
+
 /* pure-CSS toggle switch, replacing raw checkboxes */
 .aiv-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: 0 0 auto; }
 .aiv-switch input { opacity: 0; width: 0; height: 0; }
