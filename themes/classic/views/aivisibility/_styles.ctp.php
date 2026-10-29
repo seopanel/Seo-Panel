@@ -361,4 +361,21 @@
 		gap: 10px;
 	}
 }
+
+/* Page-title row + "what does this do?" trigger, opening a small static
+   Bootstrap modal (distinct from #ajaxModalSP in layout/default.ctp.php,
+   which loads its body over AJAX - this content is just inline markup). */
+.aiv-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.aiv-help-btn {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 6px 14px; border-radius: 20px;
+	border: 1px solid #d8dee8; background: #fff; color: #667085;
+	font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: none;
+	transition: all 0.15s ease;
+}
+.aiv-help-btn:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+.aiv-help-modal-body p { font-size: 13.5px; color: #4a4e69; line-height: 1.55; }
+.aiv-help-modal-body ul { padding-left: 20px; margin: 0 0 12px; }
+.aiv-help-modal-body li { font-size: 13.5px; color: #4a4e69; margin-bottom: 6px; line-height: 1.5; }
+.aiv-help-modal-body li strong { color: #2a2a3d; }
 </style>
