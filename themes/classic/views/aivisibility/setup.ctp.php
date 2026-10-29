@@ -1,6 +1,6 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <div class="aiv-page-head">
-	<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+	<?php echo showSectionHead($spTextAIV['AI Setup'] ?? 'AI Setup'); ?>
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
 </div>
 
@@ -10,7 +10,11 @@
 	<div class="aiv-intro-icon"><i class="fas fa-cogs"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Setup'] ?? 'AI Setup'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
 	</div>
 </div>
 
@@ -53,11 +57,6 @@
 </form>
 
 <?php if (!empty($siteInfo)) { ?>
-
-<div class="aiv-note">
-	<i class="fas fa-shield-alt"></i>
-	<span><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span>
-</div>
 
 <?php $advancedNeedsAttention = !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
 <div class="aiv-tabs" id="aivTabs" role="tablist" aria-label="<?php echo $spTextAIV['AI Visibility settings'] ?? 'AI Visibility settings'?>">

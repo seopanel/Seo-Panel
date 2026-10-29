@@ -313,33 +313,45 @@
    snap back to the first tab. */
 .aiv-tabs {
 	display: flex;
-	gap: 6px;
+	gap: 8px;
 	margin-bottom: 20px;
-	border-bottom: 1px solid #eceef5;
+	flex-wrap: wrap;
 }
+/* Was a thin underline-tab style (plain-text-weight label, 2px bottom
+   border only) - the active/inactive difference was subtle enough that
+   it read as "which one is a heading" rather than "which tab is on",
+   easy to miss at a glance. Now a proper filled pill for the active
+   tab (same visual language as .aiv-subnav-pill elsewhere in AI
+   Visibility), so the current tab is unmistakable. */
 .aiv-tab-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
-	background: none;
-	border: none;
+	gap: 7px;
+	background: #fff;
+	border: 1px solid #d8dee8;
+	border-radius: 9px;
 	cursor: pointer;
-	padding: 12px 6px;
-	margin-bottom: -1px;
-	font-size: 14px;
+	padding: 9px 18px;
+	font-size: 13.5px;
 	font-weight: 600;
-	color: #8a8ea3;
-	border-bottom: 2px solid transparent;
-	transition: color 0.15s ease, border-color 0.15s ease;
+	color: #4a4e69;
+	transition: all 0.15s ease;
 }
-.aiv-tab-btn:hover { color: #565a72; }
-.aiv-tab-btn.active { color: #5c4fd6; border-bottom-color: #764ba2; }
+.aiv-tab-btn:hover { border-color: #8890e0; color: #5c4fd6; }
+.aiv-tab-btn.active {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-color: #667eea;
+	color: #fff;
+	box-shadow: 0 3px 10px rgba(102,126,234,0.35);
+	cursor: default;
+}
 .aiv-tab-btn .aiv-tab-btn-badge {
 	display: inline-flex;
-	width: 8px;
-	height: 8px;
+	width: 9px;
+	height: 9px;
 	border-radius: 50%;
 	background: #e05353;
+	border: 1.5px solid #fff;
 }
 .aiv-tab-panel[hidden] { display: none; }
 
