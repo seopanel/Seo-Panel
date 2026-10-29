@@ -22,8 +22,36 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	</table>
     <?php
 } else {
-    echo showSectionHead($spTextTools['Website Analytics Summary']);
-    
+    include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+    ?>
+    <div class="aiv-page-head">
+        <?php echo showSectionHead($spTextTools['Website Analytics Summary']); ?>
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#anSummaryHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+    </div>
+
+    <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+    <div class="modal fade aiv-help-modal" id="anSummaryHelpModal" tabindex="-1" role="dialog" aria-labelledby="anSummaryHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="aiv-help-modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="aiv-help-modal-icon"><i class="fas fa-chart-pie"></i></div>
+                    <h5 class="modal-title" id="anSummaryHelpModalLabel">About Website Analytics Summary</h5>
+                </div>
+                <div class="modal-body aiv-help-modal-body">
+                    <p>Compares each traffic source's Google Analytics metrics (users, sessions, bounce rate, and more) on a chosen date versus an earlier date, across one or all websites.</p>
+                    <div class="aiv-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Reads already-saved GA4 data from the daily sync - it needs Google Analytics connected under Settings &gt; Connections before this shows anything.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
     // if not summary page show the filters
     if(!$summaryPage) {
     	$scriptName = "analytics.php";
