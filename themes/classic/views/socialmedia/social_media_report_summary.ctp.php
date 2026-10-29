@@ -22,8 +22,36 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	</table>
     <?php
 } else {
-    echo showSectionHead($spTextTools['Social Media Report Summary']);
-    
+    include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+    ?>
+    <div class="aiv-page-head">
+        <?php echo showSectionHead($spTextTools['Social Media Report Summary']); ?>
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#smSummaryHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+    </div>
+
+    <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+    <div class="modal fade aiv-help-modal" id="smSummaryHelpModal" tabindex="-1" role="dialog" aria-labelledby="smSummaryHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="aiv-help-modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="aiv-help-modal-icon"><i class="fas fa-share-alt"></i></div>
+                    <h5 class="modal-title" id="smSummaryHelpModalLabel">About Social Media Report Summary</h5>
+                </div>
+                <div class="modal-body aiv-help-modal-body">
+                    <p>A one-row-per-link snapshot comparing each link's followers/likes on a chosen date versus an earlier date, across all or one website.</p>
+                    <div class="aiv-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Data comes from the daily scheduled scrape of your registered links - it needs links added under Social Media Links first, and a day or more of history.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
     // if not summary page show the filters
     if(!$summaryPage) {
     	$scriptName = $pageScriptPath;
