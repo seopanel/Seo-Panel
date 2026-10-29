@@ -23,8 +23,35 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	</table>
     <?php
 } else {
-    echo showSectionHead($spTextTools['Keyword Position Summary']);
+    include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
     ?>
+    <div class="aiv-page-head">
+        <?php echo showSectionHead($spTextTools['Keyword Position Summary']); ?>
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#kwSummaryHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+    </div>
+
+    <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+    <div class="modal fade aiv-help-modal" id="kwSummaryHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwSummaryHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="aiv-help-modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="aiv-help-modal-icon"><i class="fas fa-list-alt"></i></div>
+                    <h5 class="modal-title" id="kwSummaryHelpModalLabel">About Keyword Position Summary</h5>
+                </div>
+                <div class="modal-body aiv-help-modal-body">
+                    <p>A sortable table comparing every active keyword's rank on two dates - a "from" and "to" date - across all your websites or one chosen website, with the change between them.</p>
+                    <div class="aiv-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
+    </div>
 	<form id='search_form'>
 	<?php $submitLink = "scriptDoLoadPost('reports.php', 'search_form', 'content', '&sec=reportsum')";?>
 	<table class="search">

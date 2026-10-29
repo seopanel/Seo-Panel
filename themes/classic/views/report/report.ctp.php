@@ -1,4 +1,42 @@
-<?php echo showSectionHead($spTextKeyword['Detailed Keyword Position Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextKeyword['Detailed Keyword Position Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#kwDetailHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="kwDetailHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('kwDetailHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-chart-line"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">Detailed Position Reports</div>
+		<div class="aiv-intro-desc">Day-by-day rank history for one keyword on one search engine, with the change from the previous recorded day. <a href="javascript:void(0);" data-toggle="modal" data-target="#kwDetailHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="kwDetailHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwDetailHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-chart-line"></i></div>
+				<h5 class="modal-title" id="kwDetailHelpModalLabel">About Detailed Position Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows the day-by-day rank history for one keyword on one search engine, including the change from the previous recorded day and, where available, an AI Overview appearance trend for that keyword.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This only shows what's already been crawled and saved - it needs keywords with rank history before there's anything to see here.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
