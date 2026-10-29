@@ -153,19 +153,23 @@
     </script>
 
     <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
-    <div class="modal fade" id="recHelpModal" tabindex="-1" role="dialog" aria-labelledby="recHelpModalLabel" aria-hidden="true">
+    <div class="modal fade aiv-help-modal" id="recHelpModal" tabindex="-1" role="dialog" aria-labelledby="recHelpModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="recHelpModalLabel"><i class="fas fa-lightbulb"></i> <?php echo $spTextAIV['About AI Insights'] ?? 'About AI Insights'?></h5>
+                <div class="aiv-help-modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="aiv-help-modal-icon"><i class="fas fa-lightbulb"></i></div>
+                    <h5 class="modal-title" id="recHelpModalLabel"><?php echo $spTextAIV['About AI Insights'] ?? 'About AI Insights'?></h5>
                 </div>
                 <div class="modal-body aiv-help-modal-body">
                     <p><?php echo $spTextAIV['A prioritized to-do list for improving this site\'s AI visibility - errors, warnings, and to-dos - built from data the other SEO Panel tools already collect (Site Auditor, AI Visibility, Schema Generator, and more).'] ?? 'A prioritized to-do list for improving this site\'s AI visibility - errors, warnings, and to-dos - built from data the other SEO Panel tools already collect (Site Auditor, AI Visibility, Schema Generator, and more).'?></p>
-                    <p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'] ?? 'Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'?></p>
+                    <div class="aiv-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span><?php echo $spTextAIV['Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'] ?? 'Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'?></span>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+                    <button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
                 </div>
             </div>
         </div>

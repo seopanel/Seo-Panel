@@ -5,19 +5,23 @@
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
-<div class="modal fade" id="aivReportHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivReportHelpModalLabel" aria-hidden="true">
+<div class="modal fade aiv-help-modal" id="aivReportHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivReportHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="aivReportHelpModalLabel"><i class="fas fa-external-link-alt"></i> <?php echo $spTextAIV['About AI Referral Report'] ?? 'About AI Referral Report'?></h5>
+			<div class="aiv-help-modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-external-link-alt"></i></div>
+				<h5 class="modal-title" id="aivReportHelpModalLabel"><?php echo $spTextAIV['About AI Referral Report'] ?? 'About AI Referral Report'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
 				<p><?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'?></p>
-				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'] ?? 'Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'?></p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span><?php echo $spTextAIV['Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'] ?? 'Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'?></span>
+				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
 			</div>
 		</div>
 	</div>

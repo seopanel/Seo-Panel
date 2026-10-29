@@ -374,8 +374,38 @@
 	transition: all 0.15s ease;
 }
 .aiv-help-btn:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
-.aiv-help-modal-body p { font-size: 13.5px; color: #4a4e69; line-height: 1.55; }
-.aiv-help-modal-body ul { padding-left: 20px; margin: 0 0 12px; }
-.aiv-help-modal-body li { font-size: 13.5px; color: #4a4e69; margin-bottom: 6px; line-height: 1.5; }
-.aiv-help-modal-body li strong { color: #2a2a3d; }
+
+/* Help-modal hero header - replaces the plain Bootstrap modal-header
+   (bare title + bare "x") with a gradient banner and a circular icon
+   badge, so the popup reads as a considered intro, not a bare dialog. */
+.aiv-help-modal .modal-content { border: none; border-radius: 16px; overflow: hidden; }
+.aiv-help-modal-header {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	padding: 32px 28px 24px;
+	text-align: center;
+	position: relative;
+}
+.aiv-help-modal-header .close {
+	position: absolute; top: 14px; right: 16px;
+	color: #fff; opacity: 0.8; text-shadow: none; font-size: 24px; font-weight: 400;
+}
+.aiv-help-modal-header .close:hover { opacity: 1; }
+.aiv-help-modal-icon {
+	width: 56px; height: 56px; border-radius: 50%;
+	background: rgba(255,255,255,0.18);
+	display: flex; align-items: center; justify-content: center;
+	margin: 0 auto 14px;
+	font-size: 22px; color: #fff;
+}
+.aiv-help-modal-header .modal-title { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+.aiv-help-modal-body { padding: 26px 28px 8px; }
+.aiv-help-modal-body p { font-size: 13.5px; color: #4a4e69; line-height: 1.6; }
+.aiv-help-modal-body p:first-of-type { font-size: 14.5px; color: #2a2a3d; }
+.aiv-help-modal-body .aiv-discover-item:last-of-type { border-bottom: none; }
+.aiv-help-modal .modal-footer { border-top: none; padding: 4px 28px 26px; justify-content: center; }
+.aiv-help-modal .modal-footer .btn {
+	border-radius: 20px; padding: 8px 28px; font-weight: 600; font-size: 13px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: #fff;
+}
+.aiv-help-modal .modal-footer .btn:hover { opacity: 0.92; color: #fff; }
 </style>

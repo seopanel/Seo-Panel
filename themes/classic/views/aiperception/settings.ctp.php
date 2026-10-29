@@ -21,25 +21,36 @@
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
-<div class="modal fade" id="aipHelpModal" tabindex="-1" role="dialog" aria-labelledby="aipHelpModalLabel" aria-hidden="true">
+<div class="modal fade aiv-help-modal" id="aipHelpModal" tabindex="-1" role="dialog" aria-labelledby="aipHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="aipHelpModalLabel"><i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
+			<div class="aiv-help-modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-comment-dots"></i></div>
+				<h5 class="modal-title" id="aipHelpModalLabel"><?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
 				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'?></p>
 				<p><?php echo $spTextAIV['Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'] ?? 'Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'?></p>
-				<ul>
-					<li><strong><?php echo $spTextAIV['Ask'] ?? 'Ask'?></strong> &mdash; <?php echo $spTextAIV['pick a website and ask any configured AI provider directly what it knows about it.'] ?? 'pick a website and ask any configured AI provider directly what it knows about it.'?></li>
-					<li><strong><?php echo $spTextAIV['Setup'] ?? 'Setup'?></strong> &mdash; <?php echo $spTextAIV['add the API key(s) for the providers you want to ask.'] ?? 'add the API key(s) for the providers you want to ask.'?></li>
-					<li><strong><?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?></strong> &mdash; <?php echo $spTextAIV['save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'] ?? 'save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'?></li>
-				</ul>
-				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'] ?? 'Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'?></p>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-comment-dots"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Ask'] ?? 'Ask'?></strong><small><?php echo $spTextAIV['pick a website and ask any configured AI provider directly what it knows about it.'] ?? 'pick a website and ask any configured AI provider directly what it knows about it.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #e0a23b 0%, #f0c674 100%);"><i class="fas fa-key"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Setup'] ?? 'Setup'?></strong><small><?php echo $spTextAIV['add the API key(s) for the providers you want to ask.'] ?? 'add the API key(s) for the providers you want to ask.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);"><i class="fas fa-calendar-check"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?></strong><small><?php echo $spTextAIV['save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'] ?? 'save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'?></small></div>
+				</div>
+				<div class="aiv-note">
+					<i class="fas fa-shield-alt"></i>
+					<span><?php echo $spTextAIV['Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'] ?? 'Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'?></span>
+				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
 			</div>
 		</div>
 	</div>

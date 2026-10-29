@@ -5,23 +5,31 @@
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
-<div class="modal fade" id="sgHelpModal" tabindex="-1" role="dialog" aria-labelledby="sgHelpModalLabel" aria-hidden="true">
+<div class="modal fade aiv-help-modal" id="sgHelpModal" tabindex="-1" role="dialog" aria-labelledby="sgHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="sgHelpModalLabel"><i class="fas fa-code"></i> <?php echo $spTextAIV['About AI Schema Markup Generator'] ?? 'About AI Schema Markup Generator'?></h5>
+			<div class="aiv-help-modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-code"></i></div>
+				<h5 class="modal-title" id="sgHelpModalLabel"><?php echo $spTextAIV['About AI Schema Markup Generator'] ?? 'About AI Schema Markup Generator'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
 				<p><?php echo $spTextAIV['This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'] ?? 'This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'?></p>
-				<ul>
-					<li><?php echo $spTextAIV['Choose a schema type (Organization, LocalBusiness, Article or FAQPage) and fill in the details - name, URL, address, questions and answers, whatever that type needs.'] ?? 'Choose a schema type (Organization, LocalBusiness, Article or FAQPage) and fill in the details - name, URL, address, questions and answers, whatever that type needs.'?></li>
-					<li><?php echo $spTextAIV['Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'] ?? 'Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'?></li>
-				</ul>
-				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'] ?? 'Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'?></p>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-list-ol"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['1. Choose a type'] ?? '1. Choose a type'?></strong><small><?php echo $spTextAIV['Organization, LocalBusiness, Article or FAQPage, then fill in the details - name, URL, address, questions and answers, whatever that type needs.'] ?? 'Organization, LocalBusiness, Article or FAQPage, then fill in the details - name, URL, address, questions and answers, whatever that type needs.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-copy"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['2. Copy & paste'] ?? '2. Copy & paste'?></strong><small><?php echo $spTextAIV['Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'] ?? 'Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'?></small></div>
+				</div>
+				<div class="aiv-note">
+					<i class="fas fa-shield-alt"></i>
+					<span><?php echo $spTextAIV['Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'] ?? 'Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'?></span>
+				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
 			</div>
 		</div>
 	</div>

@@ -5,19 +5,23 @@
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
-<div class="modal fade" id="aivOverviewHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivOverviewHelpModalLabel" aria-hidden="true">
+<div class="modal fade aiv-help-modal" id="aivOverviewHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivOverviewHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
 		<div class="modal-content">
-			<div class="modal-header">
-				<h5 class="modal-title" id="aivOverviewHelpModalLabel"><i class="fas fa-tachometer-alt"></i> <?php echo $spTextAIV['About AI Visibility Summary'] ?? 'About AI Visibility Summary'?></h5>
+			<div class="aiv-help-modal-header">
 				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-tachometer-alt"></i></div>
+				<h5 class="modal-title" id="aivOverviewHelpModalLabel"><?php echo $spTextAIV['About AI Visibility Summary'] ?? 'About AI Visibility Summary'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
 				<p><?php echo $spTextAIV['This rolls up everything AI Visibility tracks for the selected website into one score: real AI bot crawling, Google AI Overview citations, how AI assistants describe you (AI Perception Check), and real AI-referred traffic - plus an ROI card tying that traffic to conversions, if Google Analytics is connected.'] ?? 'This rolls up everything AI Visibility tracks for the selected website into one score: real AI bot crawling, Google AI Overview citations, how AI assistants describe you (AI Perception Check), and real AI-referred traffic - plus an ROI card tying that traffic to conversions, if Google Analytics is connected.'?></p>
-				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['It only aggregates data the other AI Visibility pages already collect - nothing new is measured here. A component shows "not measured yet" until its own page (AI Setup, AI Perception Check, Google Analytics) is configured.'] ?? 'It only aggregates data the other AI Visibility pages already collect - nothing new is measured here. A component shows "not measured yet" until its own page (AI Setup, AI Perception Check, Google Analytics) is configured.'?></p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span><?php echo $spTextAIV['It only aggregates data the other AI Visibility pages already collect - nothing new is measured here. A component shows "not measured yet" until its own page (AI Setup, AI Perception Check, Google Analytics) is configured.'] ?? 'It only aggregates data the other AI Visibility pages already collect - nothing new is measured here. A component shows "not measured yet" until its own page (AI Setup, AI Perception Check, Google Analytics) is configured.'?></span>
+				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
 			</div>
 		</div>
 	</div>
