@@ -25,7 +25,7 @@
 		</td>
 		<td style="text-align:center;">
 			<a href="javascript:void(0);" onclick="<?php echo $submitAction?>" class="aiv-btn aiv-btn-primary"><?php echo $spText['button']['Show Records']?></a>
-			<a href="aivisibility.php?sec=export-overview&website_id=<?php echo intval($websiteId)?>&from_time=<?php echo urlencode($fromTime)?>&to_time=<?php echo urlencode($toTime)?>" class="aiv-btn aiv-btn-outline">
+			<a href="aivisibility.php?sec=export-overview&website_id=<?php echo intval($websiteId)?>&from_time=<?php echo urlencode($fromTime)?>&to_time=<?php echo urlencode($toTime)?>" class="aiv-btn aiv-btn-outline" style="float:right;">
 				<i class="fas fa-file-csv"></i> <?php echo $spTextAIV['Export Overview CSV'] ?? 'Export Overview CSV'?>
 			</a>
 		</td>
@@ -123,7 +123,10 @@
 		<?php } ?>
 	</div>
 </div>
-<p style="font-size:12px;color:#8a8ea3;margin:-14px 0 20px;"><?php echo htmlspecialchars($fromTime)?> &ndash; <?php echo htmlspecialchars($toTime)?> &middot; <?php echo $spTextAIV['AI Overview Citation Rate'] ?? 'AI Overview Citation Rate'?> <?php echo $spTextAIV['reflects the latest measured state, not this date range'] ?? 'reflects the latest measured state, not this date range'?></p>
+<div class="aiv-note" style="margin-top:0;">
+	<i class="fas fa-calendar-alt"></i>
+	<span><strong><?php echo htmlspecialchars($fromTime)?> &ndash; <?php echo htmlspecialchars($toTime)?></strong> &middot; <?php echo $spTextAIV['AI Overview Citation Rate'] ?? 'AI Overview Citation Rate'?> <?php echo $spTextAIV['reflects the latest measured state, not this date range'] ?? 'reflects the latest measured state, not this date range'?></span>
+</div>
 
 <?php if (!$hasAnyData) { ?>
 	<div class="aiv-note">
