@@ -40,6 +40,66 @@
 }
 .aiv-card-body > p:last-child { margin-bottom: 0; }
 
+/* "Discover More" feature callouts - was 5 separate, visually identical
+   .aiv-note strips (thin left border, 13px text, bare icon) easy to skim
+   right past. One card instead, each item with its own colored icon
+   badge and a proper button CTA instead of an inline text link, bigger
+   text - reads as a set of things to try, not background noise. */
+.aiv-discover-item {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 0;
+	border-bottom: 1px solid #eef0f5;
+}
+.aiv-discover-item:last-child { border-bottom: none; padding-bottom: 0; }
+.aiv-discover-item:first-child { padding-top: 0; }
+.aiv-discover-icon {
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 15px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.aiv-discover-text {
+	flex: 1;
+	font-size: 14.5px;
+	color: #3a3d4d;
+	line-height: 1.4;
+}
+.aiv-discover-text small {
+	display: block;
+	font-size: 12px;
+	color: #8a8ea3;
+	font-weight: 400;
+	margin-top: 1px;
+}
+.aiv-discover-cta {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #f4f5fb;
+	color: #4a4fd6;
+	font-size: 13px;
+	font-weight: 700;
+	padding: 8px 14px;
+	border-radius: 8px;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.15s ease;
+}
+.aiv-discover-cta:hover { background: #e7e9fa; color: #3a3ecc; text-decoration: none; }
+@media (max-width: 600px) {
+	.aiv-discover-item { flex-wrap: wrap; }
+	.aiv-discover-cta { margin-left: 50px; }
+}
+
 .aiv-note {
 	background: #f4f5fb;
 	border: none;

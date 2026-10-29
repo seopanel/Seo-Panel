@@ -159,15 +159,7 @@
 	</div>
 <?php } ?>
 
-<?php if (!$aiReferralRoi['configured']) { ?>
-	<div class="aiv-note">
-		<i class="fas fa-chart-pie"></i>
-		<span>
-			<?php echo $spTextAIV['Want to see conversions from AI platforms, not just visits?'] ?? 'Want to see conversions from AI platforms, not just visits?'?>
-			<a href="<?php echo SP_WEBPATH?>/admin-panel.php?sec=connections"><?php echo $spTextAIV['Connect Google Analytics'] ?? 'Connect Google Analytics'?></a>
-		</span>
-	</div>
-<?php } else if ($aiReferralRoi['sessions'] > 0) { ?>
+<?php if ($aiReferralRoi['sessions'] > 0) { ?>
 	<div class="aiv-card">
 		<div class="aiv-card-header">
 			<div class="aiv-card-icon"><i class="fas fa-chart-pie"></i></div>
@@ -210,41 +202,54 @@
 	</div>
 <?php } ?>
 
-<div class="aiv-note">
-	<i class="fas fa-chart-line"></i>
-	<span>
-		<?php echo $spTextAIV['View full report'] ?? 'View full report'?>:
-		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a>
-		&nbsp;&middot;&nbsp;
-		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a>
-		&nbsp;&middot;&nbsp;
-		<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a>
-	</span>
-</div>
+<div class="aiv-card">
+	<div class="aiv-card-header">
+		<div class="aiv-card-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-compass"></i></div>
+		<div class="aiv-card-title"><?php echo $spTextAIV['Discover More'] ?? 'Discover More'?></div>
+	</div>
 
-<div class="aiv-note">
-	<i class="fas fa-robot"></i>
-	<span>
-		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
-		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
-		(<?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>)
-	</span>
-</div>
+	<?php if (!$aiReferralRoi['configured']) { ?>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#0d9488;"><i class="fas fa-chart-pie"></i></div>
+		<div class="aiv-discover-text"><?php echo $spTextAIV['Want to see conversions from AI platforms, not just visits?'] ?? 'Want to see conversions from AI platforms, not just visits?'?></div>
+		<a href="<?php echo SP_WEBPATH?>/admin-panel.php?sec=connections" class="aiv-discover-cta"><?php echo $spTextAIV['Connect Google Analytics'] ?? 'Connect Google Analytics'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
+	<?php } ?>
 
-<div class="aiv-note">
-	<i class="fas fa-comment-dots"></i>
-	<span>
-		<?php echo $spTextAIV['Curious what ChatGPT or Claude actually says about your site?'] ?? 'Curious what ChatGPT or Claude actually says about your site?'?>
-		<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Run an AI Perception Check'] ?? 'Run an AI Perception Check'?></a>
-		(<?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?>)
-	</span>
-</div>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#4a8fc7;"><i class="fas fa-chart-line"></i></div>
+		<div class="aiv-discover-text"><?php echo $spTextAIV['View full report'] ?? 'View full report'?></div>
+		<div style="display:flex;gap:8px;flex-wrap:wrap;">
+			<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a>
+			<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a>
+			<a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextTools['AI SERP Overview'] ?? 'AI SERP Overview'?></a>
+		</div>
+	</div>
 
-<div class="aiv-note">
-	<i class="fas fa-code"></i>
-	<span>
-		<?php echo $spTextAIV['Give AI answer engines a clean fact layer to cite'] ?? 'Give AI answer engines a clean fact layer to cite'?>
-		<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>')"><?php echo $spTextAIV['Generate Schema Markup'] ?? 'Generate Schema Markup'?></a>
-		(<?php echo $spTextAIV['Organization, LocalBusiness, Article, FAQPage'] ?? 'Organization, LocalBusiness, Article, FAQPage'?>)
-	</span>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#764ba2;"><i class="fas fa-robot"></i></div>
+		<div class="aiv-discover-text">
+			<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
+			<small><?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?></small>
+		</div>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')" class="aiv-discover-cta"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
+
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#d6336c;"><i class="fas fa-comment-dots"></i></div>
+		<div class="aiv-discover-text">
+			<?php echo $spTextAIV['Curious what ChatGPT or Claude actually says about your site?'] ?? 'Curious what ChatGPT or Claude actually says about your site?'?>
+			<small><?php echo $spTextAIV['uses your own API key'] ?? 'uses your own API key'?></small>
+		</div>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextAIV['Run an AI Perception Check'] ?? 'Run an AI Perception Check'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
+
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#c9820f;"><i class="fas fa-code"></i></div>
+		<div class="aiv-discover-text">
+			<?php echo $spTextAIV['Give AI answer engines a clean fact layer to cite'] ?? 'Give AI answer engines a clean fact layer to cite'?>
+			<small><?php echo $spTextAIV['Organization, LocalBusiness, Article, FAQPage'] ?? 'Organization, LocalBusiness, Article, FAQPage'?></small>
+		</div>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextAIV['Generate Schema Markup'] ?? 'Generate Schema Markup'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
 </div>
