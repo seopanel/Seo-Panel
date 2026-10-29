@@ -41,17 +41,52 @@
 	padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
 }
 .sg-copy-btn:hover { background: #3d7fb5; }
+.sg-step { flex: 1; min-width: 180px; display: flex; gap: 12px; align-items: flex-start; }
+.sg-step-badge {
+	flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%); color: #fff;
+	display: flex; align-items: center; justify-content: center;
+	font-size: 13px; font-weight: 800;
+}
+.sg-step-title { font-size: 13.5px; font-weight: 700; color: #2a2a3d; }
+.sg-step-desc { font-size: 12px; color: #8a8ea3; margin-top: 2px; }
 </style>
 
 <?php if (!empty($noWebsites)) { ?>
 	<?php echo showNoRecordsList(0); ?>
 <?php } else { ?>
 
-<div class="aiv-note">
-	<i class="fas fa-info-circle"></i>
-	<span>
-		<?php echo $spTextAIV['Structured data (JSON-LD) is the fact layer AI answer engines and Google AI Overview read directly. Fill in a type below, paste the generated script into your page\'s'] ?? 'Structured data (JSON-LD) is the fact layer AI answer engines and Google AI Overview read directly. Fill in a type below, paste the generated script into your page\'s'?> <code>&lt;head&gt;</code>. <?php echo $spTextAIV['Nothing here is sent anywhere - it only runs on this server.'] ?? 'Nothing here is sent anywhere - it only runs on this server.'?>
-	</span>
+<div class="aiv-card" style="padding:18px 22px;">
+	<div style="font-size:11px;color:#8a8ea3;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">
+		<?php echo $spTextAIV['How it works'] ?? 'How it works'?>
+	</div>
+	<div style="display:flex;gap:20px;flex-wrap:wrap;">
+		<div class="sg-step">
+			<div class="sg-step-badge">1</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Choose a type'] ?? 'Choose a type'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['Organization, LocalBusiness, Article, or FAQPage'] ?? 'Organization, LocalBusiness, Article, or FAQPage'?></div>
+			</div>
+		</div>
+		<div class="sg-step">
+			<div class="sg-step-badge">2</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Fill in the details'] ?? 'Fill in the details'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['This becomes the structured data (JSON-LD) AI answer engines and Google AI Overview read directly'] ?? 'This becomes the structured data (JSON-LD) AI answer engines and Google AI Overview read directly'?></div>
+			</div>
+		</div>
+		<div class="sg-step">
+			<div class="sg-step-badge">3</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Copy & paste'] ?? 'Copy & paste'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['Generate & Save, then paste the script into your page\'s'] ?? 'Generate & Save, then paste the script into your page\'s'?> <code>&lt;head&gt;</code></div>
+			</div>
+		</div>
+	</div>
+	<div class="aiv-note" style="margin-top:16px;margin-bottom:0;">
+		<i class="fas fa-shield-alt"></i>
+		<span><?php echo $spTextAIV['Nothing here is sent anywhere - it only runs on this server.'] ?? 'Nothing here is sent anywhere - it only runs on this server.'?></span>
+	</div>
 </div>
 
 <table class="search" style="width: 60%">
