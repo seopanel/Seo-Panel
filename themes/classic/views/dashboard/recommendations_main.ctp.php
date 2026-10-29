@@ -135,6 +135,21 @@
 
 <div class="rec-container">
 
+    <!-- same dual-context situation as the Website selector/score cards
+         below - no Dashboard tab has its own page title (the tab bar
+         itself provides that context), but this same view reached via
+         Tools -> AI Visibility -> AI Insights had no heading at all,
+         unlike every other standalone AI Visibility page. Visible by
+         default (standalone context), hidden on the Dashboard tab. -->
+    <div id="recSectionHeadWrap">
+        <?php echo showSectionHead($spTextTools['AI Insights'] ?? 'AI Insights'); ?>
+    </div>
+    <script>
+    if (document.getElementById('sp_shared_filter_bar')) {
+        document.getElementById('recSectionHeadWrap').style.display = 'none';
+    }
+    </script>
+
     <form id="recommendations_dashboard_form" method="post">
         <div class="rec-controls">
             <!-- Website selection lives in the shared filter bar above
