@@ -143,16 +143,18 @@
          unlike every other standalone AI Visibility page. Visible by
          default (standalone context), hidden on the Dashboard tab. -->
     <div id="recSectionHeadWrap">
-        <?php echo showSectionHead($spTextTools['AI Insights'] ?? 'AI Insights'); ?>
+        <div class="aiv-page-head">
+            <?php echo showSectionHead($spTextTools['AI Insights'] ?? 'AI Insights'); ?>
+            <a href="javascript:void(0);" data-toggle="modal" data-target="#recHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+        </div>
         <!-- quick at-a-glance summary, visible without clicking anything -->
         <div class="aiv-intro-card" data-intro-id="recHelpModal">
             <button type="button" class="aiv-intro-close" onclick="spDismissIntro('recHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
             <div class="aiv-intro-icon"><i class="fas fa-lightbulb"></i></div>
             <div class="aiv-intro-text">
                 <div class="aiv-intro-title"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></div>
-                <div class="aiv-intro-desc"><?php echo $spTextAIV['A prioritized to-do list for improving this site\'s AI visibility, built from data the other SEO Panel tools already collect.'] ?? 'A prioritized to-do list for improving this site\'s AI visibility, built from data the other SEO Panel tools already collect.'?></div>
+                <div class="aiv-intro-desc"><?php echo $spTextAIV['A prioritized to-do list for improving this site\'s AI visibility, built from data the other SEO Panel tools already collect.'] ?? 'A prioritized to-do list for improving this site\'s AI visibility, built from data the other SEO Panel tools already collect.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#recHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
             </div>
-            <a href="javascript:void(0);" data-toggle="modal" data-target="#recHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
         </div>
     </div>
     <script>

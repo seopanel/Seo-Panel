@@ -1,5 +1,8 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Perception Tracking'] ?? 'AI Perception Tracking'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Perception Tracking'] ?? 'AI Perception Tracking'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
 <!-- same 3-way sub-nav as settings.ctp.php/check.ctp.php -->
 <div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
@@ -20,9 +23,8 @@
 	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

@@ -1,5 +1,8 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
 <!-- quick at-a-glance summary, visible without clicking anything -->
 <div class="aiv-intro-card" data-intro-id="aioHelpModal">
@@ -7,9 +10,8 @@
 	<div class="aiv-intro-icon"><i class="fas fa-search"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'] ?? 'Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'] ?? 'Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

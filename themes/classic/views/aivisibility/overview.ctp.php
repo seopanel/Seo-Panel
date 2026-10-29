@@ -1,5 +1,8 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['Overview'] ?? 'AI Visibility Summary'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['Overview'] ?? 'AI Visibility Summary'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivOverviewHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
 <!-- quick at-a-glance summary, visible without clicking anything -->
 <div class="aiv-intro-card" data-intro-id="aivOverviewHelpModal">
@@ -7,9 +10,8 @@
 	<div class="aiv-intro-icon"><i class="fas fa-tachometer-alt"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['Overview'] ?? 'AI Visibility Summary'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Rolls up everything AI Visibility tracks for this website into one score: bot crawling, AI Overview citations, AI Perception, and AI-referred traffic.'] ?? 'Rolls up everything AI Visibility tracks for this website into one score: bot crawling, AI Overview citations, AI Perception, and AI-referred traffic.'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Rolls up everything AI Visibility tracks for this website into one score: bot crawling, AI Overview citations, AI Perception, and AI-referred traffic.'] ?? 'Rolls up everything AI Visibility tracks for this website into one score: bot crawling, AI Overview citations, AI Perception, and AI-referred traffic.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivOverviewHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivOverviewHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

@@ -1,5 +1,8 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
 <!-- quick at-a-glance summary, visible without clicking anything -->
 <div class="aiv-intro-card" data-intro-id="aivBotHelpModal">
@@ -7,9 +10,8 @@
 	<div class="aiv-intro-icon"><i class="fas fa-robot"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'] ?? 'Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'] ?? 'Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

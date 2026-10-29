@@ -362,6 +362,20 @@
 	}
 }
 
+/* Small persistent "what does this do?" link next to the page title -
+   kept alongside the intro card below (not instead of it) so the help
+   modal is still reachable any time, including after the card has
+   been dismissed via its own close button. */
+.aiv-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.aiv-help-btn {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 6px 14px; border-radius: 20px;
+	border: 1px solid #d8dee8; background: #fff; color: #667085;
+	font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: none;
+	transition: all 0.15s ease;
+}
+.aiv-help-btn:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+
 /* Help-modal hero header - replaces the plain Bootstrap modal-header
    (bare title + bare "x") with a gradient banner and a circular icon
    badge, so the popup reads as a considered intro, not a bare dialog. */
@@ -439,20 +453,20 @@
 .aiv-intro-text { flex: 1; min-width: 220px; }
 .aiv-intro-title { font-size: 14.5px; font-weight: 700; color: #2a2a3d; margin-bottom: 3px; }
 .aiv-intro-desc { font-size: 12.5px; color: #5a5e78; line-height: 1.5; }
+/* Inline right after the description text it belongs to (not stretched
+   to the far right of the card as a separate flex item), so it reads
+   as "...using your own API key. [Learn more]" in one breath. */
 .aiv-intro-cta {
-	flex: 0 0 auto;
-	display: inline-flex; align-items: center; gap: 6px;
+	display: inline-flex; align-items: center; gap: 5px;
+	margin-left: 6px; vertical-align: middle;
 	background: #fff; color: #5c4fd6;
 	border: 1px solid rgba(102,126,234,0.35);
-	padding: 8px 18px; border-radius: 20px;
-	font-size: 12.5px; font-weight: 700; text-decoration: none;
+	padding: 3px 12px; border-radius: 14px;
+	font-size: 11.5px; font-weight: 700; text-decoration: none;
+	white-space: nowrap;
 	transition: all 0.15s ease; cursor: pointer;
 }
 .aiv-intro-cta:hover { background: #5c4fd6; color: #fff; border-color: #5c4fd6; text-decoration: none; }
-@media (max-width: 600px) {
-	.aiv-intro-card { padding: 14px 40px 14px 16px; }
-	.aiv-intro-cta { width: 100%; justify-content: center; margin-top: 4px; }
-}
 </style>
 
 <script>

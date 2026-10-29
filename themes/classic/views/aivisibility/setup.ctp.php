@@ -1,5 +1,8 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
 <!-- quick at-a-glance summary, visible without clicking anything -->
 <div class="aiv-intro-card" data-intro-id="aivSetupHelpModal">
@@ -7,9 +10,8 @@
 	<div class="aiv-intro-icon"><i class="fas fa-cogs"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Setup'] ?? 'AI Setup'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
