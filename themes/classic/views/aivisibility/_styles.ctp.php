@@ -413,12 +413,21 @@
 	position: relative;
 }
 .aiv-intro-close {
-	position: absolute; top: 10px; right: 10px;
-	background: none; border: none; padding: 6px;
-	color: #9498b0; font-size: 13px; line-height: 1; cursor: pointer;
-	border-radius: 6px; transition: all 0.15s ease;
+	position: absolute; top: 12px; right: 12px;
+	display: flex; align-items: center; justify-content: center;
+	width: 24px; height: 24px;
+	background: rgba(255,255,255,0.75); border: 1px solid rgba(102,126,234,0.22);
+	border-radius: 50%;
+	color: #8a8ea3; font-size: 10.5px; line-height: 1; cursor: pointer;
+	box-shadow: 0 1px 3px rgba(20,20,43,0.07);
+	transition: all 0.15s ease;
 }
-.aiv-intro-close:hover { color: #4a4e69; background: rgba(102,126,234,0.1); }
+.aiv-intro-close:hover {
+	background: #5c4fd6; border-color: #5c4fd6; color: #fff;
+	box-shadow: 0 3px 10px rgba(92,79,214,0.35);
+	transform: scale(1.08);
+}
+.aiv-intro-close:active { transform: scale(0.94); }
 .aiv-intro-icon {
 	flex: 0 0 auto;
 	width: 46px; height: 46px; border-radius: 13px;
