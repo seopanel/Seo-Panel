@@ -42,6 +42,19 @@
 .sra-stat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: #5a5e78; margin-bottom: 14px; }
 .sra-stat-row strong { color: #2a2a3d; }
 .sra-stat-row .sep { color: #d8dee8; }
+/* The Sources count opens a modal - was styled identically to the
+   plain Present/Cited status pills next to it (gray, no hint it's
+   clickable). Its own accent color + icons make the "click for more"
+   affordance obvious instead of reading as just another status chip. */
+.sra-sources-link {
+	display: inline-flex; align-items: center; gap: 5px;
+	background: #fff; color: #764ba2;
+	border: 1px solid rgba(118,75,162,0.4);
+	padding: 3px 11px; border-radius: 20px;
+	font-size: 11.5px; font-weight: 700; text-decoration: none;
+	cursor: pointer; transition: all 0.15s ease;
+}
+.sra-sources-link:hover { background: #764ba2; color: #fff; border-color: #764ba2; text-decoration: none; }
 </style>
 
 <div class="aiv-card">
@@ -160,7 +173,7 @@
 										<span class="sep">&middot;</span>
 										<span style="color:#5a5e78;"><?php echo $spTextKeyword['Sources'] ?? 'Sources'?>:</span>
 										<?php if (!empty($seInfo['aio_reference_count'])): ?>
-											<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($keywordId)?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')" class="aiv-pill aiv-pill-muted" style="text-decoration:none;"><?php echo intval($seInfo['aio_reference_count'])?></a>
+											<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($keywordId)?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')" class="sra-sources-link"><i class="fas fa-list-ul"></i> <?php echo intval($seInfo['aio_reference_count'])?> <i class="fas fa-chevron-right" style="font-size:9px;"></i></a>
 										<?php else: ?>
 											<span class="aiv-pill aiv-pill-muted">0</span>
 										<?php endif; ?>
