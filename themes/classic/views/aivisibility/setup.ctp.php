@@ -12,7 +12,8 @@
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Setup'] ?? 'AI Setup'?></div>
 		<div class="aiv-intro-desc">
 			<?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?><br>
-			<span style="color:#8a8ea3;"><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
 			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 		</div>
 	</div>
@@ -151,11 +152,6 @@
 		<strong><?php echo $spTextAIV['WordPress note'] ?? 'WordPress:'?></strong>
 		<?php echo $spTextAIV['botwordpressinstructions'] ?? 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'?>
 	</p>
-
-	<div class="aiv-note">
-		<i class="fas fa-shield-alt"></i>
-		<span><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
-	</div>
 </div>
 
 <div class="aiv-card">
