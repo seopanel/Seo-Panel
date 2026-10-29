@@ -3,12 +3,12 @@
 
 <!-- same 3-way sub-nav as settings.ctp.php/tracking.ctp.php -->
 <div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
-	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')" class="aiv-subnav-pill">
-		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
-	</a>
 	<span class="aiv-subnav-pill aiv-subnav-active">
 		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Ask'] ?? 'Ask'?>
 	</span>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')" class="aiv-subnav-pill">
+		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+	</a>
 	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-subnav-pill">
 		<i class="fas fa-calendar-check"></i> <?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?>
 	</a>
@@ -65,12 +65,13 @@
 	<?php } ?>
 </div>
 
-<div class="aiv-note">
-	<i class="fas fa-calendar-check"></i>
-	<span>
-		<?php echo $spTextAIV['Set up weekly, unattended tracking of your own prompts'] ?? 'Set up weekly, unattended tracking of your own prompts'?>
-	</span>
-	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta" style="margin-left:auto;"><?php echo $spTextAIV['Go to Scheduled Tracking'] ?? 'Go to Scheduled Tracking'?> <i class="fas fa-arrow-right"></i></a>
+<div class="aiv-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+	<div class="aiv-card-icon" style="flex-shrink:0;background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);"><i class="fas fa-calendar-check"></i></div>
+	<div style="flex:1;min-width:220px;">
+		<div style="font-size:14.5px;font-weight:700;color:#2a2a3d;"><?php echo $spTextAIV['Dont want to ask manually every time?'] ?? "Don't want to ask manually every time?"?></div>
+		<div style="font-size:12.5px;color:#8a8ea3;margin-top:2px;"><?php echo $spTextAIV['Save your own prompts once and SEO Panel checks them automatically every week - no need to come back and ask again.'] ?? 'Save your own prompts once and SEO Panel checks them automatically every week - no need to come back and ask again.'?></div>
+	</div>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta"><?php echo $spTextAIV['Go to Scheduled Tracking'] ?? 'Go to Scheduled Tracking'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <script>
