@@ -1,5 +1,28 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="aivBotHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivBotHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aivBotHelpModalLabel"><i class="fas fa-robot"></i> <?php echo $spTextAIV['About AI Bot Crawlers'] ?? 'About AI Bot Crawlers'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it. Since bots don\'t run JavaScript, this is measured separately from the AI Referral Report\'s click-through traffic.'] ?? 'Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it. Since bots don\'t run JavaScript, this is measured separately from the AI Referral Report\'s click-through traffic.'?></p>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Needs the bot collector script from AI Setup installed first. "Verified" means the visitor\'s IP passed a reverse-DNS check at the time - the same technique used to confirm Googlebot - which is advisory analytics, not forensic proof.'] ?? 'Needs the bot collector script from AI Setup installed first. "Verified" means the visitor\'s IP passed a reverse-DNS check at the time - the same technique used to confirm Googlebot - which is advisory analytics, not forensic proof.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $submitAction = "scriptDoLoadPost('aivisibility.php?sec=botreport', 'search_form', 'content')"; ?>
 <form id='search_form'>
 <input type="hidden" name="sec" value="botreport">

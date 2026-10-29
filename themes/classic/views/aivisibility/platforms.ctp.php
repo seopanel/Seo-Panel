@@ -1,5 +1,27 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Platforms'] ?? 'AI Platforms'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Platforms'] ?? 'AI Platforms'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivPlatformsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="aivPlatformsHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivPlatformsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aivPlatformsHelpModalLabel"><i class="fas fa-sliders-h"></i> <?php echo $spTextAIV['About Manage AI Platforms'] ?? 'About Manage AI Platforms'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['An admin-only catalog of every AI platform SEO Panel recognizes (ChatGPT, Perplexity, Google-Extended, and more) - its hostnames, bot user-agent pattern, and robots.txt token - which is what actually drives the matching behind AI Referral Report and AI Bot Crawlers.'] ?? 'An admin-only catalog of every AI platform SEO Panel recognizes (ChatGPT, Perplexity, Google-Extended, and more) - its hostnames, bot user-agent pattern, and robots.txt token - which is what actually drives the matching behind AI Referral Report and AI Bot Crawlers.'?></p>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Each row has two independent toggles - "Active" for bot classification and "Referral source" for click-through matching. Don\'t mark a vendor domain used only for bot matching (e.g. google.com) as a referral source, or its ordinary traffic gets mis-counted as AI referrals.'] ?? 'Each row has two independent toggles - "Active" for bot classification and "Referral source" for click-through matching. Don\'t mark a vendor domain used only for bot matching (e.g. google.com) as a referral source, or its ordinary traffic gets mis-counted as AI referrals.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <div class="aiv-card">
 	<div class="aiv-card-header">

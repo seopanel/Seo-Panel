@@ -1,5 +1,31 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#sgHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="sgHelpModal" tabindex="-1" role="dialog" aria-labelledby="sgHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="sgHelpModalLabel"><i class="fas fa-code"></i> <?php echo $spTextAIV['About AI Schema Markup Generator'] ?? 'About AI Schema Markup Generator'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'] ?? 'This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'?></p>
+				<ul>
+					<li><?php echo $spTextAIV['Choose a schema type (Organization, LocalBusiness, Article or FAQPage) and fill in the details - name, URL, address, questions and answers, whatever that type needs.'] ?? 'Choose a schema type (Organization, LocalBusiness, Article or FAQPage) and fill in the details - name, URL, address, questions and answers, whatever that type needs.'?></li>
+					<li><?php echo $spTextAIV['Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'] ?? 'Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'?></li>
+				</ul>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'] ?? 'Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <style>
 /* Page-scoped - not shared with other AI Visibility pages via _styles.ctp.php,

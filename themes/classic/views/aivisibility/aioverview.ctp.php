@@ -1,5 +1,27 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="aioHelpModal" tabindex="-1" role="dialog" aria-labelledby="aioHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aioHelpModalLabel"><i class="fas fa-search"></i> <?php echo $spTextAIV['About AI SERP Overview'] ?? 'About AI SERP Overview'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitor domains show up alongside you when they do.'] ?? 'Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitor domains show up alongside you when they do.'?></p>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Pick a Period to see citation status for checks run in that window; a keyword with no check in the period simply won\'t appear.'] ?? 'Pick a Period to see citation status for checks run in that window; a keyword with no check in the period simply won\'t appear.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <form id='search_form'>
 <table class="search">

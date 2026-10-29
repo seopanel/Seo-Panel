@@ -1,5 +1,27 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="aivSetupHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivSetupHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aivSetupHelpModalLabel"><i class="fas fa-cogs"></i> <?php echo $spTextAIV['About AI Setup'] ?? 'About AI Setup'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['This is the one-time installation hub for AI Visibility: the JS snippet for AI Referral Report, the bot-collector script for AI Bot Crawlers, and (under Advanced) robots.txt AI-crawler rules and an llms.txt file.'] ?? 'This is the one-time installation hub for AI Visibility: the JS snippet for AI Referral Report, the bot-collector script for AI Bot Crawlers, and (under Advanced) robots.txt AI-crawler rules and an llms.txt file.'?></p>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Nothing shows up on the other AI Visibility pages until the matching piece here is actually installed. The tracking snippet itself stores no cookies, localStorage, or visitor identifiers - only aggregate hit counts.'] ?? 'Nothing shows up on the other AI Visibility pages until the matching piece here is actually installed. The tracking snippet itself stores no cookies, localStorage, or visitor identifiers - only aggregate hit counts.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <form id='search_form'>
 <table class="search">

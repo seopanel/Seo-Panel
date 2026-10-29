@@ -14,6 +14,7 @@
         'todo'    => array('class' => 'todo',    'icon' => 'fa-tasks',                'label' => 'To-Do'),
     );
     ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 
 <style>
 .rec-container { width: 100%; }
@@ -141,14 +142,34 @@
          Tools -> AI Visibility -> AI Insights had no heading at all,
          unlike every other standalone AI Visibility page. Visible by
          default (standalone context), hidden on the Dashboard tab. -->
-    <div id="recSectionHeadWrap">
+    <div id="recSectionHeadWrap" class="aiv-page-head">
         <?php echo showSectionHead($spTextTools['AI Insights'] ?? 'AI Insights'); ?>
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#recHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
     </div>
     <script>
     if (document.getElementById('sp_shared_filter_bar')) {
         document.getElementById('recSectionHeadWrap').style.display = 'none';
     }
     </script>
+
+    <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+    <div class="modal fade" id="recHelpModal" tabindex="-1" role="dialog" aria-labelledby="recHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recHelpModalLabel"><i class="fas fa-lightbulb"></i> <?php echo $spTextAIV['About AI Insights'] ?? 'About AI Insights'?></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body aiv-help-modal-body">
+                    <p><?php echo $spTextAIV['A prioritized to-do list for improving this site\'s AI visibility - errors, warnings, and to-dos - built from data the other SEO Panel tools already collect (Site Auditor, AI Visibility, Schema Generator, and more).'] ?? 'A prioritized to-do list for improving this site\'s AI visibility - errors, warnings, and to-dos - built from data the other SEO Panel tools already collect (Site Auditor, AI Visibility, Schema Generator, and more).'?></p>
+                    <p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'] ?? 'Refreshes automatically once a day, or on demand with the Refresh button. You can also generate an on-demand plain-English summary of the current findings.'?></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <form id="recommendations_dashboard_form" method="post">
         <div class="rec-controls">

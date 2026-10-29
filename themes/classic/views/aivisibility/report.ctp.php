@@ -1,5 +1,28 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade" id="aivReportHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivReportHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title" id="aivReportHelpModalLabel"><i class="fas fa-external-link-alt"></i> <?php echo $spTextAIV['About AI Referral Report'] ?? 'About AI Referral Report'?></h5>
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'?></p>
+				<p style="color:#8a8ea3;font-size:12.5px;margin-bottom:0;"><?php echo $spTextAIV['Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'] ?? 'Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-dismiss="modal"><?php echo $spText['button']['Close'] ?? 'Close'?></button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $submitAction = "scriptDoLoadPost('aivisibility.php?sec=report', 'search_form', 'content')"; ?>
 <form id='search_form'>
 <input type="hidden" name="sec" value="report">
