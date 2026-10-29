@@ -8,20 +8,36 @@
    pill tab look used elsewhere, without touching Bootstrap's generic
    .nav-tabs/.nav-link classes (used unrelated elsewhere in the app)
    or its native data-toggle="tab" JS, which this page still relies on. */
-.sra-tabs.nav-tabs { border-bottom: none; gap: 8px; }
-.sra-tabs.nav-tabs .nav-item { margin-bottom: 0; }
+/* .nav-tabs itself carries a dark gradient bar background (screen.css,
+   designed for a different dark-tab-bar look elsewhere in the app) -
+   has to be explicitly cleared here, not just have its spacing
+   tweaked, or that dark bar shows through behind these lighter pills. */
+.sra-tabs.nav-tabs {
+	background: transparent; box-shadow: none; padding: 0; border-radius: 0;
+	border-bottom: none; gap: 8px;
+}
+.sra-tabs.nav-tabs .nav-item { margin-bottom: 0; margin-right: 0; }
 .sra-tabs.nav-tabs .nav-link {
+	background: #fff;
 	border: 1px solid #d8dee8; border-radius: 9px;
 	color: #4a4e69; font-weight: 600; font-size: 13.5px;
-	padding: 9px 18px;
+	padding: 9px 18px; margin-bottom: 0;
 	display: inline-flex; align-items: center; gap: 7px;
+	box-shadow: none; transform: none;
 	transition: all 0.15s ease;
 }
-.sra-tabs.nav-tabs .nav-link:hover { border-color: #8890e0; color: #5c4fd6; }
+.sra-tabs.nav-tabs .nav-link:hover {
+	background: #f4f5fb; border-color: #8890e0; color: #5c4fd6;
+	box-shadow: none; transform: none;
+}
 .sra-tabs.nav-tabs .nav-link.active {
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	border-color: #667eea; color: #fff;
-	box-shadow: 0 3px 10px rgba(102,126,234,0.35);
+	box-shadow: 0 3px 10px rgba(102,126,234,0.35); transform: none;
+}
+.sra-tabs.nav-tabs .nav-link.active:hover {
+	background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+	color: #fff;
 }
 .sra-stat-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: #5a5e78; margin-bottom: 14px; }
 .sra-stat-row strong { color: #2a2a3d; }
