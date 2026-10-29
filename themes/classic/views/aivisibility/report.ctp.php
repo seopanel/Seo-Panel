@@ -1,7 +1,15 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<div class="aiv-page-head">
-	<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aivReportHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aivReportHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-external-link-alt"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Referral Report'] ?? 'AI Referral Report'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'?></div>
+	</div>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

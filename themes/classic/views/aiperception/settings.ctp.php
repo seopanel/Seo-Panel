@@ -1,8 +1,5 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<div class="aiv-page-head">
-	<?php echo showSectionHead($spTextAIV['AI Perception Check'] ?? 'AI Perception Check'); ?>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
-</div>
+<?php echo showSectionHead($spTextAIV['AI Perception Check'] ?? 'AI Perception Check'); ?>
 
 <!-- 3-way sub-nav shared across settings/check/tracking.ctp.php - each
      page previously only linked forward to the next step (settings ->
@@ -20,10 +17,15 @@
 	</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking "What does this do?" -->
-<div class="aiv-note">
-	<i class="fas fa-comment-dots"></i>
-	<span><?php echo $spTextAIV['AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'AI Perception Check asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?></a></span>
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aipHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aipHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?></div>
+	</div>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

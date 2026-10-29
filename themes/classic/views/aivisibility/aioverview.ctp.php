@@ -1,7 +1,15 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<div class="aiv-page-head">
-	<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
-	<a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+<?php echo showSectionHead($spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'); ?>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aioHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aioHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-search"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI SERP Overview'] ?? 'AI SERP Overview'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'] ?? 'Shows whether your tracked keywords get cited inside Google\'s AI Overview answers, and which competitors show up alongside you.'?></div>
+	</div>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aioHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
 </div>
 
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->

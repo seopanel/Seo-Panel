@@ -362,19 +362,6 @@
 	}
 }
 
-/* Page-title row + "what does this do?" trigger, opening a small static
-   Bootstrap modal (distinct from #ajaxModalSP in layout/default.ctp.php,
-   which loads its body over AJAX - this content is just inline markup). */
-.aiv-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
-.aiv-help-btn {
-	display: inline-flex; align-items: center; gap: 6px;
-	padding: 6px 14px; border-radius: 20px;
-	border: 1px solid #d8dee8; background: #fff; color: #667085;
-	font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: none;
-	transition: all 0.15s ease;
-}
-.aiv-help-btn:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
-
 /* Help-modal hero header - replaces the plain Bootstrap modal-header
    (bare title + bare "x") with a gradient banner and a circular icon
    badge, so the popup reads as a considered intro, not a bare dialog. */
@@ -408,4 +395,72 @@
 	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: #fff;
 }
 .aiv-help-modal .modal-footer .btn:hover { opacity: 0.92; color: #fff; }
+
+/* Quick-info intro card - the always-visible "what is this tool" banner
+   at the top of every AI tool page. Replaces the earlier pairing of a
+   small "What does this do?" link up in the title row plus a thin,
+   easy-to-miss .aiv-note strip below the sub-nav with one single,
+   higher-visual-weight banner that IS the page's one obvious place for
+   this, with its own "Learn more" CTA opening the same help modal. */
+.aiv-intro-card {
+	display: flex; align-items: center; gap: 16px;
+	background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%);
+	border: 1px solid rgba(102,126,234,0.2);
+	border-radius: 14px;
+	padding: 16px 44px 16px 20px;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+	position: relative;
+}
+.aiv-intro-close {
+	position: absolute; top: 10px; right: 10px;
+	background: none; border: none; padding: 6px;
+	color: #9498b0; font-size: 13px; line-height: 1; cursor: pointer;
+	border-radius: 6px; transition: all 0.15s ease;
+}
+.aiv-intro-close:hover { color: #4a4e69; background: rgba(102,126,234,0.1); }
+.aiv-intro-icon {
+	flex: 0 0 auto;
+	width: 46px; height: 46px; border-radius: 13px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff; display: flex; align-items: center; justify-content: center;
+	font-size: 19px;
+	box-shadow: 0 4px 12px rgba(102,126,234,0.32);
+}
+.aiv-intro-text { flex: 1; min-width: 220px; }
+.aiv-intro-title { font-size: 14.5px; font-weight: 700; color: #2a2a3d; margin-bottom: 3px; }
+.aiv-intro-desc { font-size: 12.5px; color: #5a5e78; line-height: 1.5; }
+.aiv-intro-cta {
+	flex: 0 0 auto;
+	display: inline-flex; align-items: center; gap: 6px;
+	background: #fff; color: #5c4fd6;
+	border: 1px solid rgba(102,126,234,0.35);
+	padding: 8px 18px; border-radius: 20px;
+	font-size: 12.5px; font-weight: 700; text-decoration: none;
+	transition: all 0.15s ease; cursor: pointer;
+}
+.aiv-intro-cta:hover { background: #5c4fd6; color: #fff; border-color: #5c4fd6; text-decoration: none; }
+@media (max-width: 600px) {
+	.aiv-intro-card { padding: 14px 40px 14px 16px; }
+	.aiv-intro-cta { width: 100%; justify-content: center; margin-top: 4px; }
+}
 </style>
+
+<script>
+// Dismiss for the "quick-info" intro card at the top of each AI tool
+// page - cookie-based (not localStorage) per the project's own choice,
+// so it naturally reappears once the cookie expires instead of staying
+// hidden forever. Keyed by the page's help-modal id, so dismissing the
+// (identical) card on any of the 3 AI Perception pages hides it on all
+// 3, while every other AI tool page's card is dismissed independently.
+function spDismissIntro(id, btn) {
+	var card = btn.closest('.aiv-intro-card');
+	if (card) card.style.display = 'none';
+	createCookie('sp_intro_dismissed_' + id, '1', 14);
+}
+document.querySelectorAll('.aiv-intro-card[data-intro-id]').forEach(function(card) {
+	if (readCookie('sp_intro_dismissed_' + card.getAttribute('data-intro-id')) === '1') {
+		card.style.display = 'none';
+	}
+});
+</script>
