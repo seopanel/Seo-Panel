@@ -10,7 +10,11 @@
 	<div class="aiv-intro-icon"><i class="fas fa-external-link-alt"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Referral Report'] ?? 'AI Referral Report'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['floornotice'] ?? 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
 	</div>
 </div>
 
@@ -68,11 +72,6 @@
 	</tr>
 </table>
 </form>
-
-<div class="aiv-note">
-	<i class="fas fa-info-circle"></i>
-	<span><?php echo $spTextAIV['floornotice'] ?? 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'?></span>
-</div>
 
 <div id='subcontent'>
 	<?php if (!empty($graphContent)) { ?>
