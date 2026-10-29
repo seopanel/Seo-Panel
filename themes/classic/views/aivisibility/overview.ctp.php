@@ -138,20 +138,46 @@
 				<div class="aiv-card-title"><?php echo $spTextAIV['Top AI Platforms'] ?? 'Top AI Platforms'?></div>
 			</div>
 		</div>
+		<?php
+		$aivPlatformColors = [
+			'chatgpt' => '#10a37f', 'claude' => '#cc785c', 'gemini' => '#4285f4',
+			'perplexity' => '#20808d', 'copilot' => '#0078d4', 'you' => '#7c3aed',
+			'poe' => '#6c5ce7', 'grok' => '#1a1a2e', 'mistral' => '#fa520f',
+			'google-extended' => '#4285f4', 'bytespider' => '#fe2c55', 'ccbot' => '#718096',
+			'applebot-extended' => '#555555', 'meta-externalagent' => '#0866ff',
+			'amazon' => '#ff9900', 'duckassist' => '#de5833',
+		];
+		$aivMaxTotal = !empty($combinedPlatforms) ? max(array_column($combinedPlatforms, 'total')) : 0;
+		?>
 		<div style="overflow-x:auto;">
 		<table class="aiv-table">
 			<tr>
 				<th><?php echo $spTextAIV['Platform'] ?? 'Platform'?></th>
 				<th class="aiv-num"><?php echo $spTextAIV['Referrals'] ?? 'Referrals'?></th>
 				<th class="aiv-num"><?php echo $spTextAIV['Bot Crawls'] ?? 'Bot Crawls'?></th>
-				<th class="aiv-num"><?php echo $spTextAIV['Total'] ?? 'Total'?></th>
+				<th style="min-width:160px;"><?php echo $spTextAIV['Total'] ?? 'Total'?></th>
 			</tr>
-			<?php foreach ($combinedPlatforms as $platform => $row) { ?>
+			<?php foreach ($combinedPlatforms as $platform => $row) {
+				$platColor = $aivPlatformColors[$platform] ?? '#667eea';
+				$platShare = $aivMaxTotal > 0 ? round((intval($row['total']) / $aivMaxTotal) * 100) : 0;
+			?>
 				<tr>
-					<td><?php echo htmlspecialchars($row['display_name'])?></td>
+					<td>
+						<div style="display:flex;align-items:center;gap:10px;">
+							<div style="width:26px;height:26px;border-radius:50%;background:<?php echo htmlspecialchars($platColor)?>;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;"><?php echo htmlspecialchars(mb_substr($row['display_name'], 0, 1))?></div>
+							<span style="font-weight:600;color:#2a2a3d;"><?php echo htmlspecialchars($row['display_name'])?></span>
+						</div>
+					</td>
 					<td class="aiv-num"><?php echo intval($row['referrals'])?></td>
 					<td class="aiv-num"><?php echo intval($row['bot_hits'])?></td>
-					<td class="aiv-num"><strong><?php echo intval($row['total'])?></strong></td>
+					<td>
+						<div style="display:flex;align-items:center;gap:10px;">
+							<div style="flex:1;height:6px;border-radius:4px;background:#eef0f5;overflow:hidden;">
+								<div style="height:100%;width:<?php echo $platShare?>%;background:<?php echo htmlspecialchars($platColor)?>;border-radius:4px;"></div>
+							</div>
+							<strong style="min-width:32px;text-align:right;color:#2a2a3d;"><?php echo intval($row['total'])?></strong>
+						</div>
+					</td>
 				</tr>
 			<?php } ?>
 		</table>
