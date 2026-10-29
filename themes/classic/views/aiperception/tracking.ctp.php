@@ -275,7 +275,15 @@
 </div>
 
 <script>
-function aipSuggestPrompts(provider) {
+// Both assigned onto window explicitly (not declared as plain
+// functions) since they're invoked from inline onclick="..." HTML
+// attributes, which only resolve names via the global scope. Pages
+// here only ever load through scriptDoLoad()'s direct eval() of their
+// <script> tags, nested inside its own function scope, so a plain
+// `function aipSuggestPrompts(){}` declared that way is scoped to
+// that internal callback, not to window (same class of bug fixed on
+// the intro card's close button elsewhere this session).
+window.aipSuggestPrompts = function(provider) {
 	var websiteId = <?php echo intval($websiteId)?>;
 	var box = document.getElementById('aip_suggestions');
 	box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Asking...'] ?? 'Asking...'?>';
@@ -303,13 +311,13 @@ function aipSuggestPrompts(provider) {
 		.catch(function() {
 			box.innerHTML = '<span class="text-danger"><?php echo $spTextAIV['Request failed'] ?? 'Request failed.'?></span>';
 		});
-}
+};
 
-function aipAddSuggestedPrompt(el) {
+window.aipAddSuggestedPrompt = function(el) {
 	var text = decodeURIComponent(el.getAttribute('data-prompt'));
 	document.querySelector('#aip_add_prompt_form input[name="prompt_text"]').value = text;
 	scriptDoLoadPost('ai-perception.php', 'aip_add_prompt_form', 'content');
-}
+};
 </script>
 
 <?php if (empty($providers)) { ?>

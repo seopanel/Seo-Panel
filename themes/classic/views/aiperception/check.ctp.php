@@ -124,7 +124,17 @@
 </div>
 
 <script>
-function aipAsk(provider) {
+// Assigned onto window explicitly, not declared as a plain function -
+// this is invoked from an inline onclick="aipAsk(...)" HTML attribute,
+// which only ever resolves names via the global scope. This whole
+// page is only ever loaded through scriptDoLoad() (js/common.js),
+// which runs its <script> tags via a direct eval() nested inside its
+// own function scope - a plain `function aipAsk(){}` declared that
+// way is scoped to that internal callback, not to window, so the
+// button would throw "aipAsk is not defined" (confirmed the same
+// class of bug on the intro card's close button elsewhere this
+// session - see _styles.ctp.php).
+window.aipAsk = function(provider) {
 	var websiteId = document.getElementById('aip_website_id').value;
 	var resultsEl = document.getElementById('aip_results');
 	var providerLabels = {openai: 'OpenAI (ChatGPT)', anthropic: 'Anthropic (Claude)', google: 'Google (Gemini)'};
@@ -149,7 +159,7 @@ function aipAsk(provider) {
 		.catch(function() {
 			bodyEl.innerHTML = '<span class="text-danger"><?php echo $spTextAIV['Request failed'] ?? 'Request failed.'?></span>';
 		});
-}
+};
 </script>
 
 <?php } ?>

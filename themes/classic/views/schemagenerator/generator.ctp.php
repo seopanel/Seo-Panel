@@ -255,7 +255,15 @@
 <?php } ?>
 
 <script>
-function sgAddFaqRow() {
+// Assigned onto window explicitly (not declared as a plain function)
+// since it's invoked from an inline onclick="sgAddFaqRow()" HTML
+// attribute, which only resolves names via the global scope - this
+// page only ever loads through scriptDoLoad()'s direct eval() of its
+// <script> tags, nested inside its own function scope, so a plain
+// `function sgAddFaqRow(){}` would be scoped to that internal
+// callback, not to window (same class of bug fixed on the intro
+// card's close button elsewhere this session).
+window.sgAddFaqRow = function() {
 	var container = document.getElementById('sg_faq_rows');
 	if (!container) return;
 	var row = document.createElement('div');
@@ -263,7 +271,7 @@ function sgAddFaqRow() {
 	row.innerHTML = '<div class="form-group"><label>Question</label><input type="text" name="question[]" class="form-control"></div>'
 		+ '<div class="form-group" style="margin-bottom:0;"><label>Answer</label><textarea name="answer[]" class="form-control" rows="2"></textarea></div>';
 	container.appendChild(row);
-}
+};
 
 var sgCopyBtn = document.getElementById('sgCopyBtn');
 if (sgCopyBtn) {

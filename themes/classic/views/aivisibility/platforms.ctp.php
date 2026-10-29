@@ -195,7 +195,15 @@
 </div>
 
 <script>
-function aivEditPlatform(data) {
+// Both assigned onto window explicitly (not declared as plain
+// functions) since they're invoked from inline onclick="..." HTML
+// attributes, which only resolve names via the global scope. This
+// page only ever loads through scriptDoLoad()'s direct eval() of its
+// <script> tags, nested inside its own function scope, so a plain
+// `function aivEditPlatform(){}` declared that way is scoped to that
+// internal callback, not to window (same class of bug fixed on the
+// intro card's close button elsewhere this session).
+window.aivEditPlatform = function(data) {
 	var form = document.getElementById('add_platform_form');
 	form.querySelector('input[name="id"]').value = data.id;
 	form.querySelector('input[name="platform"]').value = data.platform || '';
@@ -209,13 +217,13 @@ function aivEditPlatform(data) {
 	document.getElementById('aivPlatformFormTitle').textContent = <?php echo json_encode($spTextAIV['Edit Platform'] ?? 'Edit Platform')?>;
 	document.getElementById('aivCancelEditBtn').hidden = false;
 	form.scrollIntoView({behavior: 'smooth', block: 'center'});
-}
+};
 
-function aivCancelEditPlatform() {
+window.aivCancelEditPlatform = function() {
 	var form = document.getElementById('add_platform_form');
 	form.reset();
 	form.querySelector('input[name="id"]').value = '0';
 	document.getElementById('aivPlatformFormTitle').textContent = <?php echo json_encode($spTextAIV['Add Platform'] ?? 'Add Platform')?>;
 	document.getElementById('aivCancelEditBtn').hidden = true;
-}
+};
 </script>

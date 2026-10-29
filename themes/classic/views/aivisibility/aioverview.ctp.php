@@ -61,9 +61,17 @@
 </table>
 </form>
 <script>
-function aioReload() {
+// Assigned onto window explicitly (not declared as a plain function)
+// since it's invoked from inline onchange="aioReload()" attributes,
+// which only resolve names via the global scope - this page only
+// ever loads through scriptDoLoad()'s direct eval() of its <script>
+// tags, nested inside its own function scope, so a plain
+// `function aioReload(){}` would be scoped to that internal callback,
+// not to window (same class of bug fixed on the intro card's close
+// button elsewhere this session).
+window.aioReload = function() {
 	scriptDoLoad('aivisibility.php?sec=aioverview', 'content', '&website_id=' + document.getElementById('aioWebsiteId').value + '&period=' + document.getElementById('aioPeriod').value);
-}
+};
 </script>
 
 <div id='subcontent'>

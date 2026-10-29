@@ -488,7 +488,15 @@ if (aivLlmsCopyBtn) {
 	});
 }
 
-function aivSuggestLlmsDescription() {
+// Assigned onto window explicitly (not declared as a plain function)
+// since it's invoked from an inline onclick="..." HTML attribute,
+// which only resolves names via the global scope - this page only
+// ever loads through scriptDoLoad()'s direct eval() of its <script>
+// tags, nested inside its own function scope, so a plain
+// `function aivSuggestLlmsDescription(){}` would be scoped to that
+// internal callback, not to window (same class of bug fixed on the
+// intro card's close button elsewhere this session).
+window.aivSuggestLlmsDescription = function() {
 	var btn = document.getElementById('aivLlmsSuggestBtn');
 	var original = btn.innerHTML;
 	btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Generating...'] ?? 'Generating...'?>';
@@ -507,7 +515,7 @@ function aivSuggestLlmsDescription() {
 			btn.innerHTML = original;
 			alert('Could not generate a suggestion.');
 		});
-}
+};
 
 (function pollInstallStatus() {
 	fetch('aivisibility.php?sec=installstatus&website_id=<?php echo intval($websiteId)?>', { credentials: 'same-origin' })
