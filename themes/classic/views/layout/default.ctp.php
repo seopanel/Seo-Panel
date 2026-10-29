@@ -353,8 +353,16 @@
     		<?php echo $viewContent?>
     	</div>
     </div>
-    
-    <div class="container-fluid fixed-bottom <?php echo $siteNavFontClass?> <?php echo $siteFooterBgClass;?> center footer-sp d-none d-md-block">
+
+    <!-- Was fixed-bottom (position:fixed, pinned to the viewport bottom
+         regardless of content length) - on a page shorter than the
+         viewport this left a large empty gap between the content and
+         the footer, which only sat flush against the viewport edge.
+         Now a normal flow element that follows the content directly,
+         like any other footer. Mobile keeps its own separate, genuinely
+         fixed PWA bottom tab bar (pwa_bottom_nav.ctp.php) below, which
+         is a different, intentionally-always-visible nav pattern. -->
+    <div class="container-fluid <?php echo $siteNavFontClass?> <?php echo $siteFooterBgClass;?> center footer-sp d-none d-md-block">
     	<?php include_once(SP_VIEWPATH."/common/footer.ctp.php"); ?>
     </div>
 
