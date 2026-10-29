@@ -169,7 +169,7 @@
 					</div>
 				<?php endif; ?>
 				<?php if (!empty($seInfo['serp_data'])): ?>
-				<div style="max-height:480px; overflow-y:auto; padding:0 6px 6px;">
+				<div style="padding:0 6px 6px;">
 					<table class="aiv-table" style="margin:0;">
 						<thead>
 							<tr>
