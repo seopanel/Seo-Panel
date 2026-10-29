@@ -1,7 +1,40 @@
-<?php echo showSectionHead($spTextPanel['MCP Access'] ?? 'MCP Access'); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['MCP Access'] ?? 'MCP Access'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#mcpHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextMyAccount['What does this do?'] ?? 'What does this do?'?></a>
+</div>
 
-<div class="alert alert-info">
-	<?php echo $spTextMyAccount['mcpaccessnotice'] ?? 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'?>
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="mcpHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('mcpHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-key"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextPanel['MCP Access'] ?? 'MCP Access'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextMyAccount['mcpaccessnotice'] ?? 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#mcpHelpModal" class="aiv-intro-cta"><?php echo $spTextMyAccount['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="mcpHelpModal" tabindex="-1" role="dialog" aria-labelledby="mcpHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-key"></i></div>
+				<h5 class="modal-title" id="mcpHelpModalLabel"><?php echo $spTextMyAccount['About MCP Access'] ?? 'About MCP Access'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextMyAccount['mcpaccessnotice'] ?? 'Generate a personal access token to let your own AI agent (e.g. Claude Desktop) query your SEO Panel data directly - keyword rankings, backlinks, AI Visibility stats - entirely self-hosted. Nothing leaves your server.'?></p>
+				<div class="aiv-note aiv-note-warn">
+					<i class="fas fa-shield-alt"></i>
+					<span><?php echo $spTextMyAccount['A generated token is shown only once - copy it immediately. Anyone holding it can read your SEO Panel data through the API, so revoke any token you no longer use.'] ?? 'A generated token is shown only once - copy it immediately. Anyone holding it can read your SEO Panel data through the API, so revoke any token you no longer use.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextMyAccount['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
 </div>
 
 <?php if (!empty($newToken)) { ?>
