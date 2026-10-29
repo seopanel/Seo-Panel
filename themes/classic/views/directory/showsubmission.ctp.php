@@ -1,4 +1,41 @@
-<?php echo showSectionHead($spTextDir['Semi Automatic Directory Submission Tool']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextDir['Semi Automatic Directory Submission Tool']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#dirAutoHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="dirAutoHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('dirAutoHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-book"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">Automatic Submission</div>
+		<div class="aiv-intro-desc">Walks your website through submission to directories one at a time, auto-filling each one's form as it goes. <a href="javascript:void(0);" data-toggle="modal" data-target="#dirAutoHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="dirAutoHelpModal" tabindex="-1" role="dialog" aria-labelledby="dirAutoHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-book"></i></div>
+				<h5 class="modal-title" id="dirAutoHelpModalLabel">About Automatic Submission</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Pick a website and this fetches each matching directory's real submit form live, auto-fills what it can detect (category, anti-spam fields), and submits it to the actual external directory site when you confirm.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This makes real outbound requests to third-party sites and may need CAPTCHA solving. Submission counts are limited by your account's plan.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <div class="card mb-3">
     <div class="card-body">
         <form id='search_form'>
