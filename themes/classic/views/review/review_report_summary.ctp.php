@@ -22,8 +22,36 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	</table>
     <?php
 } else {
-    echo showSectionHead($spTextTools['Review Report Summary']);
-    
+    include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+    ?>
+    <div class="aiv-page-head">
+        <?php echo showSectionHead($spTextTools['Review Report Summary']); ?>
+        <a href="javascript:void(0);" data-toggle="modal" data-target="#rvSummaryHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+    </div>
+
+    <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+    <div class="modal fade aiv-help-modal" id="rvSummaryHelpModal" tabindex="-1" role="dialog" aria-labelledby="rvSummaryHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="aiv-help-modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <div class="aiv-help-modal-icon"><i class="fas fa-star-half-alt"></i></div>
+                    <h5 class="modal-title" id="rvSummaryHelpModalLabel">About Review Report Summary</h5>
+                </div>
+                <div class="modal-body aiv-help-modal-body">
+                    <p>A one-row-per-link snapshot comparing each review link's review count and rating on a chosen date versus an earlier date, across all or one website.</p>
+                    <div class="aiv-note">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Data comes from the daily scheduled check of your registered links - it needs links added under Review Links first, and a day or more of history.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php
     // if not summary page show the filters
     if(!$summaryPage) {
     	$scriptName = $pageScriptPath;

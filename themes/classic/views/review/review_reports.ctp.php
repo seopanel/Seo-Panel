@@ -1,7 +1,45 @@
 <?php
-echo showSectionHead($spTextTools['Detailed Reports']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $submitLink = "scriptDoLoadPost('$pageScriptPath', 'search_form', 'content', '&sec=viewDetailedReports')";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Detailed Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#rvDetailHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="rvDetailHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('rvDetailHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-table"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">Detailed Reports</div>
+		<div class="aiv-intro-desc">Day-by-day review count and rating history for one link, with the change from the previous day highlighted. <a href="javascript:void(0);" data-toggle="modal" data-target="#rvDetailHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="rvDetailHelpModal" tabindex="-1" role="dialog" aria-labelledby="rvDetailHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-table"></i></div>
+				<h5 class="modal-title" id="rvDetailHelpModalLabel">About Detailed Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>For one chosen link, a day-by-day history table of review count and rating over a date range, with each day's change from the previous one highlighted.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads from already-saved history from the daily scheduled check - it doesn't check the platform live. Includes an optional AI summary of the trend.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>

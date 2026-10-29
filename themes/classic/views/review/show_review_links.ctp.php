@@ -1,7 +1,45 @@
 <?php
-echo showSectionHead($spTextTools['Review Links']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Review Links']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#rvLinksHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="rvLinksHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('rvLinksHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-star-half-alt"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">Review Links</div>
+		<div class="aiv-intro-desc">Register your websites' review-profile links here (Google, Yelp, Trustpilot, TripAdvisor) - the setup step before any check or report has data. <a href="javascript:void(0);" data-toggle="modal" data-target="#rvLinksHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="rvLinksHelpModal" tabindex="-1" role="dialog" aria-labelledby="rvLinksHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-star-half-alt"></i></div>
+				<h5 class="modal-title" id="rvLinksHelpModalLabel">About Review Links</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Lists the review-profile links you've registered per website (Google, Yelp, Trustpilot, TripAdvisor, and more). Add, edit, delete or activate/deactivate from here.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>A link must be created here before the Reports or Quick Checker pages have anything to show for it. Link counts are capped by your account's plan.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form name="searchForm" id="searchForm" onsubmit="return false;">
 <table class="search">
 	<tr>
