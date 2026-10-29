@@ -46,6 +46,10 @@
 <?php } ?>
 
 <div class="aiv-card">
+	<div class="aiv-card-header">
+		<div class="aiv-card-icon" style="background:linear-gradient(135deg, #3b82f6 0%, #6faee0 100%);"><i class="fas fa-key"></i></div>
+		<div class="aiv-card-title"><?php echo $spTextAIV['Keyword-Level Detail'] ?? 'Keyword-Level Detail'?></div>
+	</div>
 	<div style="overflow-x:auto;">
 	<table class="aiv-table">
 		<tr>
@@ -67,18 +71,18 @@
 					<td><?php echo htmlspecialchars($row['se_domain'])?></td>
 					<td>
 						<?php if (!$supported) { ?>
-							<span class="text-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
+							<span class="aiv-pill aiv-pill-muted"><?php echo $spTextKeyword['Not available'] ?? 'Not available'?></span>
 						<?php } else { ?>
-							<span class="<?php echo $present ? 'text-success' : 'text-muted'?>"><?php echo $present ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?></span>
+							<span class="aiv-pill <?php echo $present ? 'aiv-pill-success' : 'aiv-pill-muted'?>"><?php echo $present ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent')?></span>
 							<br><small title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">via <?php echo htmlspecialchars($providerLabel)?> &middot; checked <?php echo htmlspecialchars($row['aio_data_date'])?></small>
 						<?php } ?>
 					</td>
 					<td>
 						<?php if ($supported && $present) { ?>
 							<?php if (!empty($row['aio_cited'])) { ?>
-								<span class="text-success"><i class="fas fa-check-circle"></i> <?php echo $spTextKeyword['Yes'] ?? 'Yes'?> (#<?php echo intval($row['aio_cited_position'])?>)</span>
+								<span class="aiv-pill aiv-pill-success"><i class="fas fa-check-circle"></i> <?php echo $spTextKeyword['Yes'] ?? 'Yes'?> (#<?php echo intval($row['aio_cited_position'])?>)</span>
 							<?php } else { ?>
-								<span class="text-muted"><?php echo $spTextKeyword['No'] ?? 'No'?></span>
+								<span class="aiv-pill aiv-pill-muted"><?php echo $spTextKeyword['No'] ?? 'No'?></span>
 							<?php } ?>
 						<?php } else { ?>
 							&mdash;
@@ -110,14 +114,14 @@
 			<th><?php echo $spTextAIV['Domain'] ?? 'Domain'?></th>
 			<th class="aiv-num"><?php echo $spText['common']['Keywords']?></th>
 			<th class="aiv-num"><?php echo $spTextAIV['Citations'] ?? 'Citations'?></th>
-			<th class="aiv-num"><?php echo $spTextAIV['Share of Voice'] ?? 'Share of Voice'?></th>
+			<th style="min-width:160px;"><?php echo $spTextAIV['Share of Voice'] ?? 'Share of Voice'?></th>
 		</tr>
 		<?php if (!empty($competitorDomains)) { ?>
 			<?php foreach ($competitorDomains as $domainInfo) { ?>
 				<?php $isTracked = !empty($trackedDomain) && AIOverviewController::isDomainCited($domainInfo['domain'], $trackedDomain, $subdomainPolicy); ?>
 				<?php $sov = !empty($summary['measured']) ? round((intval($domainInfo['keyword_count']) / intval($summary['measured'])) * 100) : 0; ?>
 				<tr <?php echo $isTracked ? "style='background:#fdf8e8;'" : ''?>>
-					<td><?php echo htmlspecialchars($domainInfo['domain'])?> <?php echo $isTracked ? '<strong>(' . ($spTextAIV['you'] ?? 'you') . ')</strong>' : ''?></td>
+					<td><?php echo htmlspecialchars($domainInfo['domain'])?> <?php echo $isTracked ? '<span class="aiv-pill aiv-pill-warn">' . ($spTextAIV['you'] ?? 'you') . '</span>' : ''?></td>
 					<td class="aiv-num"><?php echo intval($domainInfo['keyword_count'])?></td>
 					<td class="aiv-num">
 						<?php if ($isTracked) { ?>
@@ -126,14 +130,24 @@
 							<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiocompetitorkeywords&website_id=<?php echo intval($websiteId)?>&domain=<?php echo urlencode($domainInfo['domain'])?>', '<i class=&quot;fas fa-users&quot;></i> Competitor Citations')"><?php echo intval($domainInfo['citation_count'])?></a>
 						<?php } ?>
 					</td>
-					<td class="aiv-num"><?php echo $sov?>%</td>
+					<td>
+						<div style="display:flex;align-items:center;gap:10px;">
+							<div style="flex:1;height:6px;border-radius:4px;background:#eef0f5;overflow:hidden;">
+								<div style="height:100%;width:<?php echo $sov?>%;background:<?php echo $isTracked ? '#e0a23b' : '#764ba2'?>;border-radius:4px;"></div>
+							</div>
+							<strong style="min-width:36px;text-align:right;color:#2a2a3d;"><?php echo $sov?>%</strong>
+						</div>
+					</td>
 				</tr>
 			<?php } ?>
 		<?php } else { ?>
 			<?php echo showNoRecordsList(0); ?>
 		<?php } ?>
 	</table>
-	<p style="font-size:12px;color:#8a8ea3;margin:10px 0 0;"><?php echo $spTextAIV['Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'] ?? 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'?></p>
+	<div class="aiv-note" style="margin-top:14px;margin-bottom:0;">
+		<i class="fas fa-info-circle"></i>
+		<span><?php echo $spTextAIV['Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'] ?? 'Share of Voice is the percentage of your measured keywords where this domain is cited in the AI Overview.'?></span>
+	</div>
 </div>
 
 </div>

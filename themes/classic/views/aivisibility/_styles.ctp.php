@@ -246,6 +246,20 @@
 .aiv-table tr:hover td { background: #fafbff; }
 .aiv-table td.aiv-num, .aiv-table th.aiv-num { text-align: right; }
 
+/* status badge pills - replaces plain colored text (.text-success/
+   .text-muted) in table cells with a proper pill, same visual language
+   as the rest of the AI Visibility section's icon badges/CTAs. */
+.aiv-pill {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 20px;
+	font-size: 11.5px;
+	font-weight: 700;
+}
+.aiv-pill-success { background: #e6f7ee; color: #1f9d55; }
+.aiv-pill-muted { background: #f1f2f6; color: #8a8ea3; }
+.aiv-pill-warn { background: #fdf2da; color: #a9700f; margin-left: 4px; }
+
 /* pure-CSS toggle switch, replacing raw checkboxes */
 .aiv-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: 0 0 auto; }
 .aiv-switch input { opacity: 0; width: 0; height: 0; }
