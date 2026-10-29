@@ -10,7 +10,11 @@
 	<div class="aiv-intro-icon"><i class="fas fa-robot"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'] ?? 'Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextAIV['Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'] ?? 'Tracks actual AI crawler bots - GPTBot, ClaudeBot, PerplexityBot and others - visiting your site to read and index it.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivBotHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
 	</div>
 </div>
 
@@ -68,11 +72,6 @@
 	</tr>
 </table>
 </form>
-
-<div class="aiv-note">
-	<i class="fas fa-shield-alt"></i>
-	<span><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
-</div>
 
 <div id='subcontent'>
 	<?php if (!empty($graphContent)) { ?>
