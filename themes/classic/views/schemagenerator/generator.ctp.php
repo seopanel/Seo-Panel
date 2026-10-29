@@ -1,6 +1,48 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <?php echo showSectionHead($spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'); ?>
 
+<style>
+/* Page-scoped - not shared with other AI Visibility pages via _styles.ctp.php,
+   since this is the only page with a long multi-field, multi-schema-type
+   form (raw Bootstrap .form-group/.form-control/<label> previously, same
+   plain look the rest of AI Visibility moved away from already). */
+.sg-type-pill {
+	display: inline-flex; align-items: center; gap: 7px;
+	padding: 8px 16px; border-radius: 9px; margin-right: 8px; margin-bottom: 8px;
+	font-size: 13.5px; font-weight: 600; text-decoration: none;
+	border: 1px solid #d8dee8; background: #fff; color: #4a4e69;
+	transition: all 0.15s ease;
+}
+.sg-type-pill:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+.sg-type-pill.sg-type-active {
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);
+	border-color: #4a8fc7; color: #fff;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35);
+}
+.sg-form .form-group { margin-bottom: 14px; }
+.sg-form label {
+	display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: 0.03em; color: #5a6372; margin-bottom: 4px;
+}
+.sg-form .form-control {
+	border: 1px solid #d8dee8; border-radius: 7px; padding: 8px 11px;
+	font-size: 13.5px; background: #fafbfd;
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.sg-form .form-control:focus {
+	border-color: #4a8fc7; background: #fff;
+	box-shadow: 0 0 0 3px rgba(74, 143, 199, 0.12); outline: none;
+}
+.sg-faq-row { border: 1px solid #eef0f5; border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #fafbfd; }
+.sg-markup-wrap { position: relative; margin-top: 10px; }
+.sg-copy-btn {
+	position: absolute; top: 10px; right: 10px;
+	background: #4a8fc7; color: #fff; border: none;
+	padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.sg-copy-btn:hover { background: #3d7fb5; }
+</style>
+
 <?php if (!empty($noWebsites)) { ?>
 	<?php echo showNoRecordsList(0); ?>
 <?php } else { ?>
@@ -30,17 +72,19 @@
 		<div class="aiv-card-icon"><i class="fas fa-sitemap"></i></div>
 		<div class="aiv-card-title"><?php echo $spTextAIV['Schema Type'] ?? 'Schema Type'?></div>
 	</div>
-	<div style="margin-bottom:15px;">
+	<?php $sgTypeIcons = ['Organization' => 'fa-building', 'LocalBusiness' => 'fa-store', 'Article' => 'fa-newspaper', 'FAQPage' => 'fa-question-circle']; ?>
+	<div style="margin-bottom:18px;">
 		<?php foreach ($schemaTypes as $type) { ?>
 			<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>&schema_type=<?php echo urlencode($type)?>')"
-				class="btn <?php echo ($type === $schemaType) ? 'btn-primary' : 'btn-outline-secondary'?> btn-sm" style="margin-right:6px;">
+				class="sg-type-pill <?php echo ($type === $schemaType) ? 'sg-type-active' : ''?>">
+				<i class="fas <?php echo $sgTypeIcons[$type] ?? 'fa-code'?>"></i>
 				<?php echo htmlspecialchars($type)?>
-				<?php if (in_array($type, $savedTypes, true)) { ?><i class="fas fa-check-circle" style="color:<?php echo ($type === $schemaType) ? '#fff' : '#28a745'?>;"></i><?php } ?>
+				<?php if (in_array($type, $savedTypes, true)) { ?><i class="fas fa-check-circle" style="color:<?php echo ($type === $schemaType) ? '#fff' : '#1f9d55'?>;"></i><?php } ?>
 			</a>
 		<?php } ?>
 	</div>
 
-	<form id="sg_form" onsubmit="return false;">
+	<form id="sg_form" class="sg-form" onsubmit="return false;">
 		<input type="hidden" name="sec" value="generate">
 		<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
 		<input type="hidden" name="schema_type" value="<?php echo htmlspecialchars($schemaType)?>">
@@ -85,7 +129,7 @@
 			<div id="sg_faq_rows">
 				<?php $pairs = !empty($fieldData['pairs']) ? $fieldData['pairs'] : [['question' => '', 'answer' => '']]; ?>
 				<?php foreach ($pairs as $pair) { ?>
-					<div class="sg-faq-row" style="border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;">
+					<div class="sg-faq-row">
 						<div class="form-group"><label><?php echo $spTextAIV['Question'] ?? 'Question'?></label><input type="text" name="question[]" class="form-control" value="<?php echo htmlspecialchars($pair['question'] ?? '')?>"></div>
 						<div class="form-group" style="margin-bottom:0;"><label><?php echo $spTextAIV['Answer'] ?? 'Answer'?></label><textarea name="answer[]" class="form-control" rows="2"><?php echo htmlspecialchars($pair['answer'] ?? '')?></textarea></div>
 					</div>
@@ -120,10 +164,12 @@
 			<div class="aiv-card-icon"><i class="fas fa-code"></i></div>
 			<div class="aiv-card-title"><?php echo $spTextAIV['Generated Markup'] ?? 'Generated Markup'?></div>
 		</div>
-		<button class="sh-copy-btn" id="sgCopyBtn" type="button"><i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'; ?></button>
-		<pre id="sgJsonLdOutput" style="background:#282c34; color:#abb2bf; padding:15px; border-radius:8px; overflow-x:auto; font-size:12px; margin-top:10px;">&lt;script type="application/ld+json"&gt;
+		<div class="sg-markup-wrap">
+			<button class="sg-copy-btn" id="sgCopyBtn" type="button"><i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'; ?></button>
+			<pre id="sgJsonLdOutput" style="background:#282c34; color:#abb2bf; padding:15px; border-radius:8px; overflow-x:auto; font-size:12px; margin:0;">&lt;script type="application/ld+json"&gt;
 <?php echo htmlspecialchars($jsonLdOutput); ?>
 &lt;/script&gt;</pre>
+		</div>
 	</div>
 <?php } ?>
 
@@ -135,7 +181,6 @@ function sgAddFaqRow() {
 	if (!container) return;
 	var row = document.createElement('div');
 	row.className = 'sg-faq-row';
-	row.style.cssText = 'border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;';
 	row.innerHTML = '<div class="form-group"><label>Question</label><input type="text" name="question[]" class="form-control"></div>'
 		+ '<div class="form-group" style="margin-bottom:0;"><label>Answer</label><textarea name="answer[]" class="form-control" rows="2"></textarea></div>';
 	container.appendChild(row);
