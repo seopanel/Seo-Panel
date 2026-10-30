@@ -900,30 +900,44 @@ div.tab button.active {	background-color: #ccc;}
     text-decoration: underline;
 }
 
-/* Responsive table fix: .list and #cust_tab are the app's shared
+/* Mobile responsive fix: .list and #cust_tab are the app's shared
    list/report table hooks, used by over 100 views throughout the app
    between them (grep confirmed) - 87% had no responsive wrapper at
-   all, so a wide column (e.g. a long URL) could overflow the whole
-   page layout instead of just scrolling its own table, on any screen
-   size, not just mobile. Rather than adding a wrapper div to every one
-   of those view files individually (the HTML-side fix,
+   all, so on a phone they either overflowed the whole page layout or
+   got clipped depending on the ancestor's own overflow handling, with
+   no way to see the rest of the row. Rather than adding a wrapper div
+   to every one of those view files individually (the HTML-side fix,
    .table-responsive), the same effect is achieved here in one place:
    `display: block` turns the table itself into the horizontally-
    scrolling container - the exact mechanism Bootstrap's own
    .table-responsive class uses internally (.table-responsive {
    display: block; overflow-x: auto; }), just applied directly to the
-   existing table elements instead of requiring a wrapper in the
-   markup. No longer gated to a mobile-only media query, since a
-   too-wide column is just as much a desktop problem. #cust_tab is an
-   id reused as a shared styling hook across many separate view
+   existing table elements via a media query instead of requiring a
+   wrapper in the markup. Gated to a mobile-only media query on
+   purpose: `display: block` on the <table> itself breaks the normal
+   table layout algorithm (the inner row/cell structure gets boxed
+   into an anonymous table that shrink-fits to its content instead of
+   stretching to the explicit width:100% on the now-block outer
+   element), so a table narrower than its container collapses to
+   content width instead of filling it - fine/invisible on a phone
+   where content is already close to full width, but a visible
+   regression on desktop (confirmed on Keyword Position Summary's
+   table after a brief attempt at removing this gate). The real fix
+   for a too-wide column (e.g. a long URL) is the overflow-wrap/
+   word-break rule on .list td/#cust_tab td above, which doesn't
+   touch table layout at all - this block is only the fallback for
+   whatever that doesn't fully catch on narrow screens. #cust_tab is
+   an id reused as a shared styling hook across many separate view
    templates (same convention as .list, just historically built as an
    id instead of a class), not a single unique element - same fix
    applies to it for the same reason. */
-.list, #cust_tab {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+@media screen and (max-width: 768px) {
+    .list, #cust_tab {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 
 #cust_tab th a {
