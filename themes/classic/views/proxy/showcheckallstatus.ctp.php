@@ -1,7 +1,30 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <form name="listform" id="listform">
 <input type="hidden" name="sec" value="checkAllstatus">
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spText['button']["Check Status"]); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#proxyCheckStatusHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="proxyCheckStatusHelpModal" tabindex="-1" role="dialog" aria-labelledby="proxyCheckStatusHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-tasks"></i></div>
+				<h5 class="modal-title" id="proxyCheckStatusHelpModalLabel">About Check Status</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Bulk-tests every proxy in the pool - or just the Active or Inactive ones - by actually connecting through each one, and updates each proxy's Active/Inactive status with the live result.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
-echo showSectionHead($spText['button']["Check Status"]);
 $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'subcontent', '')";
 ?>
 <table class="search">

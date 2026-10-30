@@ -1,5 +1,28 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel["Proxy Perfomance"]); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#proxyPerfHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="proxyPerfHelpModal" tabindex="-1" role="dialog" aria-labelledby="proxyPerfHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-tachometer-alt"></i></div>
+				<h5 class="modal-title" id="proxyPerfHelpModalLabel">About Proxy Perfomance</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>For a chosen date range, shows each proxy's crawl success/failure counts and average score, drawn from the crawl log of every crawl that was routed through it.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
-echo showSectionHead($spTextPanel["Proxy Perfomance"]);
 $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 ?>
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>">

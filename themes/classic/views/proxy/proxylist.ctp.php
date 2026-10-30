@@ -1,5 +1,32 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel["Proxy Manager"]); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#proxyMgrHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="proxyMgrHelpModal" tabindex="-1" role="dialog" aria-labelledby="proxyMgrHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-server"></i></div>
+				<h5 class="modal-title" id="proxyMgrHelpModalLabel">About Proxy Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The list of proxy servers SEO Panel can route crawls through - add, edit, activate/deactivate, delete, or re-check each one's live status.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Proxies are only actually used when enabled in Settings &gt; Proxy Settings - this list manages the pool, not whether it's in use.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
-echo showSectionHead($spTextPanel["Proxy Manager"]);
 $searchFun = "scriptDoLoadPost('proxy.php', 'listform', 'content')";
 ?>
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>">
