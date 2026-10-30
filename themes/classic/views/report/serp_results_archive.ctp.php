@@ -138,7 +138,7 @@
 		<input type="text" id="serp_archive_quick_filter" class="form-control" style="max-width:220px;font-size:13px;" placeholder="<?php echo $spText['common']['Quick Search'] ?? 'Quick Search'?>..." onkeyup="spQuickFilterRows('serp-archive-row', this.value)">
 	</div>
 
-	<div class="aiv-card" style="padding:0; overflow:hidden;">
+	<div class="aiv-card tab-content" style="padding:0; overflow:hidden;">
 		<?php foreach ($engines as $i => $seInfo): ?>
 			<div class="tab-pane fade <?php echo $i == 0 ? 'show active' : ''?>"
 			     id="serp-se-<?php echo $i?>">
