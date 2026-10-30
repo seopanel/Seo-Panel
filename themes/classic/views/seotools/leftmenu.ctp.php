@@ -60,6 +60,11 @@ foreach($menuList as $i => $menuInfo){
 		case "webmaster-tools":
 			?>		
 			<ul id='subui'>
+				<li>
+					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchSummary', 'content')" class="menu_active">
+						<?php echo $spTextTools['Keyword Search Summary']?>
+					</a>
+				</li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li>
 						<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=quickChecker', 'content')">
@@ -67,11 +72,6 @@ foreach($menuList as $i => $menuInfo){
 						</a>
 					</li>
 				<?php }?>
-				<li>
-					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchSummary', 'content')">
-						<?php echo $spTextTools['Keyword Search Summary']?>
-					</a>
-				</li>
 				<li>
 					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchReports', 'content')">
 						<?php echo $spTextTools['Keyword Search Reports']?>
@@ -241,6 +241,7 @@ foreach($menuList as $i => $menuInfo){
 		case "sm-checker":
 			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=reportSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php', 'content')"><?php echo $spTextTools['Social Media Links']?></a></li>
 					<?php if (isQuickCheckerEnabled()) {?>
@@ -251,7 +252,6 @@ foreach($menuList as $i => $menuInfo){
     					</li>
     				<?php }?>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=reportSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=viewDetailedReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
@@ -261,6 +261,7 @@ foreach($menuList as $i => $menuInfo){
 		case "review-manager":
 			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=reportSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php', 'content')"><?php echo $spTextTools['Review Links']?></a></li>
 					<?php if (isQuickCheckerEnabled()) {?>
@@ -271,10 +272,9 @@ foreach($menuList as $i => $menuInfo){
     					</li>
     				<?php }?>
 				<?php }?>
-				
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=reportSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
+
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewDetailedReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>			
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
 			<?php
 			break;
@@ -282,6 +282,7 @@ foreach($menuList as $i => $menuInfo){
         case "web-analytics":
             ?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li>
 						<a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=quickChecker', 'content')">
@@ -289,7 +290,6 @@ foreach($menuList as $i => $menuInfo){
 						</a>
 					</li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
