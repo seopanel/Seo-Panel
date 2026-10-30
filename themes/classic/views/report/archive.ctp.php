@@ -26,7 +26,35 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		</tr>
 	</table>
 <?php } else {?>
-	<?php echo showSectionHead($sectionHead); ?>
+	<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+	<div class="aiv-page-head">
+		<?php echo showSectionHead($sectionHead); ?>
+		<a href="javascript:void(0);" data-toggle="modal" data-target="#archiveHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+	</div>
+
+	<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+	<div class="modal fade aiv-help-modal" id="archiveHelpModal" tabindex="-1" role="dialog" aria-labelledby="archiveHelpModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="aiv-help-modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<div class="aiv-help-modal-icon"><i class="fas fa-archive"></i></div>
+					<h5 class="modal-title" id="archiveHelpModalLabel">About <?php echo htmlspecialchars($sectionHead)?></h5>
+				</div>
+				<div class="modal-body aiv-help-modal-body">
+					<p>A combined summary across every tool for a website and date range in one report - rank/authority, backlinks, directory submissions, PageSpeed, Search Console, social media and reviews - viewable here, or exported as CSV/PDF.</p>
+					<div class="aiv-note">
+						<i class="fas fa-info-circle"></i>
+						<span>This reads already-saved data from each tool - it doesn't run any new checks itself.</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<form id='search_form'>
 	<table class="search" style="width: 80%">
 		<tr>

@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextPanel['Report Generation Logs']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Report Generation Logs']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#reportGenLogsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="reportGenLogsHelpModal" tabindex="-1" role="dialog" aria-labelledby="reportGenLogsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-list"></i></div>
+				<h5 class="modal-title" id="reportGenLogsHelpModalLabel">About Report Generation Logs</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>A grid showing, per user and date, whether their scheduled combined report (the one set up under Schedule Reports) was actually generated and emailed on that day.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Read-only - useful for confirming scheduled report emails are actually going out as expected.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>

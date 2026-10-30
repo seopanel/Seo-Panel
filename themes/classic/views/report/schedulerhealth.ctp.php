@@ -1,4 +1,31 @@
-<?php echo showSectionHead($spTextPanel['Scheduler Health'] ?? 'Scheduler Health'); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Scheduler Health'] ?? 'Scheduler Health'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#schedulerHealthHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="schedulerHealthHelpModal" tabindex="-1" role="dialog" aria-labelledby="schedulerHealthHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-heartbeat"></i></div>
+				<h5 class="modal-title" id="schedulerHealthHelpModalLabel">About Scheduler Health</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>A live dashboard for the background cron system: when it last ran, recent run history, per-tool stats, job queue backlog, recent failures, and whether a run is currently locked/in progress.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Admin-only - the right place to check if scheduled crawls stop updating as expected.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <style>
 .sh-container {
