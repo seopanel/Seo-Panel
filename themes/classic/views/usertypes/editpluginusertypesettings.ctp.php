@@ -1,5 +1,28 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['User Type Settings']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#userTypePluginSettingsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="userTypePluginSettingsHelpModal" tabindex="-1" role="dialog" aria-labelledby="userTypePluginSettingsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-sliders-h"></i></div>
+				<h5 class="modal-title" id="userTypePluginSettingsHelpModalLabel">About User Type Settings</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Per-user-type configuration for one specific plugin - the fields shown depend on which plugin you arrived from (e.g. Subscription), and apply only to users of the role selected above.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
-echo showSectionHead($spTextPanel['User Type Settings']);
 $actionLink = "user-types-manager.php?plugin_id=$pluginId&class_name=$className&sec=edit_plugin_user_type_settings";
 $changeUserTypeAction = "doLoad('user_type_id', '$actionLink', 'content')";
 $actionLink .= "&user_type_id=$userTypeId";

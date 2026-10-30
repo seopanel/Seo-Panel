@@ -1,5 +1,32 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
 <form name="listform" id="listform">
-<?php echo showSectionHead($spTextPanel['User Type Manager']); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['User Type Manager']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#userTypeMgrHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="userTypeMgrHelpModal" tabindex="-1" role="dialog" aria-labelledby="userTypeMgrHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-users-cog"></i></div>
+				<h5 class="modal-title" id="userTypeMgrHelpModalLabel">About User Type Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The roles assignable to a user when creating their account - each one caps their website/keyword counts and, with the Subscription plugin active, sets its price and billing details.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Per-type plugin and SEO tool access is configured from each type's Edit screen.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
 if ($isPluginSubsActive) {
 	$currencySymbol = $currencyList[SP_PAYMENT_CURRENCY]['symbol'];
