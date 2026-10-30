@@ -39,10 +39,10 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
                     <h5 class="modal-title" id="smSummaryHelpModalLabel">About Social Media Report Summary</h5>
                 </div>
                 <div class="modal-body aiv-help-modal-body">
-                    <p>A one-row-per-link snapshot comparing each link's followers/likes on a chosen date versus an earlier date, across all or one website.</p>
+                    <p>For one chosen website, compares each social media link's followers/likes between two dates, with the change highlighted. Pick Day, Week, Month or Year for a quick comparison, or set your own two dates.</p>
                     <div class="aiv-note">
                         <i class="fas fa-info-circle"></i>
-                        <span>Data comes from the daily scheduled scrape of your registered links - it needs links added under Social Media Links first, and a day or more of history.</span>
+                        <span>Data comes from the daily scheduled scrape of your registered links - it needs links added under Social Media Links first, and a day or more of history. Day/Week/Month/Year is anchored to the latest date that actually has scraped data, not today's date.</span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -67,7 +67,6 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 				<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 				<td>
 					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>" class="custom-select">
-						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
 								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -93,11 +92,26 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 				</td>
 				<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 				<td>
-					<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
-					<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+					<select name="period" id="period_preset" class="custom-select" style="display:inline-block; width:120px;" onchange="<?php echo $submitLink?>">
+						<option value="" <?php echo empty($period) ? 'selected' : ''?>>-- <?php echo $spText['label']['Custom'] ?? 'Custom'?> --</option>
+						<option value="day" <?php echo $period == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+						<option value="week" <?php echo $period == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+						<option value="month" <?php echo $period == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+						<option value="year" <?php echo $period == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
+					</select>
+					<span id="custom_date_range" style="display: <?php echo empty($period) ? 'inline-block' : 'none'?>; margin-left:6px;">
+						<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 130px;"/>
+						<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 130px;"/>
+					</span>
 					<script type="text/javascript">
 					$(function() {
 						$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
+						$( "#from_time, #to_time").on("change", function() {
+							$("#period_preset").val("");
+						});
+						$( "#period_preset" ).on("change", function() {
+							$("#custom_date_range").css("display", $(this).val() === "" ? "inline-block" : "none");
+						});
 					});
 					</script>
 				</td>
@@ -127,7 +141,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($colList);
-$colCount = ($baseColCount * 3) - 1;
+$colCount = ($baseColCount * 3) - 2;
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
@@ -150,12 +164,7 @@ $colCount = ($baseColCount * 3) - 1;
             $colspan = ($colName == "name") ? 1 : 3;
 			?>
 			<th rowspan="<?php echo $rowSpan?>" colspan="<?php echo $colspan?>" id="head"><?php echo $linkName; ?></th>
-			<?php 
-			if ($colName == "name") {
-                ?>
-				<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>	
-				<?php
-			}			
+			<?php
 		}
 		?>
 	</tr>	
@@ -184,9 +193,6 @@ $colCount = ($baseColCount * 3) - 1;
 					<td>
 						<i class="fab fa-<?php echo strtolower($listInfo['type'])?>"></i>
 						<?php echo htmlspecialchars($listInfo['name'])?>
-					</td>
-					<td>
-						<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
 					</td>
 					<?php
 					foreach ($colList as $colName => $colVal){

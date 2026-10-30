@@ -539,52 +539,82 @@ class SocialMediaController extends Controller{
 	/*
 	 * func to show report summary
 	 */ 
-	function viewReportSummary($searchInfo=[], $summaryPage = false, $cronUserId=false) {	
+	function __getSocialMediaDateAvailability($conditions) {
+		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
+				from $this->linkTable sml, $this->linkReportTable r
+				where sml.id=r.sm_link_id and sml.status=1 $conditions";
+		$row = $this->db->select($sql, true);
+		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+	}
+
+	function viewReportSummary($searchInfo=[], $summaryPage = false, $cronUserId=false) {
 		$userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
 		$this->set('summaryPage', $summaryPage);
 		$this->set('searchInfo', $searchInfo);
 		$this->set('cronUserId', $cronUserId);
-	
+
 		$exportVersion = false;
 		switch($searchInfo['doc_type']){
-	
+
 			case "export":
 				$exportVersion = true;
 				$exportContent = "";
 				break;
-					
+
 			case "pdf":
 				$this->set('pdfVersion', true);
 				break;
-					
+
 			case "print":
 				$this->set('printVersion', true);
 				break;
 		}
-	
-		$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));
-		$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
-		$this->set('fromTime', $fromTime);
-		$this->set('toTime', $toTime);
-	
+
 		$websiteController = New WebsiteController();
 		$wList = $websiteController->__getAllWebsites($userId, true);
 		$websiteList = [];
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
 		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
-		$websiteId = intval($searchInfo['website_id']);
+		$websiteId = !empty($searchInfo['website_id']) ? intval($searchInfo['website_id']) : 0;
 		// a non-admin's website_id must be one of their own (already-scoped)
 		// websites - previously unchecked, letting any non-admin view ANY
 		// other user's social media report summary for an arbitrary
-		// website_id. Falling back to 0 (rather than a specific website)
-		// reuses this method's own existing "no website_id given" semantics
-		// below - it means "all of my websites", not one arbitrary pick.
+		// website_id.
 		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
 			$websiteId = 0;
 		}
+		if (empty($websiteId)) {
+			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
+		}
 		$this->set('websiteId', $websiteId);
-	
+
+		// always scoped to one resolved website now - the old "no
+		// website_id = combine all accessible websites" mode is gone along
+		// with the WEBSITE column that used to distinguish those rows.
+		$conditions = " and sml.website_id=" . intval($websiteId);
+		$conditions .= !empty($searchInfo['search_name']) ? " and (sml.url like '%".addslashes($searchInfo['search_name'])."%' or sml.name like '%".addslashes($searchInfo['search_name'])."%')" : "";
+		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";
+
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+
+		if (!empty($period) && isset($periodOffsets[$period])) {
+			list($minAvailDate, $maxAvailDate) = $this->__getSocialMediaDateAvailability($conditions);
+			$toTime = !empty($maxAvailDate) ? $maxAvailDate : date('Y-m-d');
+			$fromTime = date('Y-m-d', strtotime($periodOffsets[$period], strtotime($toTime)));
+			if (!empty($minAvailDate) && strtotime($fromTime) < strtotime($minAvailDate)) {
+				$fromTime = $minAvailDate;
+			}
+		} else {
+			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));
+			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+		}
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+		$this->set('period', $period);
+
 		// to find order col - order_col is caller-supplied and lands
 		// directly in an ORDER BY clause with no way to parameterize an
 		// identifier position, so it must be checked against a fixed
@@ -600,23 +630,13 @@ class SocialMediaController extends Controller{
 			$orderCol = "followers";
 			$orderVal = 'DESC';
 		}
-	
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : $this->pageScriptPath;
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=reportSummary&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'] . "&type=" . $searchInfo['type'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=social-media-reports";
-	
-		// set website id to get exact keywords of a user
-		if (!empty($websiteId)) {
-			$conditions = " and sml.website_id=$websiteId";
-		} else {
-			$conditions = " and sml.website_id in (".implode(',', array_keys($websiteList)).")";
-		}
-	
-		$conditions .= !empty($searchInfo['search_name']) ? " and (sml.url like '%".addslashes($searchInfo['search_name'])."%' or sml.name like '%".addslashes($searchInfo['search_name'])."%')" : "";
-		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";
 	
 		$subSql = "select [cols] from $this->linkTable sml, $this->linkReportTable r where sml.id=r.sm_link_id
 		and sml.status=1 $conditions and r.report_date='$toTime'";
@@ -674,7 +694,7 @@ class SocialMediaController extends Controller{
 			$reportHeading =  $this->spTextTools['Social Media Report Summary']."($fromTime - $toTime)";
 			$exportContent .= createExportContent( array('', $reportHeading, ''));
 			$exportContent .= createExportContent( array());
-			$headList = array($spText['common']['Website'], $spText['common']['Url']);
+			$headList = array($spText['common']['Url']);
 	
 			$pTxt = str_replace("-", "/", substr($fromTime, -5));
 			$cTxt = str_replace("-", "/", substr($toTime, -5));
@@ -688,7 +708,7 @@ class SocialMediaController extends Controller{
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 			    $listUrl = ($listInfo['type'] == 'linkedin') ? $listInfo['name'] : $listInfo['url'];
-				$valueList = array($websiteList[$listInfo['website_id']]['url'], $listUrl);
+				$valueList = array($listUrl);
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'url') continue;
 						
