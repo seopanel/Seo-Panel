@@ -43,7 +43,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
                     <p>A sortable table comparing every active keyword's rank on a "from" and a "to" date, across all your websites or one chosen website, with the change between them. Pick Day, Week, Month or Year for a quick comparison, or set your own two dates.</p>
                     <div class="aiv-note">
                         <i class="fas fa-info-circle"></i>
-                        <span>With no filter applied yet, this shows the earliest and latest dates that actually have saved data, not today's date, and a Day/Week/Month/Year pick is anchored to that latest saved date too. A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
+                        <span>Day/Week/Month/Year is anchored to the latest date that actually has saved data, not today's date, and Month is selected by default. If less history exists than the period you picked, it just shows everything available instead of an empty tail. A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
                     </div>
                 </div>
                 <div class="modal-footer">

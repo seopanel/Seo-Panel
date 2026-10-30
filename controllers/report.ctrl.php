@@ -243,25 +243,26 @@ class ReportController extends Controller {
 		}
 		$this->set('websiteUrl', $websiteUrl);
 
-		// Period resolution - three cases:
-		// 1. A day/week/month/year preset was picked: anchor to the
-		//    latest result_date actually saved for this scope (not
-		//    today's calendar date), so a preset never lands on an
-		//    empty/rank-1000 comparison just because the crawl
-		//    schedule doesn't happen to cover today or exactly N days
-		//    back. Clamped so the "from" side never goes earlier than
-		//    the earliest saved date.
+		// Period resolution - two cases:
+		// 1. A day/week/month/year preset is in effect - either picked
+		//    explicitly, or (nothing submitted at all, i.e. first
+		//    load) defaulted to 'month' so the dropdown itself shows
+		//    "Month" selected rather than looking like nothing was
+		//    chosen. Anchors "to" to the latest result_date actually
+		//    saved for this scope (not today's calendar date), and
+		//    "from" to that minus the preset's offset, clamped so it
+		//    never goes earlier than the earliest saved date - so a
+		//    preset never lands on an empty/rank-1000 comparison just
+		//    because the crawl schedule doesn't happen to cover today,
+		//    and a website with under a month of history just shows
+		//    everything it has instead of an empty tail.
 		// 2. Explicit from_time/to_time were submitted (the manual
 		//    date pickers, or a pagination/sort link carrying forward
 		//    an already-resolved range): used exactly as given, same
 		//    as before this change.
-		// 3. First load, nothing submitted yet: default to the full
-		//    available range (earliest saved date to latest saved
-		//    date) instead of yesterday/today, which are both
-		//    frequently empty when crawls don't run daily.
-		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : '';
 		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
 		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
 
 		if (!empty($period) && isset($periodOffsets[$period])) {
 			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);
@@ -270,7 +271,7 @@ class ReportController extends Controller {
 			if (!empty($minAvailDate) && $fromTime < strtotime($minAvailDate)) {
 				$fromTime = strtotime($minAvailDate);
 			}
-		} elseif ($hasExplicitDates) {
+		} else {
 			if (!empty ($searchInfo['from_time'])) {
 				$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
 			} else {
@@ -282,10 +283,6 @@ class ReportController extends Controller {
 			} else {
 				$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 			}
-		} else {
-			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);
-			$fromTime = !empty($minAvailDate) ? strtotime($minAvailDate) : mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
-			$toTime = !empty($maxAvailDate) ? strtotime($maxAvailDate) : mktime(0, 0, 0, date('m'), date('d'), date('Y'));
 		}
 
 		$fromTimeTxt = date('Y-m-d', $fromTime);
