@@ -1,6 +1,36 @@
 <?php
-echo ($subSec == "sponsors") ? showSectionHead($spText['label']['Sponsors']) : showSectionHead($spTextPanel['About Us']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+$isSponsorsPage = ($subSec == "sponsors");
+?>
+<div class="aiv-page-head">
+	<?php echo $isSponsorsPage ? showSectionHead($spText['label']['Sponsors']) : showSectionHead($spTextPanel['About Us']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aboutUsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="aboutUsHelpModal" tabindex="-1" role="dialog" aria-labelledby="aboutUsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas <?php echo $isSponsorsPage ? 'fa-hand-holding-heart' : 'fa-info-circle'?>"></i></div>
+				<h5 class="modal-title" id="aboutUsHelpModalLabel">About <?php echo $isSponsorsPage ? htmlspecialchars($spText['label']['Sponsors']) : htmlspecialchars($spTextPanel['About Us'])?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<?php if ($isSponsorsPage) { ?>
+					<p>Lists the organizations and individuals who sponsor SEO Panel's development.</p>
+				<?php } else { ?>
+					<p>Background on SEO Panel itself and the developers/technologies behind it - purely informational, not a settings page.</p>
+				<?php } ?>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php
 if (!empty($blogContent['blog_content'])) {
     echo $blogContent['blog_content'];
 } else {

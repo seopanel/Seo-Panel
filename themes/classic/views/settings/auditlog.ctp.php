@@ -1,6 +1,32 @@
-<?php
-echo showSectionHead($spTextPanel['Audit Log'] ?? 'Audit Log');
-?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Audit Log'] ?? 'Audit Log'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#auditLogHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="auditLogHelpModal" tabindex="-1" role="dialog" aria-labelledby="auditLogHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-history"></i></div>
+				<h5 class="modal-title" id="auditLogHelpModalLabel">About Audit Log</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>A record of security-relevant admin actions on this install - who did what, when, and from where. Filterable by action type.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Read-only - this page only shows history, it doesn't let you undo or modify past actions.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <p style="color:#666; font-size:13px; margin:0 0 10px;">
 	A record of security-relevant admin actions - who did what, when, and from where.
 </p>

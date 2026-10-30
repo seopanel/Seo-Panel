@@ -1,7 +1,35 @@
 <?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $headLabel = empty($headLabel) ? $spTextPanel['Proxy Settings'] : $headLabel;
-echo showSectionHead($headLabel);
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($headLabel); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#proxySettingsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="proxySettingsHelpModal" tabindex="-1" role="dialog" aria-labelledby="proxySettingsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-exchange-alt"></i></div>
+				<h5 class="modal-title" id="proxySettingsHelpModalLabel">About Proxy Settings</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Controls whether crawls route through the proxies configured in Proxy Manager - including a separate toggle just for Google API calls, and failover behavior (retry with another proxy, or deactivate a proxy after repeated failures).</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This only turns proxy usage on/off and tunes its behavior - add the actual proxies themselves under Proxy Manager.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+<?php
 // if saved successfully
 if (!empty($saved)) {
     showSuccessMsg($spTextSettings['allsettingssaved'], false);
