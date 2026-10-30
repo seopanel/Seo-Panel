@@ -15,6 +15,7 @@ $settingsHelpInfo = array(
 	'local_ai'     => array('icon' => 'fa-robot',  'desc' => 'Connects SEO Panel to a local Ollama instance - powers the optional "Summarize with AI" trend buttons found on several report pages. Nothing is sent to a third party.'),
 	'mail'         => array('icon' => 'fa-envelope', 'desc' => 'Outgoing email configuration - SMTP host/port/credentials or a SendGrid API key - used for notification emails and scheduled report delivery.'),
 	'seopanel_api' => array('icon' => 'fa-plug',   'desc' => 'Credentials for the hosted "Seo Panel API" (spAPI) service - an optional alternative source for SERP and search volume data, separate from DataForSEO and Moz.'),
+	'siteauditor'  => array('icon' => 'fa-clipboard-list', 'desc' => 'Global Site Auditor configuration, used by every project: max pages per crawl, crawl delay, title/description/keyword length thresholds used for scoring, PageRank/backlink/page-authority check levels, and excluded file extensions.'),
 );
 $curSettingsHelp = $settingsHelpInfo[$category] ?? $settingsHelpInfo['system'];
 ?>
