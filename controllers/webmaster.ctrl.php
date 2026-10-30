@@ -427,6 +427,21 @@ class WebMasterController extends GoogleAPIController {
 		return !empty($info['website_id']) ? true : false;
 	}
 	
+	// func to get the earliest/latest keyword_analytics.report_date
+	// actually synced for the given scope - lets Keyword Search
+	// Summary's default/preset date ranges anchor to real Search
+	// Console data instead of assuming a recent calendar date has a
+	// result. $conditions is the same "and k.website_id=...[and
+	// k.name like ...]" fragment viewKeywordSearchSummary() already
+	// builds for its own query.
+	function __getKeywordAnalyticsDateAvailability($conditions, $source) {
+		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
+		        from webmaster_keywords k, keyword_analytics r
+		        where k.id = r.keyword_id and k.status=1 $conditions and r.source='" . addslashes($source) . "'";
+		$row = $this->db->select($sql, true);
+		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+	}
+
 	# func to show webmasterkeyword report summary
 	function viewKeywordSearchSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
 	
@@ -453,26 +468,26 @@ class WebMasterController extends GoogleAPIController {
 				break;
 		}
 
-		$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
-		$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
-		$this->set('fromTime', $fromTime);
-		$this->set('toTime', $toTime);
-	
 		$websiteController = New WebsiteController();
 		$wList = $websiteController->__getAllWebsites($userId, true);
 		$websiteList = [];
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
-		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
-		$websiteId = intval($searchInfo['website_id']);
+		$websiteId = !empty($searchInfo['website_id']) ? intval($searchInfo['website_id']) : 0;
 		// a non-admin's website_id must be one of their own (already-scoped)
 		// websites - previously unchecked, letting any non-admin view ANY
 		// other user's keyword search summary for an arbitrary website_id.
-		// Falling back to 0 (rather than a specific website) reuses this
-		// method's own existing "no website_id given" semantics below - it
-		// means "all of my websites", not one arbitrary pick.
 		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
 			$websiteId = 0;
+		}
+		// always resolve to a real website (first one, same default the
+		// select box itself now always pre-selects) - the old "nothing
+		// selected = every website's keywords combined" mode needed its
+		// own WEBSITE column to tell rows apart; dropped in favor of
+		// always scoping to one website, same as every other summary
+		// report page, so that column isn't needed here either
+		if (empty($websiteId)) {
+			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
 		}
 		$this->set('websiteId', $websiteId);
 
@@ -495,20 +510,49 @@ class WebMasterController extends GoogleAPIController {
 
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
+
+		// now a single website is always resolved, so this is simply
+		// "that website's keywords" - the old "every website combined"
+		// IN(...) branch is gone along with the WEBSITE column
+		$conditions = " and k.website_id=" . intval($websiteId);
+		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
+
+		// Period resolution - two cases, same pattern as Keyword
+		// Position Summary's showKeywordReportSummary(): a day/week/
+		// month/year preset (explicitly picked, or defaulted to
+		// 'month' when nothing was submitted at all, so the dropdown
+		// shows "Month" selected rather than looking unset) anchors
+		// "to" to the latest report_date actually synced from Search
+		// Console for this website, and "from" to that minus the
+		// preset's offset, clamped so it never goes earlier than the
+		// earliest synced date - or explicit from_time/to_time, used
+		// exactly as given.
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+
+		if (!empty($period) && isset($periodOffsets[$period])) {
+			list($minAvailDate, $maxAvailDate) = $this->__getKeywordAnalyticsDateAvailability($conditions, $source);
+			$toTimeStamp = !empty($maxAvailDate) ? strtotime($maxAvailDate) : strtotime('-2 days');
+			$fromTimeStamp = strtotime($periodOffsets[$period], $toTimeStamp);
+			if (!empty($minAvailDate) && $fromTimeStamp < strtotime($minAvailDate)) {
+				$fromTimeStamp = strtotime($minAvailDate);
+			}
+			$fromTime = date('Y-m-d', $fromTimeStamp);
+			$toTime = date('Y-m-d', $toTimeStamp);
+		} else {
+			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
+			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
+		}
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+		$this->set('period', $period);
+
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewKeywordReports&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=keyword-search-reports";
-		
-		// set website id to get exact keywords of a user
-		if (!empty($websiteId)) {
-			$conditions = " and k.website_id=$websiteId";
-		} else {
-			$conditions = " and k.website_id in (".implode(',', array_keys($websiteList)).")";
-		}
-		
-		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
-		
+
 		$subSql = "select [cols] from webmaster_keywords k, keyword_analytics r where k.id=r.keyword_id
 		and k.status=1 $conditions and r.source='$source' and r.report_date='$toTime'";
 		

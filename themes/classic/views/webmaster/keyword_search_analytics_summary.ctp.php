@@ -39,10 +39,10 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
                     <h5 class="modal-title" id="wmKwSummaryHelpModalLabel">About Keyword Search Summary</h5>
                 </div>
                 <div class="modal-body aiv-help-modal-body">
-                    <p>Compares each tracked keyword's clicks, impressions, CTR and average position from Google Search Console between two saved dates, with the change highlighted.</p>
+                    <p>For one chosen website, compares each tracked keyword's clicks, impressions, CTR and average position from Google Search Console between two dates, with the change highlighted. Pick Day, Week, Month or Year for a quick comparison, or set your own two dates.</p>
                     <div class="aiv-note">
                         <i class="fas fa-info-circle"></i>
-                        <span>Reads already-saved Search Console data - it needs Google Search Console connected under Settings &gt; Connections, and data saved by the daily sync, before this shows anything.</span>
+                        <span>Reads already-saved Search Console data, so it needs Google Search Console connected under Settings &gt; Connections and data saved by the daily sync before this shows anything. Day/Week/Month/Year is anchored to the latest date that actually has synced data, not today's date.</span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -67,7 +67,6 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 				<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 				<td>
 					<select name="website_id" id="website_id" onchange="<?php echo $submitLink?>" class="custom-select">
-						<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 						<?php foreach($websiteList as $websiteInfo){?>
 							<?php if($websiteInfo['id'] == $websiteId){?>
 								<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
@@ -79,11 +78,26 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 				</td>
 				<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 	    		<td>
-	    			<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
-	    			<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+					<select name="period" id="period_preset" class="custom-select" style="display:inline-block; width:120px;" onchange="<?php echo $submitLink?>">
+						<option value="" <?php echo empty($period) ? 'selected' : ''?>>-- <?php echo $spText['label']['Custom'] ?? 'Custom'?> --</option>
+						<option value="day" <?php echo $period == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+						<option value="week" <?php echo $period == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+						<option value="month" <?php echo $period == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+						<option value="year" <?php echo $period == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
+					</select>
+					<span id="custom_date_range" style="display: <?php echo empty($period) ? 'inline-block' : 'none'?>; margin-left:6px;">
+	    				<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 130px;"/>
+	    				<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 130px;"/>
+					</span>
         			<script type="text/javascript">
         			$(function() {
         				$( "input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
+        				$( "#from_time, #to_time").on("change", function() {
+        					$("#period_preset").val("");
+        				});
+        				$( "#period_preset" ).on("change", function() {
+        					$("#custom_date_range").css("display", $(this).val() === "" ? "inline-block" : "none");
+        				});
         			});
         		  	</script>
 	    		</td>
@@ -113,13 +127,12 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($colList);
-$colCount = ($baseColCount * 3) + 2;
+$colCount = $baseColCount * 3;
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
 <table id="cust_tab">
 	<tr>
-		<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
 		<?php
 		$hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
 		foreach (array_keys($colList) as $i => $colName){
@@ -163,9 +176,6 @@ $colCount = ($baseColCount * 3) + 2;
 			$scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";          
 			?>
 			<tr>
-				<td>
-					<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
-				</td>
 				<td colspan="3"><?php echo htmlspecialchars($listInfo['name'])?></td>
 				<?php
 				foreach ($colList as $colName => $colVal){
