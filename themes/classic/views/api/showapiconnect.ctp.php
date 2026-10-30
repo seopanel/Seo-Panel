@@ -1,6 +1,31 @@
-<?php
-echo showSectionHead($spTextPanel['API Connection']);
-?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['API Connection']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#apiConnectionHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="apiConnectionHelpModal" tabindex="-1" role="dialog" aria-labelledby="apiConnectionHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-key"></i></div>
+				<h5 class="modal-title" id="apiConnectionHelpModalLabel">About API Connection</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The API URL plus the key/secret pair an external tool needs to authenticate against this install's own REST API - view them here, or regenerate either one if it may have leaked.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Regenerating a value immediately breaks every existing integration using the old one.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <div class="card">
 	<div class="card-header bg-primary text-white">
 		<h5 class="mb-0"><?php echo $spTextPanel['API Connection']?></h5>
