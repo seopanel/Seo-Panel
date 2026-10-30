@@ -1,6 +1,28 @@
-<?php
-echo showSectionHead($spTextLog['Crawl Log Details']);
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextLog['Crawl Log Details']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#crawlLogDetailsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="crawlLogDetailsHelpModal" tabindex="-1" role="dialog" aria-labelledby="crawlLogDetailsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-search"></i></div>
+				<h5 class="modal-title" id="crawlLogDetailsHelpModalLabel">About Crawl Log Details</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The full record for one crawl attempt - the exact URL, referer, cookies, POST fields, user agent and proxy used, plus the raw success/failure message - useful when a report's data looks wrong and you need to see exactly what was fetched.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+<?php
 // crawl log is for keyword
 if ($logInfo['crawl_type'] == 'keyword') {
 
