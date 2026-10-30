@@ -1,5 +1,41 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextTools['SERP Results Archive'] ?? 'SERP Results Archive'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['SERP Results Archive'] ?? 'SERP Results Archive'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#serpArchiveHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="serpArchiveHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('serpArchiveHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-list-ol"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title">SERP Results Archive</div>
+		<div class="aiv-intro-desc">The full ranked result list from the last saved Keyword Position Checker run, per search engine, with your own website's result highlighted. <a href="javascript:void(0);" data-toggle="modal" data-target="#serpArchiveHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="serpArchiveHelpModal" tabindex="-1" role="dialog" aria-labelledby="serpArchiveHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-list-ol"></i></div>
+				<h5 class="modal-title" id="serpArchiveHelpModalLabel">About SERP Results Archive</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>For a chosen website and keyword, shows the full organic result list from the most recent saved search-engine results page, one tab per search engine (Google, Bing, Yahoo). Your own website's result is highlighted when it appears, and Google's AI Overview presence/citation data is shown when available.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This fills in automatically from your regular Keyword Position Checker runs, so no separate setup is needed. A keyword only appears here once it has a saved snapshot for at least one search engine.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <style>
 /* Page-scoped, not shared via _styles.ctp.php (only the .aiv-card/
