@@ -82,8 +82,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<option value="month" <?php echo $period == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
 					<option value="year" <?php echo $period == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
 				</select><br>
-    			<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
-    			<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+				<span id="custom_date_range" style="display: <?php echo empty($period) ? 'inline' : 'none'?>;">
+    				<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
+    				<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+				</span>
 				<script>
 				  $( function() {
 				    $( "#from_time, #to_time").datepicker({dateFormat: "yy-mm-dd"});
@@ -93,6 +95,14 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				    // override the manually-picked date right back
 				    $( "#from_time, #to_time").on("change", function() {
 				        $("#period_preset").val("");
+				    });
+				    // date inputs are only meaningful (and only ever get
+				    // used server-side) when Custom is selected - hide
+				    // them otherwise so a visible "Week"/"Month"/etc
+				    // selection doesn't sit next to two dates that imply
+				    // a different, unused range
+				    $( "#period_preset" ).on("change", function() {
+				        $("#custom_date_range").toggle($(this).val() === "");
 				    });
 				  } );
 			  	</script>
