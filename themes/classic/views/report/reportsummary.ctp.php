@@ -75,16 +75,16 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			</td>
 			<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 			<td>
-				<select name="period" id="period_preset" class="custom-select" style="display:inline-block; width:auto; margin-bottom:4px;" onchange="<?php echo $submitLink?>">
+				<select name="period" id="period_preset" class="custom-select" style="display:inline-block; width:120px;" onchange="<?php echo $submitLink?>">
 					<option value="" <?php echo empty($period) ? 'selected' : ''?>>-- <?php echo $spText['label']['Custom'] ?? 'Custom'?> --</option>
 					<option value="day" <?php echo $period == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
 					<option value="week" <?php echo $period == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
 					<option value="month" <?php echo $period == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
 					<option value="year" <?php echo $period == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
-				</select><br>
-				<span id="custom_date_range" style="display: <?php echo empty($period) ? 'inline' : 'none'?>;">
-    				<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
-    				<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
+				</select>
+				<span id="custom_date_range" style="display: <?php echo empty($period) ? 'inline-block' : 'none'?>; margin-left:6px;">
+    				<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 130px;"/>
+    				<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 130px;"/>
 				</span>
 				<script>
 				  $( function() {
@@ -102,7 +102,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				    // selection doesn't sit next to two dates that imply
 				    // a different, unused range
 				    $( "#period_preset" ).on("change", function() {
-				        $("#custom_date_range").toggle($(this).val() === "");
+				        // explicit inline-block, not jQuery's own show()/
+				        // toggle() default restoration - this span's
+				        // "shown" state is inline-block, not plain inline
+				        $("#custom_date_range").css("display", $(this).val() === "" ? "inline-block" : "none");
 				    });
 				  } );
 			  	</script>
