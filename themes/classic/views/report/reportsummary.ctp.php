@@ -40,10 +40,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
                     <h5 class="modal-title" id="kwSummaryHelpModalLabel">About Keyword Position Summary</h5>
                 </div>
                 <div class="modal-body aiv-help-modal-body">
-                    <p>A sortable table comparing every active keyword's rank on two dates - a "from" and "to" date - across all your websites or one chosen website, with the change between them.</p>
+                    <p>A sortable table comparing every active keyword's rank on a "from" and a "to" date, across all your websites or one chosen website, with the change between them. Pick Day, Week, Month or Year for a quick comparison, or set your own two dates.</p>
                     <div class="aiv-note">
                         <i class="fas fa-info-circle"></i>
-                        <span>A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
+                        <span>With no filter applied yet, this shows the earliest and latest dates that actually have saved data, not today's date, and a Day/Week/Month/Year pick is anchored to that latest saved date too. A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -74,12 +74,26 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				</select>
 			</td>
 			<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
-    		<td>
+			<td>
+				<select name="period" id="period_preset" class="custom-select" style="display:inline-block; width:auto; margin-bottom:4px;" onchange="<?php echo $submitLink?>">
+					<option value="" <?php echo empty($period) ? 'selected' : ''?>>-- <?php echo $spText['label']['Custom'] ?? 'Custom'?> --</option>
+					<option value="day" <?php echo $period == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+					<option value="week" <?php echo $period == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+					<option value="month" <?php echo $period == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+					<option value="year" <?php echo $period == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
+				</select><br>
     			<input type="text" value="<?php echo $fromTime?>" name="from_time" id="from_time" class="form-control" style="display: inline-block; width: 45%;"/>
     			<input type="text" value="<?php echo $toTime?>" name="to_time" id="to_time" class="form-control" style="display: inline-block; width: 45%;"/>
 				<script>
 				  $( function() {
 				    $( "#from_time, #to_time").datepicker({dateFormat: "yy-mm-dd"});
+				    // picking a date directly means "custom range", not
+				    // whichever preset was last selected - without this,
+				    // the still-submitted period value would silently
+				    // override the manually-picked date right back
+				    $( "#from_time, #to_time").on("change", function() {
+				        $("#period_preset").val("");
+				    });
 				  } );
 			  	</script>
 			</td>

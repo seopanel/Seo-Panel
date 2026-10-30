@@ -174,6 +174,27 @@ class ReportController extends Controller {
 	}
 
 
+	// func to get the earliest/latest result_date actually saved for the
+	// given scope (website_id=0 means every website this caller can
+	// access) - lets Keyword Position Summary's default/preset date
+	// ranges anchor to real crawl data instead of assuming today's
+	// calendar date has a result. Reuses the same access-control
+	// condition as the rest of showKeywordReportSummary()'s query.
+	function __getResultDateAvailability($websiteId, $userId) {
+		$conditions = " and w.status=1 and k.status=1";
+		$websiteController = new WebsiteController();
+		$conditions .= isAdmin() ? "" : $websiteController->getWebsiteUserAccessCondition($userId);
+		$conditions .= !empty($websiteId) ? " and w.id=" . intval($websiteId) : "";
+
+		$sql = "select min(sr.result_date) as min_date, max(sr.result_date) as max_date
+		        from searchresults sr
+		        join keywords k on sr.keyword_id = k.id
+		        join websites w on k.website_id = w.id
+		        where 1=1 $conditions";
+		$row = $this->db->select($sql, true);
+		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+	}
+
 	# func to show keyword report summary
 	function showKeywordReportSummary($searchInfo = '') {
 		
@@ -206,39 +227,73 @@ class ReportController extends Controller {
 				break;
 		}
 		
-		if (!empty ($searchInfo['from_time'])) {
-			$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
-		} else { 
-			$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
-		}
-		
-		if (!empty ($searchInfo['to_time'])) {
-			$toTime = strtotime($searchInfo['to_time'] . ' 00:00:00');
-		} else {
-			$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-		}
-		
-		$fromTimeTxt = date('Y-m-d', $fromTime);		
-		$toTimeTxt = date('Y-m-d', $toTime);
-		$this->set('fromTime', $fromTimeTxt);
-		$this->set('toTime', $toTimeTxt);
-		
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsitesWithActiveKeywords($userId, true);
 		$this->set('websiteList', $websiteList);
 		$websiteId = isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id'];
 		$websiteId = intval($websiteId);
 		$this->set('websiteId', $websiteId);
-		
+
 		$websiteUrl = "";
 		foreach ($websiteList as $websiteInfo) {
 		    if ($websiteInfo['id'] == $websiteId) {
 		        $websiteUrl = $websiteInfo['url'];
-		        break;    
+		        break;
 		    }
 		}
 		$this->set('websiteUrl', $websiteUrl);
-		
+
+		// Period resolution - three cases:
+		// 1. A day/week/month/year preset was picked: anchor to the
+		//    latest result_date actually saved for this scope (not
+		//    today's calendar date), so a preset never lands on an
+		//    empty/rank-1000 comparison just because the crawl
+		//    schedule doesn't happen to cover today or exactly N days
+		//    back. Clamped so the "from" side never goes earlier than
+		//    the earliest saved date.
+		// 2. Explicit from_time/to_time were submitted (the manual
+		//    date pickers, or a pagination/sort link carrying forward
+		//    an already-resolved range): used exactly as given, same
+		//    as before this change.
+		// 3. First load, nothing submitted yet: default to the full
+		//    available range (earliest saved date to latest saved
+		//    date) instead of yesterday/today, which are both
+		//    frequently empty when crawls don't run daily.
+		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : '';
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+
+		if (!empty($period) && isset($periodOffsets[$period])) {
+			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);
+			$toTime = !empty($maxAvailDate) ? strtotime($maxAvailDate) : mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+			$fromTime = strtotime($periodOffsets[$period], $toTime);
+			if (!empty($minAvailDate) && $fromTime < strtotime($minAvailDate)) {
+				$fromTime = strtotime($minAvailDate);
+			}
+		} elseif ($hasExplicitDates) {
+			if (!empty ($searchInfo['from_time'])) {
+				$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');
+			} else {
+				$fromTime = mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
+			}
+
+			if (!empty ($searchInfo['to_time'])) {
+				$toTime = strtotime($searchInfo['to_time'] . ' 00:00:00');
+			} else {
+				$toTime = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+			}
+		} else {
+			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);
+			$fromTime = !empty($minAvailDate) ? strtotime($minAvailDate) : mktime(0, 0, 0, date('m'), date('d') - 1, date('Y'));
+			$toTime = !empty($maxAvailDate) ? strtotime($maxAvailDate) : mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+		}
+
+		$fromTimeTxt = date('Y-m-d', $fromTime);
+		$toTimeTxt = date('Y-m-d', $toTime);
+		$this->set('fromTime', $fromTimeTxt);
+		$this->set('toTime', $toTimeTxt);
+		$this->set('period', $period);
+
 		$seSearchUserId = isAdmin() ? "" : $userId;
 		$this->seLIst = $keywordController->getUserKeywordSearchEngineList($seSearchUserId);
 		$this->set('seList', $this->seLIst);
