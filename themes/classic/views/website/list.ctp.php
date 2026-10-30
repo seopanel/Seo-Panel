@@ -1,5 +1,33 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Website Manager']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#webManagerHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="webManagerHelpModal" tabindex="-1" role="dialog" aria-labelledby="webManagerHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-globe"></i></div>
+				<h5 class="modal-title" id="webManagerHelpModalLabel">About Website Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The master list of every website tracked in this install. Every other tool - Rank Checker, Site Auditor, AI Visibility, and the rest - works against the websites added here.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Edit, activate/deactivate or delete a website from here. Deleting one also removes its keywords and saved history across every tool.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form name="listform" id="listform">
-<?php echo showSectionHead($spTextPanel['Website Manager']); ?>
 <?php $submitLink = "scriptDoLoadPost('websites.php', 'listform', 'content')";?>
 <table class="search">
 	<tr>
