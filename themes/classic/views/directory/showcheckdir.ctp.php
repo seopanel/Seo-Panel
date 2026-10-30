@@ -14,10 +14,10 @@
 				<h5 class="modal-title" id="checkDirStatusHelpModalLabel">About Check Directory Status</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Bulk re-checks every directory in the global Directory Manager list - filtered by Active or Inactive - and updates each one's status in place.</p>
+				<p>This bulk re-checks every directory in the global Directory Manager list, optionally filtered to just the Active or Inactive ones, and updates each one's status in place.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>This checks the directory sites themselves, not a specific website's submissions - see Websites &gt; Check Submission Status for that.</span>
+					<span>This checks the directory sites themselves, not a specific website's submissions. For that, see Websites &gt; Check Submission Status.</span>
 				</div>
 			</div>
 			<div class="modal-footer">

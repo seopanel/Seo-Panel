@@ -16,7 +16,7 @@
 				<h5 class="modal-title" id="proxyCheckStatusHelpModalLabel">About Check Status</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Bulk-tests every proxy in the pool - or just the Active or Inactive ones - by actually connecting through each one, and updates each proxy's Active/Inactive status with the live result.</p>
+				<p>This bulk-tests every proxy in the pool, or just the Active or Inactive ones, by actually connecting through each one, and updates each proxy's Active/Inactive status with the live result.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

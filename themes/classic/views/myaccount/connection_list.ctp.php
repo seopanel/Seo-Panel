@@ -14,10 +14,10 @@
 				<h5 class="modal-title" id="connectionsHelpModalLabel">About Connections</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Connect your own Google account via OAuth - this is what powers Webmaster Tools, Website Analytics, and any other feature that reads data from your Google account on your behalf.</p>
+				<p>This connects your own Google account via OAuth, which is what powers Webmaster Tools, Website Analytics, and any other feature that reads data from your Google account on your behalf.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>This is per-user - each account connects its own Google login, separate from the Google API keys configured in Settings.</span>
+					<span>This is per-user: each account connects its own Google login, separate from the Google API keys configured in Settings.</span>
 				</div>
 			</div>
 			<div class="modal-footer">

@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="userTypePluginSettingsHelpModalLabel">About User Type Settings</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Per-user-type configuration for one specific plugin - the fields shown depend on which plugin you arrived from (e.g. Subscription), and apply only to users of the role selected above.</p>
+				<p>This is per-user-type configuration for one specific plugin. The fields shown depend on which plugin you arrived from (e.g. Subscription), and they apply only to users of the role selected above.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

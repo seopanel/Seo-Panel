@@ -14,10 +14,10 @@
 				<h5 class="modal-title" id="crawlLogMgrHelpModalLabel">About Crawl Log Manager</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Every crawl SEO Panel has made - rank checks, backlink checks, site audits, and more - with the URL fetched, which proxy was used, and whether it succeeded. Filter by report type, proxy, search engine, or date range, and drill into any row for the full request/response details.</p>
+				<p>This logs every crawl SEO Panel has made, including rank checks, backlink checks, and site audits, showing the URL fetched, which proxy was used, and whether it succeeded. Filter by report type, proxy, search engine, or date range, and drill into any row for the full request and response details.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>This is the first place to look when a tool's results seem wrong - it shows exactly what was requested and what came back.</span>
+					<span>It's the first place to look when a tool's results seem wrong, since it shows exactly what was requested and what came back.</span>
 				</div>
 			</div>
 			<div class="modal-footer">

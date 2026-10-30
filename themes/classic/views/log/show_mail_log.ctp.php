@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="mailLogDetailsHelpModalLabel">About Mail Log Details</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The full record for one outgoing email - subject, category, recipients, Success/Fail status and the raw send message - useful for diagnosing a notification or scheduled report email that didn't arrive.</p>
+				<p>This is the full record for one outgoing email: its subject, category, recipients, Success or Fail status, and the raw send message. It's useful for diagnosing a notification or scheduled report email that didn't arrive.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

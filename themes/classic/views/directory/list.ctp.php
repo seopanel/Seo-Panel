@@ -14,10 +14,10 @@
 				<h5 class="modal-title" id="dirMgrHelpModalLabel">About Directory Manager</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The global, shared list of directory sites every tenant's Automatic Submission tool can submit to - add, edit, enable/disable, or mark one as featured.</p>
+				<p>This is the global, shared list of directory sites that every tenant's Automatic Submission tool can submit to. You can add, edit, enable or disable, or mark any of them as featured.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>Admin-only - this is the master directory list for the whole install, not a per-website setting.</span>
+					<span>This is admin-only, since it's the master directory list for the whole install rather than a per-website setting.</span>
 				</div>
 			</div>
 			<div class="modal-footer">

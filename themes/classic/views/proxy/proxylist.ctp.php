@@ -14,10 +14,10 @@
 				<h5 class="modal-title" id="proxyMgrHelpModalLabel">About Proxy Manager</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The list of proxy servers SEO Panel can route crawls through - add, edit, activate/deactivate, delete, or re-check each one's live status.</p>
+				<p>This is the list of proxy servers SEO Panel can route crawls through. You can add, edit, activate or deactivate, delete, or re-check each one's live status.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>Proxies are only actually used when enabled in Settings &gt; Proxy Settings - this list manages the pool, not whether it's in use.</span>
+					<span>Proxies are only actually used once they're enabled in Settings &gt; Proxy Settings. This list just manages the pool, not whether it's in use.</span>
 				</div>
 			</div>
 			<div class="modal-footer">

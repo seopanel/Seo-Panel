@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="alertsHelpModalLabel">About Alerts</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Your own in-app notifications - things like a new SEO Panel version being available, Seo Panel API connection/verification problems, or report-related warnings - filterable by category, keyword, or date. Click any row for its full message.</p>
+				<p>These are your own in-app notifications, covering things like a new SEO Panel version being available, Seo Panel API connection or verification problems, and report-related warnings. Filter the list by category, keyword, or date, and click any row to see its full message.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

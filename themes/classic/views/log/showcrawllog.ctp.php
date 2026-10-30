@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="crawlLogDetailsHelpModalLabel">About Crawl Log Details</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The full record for one crawl attempt - the exact URL, referer, cookies, POST fields, user agent and proxy used, plus the raw success/failure message - useful when a report's data looks wrong and you need to see exactly what was fetched.</p>
+				<p>This is the full record for one crawl attempt: the exact URL, referer, cookies, POST fields, user agent, and proxy used, plus the raw success or failure message. It's useful when a report's data looks wrong and you need to see exactly what was fetched.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

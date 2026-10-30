@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="apiConnectionHelpModalLabel">About API Connection</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The API URL plus the key/secret pair an external tool needs to authenticate against this install's own REST API - view them here, or regenerate either one if it may have leaked.</p>
+				<p>This shows the API URL plus the key and secret pair an external tool needs to authenticate against this install's own REST API. View them here, or regenerate either one if it may have leaked.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
 					<span>Regenerating a value immediately breaks every existing integration using the old one.</span>

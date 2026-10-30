@@ -15,7 +15,7 @@
 				<h5 class="modal-title" id="userTypeMgrHelpModalLabel">About User Type Manager</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>The roles assignable to a user when creating their account - each one caps their website/keyword counts and, with the Subscription plugin active, sets its price and billing details.</p>
+				<p>These are the roles assignable to a user when creating their account. Each one caps their website and keyword counts, and with the Subscription plugin active, also sets its price and billing details.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
 					<span>Per-type plugin and SEO tool access is configured from each type's Edit screen.</span>

@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="mailLogMgrHelpModalLabel">About Mail Log Manager</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Every email SEO Panel has sent - notification alerts and scheduled report deliveries - with its recipients, category and Success/Fail status. Filter by category, keyword, or date range, and drill into any row for the full send details.</p>
+				<p>This logs every email SEO Panel has sent, including notification alerts and scheduled report deliveries, along with its recipients, category, and Success or Fail status. Filter by category, keyword, or date range, and drill into any row for the full send details.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

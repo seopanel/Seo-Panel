@@ -14,7 +14,7 @@
 				<h5 class="modal-title" id="newUserTypeHelpModalLabel">About New User Type</h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p>Create a new role - name, description, and the website/keyword count caps it grants. Plugin and SEO tool access for it is configured afterward from its Edit screen.</p>
+				<p>This creates a new role: its name, description, and the website/keyword count caps it grants. Plugin and SEO tool access for it is configured afterward from its Edit screen.</p>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>

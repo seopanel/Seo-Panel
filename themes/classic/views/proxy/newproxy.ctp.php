@@ -17,7 +17,7 @@
 				<p>Add a single proxy server to the pool by host and port, with optional username/password if it requires authentication.</p>
 				<div class="aiv-note">
 					<i class="fas fa-info-circle"></i>
-					<span>New proxies are added Inactive by default - use Check Status to verify and activate them.</span>
+					<span>New proxies are added as Inactive by default, so use Check Status to verify and activate them.</span>
 				</div>
 			</div>
 			<div class="modal-footer">
