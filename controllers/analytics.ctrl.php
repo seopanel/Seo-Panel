@@ -396,8 +396,7 @@ class AnalyticsController extends Controller {
 		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
 		        from analytic_sources k, website_analytics r
 		        where k.id = r.source_id $conditions";
-		$row = $this->db->select($sql, true);
-		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+		return $this->__getMinMaxDate($sql);
 	}
 
 	# func to show analytics report summary
@@ -488,17 +487,11 @@ class AnalyticsController extends Controller {
 	    // website, and "from" to that minus the preset's offset,
 	    // clamped so it never goes earlier than the earliest synced
 	    // date - or explicit from_time/to_time, used exactly as given.
-	    $periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
-	    $hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-	    $period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+	    $period = $this->__resolvePeriodValue($searchInfo);
 
-	    if (!empty($period) && isset($periodOffsets[$period])) {
+	    if (!empty($period)) {
 	        list($minAvailDate, $maxAvailDate) = $this->__getWebsiteAnalyticsDateAvailability($conditions);
-	        $toTimeStamp = !empty($maxAvailDate) ? strtotime($maxAvailDate) : strtotime('-1 days');
-	        $fromTimeStamp = strtotime($periodOffsets[$period], $toTimeStamp);
-	        if (!empty($minAvailDate) && $fromTimeStamp < strtotime($minAvailDate)) {
-	            $fromTimeStamp = strtotime($minAvailDate);
-	        }
+	        list($fromTimeStamp, $toTimeStamp) = $this->__resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, '-1 days');
 	        $fromTime = date('Y-m-d', $fromTimeStamp);
 	        $toTime = date('Y-m-d', $toTimeStamp);
 	    } else {

@@ -543,8 +543,7 @@ class SocialMediaController extends Controller{
 		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
 				from $this->linkTable sml, $this->linkReportTable r
 				where sml.id=r.sm_link_id and sml.status=1 $conditions";
-		$row = $this->db->select($sql, true);
-		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+		return $this->__getMinMaxDate($sql);
 	}
 
 	function viewReportSummary($searchInfo=[], $summaryPage = false, $cronUserId=false) {
@@ -605,17 +604,13 @@ class SocialMediaController extends Controller{
 		$conditions .= !empty($searchInfo['search_name']) ? " and (sml.url like '%".addslashes($searchInfo['search_name'])."%' or sml.name like '%".addslashes($searchInfo['search_name'])."%')" : "";
 		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";
 
-		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
-		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = $this->__resolvePeriodValue($searchInfo);
 
-		if (!empty($period) && isset($periodOffsets[$period])) {
+		if (!empty($period)) {
 			list($minAvailDate, $maxAvailDate) = $this->__getSocialMediaDateAvailability($conditions);
-			$toTime = !empty($maxAvailDate) ? $maxAvailDate : date('Y-m-d');
-			$fromTime = date('Y-m-d', strtotime($periodOffsets[$period], strtotime($toTime)));
-			if (!empty($minAvailDate) && strtotime($fromTime) < strtotime($minAvailDate)) {
-				$fromTime = $minAvailDate;
-			}
+			list($fromTimeStamp, $toTimeStamp) = $this->__resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, 'today');
+			$fromTime = date('Y-m-d', $fromTimeStamp);
+			$toTime = date('Y-m-d', $toTimeStamp);
 		} else {
 			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));
 			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');

@@ -191,8 +191,7 @@ class ReportController extends Controller {
 		        join keywords k on sr.keyword_id = k.id
 		        join websites w on k.website_id = w.id
 		        where 1=1 $conditions";
-		$row = $this->db->select($sql, true);
-		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+		return $this->__getMinMaxDate($sql);
 	}
 
 	# func to show keyword report summary
@@ -260,17 +259,11 @@ class ReportController extends Controller {
 		//    date pickers, or a pagination/sort link carrying forward
 		//    an already-resolved range): used exactly as given, same
 		//    as before this change.
-		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
-		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = $this->__resolvePeriodValue($searchInfo);
 
-		if (!empty($period) && isset($periodOffsets[$period])) {
+		if (!empty($period)) {
 			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);
-			$toTime = !empty($maxAvailDate) ? strtotime($maxAvailDate) : mktime(0, 0, 0, date('m'), date('d'), date('Y'));
-			$fromTime = strtotime($periodOffsets[$period], $toTime);
-			if (!empty($minAvailDate) && $fromTime < strtotime($minAvailDate)) {
-				$fromTime = strtotime($minAvailDate);
-			}
+			list($fromTime, $toTime) = $this->__resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, 'today');
 		} else {
 			if (!empty ($searchInfo['from_time'])) {
 				$fromTime = strtotime($searchInfo['from_time'] . ' 00:00:00');

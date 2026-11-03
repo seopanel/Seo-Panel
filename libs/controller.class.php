@@ -285,5 +285,53 @@ class Controller extends Seopanel{
 			"'$now')";
 		$this->db->query($sql);
 	}
+
+	// shared by every "Summary" report page's own __get*DateAvailability()
+	// helper (report/webmaster/analytics/social_media/review_manager
+	// controllers) - each builds its own min/max(report_date) SQL (table
+	// names and join conditions differ per page), this just runs it and
+	// normalizes the result row into a plain [min, max] pair.
+	function __getMinMaxDate($sql) {
+		$row = $this->db->select($sql, true);
+		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+	}
+
+	// shared Day/Week/Month/Year period-preset resolution, used by every
+	// "Summary" report page that offers that dropdown. Split into two
+	// steps so a caller can decide $period (cheap, no DB access) before
+	// deciding whether its own availability query is even worth running -
+	// each page's own fallback for explicit from_time/to_time (when
+	// __resolvePeriodValue() comes back empty/Custom) predates this
+	// feature and legitimately differs per page, so that part stays in
+	// each controller.
+
+	// reads 'period'/'from_time'/'to_time' from the caller's raw request
+	// array and returns the resolved period key ('day'/'week'/'month'/
+	// 'year'), or '' when explicit dates were submitted/should be used
+	// (an invalid/tampered period value is treated the same as not
+	// submitted at all).
+	function __resolvePeriodValue($searchInfo) {
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+		return (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+	}
+
+	// given an already-resolved (non-empty) $period from
+	// __resolvePeriodValue(), anchors "to" to the latest date this page's
+	// own availability query actually found data for (or $noDataAnchor,
+	// a strtotime()-compatible fallback, e.g. 'today'/'-1 days', when
+	// there's no saved data at all yet - differs per page's own
+	// reporting-lag tolerance), and "from" to that minus the preset's
+	// offset, clamped so it never goes earlier than the earliest
+	// available date. Returns array($fromTimeStamp, $toTimeStamp).
+	function __resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, $noDataAnchor) {
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$toTimeStamp = !empty($maxAvailDate) ? strtotime($maxAvailDate) : strtotime($noDataAnchor);
+		$fromTimeStamp = strtotime($periodOffsets[$period], $toTimeStamp);
+		if (!empty($minAvailDate) && $fromTimeStamp < strtotime($minAvailDate)) {
+			$fromTimeStamp = strtotime($minAvailDate);
+		}
+		return array($fromTimeStamp, $toTimeStamp);
+	}
 }
 ?>
