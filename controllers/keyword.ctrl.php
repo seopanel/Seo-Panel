@@ -30,10 +30,11 @@ class KeywordController extends Controller{
 		
 	    $userId = isLoggedIn();
 		$websiteController = New WebsiteController();
-		
+
 		$urlParams = "";
-		$websiteId = empty($info['website_id']) ? "" : intval($info['website_id']);
-		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$websiteId = isset($info['website_id']) ? intval($info['website_id']) : (!empty($websiteList) ? $websiteList[0]['id'] : "");
+		$this->set('websiteList', $websiteList);
 		$this->set('websiteId', $websiteId);
 		if ($websiteId) {
 		     $conditions = " and k.website_id=$websiteId";
