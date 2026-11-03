@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#saImportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="saImportHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('saImportHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-file-upload"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Import Project Links</div>
-		<div class="aiv-intro-desc">Manually add extra page URLs to an existing project's crawl queue, instead of waiting for the crawler to discover them. <a href="javascript:void(0);" data-toggle="modal" data-target="#saImportHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="saImportHelpModal" tabindex="-1" role="dialog" aria-labelledby="saImportHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

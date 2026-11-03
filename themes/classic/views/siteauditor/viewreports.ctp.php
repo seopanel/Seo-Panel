@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#saReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="saReportsHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('saReportsHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-table"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Auditor Reports</div>
-		<div class="aiv-intro-desc">Pick a crawled project and a report type - summary, link report, or duplicate titles/descriptions - to see the audit results. <a href="javascript:void(0);" data-toggle="modal" data-target="#saReportsHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="saReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="saReportsHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

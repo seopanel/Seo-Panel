@@ -7,16 +7,6 @@ $submitAction = "scriptDoLoadPost('saturationchecker.php', 'search_form', 'conte
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#satGraphHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="satGraphHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('satGraphHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-chart-area"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Graphical Reports</div>
-		<div class="aiv-intro-desc">The same saved saturation history as Saturation Reports, drawn as a Google-vs-Bing line chart over time. <a href="javascript:void(0);" data-toggle="modal" data-target="#satGraphHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="satGraphHelpModal" tabindex="-1" role="dialog" aria-labelledby="satGraphHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

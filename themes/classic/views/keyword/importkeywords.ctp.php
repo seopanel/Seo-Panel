@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#kwImportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="kwImportHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('kwImportHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-file-upload"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Import Keywords</div>
-		<div class="aiv-intro-desc">A bulk version of New Keyword - paste a comma-separated list of keyword phrases and add them all at once. <a href="javascript:void(0);" data-toggle="modal" data-target="#kwImportHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="kwImportHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwImportHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

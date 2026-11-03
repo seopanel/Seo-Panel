@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#dirSkippedHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="dirSkippedHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('dirSkippedHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-ban"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Skipped Directories</div>
-		<div class="aiv-intro-desc">Directories you chose to skip during Automatic Submission, per website - unskip one to make it eligible again. <a href="javascript:void(0);" data-toggle="modal" data-target="#dirSkippedHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="dirSkippedHelpModal" tabindex="-1" role="dialog" aria-labelledby="dirSkippedHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

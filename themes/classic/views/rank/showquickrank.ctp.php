@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#rankQuickHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="rankQuickHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('rankQuickHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-bolt"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Quick Rank Checker</div>
-		<div class="aiv-intro-desc">Paste a list of URLs and get Moz's Spam Score, Domain Authority and Page Authority for each, instantly. <a href="javascript:void(0);" data-toggle="modal" data-target="#rankQuickHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="rankQuickHelpModal" tabindex="-1" role="dialog" aria-labelledby="rankQuickHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

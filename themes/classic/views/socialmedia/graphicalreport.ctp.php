@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#smGraphHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="smGraphHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('smGraphHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-chart-area"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Graphical Reports</div>
-		<div class="aiv-intro-desc">The same saved followers/likes history as Detailed Reports, drawn as a line chart for one link over time. <a href="javascript:void(0);" data-toggle="modal" data-target="#smGraphHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="smGraphHelpModal" tabindex="-1" role="dialog" aria-labelledby="smGraphHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

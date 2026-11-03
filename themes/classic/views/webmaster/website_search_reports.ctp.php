@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#wmWebReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="wmWebReportsHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('wmWebReportsHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-table"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Website Search Reports</div>
-		<div class="aiv-intro-desc">Day-by-day Search Console history for a whole website's overall metrics, with day-over-day change highlighted. <a href="javascript:void(0);" data-toggle="modal" data-target="#wmWebReportsHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="wmWebReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="wmWebReportsHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

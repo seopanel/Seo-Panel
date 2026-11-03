@@ -7,16 +7,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#smLinksHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="smLinksHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('smLinksHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-share-alt"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Social Media Links</div>
-		<div class="aiv-intro-desc">Register your websites' social profile links here - this is the setup step before any check or report has data to show. <a href="javascript:void(0);" data-toggle="modal" data-target="#smLinksHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="smLinksHelpModal" tabindex="-1" role="dialog" aria-labelledby="smLinksHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

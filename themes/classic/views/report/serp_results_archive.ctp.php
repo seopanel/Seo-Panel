@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#serpArchiveHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="serpArchiveHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('serpArchiveHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-list-ol"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">SERP Results Archive</div>
-		<div class="aiv-intro-desc">The full ranked result list from the last saved Keyword Position Checker run, per search engine, with your own website's result highlighted. <a href="javascript:void(0);" data-toggle="modal" data-target="#serpArchiveHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="serpArchiveHelpModal" tabindex="-1" role="dialog" aria-labelledby="serpArchiveHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">

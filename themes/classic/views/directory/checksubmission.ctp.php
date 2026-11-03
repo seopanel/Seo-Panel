@@ -4,16 +4,6 @@
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#dirCheckHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
 </div>
 
-<!-- quick at-a-glance summary, visible without clicking anything -->
-<div class="aiv-intro-card" data-intro-id="dirCheckHelpModal">
-	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('dirCheckHelpModal', this)" aria-label="Close"><i class="fas fa-times"></i></button>
-	<div class="aiv-intro-icon"><i class="fas fa-sync"></i></div>
-	<div class="aiv-intro-text">
-		<div class="aiv-intro-title">Check Submission Status</div>
-		<div class="aiv-intro-desc">Re-checks your website's still-pending directory submissions live, to see if they've since been approved and listed. <a href="javascript:void(0);" data-toggle="modal" data-target="#dirCheckHelpModal" class="aiv-intro-cta">Learn more <i class="fas fa-arrow-right"></i></a></div>
-	</div>
-</div>
-
 <!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
 <div class="modal fade aiv-help-modal" id="dirCheckHelpModal" tabindex="-1" role="dialog" aria-labelledby="dirCheckHelpModalLabel" aria-hidden="true">
 	<div class="modal-dialog" role="document">
