@@ -493,7 +493,7 @@ INSERT INTO `currency` (`id`, `name`, `iso_code`, `symbol`, `unicode`, `position
 (55, 'Saudi Arabian Riyal', 'SAR', 'SAR', '&#65020;', 'after', 0, 1),
 (56, 'Swedish Krona', 'SEK', 'kr', 'kr', 'before', 1, 1),
 (57, 'Singapore Dollar', 'SGD', '$', '&#36;', 'before', 1, 1),
-(58, 'Thai Baht', 'THB', '฿', '&#322;', 'before', 1, 1),
+(58, 'Thai Baht', 'THB', '฿', '&#3647;', 'before', 1, 1),
 (59, 'Turkish Lira', 'TRY', 'TL', 'TL', 'before', 1, 1),
 (60, 'Trinidad and Tobago Dollar', 'TTD', '$', '&#36;', 'before', 0, 1),
 (61, 'Taiwan Dollar', 'TWD', '$', '&#36;', 'before', 0, 1),
@@ -2089,7 +2089,7 @@ UPDATE `currency` SET `symbol` = '﷼' WHERE `currency`.`id` = 48;
 UPDATE `currency` SET `symbol` = '₱' WHERE `currency`.`id` = 50;
 UPDATE `currency` SET `symbol` = 'Zł' WHERE `currency`.`id` = 51;
 UPDATE `currency` SET `symbol` = '₽' WHERE `currency`.`id` = 54;
-UPDATE `currency` SET `symbol` = 'ł' WHERE `currency`.`id` = 58;
+UPDATE `currency` SET `symbol` = '฿' WHERE `currency`.`id` = 58;
 UPDATE `currency` SET `symbol` = '₫' WHERE `currency`.`id` = 65;
 UPDATE `currency` SET `symbol` = '¥' WHERE `currency`.`id` = 16;
 
