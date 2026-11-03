@@ -472,10 +472,16 @@ class AnalyticsController extends Controller {
 	    $this->set('orderVal', $orderVal);
 
 	    $conditions = !empty($searchInfo['search_name']) ? " and k.source_name like '%".addslashes($searchInfo['search_name'])."%'" : "";
+	    $websiteIds = array_keys($websiteList);
 	    if (!empty($websiteId)) {
 	        $conditions .= " and r.website_id=" . intval($websiteId);
+	    } elseif (!empty($websiteIds)) {
+	        $conditions .= " and r.website_id in (" . implode(',', $websiteIds) . ")";
 	    } else {
-	        $conditions .= " and r.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+	        // no websites at all (e.g. a brand new install's admin with
+	        // none created yet) - "in ()" with no values is a SQL syntax
+	        // error, so match nothing instead
+	        $conditions .= " and 1=0";
 	    }
 
 	    // Period resolution - two cases, same pattern as Keyword

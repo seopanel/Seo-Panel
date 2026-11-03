@@ -87,7 +87,7 @@ class DBI{
 		
 		mysqli_free_result($res);
 		if ($fetchFirst){
-			return $returnArr[0];
+			return $returnArr[0] ?? null;
 		}
 		return $returnArr;
 	}
@@ -111,7 +111,24 @@ class DBI{
 		$tmpline = '';
 
 		# read in entire file
-		$lines = file($filename);
+		// count(false) is a TypeError on PHP8, so a missing/unreadable
+		// migration file must not reach count() at all. $block=true is
+		// the strict fresh-install path (the core schema/language files
+		// are required - silently treating a missing one as "nothing to
+		// import" would let the installer report success over an empty
+		// database); $block=false is the lenient upgrade/optional-plugin-
+		// file path, where skipping a file that doesn't exist (e.g. a
+		// plugin with no extra schema) and just logging it is correct.
+		$lines = @file($filename);
+		if (!is_array($lines)) {
+			$msg = "could not read migration file $filename (missing or unreadable)";
+			error_log("SEO Panel installer: $msg");
+			if ($block) {
+				$this->error = true;
+				return $msg;
+			}
+			return false;
+		}
 		$totalLines = count($lines);
 
 		// bug fix: with $block=false (the upgrade path - a replayed

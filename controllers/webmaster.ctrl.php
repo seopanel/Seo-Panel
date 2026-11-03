@@ -512,10 +512,16 @@ class WebMasterController extends GoogleAPIController {
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 
+		$websiteIds = array_keys($websiteList);
 		if (!empty($websiteId)) {
 			$conditions = " and k.website_id=" . intval($websiteId);
+		} elseif (!empty($websiteIds)) {
+			$conditions = " and k.website_id in (" . implode(',', $websiteIds) . ")";
 		} else {
-			$conditions = " and k.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+			// no websites at all (e.g. a brand new install's admin with
+			// none created yet) - "in ()" with no values is a SQL syntax
+			// error, so match nothing instead
+			$conditions = " and 1=0";
 		}
 		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
 

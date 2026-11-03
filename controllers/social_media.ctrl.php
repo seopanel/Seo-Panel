@@ -596,10 +596,15 @@ class SocialMediaController extends Controller{
 		}
 		$this->set('websiteId', $websiteId);
 
+		$websiteIds = array_keys($websiteList);
 		if (!empty($websiteId)) {
 			$conditions = " and sml.website_id=" . intval($websiteId);
+		} elseif (!empty($websiteIds)) {
+			$conditions = " and sml.website_id in (" . implode(',', $websiteIds) . ")";
 		} else {
-			$conditions = " and sml.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+			// no websites at all - "in ()" with no values is a SQL syntax
+			// error, so match nothing instead
+			$conditions = " and 1=0";
 		}
 		$conditions .= !empty($searchInfo['search_name']) ? " and (sml.url like '%".addslashes($searchInfo['search_name'])."%' or sml.name like '%".addslashes($searchInfo['search_name'])."%')" : "";
 		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";

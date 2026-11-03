@@ -658,7 +658,13 @@ class Install {
 		$fileLineCounts = array();
 		$totalLines = 0;
 		foreach ($files as $key => $file) {
-			$fileLineCounts[$key] = @count(@file($file['path']));
+			// count(false) is a TypeError on PHP8 (not just a suppressible
+			// warning), so a missing/unreadable migration file must not
+			// reach count() at all - it previously fataled the whole
+			// upgrade/install chain here, before the real import loop
+			// below even got a chance to error_log() and move on
+			$lines = @file($file['path']);
+			$fileLineCounts[$key] = is_array($lines) ? count($lines) : 0;
 			$totalLines += $fileLineCounts[$key];
 		}
 		?>
