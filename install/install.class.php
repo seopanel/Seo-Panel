@@ -75,7 +75,15 @@ class Install {
 			
 			include_once(SP_INSTALL_CONFIG_FILE);
 			if(defined('SP_INSTALLED')){
-				die("<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>");
+				// previously die()'d a bare fragment here, skipping
+				// showDefaultFooter() entirely - left the page as
+				// unclosed HTML (no </div>/</body>/</html>) with no way
+				// forward for a user who just lands on /install/ or
+				// resubmits the install form after already installing
+				echo "<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>";
+				echo "<p><a href='".SP_WEBPATH."/login.php'>Go to login</a></p>";
+				$this->showDefaultFooter();
+				exit;
 			}
 			
 			$configSupport = "Found, Unwritable<br><p class='note'><b>Command:</b> chmod 666 config/sp-config.php</p>";
@@ -399,7 +407,15 @@ class Install {
 		if (file_exists(SP_INSTALL_CONFIG_FILE)) {
 			include_once(SP_INSTALL_CONFIG_FILE);
 			if (defined('SP_INSTALLED')) {
-				die("<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>");
+				// previously die()'d a bare fragment here, skipping
+				// showDefaultFooter() entirely - left the page as
+				// unclosed HTML (no </div>/</body>/</html>) with no way
+				// forward for a user who just lands on /install/ or
+				// resubmits the install form after already installing
+				echo "<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>";
+				echo "<p><a href='".SP_WEBPATH."/login.php'>Go to login</a></p>";
+				$this->showDefaultFooter();
+				exit;
 			}
 		}
 
