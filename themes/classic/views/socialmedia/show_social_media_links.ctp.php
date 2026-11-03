@@ -89,7 +89,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 		<th><?php echo $spText['common']['Name']?></th>
 		<th><?php echo $spText['label']['Type']?></th>
     	<th><?php echo $spText['common']['Link']?></th>
-    	<th><?php echo $spText['common']['Website']?></th>
 		<th><?php echo $spText['common']['Status']?></th>
 		<th><?php echo $spText['common']['Action']?></th>
 	</tr>
@@ -113,7 +112,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 					}
 					?>
 				</td>
-				<td><?php echo htmlspecialchars($listInfo['website_name'])?></td>
 				<td><?php echo showStatusBadge($listInfo['status']);?></td>
 				<td>
 					<?php
@@ -138,7 +136,7 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 		}
 	}else{
 		?>
-		<tr><td colspan="6"><b><?php echo $_SESSION['text']['common']['No Records Found']?></b></tr>
+		<tr><td colspan="5"><b><?php echo $_SESSION['text']['common']['No Records Found']?></b></tr>
 		<?php
 	} 
 	?>

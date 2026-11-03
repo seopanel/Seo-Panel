@@ -89,12 +89,11 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 		<th><?php echo $spText['common']['Name']?></th>
 		<th><?php echo $spText['label']['Type']?></th>
     	<th><?php echo $spText['common']['Link']?></th>
-    	<th><?php echo $spText['common']['Website']?></th>
 		<th><?php echo $spText['common']['Status']?></th>
 		<th><?php echo $spText['common']['Action']?></th>
 	</tr>
 	<?php
-	$colCount = 6;
+	$colCount = 5;
 	if(count($list) > 0) {
 		foreach($list as $listInfo){
 		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", htmlspecialchars($listInfo['name']));
@@ -106,7 +105,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 					<?php echo $serviceList[$listInfo['type']]['label']?>
 				</td>
 				<td style="text-align: left;"><?php echo htmlspecialchars($listInfo['url'])?></td>
-				<td><?php echo htmlspecialchars($listInfo['website_name'])?></td>
 				<td><?php echo showStatusBadge($listInfo['status']);?></td>
 				<td>
 					<?php
