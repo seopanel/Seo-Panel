@@ -395,6 +395,19 @@ class Install {
 	# func to proceed installation
 	function proceedInstallation($info) {
 
+		// a real install test once truncated mid-script here (DB left
+		// with the core schema but no plugin-activation rows, and no
+		// "Installation Complete" page) with nothing logged anywhere -
+		// consistent with, but not conclusively proven to be, PHP's
+		// default 30s max_execution_time (a deliberate retest under a
+		// tightened limit did NOT reproduce it, so the exact trigger is
+		// still unconfirmed). Either way, this is a one-time admin
+		// operation chaining a SQL/language import, plugin activation,
+		// and an external telemetry call in one request - there's no
+		// good reason to leave it bound by the default request timeout
+		// regardless of what actually caused that one truncation.
+		set_time_limit(0);
+
 		// checkRequirements() only performs this exact check on the GET
 		// landing page, never on this POST path - meaning if an admin
 		// ever skips the documented post-install "chmod config to 644"
@@ -1015,12 +1028,17 @@ class Install {
 		
 	}
 	
-	function proceedUpgrade($info=[]){ 
+	function proceedUpgrade($info=[]){
+		// same reasoning as proceedInstallation() - an upgrade can chain
+		// through many migration files in one request; not something
+		// the default request timeout should ever cut short
+		set_time_limit(0);
+
 		if( ($info['php_support'] == 'red') || ($info['mysql_support'] == 'red') || ($info['curl_support'] == 'red')
 		|| ($info['config'] == 'red') || ($info['db_support'] == 'red')){
 			$this->checkUpgradeRequirements(true);
 			return;
-		}		
+		}
 		
 		include_once(SP_INSTALL_CONFIG_FILE);
 		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
