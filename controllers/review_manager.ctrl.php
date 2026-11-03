@@ -49,24 +49,34 @@ class ReviewManagerController extends ReviewBase{
     
     function showReviewLinks($searchInfo = '') {
     	$userId = isLoggedIn();
+    	// default param is a string (''), not an array - assigning an
+    	// array key straight onto that below would fatal in PHP8
+    	// ("Cannot access offset of type string on string")
+    	if (!is_array($searchInfo)) {
+    	    $searchInfo = [];
+    	}
+
+    	$webSiteCtrler = new WebsiteController();
+    	$websiteList = $webSiteCtrler->__getAllWebsites($userId, true);
+    	if (!isset($searchInfo['website_id']) && !empty($websiteList)) {
+    	    $searchInfo['website_id'] = $websiteList[0]['id'];
+    	}
     	$this->set('searchInfo', $searchInfo);
     	$sql = "select l.*, w.name as website_name from $this->linkTable l, websites w where l.website_id=w.id";
-    	
+
     	if (!isAdmin()) {
     	    $sql .= " and w.user_id=$userId";
     	}
-    	
+
     	// search conditions
     	$sql .= !empty($searchInfo['name']) ? " and l.name like '%".addslashes($searchInfo['name'])."%'" : "";
     	$sql .= !empty($searchInfo['website_id']) ? " and l.website_id=".intval($searchInfo['website_id']) : "";
     	$sql .= !empty($searchInfo['type']) ? " and `type`='".addslashes($searchInfo['type'])."'" : "";
-    	
+
     	if (!empty($searchInfo['status'])) {
-    	    $sql .= ($searchInfo['status'] == 'active') ? " and l.status=1" : " and l.status=0"; 
+    	    $sql .= ($searchInfo['status'] == 'active') ? " and l.status=1" : " and l.status=0";
     	}
-    	
-    	$webSiteCtrler = new WebsiteController();
-    	$websiteList = $webSiteCtrler->__getAllWebsites($userId, true);
+
     	$this->set( 'websiteList', $websiteList );
     	 
     	// pagination setup
