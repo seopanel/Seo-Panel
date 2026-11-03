@@ -436,7 +436,7 @@ CREATE TABLE IF NOT EXISTS `currency` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=68 ;
 
 INSERT INTO `currency` (`id`, `name`, `iso_code`, `symbol`, `unicode`, `position`, `paypal`, `status`) VALUES
-(1, 'United Arab Emirates Dirham', 'AED', 'Ø¯.', '', 'after', 0, 1),
+(1, 'United Arab Emirates Dirham', 'AED', 'د.', '', 'after', 0, 1),
 (2, 'Netherlands Antillian Guilder', 'ANG', 'Æ’', '&#x0192;', 'before', 0, 1),
 (3, '', 'AOA', 'AOA', 'AOA', 'before', 0, 1),
 (4, 'Argentine Peso', 'ARS', '$', '&#36;', 'before', 0, 1),
@@ -468,7 +468,7 @@ INSERT INTO `currency` (`id`, `name`, `iso_code`, `symbol`, `unicode`, `position
 (30, 'Indonesian Rupiah', 'IDR', 'Rp', 'Rp', 'before', 0, 1),
 (31, 'Israeli Shekel', 'ILS', 'â‚ª', '&#x20AA;', 'before', 1, 1),
 (32, 'Indian Rupee', 'INR', 'Rs', 'Rs', 'before', 0, 1),
-(33, 'Jordanian Dinar', 'JOD', 'Ø¯.', '', '', 0, 1),
+(33, 'Jordanian Dinar', 'JOD', 'د.', '', '', 0, 1),
 (34, 'Japanese Yen', 'JPY', 'Â¥', '&#165;', 'before', 1, 1),
 (35, 'Kenyan Schilling', 'KES', 'KSh', 'Ksh', 'before', 0, 1),
 (36, '(South) Korean Won', 'KRW', 'â‚©', '&#x20A9;', 'before', 0, 1),
@@ -476,7 +476,7 @@ INSERT INTO `currency` (`id`, `name`, `iso_code`, `symbol`, `unicode`, `position
 (38, 'Cayman Islands Dollar', 'KYD', '$', '&#36;', 'before', 0, 1),
 (39, '', 'LTL', 'Lt', 'Lt', 'before', 0, 1),
 (40, '', 'LVL', 'Ls', 'Ls', 'before', 0, 1),
-(41, 'Moroccan Dirham', 'MAD', 'Ø¯.', '', '', 0, 1),
+(41, 'Moroccan Dirham', 'MAD', 'د.', '', '', 0, 1),
 (42, 'Maldive Rufiyaa', 'MVR', 'Rf', 'Rf', 'before', 0, 1),
 (43, '', 'MXN', '$', '&#36;', 'before', 1, 1),
 (44, 'Malaysian Ringgit', 'MYR', 'RM', 'RM', 'before', 1, 1),
