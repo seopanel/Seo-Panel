@@ -137,12 +137,12 @@ foreach($menuList as $i => $menuInfo){
 			break;
 			
 		case "rank-checker":
-			?>			
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Rank Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=quickrank', 'content')"><?php echo $spTextTools['Quick Rank Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=reports', 'content')"><?php echo $spTextTools['Rank Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
     				<?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>
@@ -158,12 +158,12 @@ foreach($menuList as $i => $menuInfo){
 			break;
 			
 		case "backlink-checker":
-			?>		
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Backlinks Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php', 'content')"><?php echo $spTextTools['Quick Backlinks Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=reports', 'content')"><?php echo $spTextTools['Backlinks Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
     				<?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>
@@ -201,12 +201,12 @@ foreach($menuList as $i => $menuInfo){
 			break;			
 			
 		case "saturation-checker":
-			?>			
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Saturation Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php', 'content')"><?php echo $spTextTools['Quick Saturation Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=reports', 'content')"><?php echo $spTextTools['Saturation Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if(!SP_CUSTOM_DEV && (SP_USER_GEN_REPORT || isAdmin())) { ?>				
 					<?php if(SP_DEMO){?>
@@ -220,12 +220,12 @@ foreach($menuList as $i => $menuInfo){
 			break;			
 			
 		case "pagespeed":
-			?>	
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['PageSpeed Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php', 'content')"><?php echo $spTextTools['Quick PageSpeed Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=reports', 'content')"><?php echo $spTextTools['PageSpeed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if(!SP_CUSTOM_DEV && (SP_USER_GEN_REPORT || isAdmin())) { ?>				
 					<?php if(SP_DEMO){?>
