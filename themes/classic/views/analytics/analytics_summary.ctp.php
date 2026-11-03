@@ -127,12 +127,15 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($metricColList);
-$colCount = ($baseColCount * 3) + 1;
+$colCount = ($baseColCount * 3) + (empty($websiteId) ? 2 : 1);
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
 <table id="cust_tab">
 	<tr>
+		<?php if (empty($websiteId)) {?>
+			<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
+		<?php }?>
 		<th id="head" rowspan="2"><?php echo $spText['common']['Source']?></th>
 		<?php
 		$hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
@@ -177,6 +180,9 @@ $colCount = ($baseColCount * 3) + 1;
 			$sourceName = ($listInfo['source_name'] == 'total') ? "<b>".$spText['common']['Total']."</b>" : htmlspecialchars($listInfo['source_name']);
 			?>
 			<tr class="<?php echo $trClass?>">
+				<?php if (empty($websiteId)) {?>
+					<td><a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a></td>
+				<?php }?>
 				<td><?php echo $sourceName; ?></td>
 				<?php
 				foreach ($metricColList as $colName => $colVal) {

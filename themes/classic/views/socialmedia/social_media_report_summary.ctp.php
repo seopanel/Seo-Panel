@@ -141,7 +141,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($colList);
-$colCount = ($baseColCount * 3) - 2;
+$colCount = ($baseColCount * 3) - (empty($websiteId) ? 1 : 2);
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
@@ -165,9 +165,14 @@ $colCount = ($baseColCount * 3) - 2;
 			?>
 			<th rowspan="<?php echo $rowSpan?>" colspan="<?php echo $colspan?>" id="head"><?php echo $linkName; ?></th>
 			<?php
+			if ($colName == "name" && empty($websiteId)) {
+                ?>
+				<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
+				<?php
+			}
 		}
 		?>
-	</tr>	
+	</tr>
 	<tr>
 		<?php
 		$pTxt = str_replace("-", "/", substr($fromTime, -5));
@@ -187,13 +192,19 @@ $colCount = ($baseColCount * 3) - 2;
 			foreach($baseReportList as $listInfo){
 				$keywordId = $listInfo['id'];
 				$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
-				$scriptLink = "website_id=$websiteId&link_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
+				$rowWebsiteId = empty($websiteId) ? $listInfo['website_id'] : $websiteId;
+				$scriptLink = "website_id=$rowWebsiteId&link_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 				?>
 				<tr>
 					<td>
 						<i class="fab fa-<?php echo strtolower($listInfo['type'])?>"></i>
 						<?php echo htmlspecialchars($listInfo['name'])?>
 					</td>
+					<?php if (empty($websiteId)) {?>
+						<td>
+							<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
+						</td>
+					<?php }?>
 					<?php
 					foreach ($colList as $colName => $colVal){
 						if ($colName == 'name') continue;

@@ -473,20 +473,22 @@ class WebMasterController extends GoogleAPIController {
 		$websiteList = [];
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
 		$this->set('websiteList', $websiteList);
-		$websiteId = !empty($searchInfo['website_id']) ? intval($searchInfo['website_id']) : 0;
+		$websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : null;
 		// a non-admin's website_id must be one of their own (already-scoped)
 		// websites - previously unchecked, letting any non-admin view ANY
 		// other user's keyword search summary for an arbitrary website_id.
 		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
 			$websiteId = 0;
 		}
-		// always resolve to a real website (first one, same default the
-		// select box itself now always pre-selects) - the old "nothing
-		// selected = every website's keywords combined" mode needed its
-		// own WEBSITE column to tell rows apart; dropped in favor of
-		// always scoping to one website, same as every other summary
-		// report page, so that column isn't needed here either
-		if (empty($websiteId)) {
+		// resolve to a real website (first one, same default the select
+		// box itself now always pre-selects) only when nothing was
+		// submitted at all - the search form's own select never submits
+		// an empty value any more. An explicit 0 is left alone:
+		// ReportController::sentEmailNotificationForReportGen()'s "Overall
+		// Report Summary" email deliberately passes website_id=0 to mean
+		// every one of this user's websites combined, which still needs
+		// the WEBSITE column below to tell rows apart.
+		if ($websiteId === null) {
 			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
 		}
 		$this->set('websiteId', $websiteId);
@@ -511,10 +513,11 @@ class WebMasterController extends GoogleAPIController {
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 
-		// now a single website is always resolved, so this is simply
-		// "that website's keywords" - the old "every website combined"
-		// IN(...) branch is gone along with the WEBSITE column
-		$conditions = " and k.website_id=" . intval($websiteId);
+		if (!empty($websiteId)) {
+			$conditions = " and k.website_id=" . intval($websiteId);
+		} else {
+			$conditions = " and k.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+		}
 		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
 
 		// Period resolution - two cases, same pattern as Keyword
@@ -529,7 +532,7 @@ class WebMasterController extends GoogleAPIController {
 		// exactly as given.
 		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
 		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
 
 		if (!empty($period) && isset($periodOffsets[$period])) {
 			list($minAvailDate, $maxAvailDate) = $this->__getKeywordAnalyticsDateAvailability($conditions, $source);

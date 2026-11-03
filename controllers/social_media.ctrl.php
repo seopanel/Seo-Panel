@@ -576,7 +576,7 @@ class SocialMediaController extends Controller{
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
 		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
-		$websiteId = !empty($searchInfo['website_id']) ? intval($searchInfo['website_id']) : 0;
+		$websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : null;
 		// a non-admin's website_id must be one of their own (already-scoped)
 		// websites - previously unchecked, letting any non-admin view ANY
 		// other user's social media report summary for an arbitrary
@@ -584,21 +584,30 @@ class SocialMediaController extends Controller{
 		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
 			$websiteId = 0;
 		}
-		if (empty($websiteId)) {
+		// resolve to a real website (first one, same default the select
+		// box itself now always pre-selects) only when nothing was
+		// submitted at all - the search form's own select never submits
+		// an empty value any more. An explicit 0 is left alone:
+		// ReportController::sentEmailNotificationForReportGen()'s "Overall
+		// Report Summary" email deliberately passes website_id=0 to mean
+		// every one of this user's websites combined, which still needs
+		// the WEBSITE column below to tell rows apart.
+		if ($websiteId === null) {
 			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
 		}
 		$this->set('websiteId', $websiteId);
 
-		// always scoped to one resolved website now - the old "no
-		// website_id = combine all accessible websites" mode is gone along
-		// with the WEBSITE column that used to distinguish those rows.
-		$conditions = " and sml.website_id=" . intval($websiteId);
+		if (!empty($websiteId)) {
+			$conditions = " and sml.website_id=" . intval($websiteId);
+		} else {
+			$conditions = " and sml.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+		}
 		$conditions .= !empty($searchInfo['search_name']) ? " and (sml.url like '%".addslashes($searchInfo['search_name'])."%' or sml.name like '%".addslashes($searchInfo['search_name'])."%')" : "";
 		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";
 
 		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
 		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
 
 		if (!empty($period) && isset($periodOffsets[$period])) {
 			list($minAvailDate, $maxAvailDate) = $this->__getSocialMediaDateAvailability($conditions);
@@ -694,12 +703,12 @@ class SocialMediaController extends Controller{
 			$reportHeading =  $this->spTextTools['Social Media Report Summary']."($fromTime - $toTime)";
 			$exportContent .= createExportContent( array('', $reportHeading, ''));
 			$exportContent .= createExportContent( array());
-			$headList = array($spText['common']['Url']);
+			$headList = empty($websiteId) ? array($spText['common']['Website'], $spText['common']['Url']) : array($spText['common']['Url']);
 	
 			$pTxt = str_replace("-", "/", substr($fromTime, -5));
 			$cTxt = str_replace("-", "/", substr($toTime, -5));
 			foreach ($this->colList as $colKey => $colLabel) {
-				if ($colKey == 'url') continue;
+				if ($colKey == 'name') continue;
 				$headList[] = $colLabel . "($pTxt)";
 				$headList[] = $colLabel . "($cTxt)";
 				$headList[] = $colLabel . "(+/-)";
@@ -708,9 +717,9 @@ class SocialMediaController extends Controller{
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 			    $listUrl = ($listInfo['type'] == 'linkedin') ? $listInfo['name'] : $listInfo['url'];
-				$valueList = array($listUrl);
+				$valueList = empty($websiteId) ? array($websiteList[$listInfo['website_id']]['url'] ?? '', $listUrl) : array($listUrl);
 				foreach ($this->colList as $colName => $colVal) {
-					if ($colName == 'url') continue;
+					if ($colName == 'name') continue;
 						
 					$currRank = isset($listInfo[$colName]) ? $listInfo[$colName] : 0;
 					$prevRank = isset($compareReportList[$listInfo['id']][$colName]) ? $compareReportList[$listInfo['id']][$colName] : 0;

@@ -664,28 +664,37 @@ class ReviewManagerController extends ReviewBase{
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
 		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
-		$websiteId = !empty($searchInfo['website_id']) ? intval($searchInfo['website_id']) : 0;
+		$websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : null;
 		// a non-admin's website_id must be one of their own (already-scoped)
 		// websites - previously unchecked, letting any non-admin view ANY
 		// other user's review report summary for an arbitrary website_id.
 		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
 			$websiteId = 0;
 		}
-		if (empty($websiteId)) {
+		// resolve to a real website (first one, same default the select
+		// box itself now always pre-selects) only when nothing was
+		// submitted at all - the search form's own select never submits
+		// an empty value any more. An explicit 0 is left alone:
+		// ReportController::sentEmailNotificationForReportGen()'s "Overall
+		// Report Summary" email deliberately passes website_id=0 to mean
+		// every one of this user's websites combined, which still needs
+		// the WEBSITE column below to tell rows apart.
+		if ($websiteId === null) {
 			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
 		}
 		$this->set('websiteId', $websiteId);
 
-		// always scoped to one resolved website now - the old "no
-		// website_id = combine all accessible websites" mode is gone along
-		// with the WEBSITE column that used to distinguish those rows.
-		$conditions = " and sml.website_id=" . intval($websiteId);
+		if (!empty($websiteId)) {
+			$conditions = " and sml.website_id=" . intval($websiteId);
+		} else {
+			$conditions = " and sml.website_id in (" . implode(',', array_keys($websiteList)) . ")";
+		}
 		$conditions .= !empty($searchInfo['search_name']) ? " and sml.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
 		$conditions .= !empty($searchInfo['type']) ? " and sml.type='".addslashes($searchInfo['type'])."'" : "";
 
 		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
 		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
 
 		if (!empty($period) && isset($periodOffsets[$period])) {
 			list($minAvailDate, $maxAvailDate) = $this->__getReviewDateAvailability($conditions);
@@ -781,7 +790,7 @@ class ReviewManagerController extends ReviewBase{
 			$reportHeading =  $this->spTextTools['Review Report Summary']."($fromTime - $toTime)";
 			$exportContent .= createExportContent( array('', $reportHeading, ''));
 			$exportContent .= createExportContent( array());
-			$headList = array($spText['common']['Url'], $spText['label']['Type']);
+			$headList = empty($websiteId) ? array($spText['common']['Website'], $spText['common']['Url'], $spText['label']['Type']) : array($spText['common']['Url'], $spText['label']['Type']);
 	
 			$pTxt = str_replace("-", "/", substr($fromTime, -5));
 			$cTxt = str_replace("-", "/", substr($toTime, -5));
@@ -795,7 +804,7 @@ class ReviewManagerController extends ReviewBase{
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 	
-			    $valueList = array($listInfo['url'], $this->serviceList[$listInfo['type']]['label']);
+			    $valueList = empty($websiteId) ? array($websiteList[$listInfo['website_id']]['url'] ?? '', $listInfo['url'], $this->serviceList[$listInfo['type']]['label']) : array($listInfo['url'], $this->serviceList[$listInfo['type']]['label']);
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'name') continue;
 						

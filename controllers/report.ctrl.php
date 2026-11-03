@@ -262,7 +262,7 @@ class ReportController extends Controller {
 		//    as before this change.
 		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
 		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
-		$period = !empty($searchInfo['period']) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+		$period = (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
 
 		if (!empty($period) && isset($periodOffsets[$period])) {
 			list($minAvailDate, $maxAvailDate) = $this->__getResultDateAvailability($websiteId, $userId);

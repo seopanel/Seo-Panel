@@ -127,12 +127,15 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 }
 
 $baseColCount = count($colList);
-$colCount = $baseColCount * 3;
+$colCount = ($baseColCount * 3) + (empty($websiteId) ? 2 : 0);
 ?>
 <div id='subcontent' style="margin-top: 0px;">
 
 <table id="cust_tab">
 	<tr>
+		<?php if (empty($websiteId)) {?>
+			<th id="head" rowspan="2"><?php echo $spText['common']['Website']?></th>
+		<?php }?>
 		<?php
 		$hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
 		foreach (array_keys($colList) as $i => $colName){
@@ -173,9 +176,15 @@ $colCount = $baseColCount * 3;
 		foreach($baseReportList as $listInfo){
 			$keywordId = $listInfo['id'];
 			$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
-			$scriptLink = "website_id=$websiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";          
+			$rowWebsiteId = empty($websiteId) ? $listInfo['website_id'] : $websiteId;
+			$scriptLink = "website_id=$rowWebsiteId&keyword_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
 			?>
 			<tr>
+				<?php if (empty($websiteId)) {?>
+					<td>
+						<a href="javascript:void(0)"><?php echo htmlspecialchars($websiteList[$listInfo['website_id']]['name'] ?? '')?></a>
+					</td>
+				<?php }?>
 				<td colspan="3"><?php echo htmlspecialchars($listInfo['name'])?></td>
 				<?php
 				foreach ($colList as $colName => $colVal){
