@@ -732,7 +732,7 @@ CREATE TABLE IF NOT EXISTS `featured_directories` (
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=6 ;
 
 INSERT INTO `featured_directories` (`id`, `directory_name`, `directory_link`, `google_pagerank`, `coupon_code`, `coupon_offer`, `status`) VALUES
-(1, 'directory.seopanel.org', 'http://directory.seopanel.org/submit.php?LINK_TYPE=featured', 4, '', 0, 1),
+(1, 'directory.seopanel.org', 'https://directory.seopanel.org/submit.php?LINK_TYPE=featured', 4, '', 0, 1),
 (4, 'beta-i.org', 'http://beta-i.org/submit.php?LINK_TYPE=4', 6, '', 0, 0),
 (5, 'directorymaximizer.com', 'http://www.directorymaximizer.com/af.php?af=207564&ad=5&p=1', 6, '', 0, 0);
 

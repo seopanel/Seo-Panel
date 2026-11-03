@@ -2171,3 +2171,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- there more to crawl" check) without ever counting it as crawled=1
 -- (it still wasn't - crawl stats stay honest).
 ALTER TABLE `auditorreports` ADD COLUMN `fetch_fail_count` tinyint(3) UNSIGNED NOT NULL DEFAULT 0;
+
+-- Featured Submission's own listing for directory.seopanel.org pointed
+-- at plain http://, both for the clickable name link and the Submit
+-- button (the latter uses directory_link directly, with no
+-- addHttpToUrl() upgrade-to-https fallback like the name link has).
+UPDATE `featured_directories` SET `directory_link` = 'https://directory.seopanel.org/submit.php?LINK_TYPE=featured' WHERE `id` = 1 AND `directory_link` = 'http://directory.seopanel.org/submit.php?LINK_TYPE=featured';
