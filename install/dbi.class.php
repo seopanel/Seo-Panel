@@ -54,6 +54,21 @@ class DBI{
 				return $error;
 			}
 
+			// without this, the connection charset falls back to
+			// mysqli/MySQL's own default (commonly latin1), while every
+			// install/upgrade SQL file and column here is utf8/utf8mb4 -
+			// MysqliHelper (the main app's own equivalent class) already
+			// does this right after connecting; this installer-only
+			// class never did. Confirmed real impact: a non-ASCII
+			// literal in an upgrade file (e.g. a currency symbol update)
+			// gets misread byte-by-byte under the wrong charset, so its
+			// character count no longer matches its real length -
+			// "Data too long for column" on a column it actually fits
+			// in once read correctly - or, for a statement that doesn't
+			// hit a length limit, silently stores corrupted text instead
+			// of erroring at all.
+			mysqli_set_charset($this->connectionId, 'utf8mb4');
+
 			return true;
 		} catch (Exception $e) {
 			$this->error = true;

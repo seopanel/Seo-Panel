@@ -35,6 +35,7 @@ define("SP_CONFIG_FILE", "config/sp-config.php");
 define("SP_UPGRADE_DB_FILE", SP_INSTALL_DIR."/data/upgrade.sql");
 define("SP_UPGRADE_DB_LANG_FILE", SP_INSTALL_DIR."/data/textlang.sql");
 define("SP_INSTALL_CONFIG_FILE", SP_INSTALL_DIR."/../".SP_CONFIG_FILE);
+define("SP_INSTALL_CONFIG_SAMPLE", SP_INSTALL_DIR."/sp-config-sample.php");
 
 $install->showDefaultHeader();
 $install->requireAdminSession();

@@ -1036,10 +1036,36 @@ class Install {
 			. '<div class="step active"><span class="step-number">2</span> Complete</div>';
 		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
-		
+
 		# create API Key if not exists
 		$this->createSeoPanelAPIKey($db);
-		
+
+		// bug fix: nothing in this whole upgrade path ever rewrote the
+		// user's actual config/sp-config.php - only the DB's own
+		// settings.SP_VERSION_NUMBER got bumped by the migration SQL
+		// itself. SP_INSTALLED here was include_once()'d from that same
+		// file near the top of this function, back when it still held
+		// whatever version the user originally installed - so this page
+		// was always telling every single successful upgrade "Upgraded
+		// to Seo Panel v<the OLD version>", which reads as the upgrade
+		// having silently failed. The version this codebase is actually
+		// shipping is the SP_INSTALLED already baked into
+		// sp-config-sample.php (the exact same source a fresh install's
+		// writeConfigFile() copies its own value from) - read that and
+		// patch just the one line in the user's real config file,
+		// leaving everything else in it untouched.
+		$newVersion = defined('SP_INSTALLED') ? SP_INSTALLED : '';
+		$sampleConfig = @file_get_contents(SP_INSTALL_CONFIG_SAMPLE);
+		if ($sampleConfig !== false && preg_match("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'([^']+)'\\s*\\)/", $sampleConfig, $m)) {
+			$newVersion = $m[1];
+			$liveConfig = @file_get_contents(SP_INSTALL_CONFIG_FILE);
+			if ($liveConfig !== false) {
+				$patchedConfig = preg_replace("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'[^']+'\\s*\\)/", "define('SP_INSTALLED', '" . addslashes($newVersion) . "')", $liveConfig, 1);
+				if ($patchedConfig !== null) {
+					@file_put_contents(SP_INSTALL_CONFIG_FILE, $patchedConfig);
+				}
+			}
+		}
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Check</div>
@@ -1050,7 +1076,7 @@ class Install {
 		<form method="post" action="<?php echo SP_WEBPATH."/login.php"; ?>">
 		<div class="content-section">
 			<div class="success-box">
-				<h3>Upgraded to Seo Panel v<?php echo SP_INSTALLED;?></h3>
+				<h3>Upgraded to Seo Panel v<?php echo htmlspecialchars($newVersion);?></h3>
 				<p>Your SEO Panel has been upgraded successfully.</p>
 			</div>
 
