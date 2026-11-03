@@ -1,5 +1,46 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Referral Report'] ?? 'AI Referral Report'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aivReportHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aivReportHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-external-link-alt"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Referral Report'] ?? 'AI Referral Report'?></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['floornotice'] ?? 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivReportHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="aivReportHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivReportHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-external-link-alt"></i></div>
+				<h5 class="modal-title" id="aivReportHelpModalLabel"><?php echo $spTextAIV['About AI Referral Report'] ?? 'About AI Referral Report'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'] ?? 'Shows real visits that clicked through to your site from a link on an AI platform like ChatGPT or Perplexity - a traffic chart over time, totals by platform, and your top landing pages.'?></p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span><?php echo $spTextAIV['Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'] ?? 'Needs the tracking snippet from AI Setup installed on your site first. Treat the numbers as a floor, not a full count - some AI clients and most native apps strip or omit the referrer entirely.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <?php $submitAction = "scriptDoLoadPost('aivisibility.php?sec=report', 'search_form', 'content')"; ?>
 <form id='search_form'>
 <input type="hidden" name="sec" value="report">
@@ -15,13 +56,12 @@
 		</td>
 		<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 		<td>
-			<input type="text" value="<?php echo $fromTime?>" name="from_time" class="form-control" style="display:inline-block;width:45%;"/>
-			<input type="text" value="<?php echo $toTime?>" name="to_time" class="form-control" style="display:inline-block;width:45%;"/>
-			<script type="text/javascript">
-			$(function() {
-				$("input[name='from_time'], input[name='to_time']").datepicker({dateFormat: "yy-mm-dd"});
-			});
-			</script>
+			<select name="period" class="custom-select" onchange="<?php echo $submitAction?>">
+				<option value="day" <?php echo ($period ?? 'month') == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
+				<option value="week" <?php echo ($period ?? 'month') == 'week' ? 'selected' : ''?>><?php echo $spText['label']['Week']?></option>
+				<option value="month" <?php echo ($period ?? 'month') == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
+				<option value="year" <?php echo ($period ?? 'month') == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
+			</select>
 		</td>
 		<td style="text-align:center;">
 			<a href="javascript:void(0);" onclick="<?php echo $submitAction?>" class="aiv-btn aiv-btn-primary"><?php echo $spText['button']['Show Records']?></a>
@@ -32,11 +72,6 @@
 	</tr>
 </table>
 </form>
-
-<div class="aiv-note">
-	<i class="fas fa-info-circle"></i>
-	<span><?php echo $spTextAIV['floornotice'] ?? 'Some AI clients strip or omit the referrer, and native mobile apps often send nothing - treat these counts as a floor, not a complete measure.'?></span>
-</div>
 
 <div id='subcontent'>
 	<?php if (!empty($graphContent)) { ?>

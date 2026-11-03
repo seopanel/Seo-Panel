@@ -1,5 +1,46 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextTools['AI Visibility'] ?? 'AI Visibility'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Setup'] ?? 'AI Setup'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aivSetupHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aivSetupHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-cogs"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Setup'] ?? 'AI Setup'?></div>
+		<div class="aiv-intro-desc">
+			<?php echo $spTextAIV['The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'] ?? 'The one-time installation hub for AI Visibility - the tracking snippet, the bot-collector script, and robots.txt / llms.txt rules.'?><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span><br>
+			<span style="color:#8a8ea3;"><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
+			<a href="javascript:void(0);" data-toggle="modal" data-target="#aivSetupHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="aivSetupHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivSetupHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-cogs"></i></div>
+				<h5 class="modal-title" id="aivSetupHelpModalLabel"><?php echo $spTextAIV['About AI Setup'] ?? 'About AI Setup'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['This is the one-time installation hub for AI Visibility: the JS snippet for AI Referral Report, the bot-collector script for AI Bot Crawlers, and (under Advanced) robots.txt AI-crawler rules and an llms.txt file.'] ?? 'This is the one-time installation hub for AI Visibility: the JS snippet for AI Referral Report, the bot-collector script for AI Bot Crawlers, and (under Advanced) robots.txt AI-crawler rules and an llms.txt file.'?></p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span><?php echo $spTextAIV['Nothing shows up on the other AI Visibility pages until the matching piece here is actually installed. The tracking snippet itself stores no cookies, localStorage, or visitor identifiers - only aggregate hit counts.'] ?? 'Nothing shows up on the other AI Visibility pages until the matching piece here is actually installed. The tracking snippet itself stores no cookies, localStorage, or visitor identifiers - only aggregate hit counts.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <form id='search_form'>
 <table class="search">
@@ -18,15 +59,10 @@
 
 <?php if (!empty($siteInfo)) { ?>
 
-<div class="aiv-note">
-	<i class="fas fa-shield-alt"></i>
-	<span><?php echo $spTextAIV['Privacy note'] ?? 'No cookies, no localStorage, no visitor identifiers are ever stored - only that a visit arrived from a given AI platform to a given page. Data stays on your own server.'?></span>
-</div>
-
 <?php $advancedNeedsAttention = !empty($robotsWriteError) || !empty($htaccessWriteError) || !empty($llmsWriteError); ?>
 <div class="aiv-tabs" id="aivTabs" role="tablist" aria-label="<?php echo $spTextAIV['AI Visibility settings'] ?? 'AI Visibility settings'?>">
 	<button type="button" class="aiv-tab-btn" id="aivTabBtnSetup" data-tab="setup" role="tab" aria-selected="false" aria-controls="aivPanelSetup" tabindex="-1">
-		<i class="fas fa-rocket" aria-hidden="true"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+		<i class="fas fa-rocket" aria-hidden="true"></i> <?php echo $spTextAIV['Setup'] ?? 'AI Setup'?>
 	</button>
 	<button type="button" class="aiv-tab-btn" id="aivTabBtnAdvanced" data-tab="advanced" role="tab" aria-selected="false" aria-controls="aivPanelAdvanced" tabindex="-1">
 		<i class="fas fa-sliders-h" aria-hidden="true"></i> <?php echo $spTextAIV['Advanced'] ?? 'Advanced'?>
@@ -116,30 +152,28 @@
 		<strong><?php echo $spTextAIV['WordPress note'] ?? 'WordPress:'?></strong>
 		<?php echo $spTextAIV['botwordpressinstructions'] ?? 'WordPress: save it into wp-content/mu-plugins/ so it loads automatically on every request.'?>
 	</p>
+</div>
 
-	<div class="aiv-note">
-		<i class="fas fa-shield-alt"></i>
-		<span><?php echo $spTextAIV['botverifiednotice'] ?? '"Verified" means the crawler\'s IP passed a reverse-DNS check on your own server at the moment it visited - the same method used to confirm Googlebot. It is not cryptographic proof, so treat this as advisory analytics, not forensic evidence.'?></span>
+<div class="aiv-card">
+	<div class="aiv-card-header">
+		<div class="aiv-card-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-compass"></i></div>
+		<div class="aiv-card-title"><?php echo $spTextAIV['Discover More'] ?? 'Discover More'?></div>
 	</div>
-</div>
 
-<div class="aiv-note">
-	<i class="fas fa-sliders-h"></i>
-	<span>
-		<?php echo $spTextAIV['advancedlinknotice'] ?? 'Need document root access, custom crawler rules, or AI-bot response headers?'?>
-		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" style="font-weight:600;">
-			<?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i>
-		</a>
-	</span>
-</div>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#4a8fc7;"><i class="fas fa-sliders-h"></i></div>
+		<div class="aiv-discover-text"><?php echo $spTextAIV['advancedlinknotice'] ?? 'Need document root access, custom crawler rules, or AI-bot response headers?'?></div>
+		<a href="javascript:void(0);" onclick="aivActivateTab('advanced')" class="aiv-discover-cta"><?php echo $spTextAIV['Go to Advanced settings'] ?? 'Go to Advanced settings'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
 
-<div class="aiv-note">
-	<i class="fas fa-robot"></i>
-	<span>
-		<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
-		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?></a>
-		&mdash; <?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?>
-	</span>
+	<div class="aiv-discover-item">
+		<div class="aiv-discover-icon" style="background:#764ba2;"><i class="fas fa-robot"></i></div>
+		<div class="aiv-discover-text">
+			<?php echo $spTextAIV['Prefer to ask your own AI agent directly?'] ?? 'Prefer to ask your own AI agent directly?'?>
+			<small><?php echo $spTextAIV['self-hosted, no data leaves this server'] ?? 'self-hosted, no data leaves this server'?></small>
+		</div>
+		<a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')" class="aiv-discover-cta"><?php echo $spTextAIV['Connect Claude Desktop or any MCP client'] ?? 'Connect Claude Desktop or any MCP client'?> <i class="fas fa-arrow-right"></i></a>
+	</div>
 </div>
 
 </div>
@@ -452,7 +486,15 @@ if (aivLlmsCopyBtn) {
 	});
 }
 
-function aivSuggestLlmsDescription() {
+// Assigned onto window explicitly (not declared as a plain function)
+// since it's invoked from an inline onclick="..." HTML attribute,
+// which only resolves names via the global scope - this page only
+// ever loads through scriptDoLoad()'s direct eval() of its <script>
+// tags, nested inside its own function scope, so a plain
+// `function aivSuggestLlmsDescription(){}` would be scoped to that
+// internal callback, not to window (same class of bug fixed on the
+// intro card's close button elsewhere this session).
+window.aivSuggestLlmsDescription = function() {
 	var btn = document.getElementById('aivLlmsSuggestBtn');
 	var original = btn.innerHTML;
 	btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Generating...'] ?? 'Generating...'?>';
@@ -471,7 +513,7 @@ function aivSuggestLlmsDescription() {
 			btn.innerHTML = original;
 			alert('Could not generate a suggestion.');
 		});
-}
+};
 
 (function pollInstallStatus() {
 	fetch('aivisibility.php?sec=installstatus&website_id=<?php echo intval($websiteId)?>', { credentials: 'same-origin' })

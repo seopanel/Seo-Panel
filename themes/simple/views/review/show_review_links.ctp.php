@@ -1,7 +1,35 @@
 <?php
-echo showSectionHead($spTextTools['Review Links']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Review Links']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#rvLinksHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="rvLinksHelpModal" tabindex="-1" role="dialog" aria-labelledby="rvLinksHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-star-half-alt"></i></div>
+				<h5 class="modal-title" id="rvLinksHelpModalLabel">About Review Links</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Lists the review-profile links you've registered per website (Google, Yelp, Trustpilot, TripAdvisor, and more). Add, edit, delete or activate/deactivate from here.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>A link must be created here before the Reports or Quick Checker pages have anything to show for it. Link counts are capped by your account's plan.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form name="searchForm" id="searchForm" onsubmit="return false;">
 <table class="search">
 	<tr>
@@ -10,7 +38,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 		<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<select name="website_id" id="website_id" onchange="<?php echo $searchFun?>" class="custom-select">
-				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $searchInfo['website_id']){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -62,12 +89,11 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 		<th><?php echo $spText['common']['Name']?></th>
 		<th><?php echo $spText['label']['Type']?></th>
     	<th><?php echo $spText['common']['Link']?></th>
-    	<th><?php echo $spText['common']['Website']?></th>
 		<th><?php echo $spText['common']['Status']?></th>
 		<th><?php echo $spText['common']['Action']?></th>
 	</tr>
 	<?php
-	$colCount = 6;
+	$colCount = 5;
 	if(count($list) > 0) {
 		foreach($list as $listInfo){
 		    $projectLink = scriptAJAXLinkHref($pageScriptPath, 'content', "sec=edit&id={$listInfo['id']}", htmlspecialchars($listInfo['name']));
@@ -79,7 +105,6 @@ $searchFun = "scriptDoLoadPost('$pageScriptPath', 'searchForm', 'content')";
 					<?php echo $serviceList[$listInfo['type']]['label']?>
 				</td>
 				<td style="text-align: left;"><?php echo htmlspecialchars($listInfo['url'])?></td>
-				<td><?php echo htmlspecialchars($listInfo['website_name'])?></td>
 				<td><?php echo showStatusBadge($listInfo['status']);?></td>
 				<td>
 					<?php

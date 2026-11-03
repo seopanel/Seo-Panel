@@ -1,15 +1,126 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#sgHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="sgHelpModal" tabindex="-1" role="dialog" aria-labelledby="sgHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-code"></i></div>
+				<h5 class="modal-title" id="sgHelpModalLabel"><?php echo $spTextAIV['About AI Schema Markup Generator'] ?? 'About AI Schema Markup Generator'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'] ?? 'This builds Schema.org structured data (JSON-LD) for your site - the machine-readable "fact layer" that AI answer engines and search engines read to understand who you are and what your page is about.'?></p>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><i class="fas fa-list-ol"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['1. Choose a type'] ?? '1. Choose a type'?></strong><small><?php echo $spTextAIV['Organization, LocalBusiness, Article or FAQPage, then fill in the details - name, URL, address, questions and answers, whatever that type needs.'] ?? 'Organization, LocalBusiness, Article or FAQPage, then fill in the details - name, URL, address, questions and answers, whatever that type needs.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-copy"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['2. Copy & paste'] ?? '2. Copy & paste'?></strong><small><?php echo $spTextAIV['Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'] ?? 'Copy the generated JSON-LD snippet and paste it into your page\'s &lt;head&gt;, or hand it to whoever manages your site.'?></small></div>
+				</div>
+				<div class="aiv-note">
+					<i class="fas fa-shield-alt"></i>
+					<span><?php echo $spTextAIV['Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'] ?? 'Your entries are saved per website and schema type so you can come back and edit them later - but unlike AI Perception Check, nothing here is ever sent to any outside AI provider.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+/* Page-scoped - not shared with other AI Visibility pages via _styles.ctp.php,
+   since this is the only page with a long multi-field, multi-schema-type
+   form (raw Bootstrap .form-group/.form-control/<label> previously, same
+   plain look the rest of AI Visibility moved away from already). */
+.sg-type-pill {
+	display: inline-flex; align-items: center; gap: 7px;
+	padding: 8px 16px; border-radius: 9px; margin-right: 8px; margin-bottom: 8px;
+	font-size: 13.5px; font-weight: 600; text-decoration: none;
+	border: 1px solid #d8dee8; background: #fff; color: #4a4e69;
+	transition: all 0.15s ease;
+}
+.sg-type-pill:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+.sg-type-pill.sg-type-active {
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);
+	border-color: #4a8fc7; color: #fff;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35);
+}
+.sg-form .form-group { margin-bottom: 14px; }
+.sg-form label {
+	display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: 0.03em; color: #5a6372; margin-bottom: 4px;
+}
+.sg-form .form-control {
+	border: 1px solid #d8dee8; border-radius: 7px; padding: 8px 11px;
+	font-size: 13.5px; background: #fafbfd;
+	transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.sg-form .form-control:focus {
+	border-color: #4a8fc7; background: #fff;
+	box-shadow: 0 0 0 3px rgba(74, 143, 199, 0.12); outline: none;
+}
+.sg-faq-row { border: 1px solid #eef0f5; border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #fafbfd; }
+.sg-markup-wrap { position: relative; margin-top: 10px; }
+.sg-copy-btn {
+	position: absolute; top: 10px; right: 10px;
+	background: #4a8fc7; color: #fff; border: none;
+	padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600;
+}
+.sg-copy-btn:hover { background: #3d7fb5; }
+.sg-step { flex: 1; min-width: 180px; display: flex; gap: 12px; align-items: flex-start; }
+.sg-step-badge {
+	flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%;
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%); color: #fff;
+	display: flex; align-items: center; justify-content: center;
+	font-size: 13px; font-weight: 800;
+}
+.sg-step-title { font-size: 13.5px; font-weight: 700; color: #2a2a3d; }
+.sg-step-desc { font-size: 12px; color: #8a8ea3; margin-top: 2px; }
+</style>
 
 <?php if (!empty($noWebsites)) { ?>
 	<?php echo showNoRecordsList(0); ?>
 <?php } else { ?>
 
-<div class="aiv-note">
-	<i class="fas fa-info-circle"></i>
-	<span>
-		<?php echo $spTextAIV['Structured data (JSON-LD) is the fact layer AI answer engines and Google AI Overview read directly. Fill in a type below, paste the generated script into your page\'s'] ?? 'Structured data (JSON-LD) is the fact layer AI answer engines and Google AI Overview read directly. Fill in a type below, paste the generated script into your page\'s'?> <code>&lt;head&gt;</code>. <?php echo $spTextAIV['Nothing here is sent anywhere - it only runs on this server.'] ?? 'Nothing here is sent anywhere - it only runs on this server.'?>
-	</span>
+<div class="aiv-card" style="padding:18px 22px;">
+	<div style="font-size:11px;color:#8a8ea3;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;">
+		<?php echo $spTextAIV['How it works'] ?? 'How it works'?>
+	</div>
+	<div style="display:flex;gap:20px;flex-wrap:wrap;">
+		<div class="sg-step">
+			<div class="sg-step-badge">1</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Choose a type'] ?? 'Choose a type'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['Organization, LocalBusiness, Article, or FAQPage'] ?? 'Organization, LocalBusiness, Article, or FAQPage'?></div>
+			</div>
+		</div>
+		<div class="sg-step">
+			<div class="sg-step-badge">2</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Fill in the details'] ?? 'Fill in the details'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['This becomes the structured data (JSON-LD) AI answer engines and Google AI Overview read directly'] ?? 'This becomes the structured data (JSON-LD) AI answer engines and Google AI Overview read directly'?></div>
+			</div>
+		</div>
+		<div class="sg-step">
+			<div class="sg-step-badge">3</div>
+			<div>
+				<div class="sg-step-title"><?php echo $spTextAIV['Copy & paste'] ?? 'Copy & paste'?></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['Generate & Save, then paste the script into your page\'s'] ?? 'Generate & Save, then paste the script into your page\'s'?> <code>&lt;head&gt;</code></div>
+			</div>
+		</div>
+	</div>
+	<div class="aiv-note" style="margin-top:16px;margin-bottom:0;">
+		<i class="fas fa-shield-alt"></i>
+		<span><?php echo $spTextAIV['Nothing here is sent anywhere - it only runs on this server.'] ?? 'Nothing here is sent anywhere - it only runs on this server.'?></span>
+	</div>
 </div>
 
 <table class="search" style="width: 60%">
@@ -30,17 +141,19 @@
 		<div class="aiv-card-icon"><i class="fas fa-sitemap"></i></div>
 		<div class="aiv-card-title"><?php echo $spTextAIV['Schema Type'] ?? 'Schema Type'?></div>
 	</div>
-	<div style="margin-bottom:15px;">
+	<?php $sgTypeIcons = ['Organization' => 'fa-building', 'LocalBusiness' => 'fa-store', 'Article' => 'fa-newspaper', 'FAQPage' => 'fa-question-circle']; ?>
+	<div style="margin-bottom:18px;">
 		<?php foreach ($schemaTypes as $type) { ?>
 			<a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content', '&website_id=<?php echo intval($websiteId)?>&schema_type=<?php echo urlencode($type)?>')"
-				class="btn <?php echo ($type === $schemaType) ? 'btn-primary' : 'btn-outline-secondary'?> btn-sm" style="margin-right:6px;">
+				class="sg-type-pill <?php echo ($type === $schemaType) ? 'sg-type-active' : ''?>">
+				<i class="fas <?php echo $sgTypeIcons[$type] ?? 'fa-code'?>"></i>
 				<?php echo htmlspecialchars($type)?>
-				<?php if (in_array($type, $savedTypes, true)) { ?><i class="fas fa-check-circle" style="color:<?php echo ($type === $schemaType) ? '#fff' : '#28a745'?>;"></i><?php } ?>
+				<?php if (in_array($type, $savedTypes, true)) { ?><i class="fas fa-check-circle" style="color:<?php echo ($type === $schemaType) ? '#fff' : '#1f9d55'?>;"></i><?php } ?>
 			</a>
 		<?php } ?>
 	</div>
 
-	<form id="sg_form" onsubmit="return false;">
+	<form id="sg_form" class="sg-form" onsubmit="return false;">
 		<input type="hidden" name="sec" value="generate">
 		<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
 		<input type="hidden" name="schema_type" value="<?php echo htmlspecialchars($schemaType)?>">
@@ -85,7 +198,7 @@
 			<div id="sg_faq_rows">
 				<?php $pairs = !empty($fieldData['pairs']) ? $fieldData['pairs'] : [['question' => '', 'answer' => '']]; ?>
 				<?php foreach ($pairs as $pair) { ?>
-					<div class="sg-faq-row" style="border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;">
+					<div class="sg-faq-row">
 						<div class="form-group"><label><?php echo $spTextAIV['Question'] ?? 'Question'?></label><input type="text" name="question[]" class="form-control" value="<?php echo htmlspecialchars($pair['question'] ?? '')?>"></div>
 						<div class="form-group" style="margin-bottom:0;"><label><?php echo $spTextAIV['Answer'] ?? 'Answer'?></label><textarea name="answer[]" class="form-control" rows="2"><?php echo htmlspecialchars($pair['answer'] ?? '')?></textarea></div>
 					</div>
@@ -120,26 +233,35 @@
 			<div class="aiv-card-icon"><i class="fas fa-code"></i></div>
 			<div class="aiv-card-title"><?php echo $spTextAIV['Generated Markup'] ?? 'Generated Markup'?></div>
 		</div>
-		<button class="sh-copy-btn" id="sgCopyBtn" type="button"><i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'; ?></button>
-		<pre id="sgJsonLdOutput" style="background:#282c34; color:#abb2bf; padding:15px; border-radius:8px; overflow-x:auto; font-size:12px; margin-top:10px;">&lt;script type="application/ld+json"&gt;
+		<div class="sg-markup-wrap">
+			<button class="sg-copy-btn" id="sgCopyBtn" type="button"><i class="fas fa-copy"></i> <?php echo $spText['button']['Copy'] ?? 'Copy'; ?></button>
+			<pre id="sgJsonLdOutput" style="background:#282c34; color:#abb2bf; padding:15px; border-radius:8px; overflow-x:auto; font-size:12px; margin:0;">&lt;script type="application/ld+json"&gt;
 <?php echo htmlspecialchars($jsonLdOutput); ?>
 &lt;/script&gt;</pre>
+		</div>
 	</div>
 <?php } ?>
 
 <?php } ?>
 
 <script>
-function sgAddFaqRow() {
+// Assigned onto window explicitly (not declared as a plain function)
+// since it's invoked from an inline onclick="sgAddFaqRow()" HTML
+// attribute, which only resolves names via the global scope - this
+// page only ever loads through scriptDoLoad()'s direct eval() of its
+// <script> tags, nested inside its own function scope, so a plain
+// `function sgAddFaqRow(){}` would be scoped to that internal
+// callback, not to window (same class of bug fixed on the intro
+// card's close button elsewhere this session).
+window.sgAddFaqRow = function() {
 	var container = document.getElementById('sg_faq_rows');
 	if (!container) return;
 	var row = document.createElement('div');
 	row.className = 'sg-faq-row';
-	row.style.cssText = 'border:1px solid #eee; border-radius:8px; padding:10px; margin-bottom:10px;';
 	row.innerHTML = '<div class="form-group"><label>Question</label><input type="text" name="question[]" class="form-control"></div>'
 		+ '<div class="form-group" style="margin-bottom:0;"><label>Answer</label><textarea name="answer[]" class="form-control" rows="2"></textarea></div>';
 	container.appendChild(row);
-}
+};
 
 var sgCopyBtn = document.getElementById('sgCopyBtn');
 if (sgCopyBtn) {

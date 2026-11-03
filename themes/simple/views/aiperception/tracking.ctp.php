@@ -1,5 +1,67 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Perception Tracking'] ?? 'AI Perception Tracking'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Perception Tracking'] ?? 'AI Perception Tracking'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- same 3-way sub-nav as settings.ctp.php/check.ctp.php -->
+<div class="aip-subnav" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px;">
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-subnav-pill">
+		<i class="fas fa-comment-dots"></i> <?php echo $spTextAIV['Ask'] ?? 'Ask'?>
+	</a>
+	<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')" class="aiv-subnav-pill">
+		<i class="fas fa-key"></i> <?php echo $spTextAIV['Setup'] ?? 'Setup'?>
+	</a>
+	<span class="aiv-subnav-pill aiv-subnav-active">
+		<i class="fas fa-calendar-check"></i> <?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?>
+	</span>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aipHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aipHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="aipHelpModal" tabindex="-1" role="dialog" aria-labelledby="aipHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-comment-dots"></i></div>
+				<h5 class="modal-title" id="aipHelpModalLabel"><?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'?></p>
+				<p><?php echo $spTextAIV['Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'] ?? 'Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'?></p>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-comment-dots"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Ask'] ?? 'Ask'?></strong><small><?php echo $spTextAIV['pick a website and ask any configured AI provider directly what it knows about it.'] ?? 'pick a website and ask any configured AI provider directly what it knows about it.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #e0a23b 0%, #f0c674 100%);"><i class="fas fa-key"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Setup'] ?? 'Setup'?></strong><small><?php echo $spTextAIV['add the API key(s) for the providers you want to ask.'] ?? 'add the API key(s) for the providers you want to ask.'?></small></div>
+				</div>
+				<div class="aiv-discover-item">
+					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);"><i class="fas fa-calendar-check"></i></div>
+					<div class="aiv-discover-text"><strong><?php echo $spTextAIV['Scheduled Tracking'] ?? 'Scheduled Tracking'?></strong><small><?php echo $spTextAIV['save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'] ?? 'save a prompt once and SEO Panel asks it again automatically every week, so you can watch an answer change over time.'?></small></div>
+				</div>
+				<div class="aiv-note">
+					<i class="fas fa-shield-alt"></i>
+					<span><?php echo $spTextAIV['Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'] ?? 'Each "Ask" only runs when you click it. SEO Panel never sees or pays for these calls - they use your own key, directly.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <?php if (!empty($noWebsites)) { ?>
 	<?php echo showNoRecordsList(0); ?>
@@ -213,7 +275,15 @@
 </div>
 
 <script>
-function aipSuggestPrompts(provider) {
+// Both assigned onto window explicitly (not declared as plain
+// functions) since they're invoked from inline onclick="..." HTML
+// attributes, which only resolve names via the global scope. Pages
+// here only ever load through scriptDoLoad()'s direct eval() of their
+// <script> tags, nested inside its own function scope, so a plain
+// `function aipSuggestPrompts(){}` declared that way is scoped to
+// that internal callback, not to window (same class of bug fixed on
+// the intro card's close button elsewhere this session).
+window.aipSuggestPrompts = function(provider) {
 	var websiteId = <?php echo intval($websiteId)?>;
 	var box = document.getElementById('aip_suggestions');
 	box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <?php echo $spTextAIV['Asking...'] ?? 'Asking...'?>';
@@ -241,13 +311,13 @@ function aipSuggestPrompts(provider) {
 		.catch(function() {
 			box.innerHTML = '<span class="text-danger"><?php echo $spTextAIV['Request failed'] ?? 'Request failed.'?></span>';
 		});
-}
+};
 
-function aipAddSuggestedPrompt(el) {
+window.aipAddSuggestedPrompt = function(el) {
 	var text = decodeURIComponent(el.getAttribute('data-prompt'));
 	document.querySelector('#aip_add_prompt_form input[name="prompt_text"]').value = text;
 	scriptDoLoadPost('ai-perception.php', 'aip_add_prompt_form', 'content');
-}
+};
 </script>
 
 <?php if (empty($providers)) { ?>

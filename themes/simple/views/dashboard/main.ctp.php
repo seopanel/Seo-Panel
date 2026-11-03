@@ -13,16 +13,22 @@
 	overflow: hidden;
 }
 
+/* Card headers: match #main_dashboard_nav's own active-tab gradient
+   (screen.css) instead of the darker navy/.card-header-gradient-blue
+   default, and sit shorter/more compact - closer to that same tab bar's
+   own padding - rather than the taller default <h4>-based header. */
 .sp-dashboard .card-header-gradient-blue {
-	background: #1e3a5f !important;
-	box-shadow: none !important;
-	border-bottom: 2px solid #16304d;
-	padding: 0.85rem 1.25rem !important;
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%) !important;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35) !important;
+	border-bottom: none;
+	padding: 0.5rem 1.25rem !important;
 }
 .sp-dashboard .card-header-gradient-blue h4 {
 	font-size: 0.95rem !important;
 	font-weight: 600 !important;
 	letter-spacing: 0.02em;
+	margin: 0 !important;
+	line-height: 1.4;
 }
 .sp-dashboard .card-header-gradient-blue small {
 	opacity: 0.75;
@@ -154,7 +160,7 @@
 	/* tighter card padding - desktop-sized 1.5rem eats a lot of a
 	   360-400px-wide screen */
 	.sp-dashboard .card-body { padding: 1rem; }
-	.sp-dashboard .card-header-gradient-blue { padding: 0.7rem 1rem !important; }
+	.sp-dashboard .card-header-gradient-blue { padding: 0.45rem 1rem !important; }
 	.sp-dashboard .card-header-gradient-blue h4 { font-size: 0.88rem !important; }
 
 	/* distribution tabs scroll horizontally instead of wrapping to
@@ -197,7 +203,11 @@
 }
 </style>
 
-<form id='dashboard_form' method="post">
+<!-- Website/Period selection now lives in the shared filter bar above
+     #main_dashboard_nav (userhome.ctp.php) - this form is kept (hidden,
+     not removed) since the controller/view below still read its field
+     names; the shared bar drives reloads directly via GET instead. -->
+<form id='dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -367,23 +377,27 @@ if (!function_exists('renderStatTile')) {
 				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-robot"></i> AI Visibility</h4>
 					<div>
-					<a href="javascript:void(0);" onclick="scriptDoLoadDialog('mcp-access.php', 'content')" class="btn btn-sm btn-light" title="Connect your own AI agent (Claude Desktop or any MCP client) to this data">
+					<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/mcp-access.php', '<i class=&quot;fas fa-plug&quot;></i> Connect via MCP')" class="btn btn-sm btn-light" title="Connect your own AI agent (Claude Desktop or any MCP client) to this data">
 						<i class="fas fa-plug"></i> Connect via MCP
 					</a>
 					<?php if (!empty($seoDiaryPluginId)) {
 						// Opt-in only - never auto-created, same pattern as
 						// RecommendationsController's own "Add to SEO Diary"
-						// action. Opens in the app's existing modal dialog
-						// mechanism (scriptDoLoadDialog(), js/popup.js) rather
-						// than navigating away - see recommendations_main.ctp.php's
-						// own comment on this for the full rationale (also
-						// sidesteps the layout/jQuery bug a plain full-page
-						// link to seo-plugins.php used to hit).
-						$diaryArgs = "&pid=" . intval($seoDiaryPluginId)
+						// action. Opens via the shared Bootstrap #ajaxModalSP
+						// (js/popup.js) rather than the jQuery UI #dialogContent
+						// dialog (scriptDoLoadDialog()) - that one wraps every
+						// popup in its own generic "Seo Panel" title bar on top
+						// of the content's own heading, a redundant second
+						// header neither this form nor the MCP Access panel
+						// needs. See recommendations_main.ctp.php's own comment
+						// on this for the full rationale (also sidesteps the
+						// layout/jQuery bug a plain full-page link to
+						// seo-plugins.php used to hit).
+						$diaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
 							. "&action=newDiary"
 							. "&title=" . urlencode($aiFindingTitle)
 							. "&description=" . urlencode($aiFindingDesc);
-						$diaryOnclick = "scriptDoLoadDialog('seo-plugins.php', 'content', '" . addslashes($diaryArgs) . "')";
+						$diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> Add to SEO Diary')";
 					?>
 					<a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($diaryOnclick, ENT_QUOTES)?>" class="btn btn-sm btn-light" title="Add to SEO Diary">
 						<i class="fas fa-book"></i> Add to SEO Diary
@@ -437,7 +451,7 @@ if (!function_exists('renderStatTile')) {
 							<?php renderStatTile($spTextDashboard['Top 10'] . ' ' . $spText['common']['Rankings'], null, $keywordStats['top10'], 'info', null, $keywordComparison['top10'] ?? null); ?>
 						</div>
 						<div class="col-md-2">
-							<?php renderStatTile($spTextDashboard['Never Checked'], null, $keywordStats['total'] - $keywordStats['tracked'], 'secondary'); ?>
+							<?php renderStatTile($spTextDashboard['Never Checked'], null, $keywordStats['never_checked'], 'secondary'); ?>
 						</div>
 					</div>
 				</div>
@@ -705,9 +719,9 @@ if (!function_exists('renderStatTile')) {
 
 		<div class="col-md-6">
 			<div class="card">
-				<div class="card-header card-header-gradient-blue">
+				<div class="card-header card-header-gradient-blue d-flex justify-content-between align-items-center">
 					<h4><i class="fas fa-chart-bar"></i> <?php echo $spTextDashboard['Ranking Volatility']?></h4>
-					<small class="text-white"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
+					<small class="text-white-50"><?php echo $spTextDashboard['Keywords with most ranking fluctuations']?></small>
 				</div>
 				<div class="card-body">
 					<?php if (!empty($rankingVolatility)) { ?>
@@ -975,6 +989,11 @@ if (!function_exists('renderStatTile')) {
 								</tbody>
 							</table>
 						</div>
+						<div style="text-align:right;margin-top:10px;">
+							<a href="<?php echo SP_WEBPATH?>/overview.php" onclick="return navigateDashboardTab(this, 'overview');" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
+								More details <i class="fas fa-arrow-right"></i>
+							</a>
+						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
 							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
@@ -1013,6 +1032,19 @@ if (!function_exists('renderStatTile')) {
 								</tbody>
 							</table>
 						</div>
+						<div style="text-align:right;margin-top:10px;">
+							<!-- reports.php (SERP Results Archive's own front controller)
+							     hardcodes layout='ajax' for every action - a real browser
+							     navigation there renders a bare, unstyled fragment with no
+							     page chrome at all. seo-tools.php?menu_sec=... is a real
+							     full page (same pattern "View full AI Visibility report"
+							     above already uses) - lands on the Keyword Position
+							     Checker tool, where SERP Results Archive is one click away
+							     in its own left menu. -->
+							<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=keyword-position-checker" style="font-size:12px;font-weight:600;color:#4a8fc7;text-decoration:none;">
+								More details <i class="fas fa-arrow-right"></i>
+							</a>
+						</div>
 					<?php } else { ?>
 						<div class="alert alert-info">
 							<i class="fas fa-info-circle me-2"></i><?php echo $spText['common']['No Records Found']?>
@@ -1026,29 +1058,9 @@ if (!function_exists('renderStatTile')) {
 </div>
 
 <script type="text/javascript">
-// Sync website selection with other tabs
-$(document).ready(function() {
-	if (sessionStorage.getItem('sp_dashboard_auto_loading')) {
-		sessionStorage.removeItem('sp_dashboard_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_dashboard_auto_loading', '1');
-			scriptDoLoadPost('dashboard.php', 'dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 
 <script type="text/javascript">

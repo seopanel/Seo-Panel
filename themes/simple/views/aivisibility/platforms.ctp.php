@@ -1,5 +1,41 @@
 <?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
-<?php echo showSectionHead($spTextAIV['AI Platforms'] ?? 'AI Platforms'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextAIV['AI Platforms'] ?? 'AI Platforms'); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#aivPlatformsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> <?php echo $spTextAIV['What does this do?'] ?? 'What does this do?'?></a>
+</div>
+
+<!-- quick at-a-glance summary, visible without clicking anything -->
+<div class="aiv-intro-card" data-intro-id="aivPlatformsHelpModal">
+	<button type="button" class="aiv-intro-close" onclick="spDismissIntro('aivPlatformsHelpModal', this)" aria-label="<?php echo $spText['button']['Close'] ?? 'Close'?>"><i class="fas fa-times"></i></button>
+	<div class="aiv-intro-icon"><i class="fas fa-sliders-h"></i></div>
+	<div class="aiv-intro-text">
+		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Platforms'] ?? 'AI Platforms'?></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['An admin-only catalog of every AI platform SEO Panel recognizes - driving the matching behind AI Referral Report and AI Bot Crawlers.'] ?? 'An admin-only catalog of every AI platform SEO Panel recognizes - driving the matching behind AI Referral Report and AI Bot Crawlers.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aivPlatformsHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+	</div>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="aivPlatformsHelpModal" tabindex="-1" role="dialog" aria-labelledby="aivPlatformsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-sliders-h"></i></div>
+				<h5 class="modal-title" id="aivPlatformsHelpModalLabel"><?php echo $spTextAIV['About Manage AI Platforms'] ?? 'About Manage AI Platforms'?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo $spTextAIV['An admin-only catalog of every AI platform SEO Panel recognizes (ChatGPT, Perplexity, Google-Extended, and more) - its hostnames, bot user-agent pattern, and robots.txt token - which is what actually drives the matching behind AI Referral Report and AI Bot Crawlers.'] ?? 'An admin-only catalog of every AI platform SEO Panel recognizes (ChatGPT, Perplexity, Google-Extended, and more) - its hostnames, bot user-agent pattern, and robots.txt token - which is what actually drives the matching behind AI Referral Report and AI Bot Crawlers.'?></p>
+				<div class="aiv-note aiv-note-warn">
+					<i class="fas fa-exclamation-triangle"></i>
+					<span><?php echo $spTextAIV['Each row has two independent toggles - "Active" for bot classification and "Referral source" for click-through matching. Don\'t mark a vendor domain used only for bot matching (e.g. google.com) as a referral source, or its ordinary traffic gets mis-counted as AI referrals.'] ?? 'Each row has two independent toggles - "Active" for bot classification and "Referral source" for click-through matching. Don\'t mark a vendor domain used only for bot matching (e.g. google.com) as a referral source, or its ordinary traffic gets mis-counted as AI referrals.'?></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal"><?php echo $spTextAIV['Got it'] ?? 'Got it'?></button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <div class="aiv-card">
 	<div class="aiv-card-header">
@@ -159,7 +195,15 @@
 </div>
 
 <script>
-function aivEditPlatform(data) {
+// Both assigned onto window explicitly (not declared as plain
+// functions) since they're invoked from inline onclick="..." HTML
+// attributes, which only resolve names via the global scope. This
+// page only ever loads through scriptDoLoad()'s direct eval() of its
+// <script> tags, nested inside its own function scope, so a plain
+// `function aivEditPlatform(){}` declared that way is scoped to that
+// internal callback, not to window (same class of bug fixed on the
+// intro card's close button elsewhere this session).
+window.aivEditPlatform = function(data) {
 	var form = document.getElementById('add_platform_form');
 	form.querySelector('input[name="id"]').value = data.id;
 	form.querySelector('input[name="platform"]').value = data.platform || '';
@@ -173,13 +217,13 @@ function aivEditPlatform(data) {
 	document.getElementById('aivPlatformFormTitle').textContent = <?php echo json_encode($spTextAIV['Edit Platform'] ?? 'Edit Platform')?>;
 	document.getElementById('aivCancelEditBtn').hidden = false;
 	form.scrollIntoView({behavior: 'smooth', block: 'center'});
-}
+};
 
-function aivCancelEditPlatform() {
+window.aivCancelEditPlatform = function() {
 	var form = document.getElementById('add_platform_form');
 	form.reset();
 	form.querySelector('input[name="id"]').value = '0';
 	document.getElementById('aivPlatformFormTitle').textContent = <?php echo json_encode($spTextAIV['Add Platform'] ?? 'Add Platform')?>;
 	document.getElementById('aivCancelEditBtn').hidden = true;
-}
+};
 </script>

@@ -22,9 +22,36 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	</table>
     <?php
 } else {
-	
-	echo showSectionHead($spTextTools['Website Search Summary']);
-    
+	include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+	?>
+	<div class="aiv-page-head">
+		<?php echo showSectionHead($spTextTools['Website Search Summary']); ?>
+		<a href="javascript:void(0);" data-toggle="modal" data-target="#wmWebSummaryHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+	</div>
+
+	<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+	<div class="modal fade aiv-help-modal" id="wmWebSummaryHelpModal" tabindex="-1" role="dialog" aria-labelledby="wmWebSummaryHelpModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="aiv-help-modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<div class="aiv-help-modal-icon"><i class="fas fa-list-alt"></i></div>
+					<h5 class="modal-title" id="wmWebSummaryHelpModalLabel">About Website Search Summary</h5>
+				</div>
+				<div class="modal-body aiv-help-modal-body">
+					<p>Compares a website's overall Search Console metrics - clicks, impressions, CTR, average position - between two saved dates, with the change highlighted.</p>
+					<div class="aiv-note">
+						<i class="fas fa-info-circle"></i>
+						<span>Reads already-saved Search Console data - it needs Google Search Console connected under Settings &gt; Connections, and data saved by the daily sync, before this shows anything.</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php
     // if not summary page show the filters
     if(!$summaryPage) {
     	$scriptName = "webmaster-tools.php";    	

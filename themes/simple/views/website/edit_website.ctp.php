@@ -1,7 +1,32 @@
-<?php 
+<?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $headText = ($editAction == 'update') ? $spTextPanel['New Website'] : $spTextWeb['Edit Website'];
-echo showSectionHead($headText);
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($headText); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#webEditHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="webEditHelpModal" tabindex="-1" role="dialog" aria-labelledby="webEditHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-globe"></i></div>
+				<h5 class="modal-title" id="webEditHelpModalLabel">About <?php echo htmlspecialchars($headText)?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Add a new website (or edit an existing one) with its name, URL and ownership details. This is the base record every other tool - keywords, backlinks, Site Auditor, AI Visibility - attaches to.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php
 if (!empty($warningMsg)) {
     showWarningMsg($warningMsg, FALSE);
 }

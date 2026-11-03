@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextKeyword['Import Keywords']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextKeyword['Import Keywords']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#kwImportHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="kwImportHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwImportHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-file-upload"></i></div>
+				<h5 class="modal-title" id="kwImportHelpModalLabel">About Import Keywords</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>A bulk version of New Keyword - paste a comma-separated list of keyword phrases and they're all added at once, sharing one website, language, country and set of search engines.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>If any keyword in the list already exists for that website, the whole import is rejected - nothing is partially imported. Still subject to your plan's keyword count limit.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id="newKeyword">
 <input type="hidden" name="sec" value="import"/>
 <table class="list">

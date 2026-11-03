@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextTools['Rank Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Rank Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#rankReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="rankReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="rankReportsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-chart-line"></i></div>
+				<h5 class="modal-title" id="rankReportsHelpModalLabel">About Rank Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows saved Spam Score, Domain Authority and Page Authority history for one of your websites over a date range, with up/down change indicators versus the previous recorded date.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This only shows what's already been saved by Generate Rank Reports - it doesn't call Moz live. A website needs saved history first, or the table is empty.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>

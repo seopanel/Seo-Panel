@@ -2,7 +2,11 @@
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 } else { ?>
-<form id='search_console_dashboard_form' method="post">
+<!-- Website/Period selection now lives in the shared filter bar above
+     #main_dashboard_nav (userhome.ctp.php) - this form is kept (hidden,
+     not removed) since the controller/view below still read its field
+     names; the shared bar drives reloads directly via GET instead. -->
+<form id='search_console_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -649,33 +653,8 @@ function drawPositionTrendsChart() {
 	<?php } ?>
 }
 
-// Sync website selection with other tabs
-$(document).ready(function() {
-	// Save website selection when dropdown changes
-	$('#website_id').on('change', function() {
-		sessionStorage.setItem('sp_selected_website_id', $(this).val());
-	});
-
-	if (sessionStorage.getItem('sp_sc_auto_loading')) {
-		sessionStorage.removeItem('sp_sc_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_sc_auto_loading', '1');
-			scriptDoLoadPost('<?php echo SP_WEBPATH?>/search_console_dashboard.php', 'search_console_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

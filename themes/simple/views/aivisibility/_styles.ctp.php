@@ -40,6 +40,66 @@
 }
 .aiv-card-body > p:last-child { margin-bottom: 0; }
 
+/* "Discover More" feature callouts - was 5 separate, visually identical
+   .aiv-note strips (thin left border, 13px text, bare icon) easy to skim
+   right past. One card instead, each item with its own colored icon
+   badge and a proper button CTA instead of an inline text link, bigger
+   text - reads as a set of things to try, not background noise. */
+.aiv-discover-item {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px 0;
+	border-bottom: 1px solid #eef0f5;
+}
+.aiv-discover-item:last-child { border-bottom: none; padding-bottom: 0; }
+.aiv-discover-item:first-child { padding-top: 0; }
+.aiv-discover-icon {
+	flex: 0 0 auto;
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 15px;
+	box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+.aiv-discover-text {
+	flex: 1;
+	font-size: 14.5px;
+	color: #3a3d4d;
+	line-height: 1.4;
+}
+.aiv-discover-text small {
+	display: block;
+	font-size: 12px;
+	color: #8a8ea3;
+	font-weight: 400;
+	margin-top: 1px;
+}
+.aiv-discover-cta {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: #f4f5fb;
+	color: #4a4fd6;
+	font-size: 13px;
+	font-weight: 700;
+	padding: 8px 14px;
+	border-radius: 8px;
+	text-decoration: none;
+	white-space: nowrap;
+	transition: background 0.15s ease;
+}
+.aiv-discover-cta:hover { background: #e7e9fa; color: #3a3ecc; text-decoration: none; }
+@media (max-width: 600px) {
+	.aiv-discover-item { flex-wrap: wrap; }
+	.aiv-discover-cta { margin-left: 50px; }
+}
+
 .aiv-note {
 	background: #f4f5fb;
 	border: none;
@@ -186,6 +246,38 @@
 .aiv-table tr:hover td { background: #fafbff; }
 .aiv-table td.aiv-num, .aiv-table th.aiv-num { text-align: right; }
 
+/* status badge pills - replaces plain colored text (.text-success/
+   .text-muted) in table cells with a proper pill, same visual language
+   as the rest of the AI Visibility section's icon badges/CTAs. */
+.aiv-pill {
+	display: inline-block;
+	padding: 3px 10px;
+	border-radius: 20px;
+	font-size: 11.5px;
+	font-weight: 700;
+}
+.aiv-pill-success { background: #e6f7ee; color: #1f9d55; }
+.aiv-pill-muted { background: #f1f2f6; color: #8a8ea3; }
+.aiv-pill-warn { background: #fdf2da; color: #a9700f; margin-left: 4px; }
+
+/* 3-way sub-nav shared by ai-perception's settings/check/tracking.ctp.php
+   (Setup/Ask/Scheduled Tracking) - was plain Bootstrap btn-outline-
+   primary/btn-primary, same icon-pill treatment as the Schema
+   Generator's type selector for visual consistency across AI Visibility. */
+.aiv-subnav-pill {
+	display: inline-flex; align-items: center; gap: 7px;
+	padding: 8px 16px; border-radius: 9px;
+	font-size: 13.5px; font-weight: 600; text-decoration: none;
+	border: 1px solid #d8dee8; background: #fff; color: #4a4e69;
+	transition: all 0.15s ease;
+}
+.aiv-subnav-pill:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+.aiv-subnav-pill.aiv-subnav-active {
+	background: linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);
+	border-color: #4a8fc7; color: #fff;
+	box-shadow: 0 2px 6px rgba(74, 143, 199, 0.35); cursor: default;
+}
+
 /* pure-CSS toggle switch, replacing raw checkboxes */
 .aiv-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: 0 0 auto; }
 .aiv-switch input { opacity: 0; width: 0; height: 0; }
@@ -221,33 +313,45 @@
    snap back to the first tab. */
 .aiv-tabs {
 	display: flex;
-	gap: 6px;
+	gap: 8px;
 	margin-bottom: 20px;
-	border-bottom: 1px solid #eceef5;
+	flex-wrap: wrap;
 }
+/* Was a thin underline-tab style (plain-text-weight label, 2px bottom
+   border only) - the active/inactive difference was subtle enough that
+   it read as "which one is a heading" rather than "which tab is on",
+   easy to miss at a glance. Now a proper filled pill for the active
+   tab (same visual language as .aiv-subnav-pill elsewhere in AI
+   Visibility), so the current tab is unmistakable. */
 .aiv-tab-btn {
 	display: inline-flex;
 	align-items: center;
-	gap: 8px;
-	background: none;
-	border: none;
+	gap: 7px;
+	background: #fff;
+	border: 1px solid #d8dee8;
+	border-radius: 9px;
 	cursor: pointer;
-	padding: 12px 6px;
-	margin-bottom: -1px;
-	font-size: 14px;
+	padding: 9px 18px;
+	font-size: 13.5px;
 	font-weight: 600;
-	color: #8a8ea3;
-	border-bottom: 2px solid transparent;
-	transition: color 0.15s ease, border-color 0.15s ease;
+	color: #4a4e69;
+	transition: all 0.15s ease;
 }
-.aiv-tab-btn:hover { color: #565a72; }
-.aiv-tab-btn.active { color: #5c4fd6; border-bottom-color: #764ba2; }
+.aiv-tab-btn:hover { border-color: #8890e0; color: #5c4fd6; }
+.aiv-tab-btn.active {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-color: #667eea;
+	color: #fff;
+	box-shadow: 0 3px 10px rgba(102,126,234,0.35);
+	cursor: default;
+}
 .aiv-tab-btn .aiv-tab-btn-badge {
 	display: inline-flex;
-	width: 8px;
-	height: 8px;
+	width: 9px;
+	height: 9px;
 	border-radius: 50%;
 	background: #e05353;
+	border: 1.5px solid #fff;
 }
 .aiv-tab-panel[hidden] { display: none; }
 
@@ -269,4 +373,140 @@
 		gap: 10px;
 	}
 }
+
+/* Small persistent "what does this do?" link next to the page title -
+   kept alongside the intro card below (not instead of it) so the help
+   modal is still reachable any time, including after the card has
+   been dismissed via its own close button. */
+.aiv-page-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.aiv-help-btn {
+	display: inline-flex; align-items: center; gap: 6px;
+	padding: 6px 14px; border-radius: 20px;
+	border: 1px solid #d8dee8; background: #fff; color: #667085;
+	font-size: 12.5px; font-weight: 600; cursor: pointer; text-decoration: none;
+	transition: all 0.15s ease;
+}
+.aiv-help-btn:hover { border-color: #4a8fc7; color: #4a8fc7; text-decoration: none; }
+
+/* Help-modal hero header - replaces the plain Bootstrap modal-header
+   (bare title + bare "x") with a gradient banner and a circular icon
+   badge, so the popup reads as a considered intro, not a bare dialog. */
+.aiv-help-modal .modal-content { border: none; border-radius: 16px; overflow: hidden; }
+.aiv-help-modal-header {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	padding: 32px 28px 24px;
+	text-align: center;
+	position: relative;
+}
+.aiv-help-modal-header .close {
+	position: absolute; top: 14px; right: 16px;
+	color: #fff; opacity: 0.8; text-shadow: none; font-size: 24px; font-weight: 400;
+}
+.aiv-help-modal-header .close:hover { opacity: 1; }
+.aiv-help-modal-icon {
+	width: 56px; height: 56px; border-radius: 50%;
+	background: rgba(255,255,255,0.18);
+	display: flex; align-items: center; justify-content: center;
+	margin: 0 auto 14px;
+	font-size: 22px; color: #fff;
+}
+.aiv-help-modal-header .modal-title { font-size: 18px; font-weight: 700; color: #fff; margin: 0; }
+.aiv-help-modal-body { padding: 26px 28px 8px; }
+.aiv-help-modal-body p { font-size: 13.5px; color: #4a4e69; line-height: 1.6; }
+.aiv-help-modal-body p:first-of-type { font-size: 14.5px; color: #2a2a3d; }
+.aiv-help-modal-body .aiv-discover-item:last-of-type { border-bottom: none; }
+.aiv-help-modal .modal-footer { border-top: none; padding: 4px 28px 26px; justify-content: center; }
+.aiv-help-modal .modal-footer .btn {
+	border-radius: 20px; padding: 8px 28px; font-weight: 600; font-size: 13px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: #fff;
+}
+.aiv-help-modal .modal-footer .btn:hover { opacity: 0.92; color: #fff; }
+
+/* Quick-info intro card - the always-visible "what is this tool" banner
+   at the top of every AI tool page. Replaces the earlier pairing of a
+   small "What does this do?" link up in the title row plus a thin,
+   easy-to-miss .aiv-note strip below the sub-nav with one single,
+   higher-visual-weight banner that IS the page's one obvious place for
+   this, with its own "Learn more" CTA opening the same help modal. */
+.aiv-intro-card {
+	display: flex; align-items: center; gap: 16px;
+	background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%);
+	border: 1px solid rgba(102,126,234,0.2);
+	border-radius: 14px;
+	padding: 16px 44px 16px 20px;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+	position: relative;
+}
+.aiv-intro-close {
+	position: absolute; top: 12px; right: 12px;
+	display: flex; align-items: center; justify-content: center;
+	width: 24px; height: 24px;
+	background: rgba(255,255,255,0.75); border: 1px solid rgba(102,126,234,0.22);
+	border-radius: 50%;
+	color: #8a8ea3; font-size: 10.5px; line-height: 1; cursor: pointer;
+	box-shadow: 0 1px 3px rgba(20,20,43,0.07);
+	transition: all 0.15s ease;
+}
+.aiv-intro-close:hover {
+	background: #5c4fd6; border-color: #5c4fd6; color: #fff;
+	box-shadow: 0 3px 10px rgba(92,79,214,0.35);
+	transform: scale(1.08);
+}
+.aiv-intro-close:active { transform: scale(0.94); }
+.aiv-intro-icon {
+	flex: 0 0 auto;
+	width: 46px; height: 46px; border-radius: 13px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #fff; display: flex; align-items: center; justify-content: center;
+	font-size: 19px;
+	box-shadow: 0 4px 12px rgba(102,126,234,0.32);
+}
+.aiv-intro-text { flex: 1; min-width: 220px; }
+.aiv-intro-title { font-size: 14.5px; font-weight: 700; color: #2a2a3d; margin-bottom: 3px; }
+.aiv-intro-desc { font-size: 12.5px; color: #5a5e78; line-height: 1.5; }
+/* Inline right after the description text it belongs to (not stretched
+   to the far right of the card as a separate flex item), so it reads
+   as "...using your own API key. [Learn more]" in one breath. */
+.aiv-intro-cta {
+	display: inline-flex; align-items: center; gap: 5px;
+	margin-left: 6px; vertical-align: middle;
+	background: #fff; color: #5c4fd6;
+	border: 1px solid rgba(102,126,234,0.35);
+	padding: 3px 12px; border-radius: 14px;
+	font-size: 11.5px; font-weight: 700; text-decoration: none;
+	white-space: nowrap;
+	transition: all 0.15s ease; cursor: pointer;
+}
+.aiv-intro-cta:hover { background: #5c4fd6; color: #fff; border-color: #5c4fd6; text-decoration: none; }
 </style>
+
+<script>
+// Dismiss for the "quick-info" intro card at the top of each AI tool
+// page - cookie-based (not localStorage) per the project's own choice,
+// so it naturally reappears once the cookie expires instead of staying
+// hidden forever. Keyed by the page's help-modal id, so dismissing the
+// (identical) card on any of the 3 AI Perception pages hides it on all
+// 3, while every other AI tool page's card is dismissed independently.
+//
+// Assigned onto window explicitly rather than declared as a plain
+// `function spDismissIntro(){}` - this whole block only ever runs
+// through scriptDoLoad()'s manual `eval($(this).text())` on the AJAX
+// response (js/common.js), which is a DIRECT eval nested inside that
+// function's own .each() callback. Per spec, a plain function
+// declaration evaluated that way is scoped to that callback, not to
+// window, so the inline onclick="spDismissIntro(...)" below would
+// throw "spDismissIntro is not defined" - an explicit window.X =
+// assignment is immune to that scoping, since it's a property write
+// on the global object itself rather than a hoisted declaration.
+window.spDismissIntro = function(id, btn) {
+	var card = btn.closest('.aiv-intro-card');
+	if (card) card.style.display = 'none';
+	createCookie('sp_intro_dismissed_' + id, '1', 14);
+};
+document.querySelectorAll('.aiv-intro-card[data-intro-id]').forEach(function(card) {
+	if (readCookie('sp_intro_dismissed_' + card.getAttribute('data-intro-id')) === '1') {
+		card.style.display = 'none';
+	}
+});
+</script>

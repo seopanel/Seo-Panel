@@ -1,4 +1,31 @@
-<?php echo showSectionHead($spTextPanel['Cron Command']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Cron Command']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#cronCommandHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="cronCommandHelpModal" tabindex="-1" role="dialog" aria-labelledby="cronCommandHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-terminal"></i></div>
+				<h5 class="modal-title" id="cronCommandHelpModalLabel">About Cron Command</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Gives you the exact crontab line to schedule SEO Panel's main background crawler (cron.php) - this is what keeps every tool's rank/backlink/analytics history up to date automatically.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Purely reference text - setting up the actual cron job happens on your server, outside SEO Panel.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <style>
 .cron-container {

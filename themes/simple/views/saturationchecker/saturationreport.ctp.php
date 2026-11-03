@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextSat['Search Engine Saturation Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextSat['Search Engine Saturation Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#satReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="satReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="satReportsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-table"></i></div>
+				<h5 class="modal-title" id="satReportsHelpModalLabel">About Saturation Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows a date-range history of a website's Google and Bing indexed-page counts, with trend indicators, plus an optional AI summary of the trend.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads only already-saved history - no new crawling happens here. Needs data saved by Generate Saturation Reports or the scheduled cron first.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>

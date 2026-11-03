@@ -3,8 +3,13 @@
     // $msg can be text extracted directly from a third-party directory
     // site's own HTML response (submitSite()'s regex match on its
     // success message) - genuinely untrusted external content, same bug
-    // class as the already-fixed printSearchEngineSaturation() XSS
-    echo "<div class='alert $msgClass'>" . htmlspecialchars($msg, ENT_QUOTES) . "</div>";
+    // class as the already-fixed printSearchEngineSaturation() XSS - so
+    // escaped by default. The controller explicitly sets $trustedMsg
+    // only for our own translation strings (e.g. nocatnote), which
+    // intentionally contain real <b> markup - every other/future $msg
+    // source stays safely escaped unless it opts in the same way.
+    $msgOutput = empty($trustedMsg) ? htmlspecialchars($msg, ENT_QUOTES) : $msg;
+    echo "<div class='alert $msgClass'>" . $msgOutput . "</div>";
 }
 ?>
 <form id="submissionForm" name="submissionForm">

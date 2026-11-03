@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextKeyword['Detailed Keyword Position Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextKeyword['Detailed Keyword Position Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#kwDetailHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="kwDetailHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwDetailHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-chart-line"></i></div>
+				<h5 class="modal-title" id="kwDetailHelpModalLabel">About Detailed Position Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows the day-by-day rank history for one keyword on one search engine, including the change from the previous recorded day and, where available, an AI Overview appearance trend for that keyword.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This only shows what's already been crawled and saved - it needs keywords with rank history before there's anything to see here.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
@@ -55,8 +83,7 @@
 <?php if (!empty($showAioUpsellHint)): ?>
 	<div class="alert alert-info py-2 mb-2" style="font-size:0.85rem;">
 		<i class="fas fa-info-circle"></i>
-		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? 'AI Overview is not available on your current data source.' ?>
-		<?php echo $spTextKeyword['Configure DataForSEO credentials to enable this feature immediately'] ?? 'Configure DataForSEO credentials to enable this feature immediately.' ?>
+		<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>
 	</div>
 <?php endif; ?>
 
@@ -112,7 +139,7 @@
 					<?php if (!$aioMeasured): ?>
 						<span class="text-muted">&mdash;</span>
 					<?php elseif (!$aioSupported): ?>
-						<span class="text-muted" title="<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? 'AI Overview is not available on your current data source'?>">
+						<span class="text-muted" title="<?php echo $spTextKeyword['AI Overview is not available on your current data source'] ?? "AI Overview is only available for Google." ?>">
 							<?php echo $spTextKeyword['Not available'] ?? 'Not available' ?>
 						</span>
 					<?php else: ?>
@@ -120,8 +147,8 @@
 							<?php echo $aioPresent ? ($spTextKeyword['Present'] ?? 'Present') : ($spTextKeyword['Absent'] ?? 'Absent') ?>
 						</span>
 						<br>
-						<small class="text-muted">
-							<?php echo htmlspecialchars($aioProviderLabel)?>, <?php echo htmlspecialchars($listInfo['aio_data_date'])?>
+						<small class="text-muted" title="<?php echo $spTextKeyword['Data source and date this AI Overview result was last checked'] ?? 'Data source and date this AI Overview result was last checked'?>">
+							via <?php echo htmlspecialchars($aioProviderLabel)?> &middot; checked <?php echo htmlspecialchars($listInfo['aio_data_date'])?>
 							<?php if ($aioStale): ?>
 								<span class="text-warning" title="<?php echo $spTextKeyword['Data older than the configured freshness threshold'] ?? 'Data older than the configured freshness threshold'?>">
 									(<?php echo $spTextKeyword['stale'] ?? 'stale' ?>)
@@ -141,7 +168,7 @@
 				</td>
 				<td style="font-size:0.85rem;">
 					<?php if ($aioSupported && !empty($listInfo['aio_reference_count'])): ?>
-						<?php echo scriptAJAXLinkHref('reports.php', 'subcontent', "sec=aiosources&keyword_id={$listInfo['keyword_id']}", intval($listInfo['aio_reference_count']))?>
+						<a href="javascript:void(0);" onclick="openAjaxModalSP('<?php echo SP_WEBPATH?>/reports.php?sec=aiosources&keyword_id=<?php echo intval($listInfo['keyword_id'])?>', '<i class=&quot;fas fa-robot&quot;></i> AI Overview Cited Sources')"><?php echo intval($listInfo['aio_reference_count'])?></a>
 					<?php else: ?>
 						<span class="text-muted">0</span>
 					<?php endif; ?>

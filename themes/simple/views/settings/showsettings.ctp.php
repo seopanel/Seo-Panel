@@ -1,7 +1,51 @@
 <?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $headLabel = empty($headLabel) ? $spTextPanel['System Settings'] : $headLabel;
-echo showSectionHead($headLabel);
 
+// One shared view handles System/API/MOZ/Google/DataForSEO/Local AI/
+// Mail/Seo Panel API Settings (see SettingsController::showSystemSettings),
+// so the help modal's content has to switch on $category too instead of
+// being fixed markup like on a page with just one identity.
+$settingsHelpInfo = array(
+	'system'       => array('icon' => 'fa-cogs',   'desc' => 'Core site configuration - site title/branding, timezone, default language and country, pagination size, GDPR cookie banner, and the encryption keys used to store other settings securely.'),
+	'api'          => array('icon' => 'fa-key',    'desc' => 'The key/secret pair for SEO Panel\'s own REST API (api/api.php) - lets external tools authenticate against this installation. Regenerating it here invalidates the old key immediately.'),
+	'moz'          => array('icon' => 'fa-chart-line', 'desc' => 'Your Moz API credentials - powers Rank Checker and Backlink Checker\'s Spam Score, Domain Authority, Page Authority and backlink count data.'),
+	'google'       => array('icon' => 'fa-globe',  'desc' => 'Google API key, OAuth client ID/secret, reCAPTCHA keys, and Analytics tracking code - powers Webmaster Tools, Website Analytics, PageSpeed Insights, and login reCAPTCHA.'),
+	'dataforseo'   => array('icon' => 'fa-database', 'desc' => 'Your DataForSEO API login and password, plus per-feature toggles - an alternative data source for several checker tools (reviews, backlinks, saturation, SERP, search volume).'),
+	'local_ai'     => array('icon' => 'fa-robot',  'desc' => 'Connects SEO Panel to a local Ollama instance - powers the optional "Summarize with AI" trend buttons found on several report pages. Nothing is sent to a third party.'),
+	'mail'         => array('icon' => 'fa-envelope', 'desc' => 'Outgoing email configuration - SMTP host/port/credentials or a SendGrid API key - used for notification emails and scheduled report delivery.'),
+	'seopanel_api' => array('icon' => 'fa-plug',   'desc' => 'Credentials for the hosted "Seo Panel API" (spAPI) service - an optional alternative source for SERP and search volume data, separate from DataForSEO and Moz.'),
+	'siteauditor'  => array('icon' => 'fa-clipboard-list', 'desc' => 'Global Site Auditor configuration, used by every project: max pages per crawl, crawl delay, title/description/keyword length thresholds used for scoring, PageRank/backlink/page-authority check levels, and excluded file extensions.'),
+);
+$curSettingsHelp = $settingsHelpInfo[$category] ?? $settingsHelpInfo['system'];
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($headLabel); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#settingsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved.
+     Content keyed by $category (see $settingsHelpInfo above), since this
+     one view is shared by 8 different settings pages. -->
+<div class="modal fade aiv-help-modal" id="settingsHelpModal" tabindex="-1" role="dialog" aria-labelledby="settingsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas <?php echo $curSettingsHelp['icon']?>"></i></div>
+				<h5 class="modal-title" id="settingsHelpModalLabel">About <?php echo htmlspecialchars($headLabel)?></h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p><?php echo htmlspecialchars($curSettingsHelp['desc'])?></p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php
 // if saved successfully
 if (!empty($saved)) {
     showSuccessMsg($spTextSettings['allsettingssaved'], false);
@@ -239,10 +283,21 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 							// shoulder-surfing, or a shared screenshot of
 							// this page on every real install
 							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET', 'SP_MOZ_API_SECRET', 'SP_GOOGLE_API_CLIENT_SECRET', 'SP_DFS_API_PASSWORD', 'SP_SPAPI_KEY', 'SP_RECAPTCHA_SECRET_KEY');
-						    $type = in_array($listInfo['set_name'], $passTypeList) ? "password" : "text";
-						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'"
+						    $isSecretField = in_array($listInfo['set_name'], $passTypeList);
+						    $type = $isSecretField ? "password" : "text";
+						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'";
+						    $fieldId = 'sp_secret_' . strtolower($listInfo['set_name']);
 						    ?>
-							<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" <?php echo $styleOpt?>>
+							<?php if ($isSecretField) {?>
+								<div style="position:relative; display:inline-block; <?php echo ($width == 'large') ? 'width:100%;' : "width: {$width}px;"?>">
+									<input type="<?php echo $type?>" id="<?php echo $fieldId?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" class='form-control' style="padding-right:34px; width:100%;">
+									<a href="javascript:void(0);" onclick="spToggleSecretVisibility('<?php echo $fieldId?>', this)" title="<?php echo $spText['common']['Show/Hide'] ?? 'Show/Hide'?>" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); color:#8a8ea3;">
+										<i class="fas fa-eye"></i>
+									</a>
+								</div>
+							<?php } else { ?>
+								<input type="<?php echo $type?>" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" <?php echo $styleOpt?>>
+							<?php } ?>
 							<?php if ($listInfo['set_name'] == 'SP_MOZ_API_SECRET') {?>
 								<div class="mt-2">
 									<a href="javascript:void(0);" onclick="checkMozConnection('settings.php?sec=checkMozCon', 'show_conn_res')" class="btn btn-info"><?php echo $spTextSettings['Verify connection']; ?> &gt;&gt;</a>

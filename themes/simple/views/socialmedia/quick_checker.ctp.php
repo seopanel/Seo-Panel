@@ -1,7 +1,35 @@
 <?php
-echo showSectionHead($spTextTools['Quick Checker']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $actFun = SP_DEMO ? "alertDemoMsg()" : "scriptDoLoadPost('$pageScriptPath', 'search_form', 'subcontent', '&sec=doQuickChecker')";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Quick Checker']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#smQuickHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="smQuickHelpModal" tabindex="-1" role="dialog" aria-labelledby="smQuickHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-bolt"></i></div>
+				<h5 class="modal-title" id="smQuickHelpModalLabel">About Social Media Quick Checker</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Paste a profile URL and pick its platform to scrape that public page right now for its current like/follower count. Nothing is saved - it's an instant preview, not part of the scheduled reporting.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Relies on reading the platform's public page HTML (no official API), so results can break if that platform changes its page layout. LinkedIn needs a numeric company ID instead of a URL.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form' onsubmit="<?php echo $actFun; ?>;return false;">
 <table class="search" style="width: 60%">
 	<tr>

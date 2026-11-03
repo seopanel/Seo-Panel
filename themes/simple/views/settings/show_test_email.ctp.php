@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextPanel['Test Email Settings']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Test Email Settings']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#testEmailHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="testEmailHelpModal" tabindex="-1" role="dialog" aria-labelledby="testEmailHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-paper-plane"></i></div>
+				<h5 class="modal-title" id="testEmailHelpModalLabel">About Test Email Settings</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Sends a real test email using the SMTP/SendGrid credentials configured under Mail Settings, so you can confirm outgoing email actually works before relying on it for notifications or scheduled reports.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Mail Settings needs to be configured first, or this test will fail the same way real notification emails would.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id="emailForm">
 <input type="hidden" value="send_test_email" name="sec">
 <table class="list">

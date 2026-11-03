@@ -60,6 +60,11 @@ foreach($menuList as $i => $menuInfo){
 		case "webmaster-tools":
 			?>		
 			<ul id='subui'>
+				<li>
+					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchSummary', 'content')" class="menu_active">
+						<?php echo $spTextTools['Keyword Search Summary']?>
+					</a>
+				</li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li>
 						<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=quickChecker', 'content')">
@@ -67,11 +72,6 @@ foreach($menuList as $i => $menuInfo){
 						</a>
 					</li>
 				<?php }?>
-				<li>
-					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchSummary', 'content')">
-						<?php echo $spTextTools['Keyword Search Summary']?>
-					</a>
-				</li>
 				<li>
 					<a href="javascript:void(0);" onclick="scriptDoLoad('webmaster-tools.php?sec=viewKeywordSearchReports', 'content')">
 						<?php echo $spTextTools['Keyword Search Reports']?>
@@ -137,12 +137,12 @@ foreach($menuList as $i => $menuInfo){
 			break;
 			
 		case "rank-checker":
-			?>			
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Rank Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=quickrank', 'content')"><?php echo $spTextTools['Quick Rank Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=reports', 'content')"><?php echo $spTextTools['Rank Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('rank.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
     				<?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>
@@ -158,12 +158,12 @@ foreach($menuList as $i => $menuInfo){
 			break;
 			
 		case "backlink-checker":
-			?>		
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Backlinks Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php', 'content')"><?php echo $spTextTools['Quick Backlinks Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=reports', 'content')"><?php echo $spTextTools['Backlinks Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
     				<?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>
@@ -201,12 +201,12 @@ foreach($menuList as $i => $menuInfo){
 			break;			
 			
 		case "saturation-checker":
-			?>			
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['Saturation Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php', 'content')"><?php echo $spTextTools['Quick Saturation Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=reports', 'content')"><?php echo $spTextTools['Saturation Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('saturationchecker.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if(!SP_CUSTOM_DEV && (SP_USER_GEN_REPORT || isAdmin())) { ?>				
 					<?php if(SP_DEMO){?>
@@ -220,12 +220,12 @@ foreach($menuList as $i => $menuInfo){
 			break;			
 			
 		case "pagespeed":
-			?>	
+			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=reports', 'content')" class="menu_active"><?php echo $spTextTools['PageSpeed Reports']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php', 'content')"><?php echo $spTextTools['Quick PageSpeed Checker']?></a></li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=reports', 'content')"><?php echo $spTextTools['PageSpeed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('pagespeed.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if(!SP_CUSTOM_DEV && (SP_USER_GEN_REPORT || isAdmin())) { ?>				
 					<?php if(SP_DEMO){?>
@@ -241,6 +241,7 @@ foreach($menuList as $i => $menuInfo){
 		case "sm-checker":
 			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=reportSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php', 'content')"><?php echo $spTextTools['Social Media Links']?></a></li>
 					<?php if (isQuickCheckerEnabled()) {?>
@@ -251,7 +252,6 @@ foreach($menuList as $i => $menuInfo){
     					</li>
     				<?php }?>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=reportSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=viewDetailedReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('social_media.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
@@ -261,6 +261,7 @@ foreach($menuList as $i => $menuInfo){
 		case "review-manager":
 			?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=reportSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php', 'content')"><?php echo $spTextTools['Review Links']?></a></li>
 					<?php if (isQuickCheckerEnabled()) {?>
@@ -271,10 +272,9 @@ foreach($menuList as $i => $menuInfo){
     					</li>
     				<?php }?>
 				<?php }?>
-				
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=reportSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
+
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewDetailedReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>			
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('review.php?sec=viewGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
 			<?php
 			break;
@@ -282,6 +282,7 @@ foreach($menuList as $i => $menuInfo){
         case "web-analytics":
             ?>
 			<ul id='subui'>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsSummary', 'content')" class="menu_active"><?php echo $spTextSA['Report Summary']?></a></li>
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li>
 						<a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=quickChecker', 'content')">
@@ -289,7 +290,6 @@ foreach($menuList as $i => $menuInfo){
 						</a>
 					</li>
 				<?php }?>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsSummary', 'content')"><?php echo $spTextSA['Report Summary']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsReports', 'content')"><?php echo $spTextTools['Detailed Reports']?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('analytics.php?sec=viewAnalyticsGraphReports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 			</ul>
@@ -299,14 +299,30 @@ foreach($menuList as $i => $menuInfo){
 		case "ai-visibility":
 			?>
 			<ul id='subui'>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=overview', 'content')"><?php echo $spTextAIV['Overview'] ?? 'Overview'?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php', 'content')"><?php echo $spTextTools['Setup'] ?? 'Setup'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=overview', 'content')" class="menu_active"><?php echo $spTextAIV['Overview'] ?? 'AI Visibility Summary'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI SERP Overview'] ?? 'AI SERP Overview'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=report', 'content')"><?php echo $spTextTools['AI Referral Report'] ?? 'AI Referral Report'?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=aioverview', 'content')"><?php echo $spTextTools['AI Overview'] ?? 'AI Overview'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=botreport', 'content')"><?php echo $spTextAIV['AI Bot Crawlers'] ?? 'AI Bot Crawlers'?></a></li>
+				<!-- same gap as AI API Keys below - schema-generator.php had no
+				     left-menu entry at all, only reachable via the "Discover
+				     More" card's "Generate Schema Markup" link on AI
+				     Visibility Summary. -->
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('schema-generator.php', 'content')"><?php echo $spTextAIV['AI Schema Markup Generator'] ?? 'AI Schema Markup Generator'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=check', 'content')"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('recommendations_dashboard.php', 'content')"><?php echo $spTextTools['AI Insights'] ?? 'AI Insights'?></a></li>
+				<!-- the API key management page (ai-perception.php, no sec -
+				     settings.ctp.php) had no left-menu entry of its own at
+				     all, only reachable via the in-page sub-nav's "Setup"
+				     button once already inside AI Perception Check/Tracking -
+				     added alongside it, same as every other AI area having
+				     its own settings entry (AI Setup, Manage AI Platforms). -->
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')"><?php echo $spTextAIV['AI API Keys'] ?? 'AI API Keys'?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=setup', 'content')"><?php echo $spTextTools['Setup'] ?? 'AI Setup'?></a></li>
 				<?php if (isAdmin()) { ?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('aivisibility.php?sec=platforms', 'content')"><?php echo $spTextAIV['Manage AI Platforms'] ?? 'Manage AI Platforms'?></a></li>
+				<?php } ?>
+				<?php if (!SP_CUSTOM_DEV) { ?>
+					<li><a href="javascript:void(0);" onclick="scriptDoLoad('mcp-access.php', 'content')"><?php echo $spTextPanel['MCP Access'] ?? 'MCP Access'?></a></li>
 				<?php } ?>
 			</ul>
 			<?php
