@@ -119,13 +119,13 @@ window.spapiUpgradeLoadPlans = function() {
 					}
 					html += '<div class="spapi-plan-divider"></div>';
 					if (plan.monthly_limit) {
-						html += '<div class="spapi-plan-detail"><i class="fas fa-database"></i>' + plan.monthly_limit.toLocaleString() + ' requests/mo</div>';
+						html += '<div class="spapi-plan-detail"><i class="fas fa-database"></i>' + plan.monthly_limit.toLocaleString() + ' <span style="white-space:nowrap">requests/mo</span></div>';
 					}
 					if (serpLimit) {
-						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
+						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' <span style="white-space:nowrap">SERPs/mo</span></div>';
 					}
 					if (searchVolumeLimit) {
-						html += '<div class="spapi-plan-detail"><i class="fas fa-chart-line"></i>' + searchVolumeLimit.toLocaleString() + ' search volume lookups/mo</div>';
+						html += '<div class="spapi-plan-detail"><i class="fas fa-chart-line"></i>' + searchVolumeLimit.toLocaleString() + ' search volume <span style="white-space:nowrap">lookups/mo</span></div>';
 					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {
