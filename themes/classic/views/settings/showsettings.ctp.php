@@ -118,7 +118,15 @@ if ($category == "moz") {
 		// Panel API, specifically because they clicked a link about
 		// registering for it, should see the registration flow without
 		// an extra click on the "Register" button below.
-		include(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
+		// include_once, not include: default.ctp.php's own global auto-popup
+		// (same file) already include_once()'d it earlier in this same
+		// request whenever its own condition is also true (admin not
+		// registered, Feature Tour not showing) - a plain include here would
+		// render the whole overlay a second time with a duplicate id,
+		// stacking two modals and leaving every window.spapi*() function
+		// only ever able to see the first one (duplicate DOM ids, jQuery's
+		// #id selector always resolves to the first match).
+		include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
 	}
 }
 ?>
