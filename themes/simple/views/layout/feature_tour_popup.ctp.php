@@ -371,15 +371,6 @@ function tourText($key, $default) {
                     </div>
                     <div class="sp-tour-form-hint" id="tour_web_review_hint"><?php echo tourText('tour_review_hint', 'The URL must contain the platform\'s name, e.g. a Yelp link should include "yelp".') ?></div>
                     <div class="sp-tour-field-err" id="tour_web_err_review"></div>
-
-                    <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="tour_web_submit_btn" onclick="window._tourSubmitWebsite()" style="margin-top:10px;">
-                        <!-- fa-check, not fa-plus: this is the tour's one-time "save my
-                             first website and continue" action (see tour_step2_heading
-                             above, "Add Your First Website"), not an "add another entry"
-                             button like the real Website Manager's - a plus icon here
-                             read as "add one more website" out of context -->
-                        <i class="fas fa-check" style="margin-right:5px;"></i><?php echo tourText('tour_add_website_btn', 'Add Website') ?>
-                    </button>
                 <?php } ?>
             </div>
 
@@ -689,11 +680,18 @@ function tourText($key, $default) {
 (function() {
     var TOTAL_STEPS = 9;
     var currentStep = 1;
-    // set once the website step succeeds (or was already satisfied on
-    // load) - lets Next skip re-validating a step that's already done,
-    // and lets a keyword-only retry pass the existing website_id back
-    // instead of re-submitting the website fields
+    // set as soon as the website row exists (full success OR a partial
+    // failure where only the keyword was rejected) - lets a keyword-only
+    // retry pass the existing website_id back instead of re-submitting
+    // the website fields. Deliberately NOT what gates whether step 2 is
+    // "done" (see tourWebsiteStepDone below) - a partial failure sets
+    // this too, and that retry still needs to happen.
     var tourCreatedWebsiteId = null;
+    // true only once step 2 has fully succeeded (or needed no action at
+    // all - the user already had a website on load, so the form never
+    // rendered). Gates whether the footer's Next button submits the
+    // website form or just advances - see featureTourNext().
+    var tourWebsiteStepDone = false;
 
     // strings the JS needs at runtime (button labels swapped in place,
     // badge text, dynamic hints/messages) - translated server-side same
@@ -742,13 +740,15 @@ function tourText($key, $default) {
     };
 
     window.featureTourNext = function() {
-        // Step 2's own in-form submit button sits below several optional
-        // fields and needs scrolling to reach on a short viewport - the
-        // always-visible footer button doubles as it (same action, same
-        // tourCreatedWebsiteId gate _tourSubmitWebsite() already uses)
-        // until the website is actually saved, so "Next" never silently
-        // skips past step 2 without saving anything.
-        if (currentStep === 2 && !tourCreatedWebsiteId) {
+        // Step 2 has no in-form submit button of its own (would sit below
+        // several optional fields, needing a scroll to reach on a short
+        // viewport) - this always-visible footer button IS the submit
+        // action until the website step is actually done. The
+        // #tour_web_name check matters: if the user already had a website
+        // on load, step 2 never rendered the form at all (just a "You're
+        // all set" message) and tourWebsiteStepDone is still false - Next
+        // must still just advance, not try to submit a form that isn't there.
+        if (currentStep === 2 && !tourWebsiteStepDone && $('#tour_web_name').length) {
             window._tourSubmitWebsite();
             return;
         }
@@ -841,13 +841,11 @@ function tourText($key, $default) {
     // returned website_id is remembered so a retry only re-attempts the
     // keyword, not the whole website again.
     window._tourSubmitWebsite = function() {
-        // $next doubles as this step's submit button (see featureTourNext())
-        // so it needs the exact same disabled-while-submitting/re-enabled-
-        // on-error treatment as the in-form button, not just a label swap.
-        var $btn = $('#tour_web_submit_btn');
+        // The footer's Next button IS this step's submit button (see
+        // featureTourNext()) - disable it for the duration of the request
+        // like any other submit button, re-enabling on every error path.
         var $next = $('#sp_tbtn_next');
-        if ($btn.prop('disabled')) return;
-        $btn.prop('disabled', true);
+        if ($next.prop('disabled')) return;
         $next.prop('disabled', true);
         $('.sp-tour-field-err').text('');
         $('#tour_web_general_err').empty();
@@ -877,6 +875,7 @@ function tourText($key, $default) {
             success: function(res) {
                 if (res.status === 'ok') {
                     tourCreatedWebsiteId = res.website_id;
+                    tourWebsiteStepDone = true;
                     var warningHtml = '';
                     if (res.warnings) {
                         $.each(res.warnings, function(kind, errs) {
@@ -894,28 +893,24 @@ function tourText($key, $default) {
                         '<i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>' +
                         TOUR_I18N.websiteAdded + '</div>' + warningHtml
                     );
-                    // tourCreatedWebsiteId is now set, so re-render flips $next
-                    // from "Add Website" back to a normal "Next" label
+                    // tourWebsiteStepDone is now true, so re-render flips
+                    // $next from "Add Website" back to a normal "Next" label
                     _tourRender();
                     $next.prop('disabled', false);
                 } else if (res.stage === 'website') {
                     _tourShowFieldErrors({ name: 'tour_web_err_name', url: 'tour_web_err_url' }, res.errors);
-                    $btn.prop('disabled', false);
                     $next.prop('disabled', false);
                 } else if (res.stage === 'keyword') {
                     tourCreatedWebsiteId = res.website_id;
                     _tourShowFieldErrors({ name: 'tour_web_err_keyword', searchengines: 'tour_web_err_searchengines' }, res.errors);
-                    $btn.prop('disabled', false);
                     $next.prop('disabled', false);
                 } else {
                     $('#tour_web_general_err').text(TOUR_I18N.genericError);
-                    $btn.prop('disabled', false);
                     $next.prop('disabled', false);
                 }
             },
             error: function() {
                 $('#tour_web_general_err').text(TOUR_I18N.genericError);
-                $btn.prop('disabled', false);
                 $next.prop('disabled', false);
             }
         });
@@ -1088,7 +1083,7 @@ function tourText($key, $default) {
         var $next = $('#sp_tbtn_next');
         if (currentStep === TOTAL_STEPS) {
             $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>' + TOUR_I18N.getStarted);
-        } else if (currentStep === 2 && !tourCreatedWebsiteId) {
+        } else if (currentStep === 2 && !tourWebsiteStepDone && $('#tour_web_name').length) {
             $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>' + TOUR_I18N.addWebsiteBtn);
         } else {
             $next.html('<i class="fas fa-arrow-right" style="margin-right:5px;"></i>' + TOUR_I18N.next);
