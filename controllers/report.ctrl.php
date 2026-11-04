@@ -210,13 +210,14 @@ class ReportController extends Controller {
 		$this->set('showAiOverview', $showAiOverview);
 		$this->set('spTextKeyword', $this->getLanguageTexts('keyword', $_SESSION['lang_code']));
 		$exportVersion = false;
-		switch($searchInfo['doc_type']){
-						
+		$this->set('pdfVersion', false);
+		switch($searchInfo['doc_type'] ?? ''){
+
 			case "export":
 				$exportVersion = true;
 				$exportContent = "";
 				break;
-			
+
 			case "pdf":
 				$this->set('pdfVersion', true);
 				break;
@@ -300,7 +301,7 @@ class ReportController extends Controller {
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptPath = SP_WEBPATH."/reports.php?sec=reportsum&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTimeTxt&to_time=$toTimeTxt&search_name=" . $searchInfo['search_name'];
+		$scriptPath .= "&from_time=$fromTimeTxt&to_time=$toTimeTxt&search_name=" . ($searchInfo['search_name'] ?? '');
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal";
 			
 		$conditions = " and w.status=1 and k.status=1";
@@ -330,9 +331,9 @@ class ReportController extends Controller {
 		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
 		$pagingDiv = $this->paging->printPages($scriptPath, '', 'scriptDoLoad', 'content', "");
 		$this->set('pagingDiv', $pagingDiv);
-		$this->set('pageNo', $searchInfo['pageno']);
-		
-		if (!in_array($searchInfo['doc_type'], array("pdf", "export"))) {
+		$this->set('pageNo', $searchInfo['pageno'] ?? '');
+
+		if (!in_array($searchInfo['doc_type'] ?? '', array("pdf", "export"))) {
 			$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
 		}
 			
@@ -417,7 +418,7 @@ class ReportController extends Controller {
 			$this->set('list', $keywordList);
 			
 			// if pdf export
-			if ($searchInfo['doc_type'] == "pdf") {
+			if (($searchInfo['doc_type'] ?? '') == "pdf") {
 				exportToPdf($this->getViewContent('report/reportsummary'), "keyword_report_summary_$fromTimeTxt-$toTimeTxt.pdf");
 			} else {
 				$this->set('searchInfo', $searchInfo);

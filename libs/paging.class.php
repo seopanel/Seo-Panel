@@ -93,6 +93,7 @@ class Paging {
 	# func to create paging link
 	function createPagingLink($linkText='', $linkBefore='', $linkAfter=''){
 				
+		$linkClass = '';
 		if(!empty($this->link_class)) { $linkClass=' class="'.$this->link_class.'"'; }
 		
 		if ($this->scriptFunction == 'link') {
