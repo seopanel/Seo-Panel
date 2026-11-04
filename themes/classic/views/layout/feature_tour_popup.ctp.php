@@ -718,7 +718,8 @@ function tourText($key, $default) {
         cronTestDone: <?php echo json_encode(tourText('tour_cron_test_done', 'Test run completed - see the status above.')) ?>,
         refreshChecked: <?php echo json_encode(tourText('tour_refresh_checked', 'Checked latest status')) ?>,
         reviewHintDynamic: <?php echo json_encode(tourText('tour_review_hint_dynamic', 'The URL must contain "%s" (e.g. a %s link should include that word).')) ?>,
-        addWebsiteHeading: <?php echo json_encode(tourText('tour_step2_heading', 'Add Your First Website')) ?>
+        addWebsiteHeading: <?php echo json_encode(tourText('tour_step2_heading', 'Add Your First Website')) ?>,
+        addWebsiteBtn: <?php echo json_encode(tourText('tour_add_website_btn', 'Add Website')) ?>
     };
 
     // shown on auto-trigger (new user, tour not yet seen) AND when the
@@ -741,6 +742,16 @@ function tourText($key, $default) {
     };
 
     window.featureTourNext = function() {
+        // Step 2's own in-form submit button sits below several optional
+        // fields and needs scrolling to reach on a short viewport - the
+        // always-visible footer button doubles as it (same action, same
+        // tourCreatedWebsiteId gate _tourSubmitWebsite() already uses)
+        // until the website is actually saved, so "Next" never silently
+        // skips past step 2 without saving anything.
+        if (currentStep === 2 && !tourCreatedWebsiteId) {
+            window._tourSubmitWebsite();
+            return;
+        }
         if (currentStep === TOTAL_STEPS) {
             _tourDismiss(function() {
                 $('#sp_tour_overlay').fadeOut(200);
@@ -830,9 +841,14 @@ function tourText($key, $default) {
     // returned website_id is remembered so a retry only re-attempts the
     // keyword, not the whole website again.
     window._tourSubmitWebsite = function() {
+        // $next doubles as this step's submit button (see featureTourNext())
+        // so it needs the exact same disabled-while-submitting/re-enabled-
+        // on-error treatment as the in-form button, not just a label swap.
         var $btn = $('#tour_web_submit_btn');
+        var $next = $('#sp_tbtn_next');
         if ($btn.prop('disabled')) return;
         $btn.prop('disabled', true);
+        $next.prop('disabled', true);
         $('.sp-tour-field-err').text('');
         $('#tour_web_general_err').empty();
 
@@ -878,21 +894,29 @@ function tourText($key, $default) {
                         '<i class="fas fa-check-circle" style="color:#34a853; margin-right:6px;"></i>' +
                         TOUR_I18N.websiteAdded + '</div>' + warningHtml
                     );
+                    // tourCreatedWebsiteId is now set, so re-render flips $next
+                    // from "Add Website" back to a normal "Next" label
+                    _tourRender();
+                    $next.prop('disabled', false);
                 } else if (res.stage === 'website') {
                     _tourShowFieldErrors({ name: 'tour_web_err_name', url: 'tour_web_err_url' }, res.errors);
                     $btn.prop('disabled', false);
+                    $next.prop('disabled', false);
                 } else if (res.stage === 'keyword') {
                     tourCreatedWebsiteId = res.website_id;
                     _tourShowFieldErrors({ name: 'tour_web_err_keyword', searchengines: 'tour_web_err_searchengines' }, res.errors);
                     $btn.prop('disabled', false);
+                    $next.prop('disabled', false);
                 } else {
                     $('#tour_web_general_err').text(TOUR_I18N.genericError);
                     $btn.prop('disabled', false);
+                    $next.prop('disabled', false);
                 }
             },
             error: function() {
                 $('#tour_web_general_err').text(TOUR_I18N.genericError);
                 $btn.prop('disabled', false);
+                $next.prop('disabled', false);
             }
         });
     };
@@ -1064,6 +1088,8 @@ function tourText($key, $default) {
         var $next = $('#sp_tbtn_next');
         if (currentStep === TOTAL_STEPS) {
             $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>' + TOUR_I18N.getStarted);
+        } else if (currentStep === 2 && !tourCreatedWebsiteId) {
+            $next.html('<i class="fas fa-check" style="margin-right:5px;"></i>' + TOUR_I18N.addWebsiteBtn);
         } else {
             $next.html('<i class="fas fa-arrow-right" style="margin-right:5px;"></i>' + TOUR_I18N.next);
         }
