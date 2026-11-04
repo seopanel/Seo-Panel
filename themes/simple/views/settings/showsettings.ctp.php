@@ -127,6 +127,23 @@ if ($category == "moz") {
 		// only ever able to see the first one (duplicate DOM ids, jQuery's
 		// #id selector always resolves to the first match).
 		include_once(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
+		?>
+		<script type="text/javascript">
+		// This page is reached via scriptDoLoad()'s plain AJAX GET (see
+		// admin-panel.php's menu) - a completely separate HTTP request/PHP
+		// process from whatever rendered the rest of the page, so
+		// include_once above has no way to know the global auto-popup
+		// (default.ctp.php) might already be sitting on the page outside
+		// #content. If it is, we now have two #spapi_popup_overlay elements -
+		// jQuery's #id selector (like plain getElementById) only ever sees
+		// the first one, so every window.spapi*() call from here on would
+		// silently act on the wrong, invisible copy. [id="..."] (not #id)
+		// actually selects every duplicate instead of just the first; keep
+		// the one just inserted (:last) since that's the one on screen,
+		// matching what the admin just clicked "Register" to see.
+		$('[id="spapi_popup_overlay"]:not(:last)').remove();
+		</script>
+		<?php
 	}
 }
 ?>
