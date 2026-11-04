@@ -101,10 +101,7 @@ class SettingsController extends Controller{
 
 				case "seopanel_api":
 				    $this->set('headLabel', $spTextPanel['Seo Panel API Settings']);
-				    include_once(SP_CTRLPATH . "/information.ctrl.php");
-				    $informationCtrler = new InformationController();
-				    $spapiCheckInfo = $informationCtrler->__getTodayInformation('spapi_check');
-				    $this->set('spapiCheckResult', !empty($spapiCheckInfo['page']) ? $spapiCheckInfo['page'] : '');
+				    $this->set('spapiCheckResult', SettingsController::refreshSpApiCheckStatus());
 				    break;
 
 				default:
@@ -521,6 +518,51 @@ class SettingsController extends Controller{
 	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
 	        default:              return true;
 	    }
+	}
+
+	// Returns today's cached spAPI connection status ('', 'ok',
+	// 'unconfirmed', 'expired', 'monthly_limit', or a raw connection-error
+	// string) - the same daily cache AlertController::updateSpApiAlerts()
+	// (the cron check) maintains, consumed by both
+	// showSystemSettings('seopanel_api') and the Setup Tour's Seo Panel
+	// API step. 'unconfirmed' is the one cached state genuinely likely to
+	// change within the same day - the admin verifies their email
+	// entirely outside this app, at any moment - so it gets a live
+	// re-check here instead of leaving the admin looking at a "please
+	// verify" banner/badge for up to 24h after they already did. Every
+	// other cached state is left alone, same caching rationale (avoiding
+	// a live, 30s-timeout API call on every page load) as the rest of
+	// this app's daily checks. Mirrors updateSpApiAlerts()'s own status-
+	// mapping exactly so the cache stays consistent regardless of which
+	// of the two last wrote to it.
+	public static function refreshSpApiCheckStatus() {
+	    include_once(SP_CTRLPATH . "/information.ctrl.php");
+	    $informationCtrler = new InformationController();
+	    $cacheInfo = $informationCtrler->__getTodayInformation('spapi_check');
+	    $status = !empty($cacheInfo['page']) ? $cacheInfo['page'] : '';
+
+	    if ($status !== 'unconfirmed' || !defined('SP_SPAPI_KEY') || empty(SP_SPAPI_KEY)) {
+	        return $status;
+	    }
+
+	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");
+	    $spapiCtrler = new SPAPIController();
+	    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData();
+
+	    if (!empty($logInfo['needs_upgrade'])) {
+	        $newStatus = !empty($logInfo['upgrade_reason']) ? $logInfo['upgrade_reason'] : 'expired';
+	    } elseif (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
+	        $newStatus = $logInfo['log_message'];
+	    } else {
+	        $newStatus = 'ok';
+	    }
+
+	    if ($newStatus !== $status) {
+	        $informationCtrler->updateTodayInformation($newStatus, 'spapi_check');
+	        $status = $newStatus;
+	    }
+
+	    return $status;
 	}
 
 	// func to check whether Local AI (Ollama) is enabled+configured - cheap

@@ -128,9 +128,14 @@ function tourText($key, $default) {
             // the tour itself opening), so it's usually warm by the time
             // this renders, and correctly defaults to "not connected"
             // rather than "trust it forever" on the rare cold-cache miss.
-            include_once(SP_CTRLPATH . "/information.ctrl.php");
-            $tourSpApiCacheInfo = (new InformationController())->__getTodayInformation('spapi_check');
-            $tourSpApiConnected = !empty($tourSpApiCacheInfo) && $tourSpApiCacheInfo['page'] === 'ok';
+            // refreshSpApiCheckStatus(), not a raw cache read: 'unconfirmed'
+            // is the one cached state genuinely likely to change within the
+            // same day (the admin verifies their email entirely outside
+            // this app), so it gets a live re-check instead of this badge
+            // staying stuck on "Not Set Up" for up to 24h after they
+            // already finished. See its own doc comment for the full
+            // rationale - same cache, shared with showSystemSettings().
+            $tourSpApiConnected = SettingsController::refreshSpApiCheckStatus() === 'ok';
             // DataForSEO and MOZ exist to answer the exact same "where do
             // rank/SERP numbers come from" need the Seo Panel API step
             // above already offers a free, zero-setup answer to (see its
@@ -787,32 +792,31 @@ function tourText($key, $default) {
     // linking straight to e.g. aivisibility.php or settings.php on
     // their own, which render as a bare fragment with no chrome at all
     // since those controllers hardcode layout='ajax' - confirmed live).
-    // The href does the actual navigation; this just saves the CURRENT
-    // step and closes the overlay in the background, without blocking
-    // the new tab from opening. Saves rather than dismisses - clicking
-    // a link to go look at something is the single most common way a
-    // user leaves the tour mid-flow, and if that also marked it
-    // permanently "seen" (the original behavior here), the whole point
-    // of step persistence (resume where you left off) would never
-    // actually apply to the case it matters most for. Only Skip or
-    // finishing the last step dismiss it for good.
+    // The href does the actual navigation (target="_blank", a new tab) -
+    // this tab's own content never changes, so the overlay here is left
+    // open exactly as it was; closing it just meant the admin had to
+    // reopen the Setup Tour from the top menu to get back to where they
+    // were, every single time they clicked a row. Still saves the
+    // current step regardless (same reasoning as ever: clicking a link
+    // to go look at something is the single most common way a user
+    // leaves the tour mid-flow, and that shouldn't silently lose their
+    // place if they close the overlay some other way later).
     window.featureTourPauseOnLinkClick = function() {
         _tourSaveStep();
-        $('#sp_tour_overlay').fadeOut(200);
-        // Every one of these links opens in a new tab (target="_blank"),
-        // so fading out the overlay above only affects the tab the user
-        // stays on - the new tab is a completely fresh page load, which
-        // re-runs getTourState() server-side and reopens the tour on top
-        // of the very page this link was pointing at (most visible on
-        // the Settings rows, e.g. Seo Panel API). A cookie is the only
-        // way to signal "suppress the next auto-show" across that
-        // tab boundary - localStorage/sessionStorage don't help here
-        // since the new tab's fresh document.ready() fires before any
-        // JS in it could read same-tab state, and this needs to reach
-        // the SERVER before it decides whether to echo the auto-show
-        // script at all. 10s is generous for the new tab's first
-        // request to land; default.ctp.php clears the cookie as soon as
-        // it's consumed so it only ever suppresses that one page load.
+        // The new tab IS a completely fresh page load, which re-runs
+        // getTourState() server-side and would otherwise reopen the tour
+        // on top of the very page this link was pointing at (most
+        // visible on the Settings rows, e.g. Seo Panel API) - stacking a
+        // second copy of this exact overlay on top of the one already
+        // open here. A cookie is the only way to signal "suppress the
+        // next auto-show" across that tab boundary - localStorage/
+        // sessionStorage don't help here since the new tab's fresh
+        // document.ready() fires before any JS in it could read same-tab
+        // state, and this needs to reach the SERVER before it decides
+        // whether to echo the auto-show script at all. 10s is generous
+        // for the new tab's first request to land; default.ctp.php
+        // clears the cookie as soon as it's consumed so it only ever
+        // suppresses that one page load.
         document.cookie = 'sp_tour_suppress_once=1; path=/; max-age=10; SameSite=Lax';
     };
 
