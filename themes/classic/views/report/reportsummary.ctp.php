@@ -260,7 +260,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
-					$rankInfo = $positionInfo[$seInfo['id']];
+					$rankInfo = $positionInfo[$seInfo['id']] ?? [];
 					$prevRank = isset($rankInfo[$fromTime]) ? $rankInfo[$fromTime] : "";
 					$currRank = isset($rankInfo[$toTime]) ? $rankInfo[$toTime] : "";
 					$rankDiffTxt = "";

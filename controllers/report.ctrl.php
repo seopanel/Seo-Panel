@@ -392,11 +392,11 @@ class ReportController extends Controller {
 			foreach($indexList as $keywordId => $rankValue){
 			    $listInfo = $keywordList[$keywordId];
 				$positionInfo = $listInfo['position_info'];
-				
+
 				$valueList = array(neutralizeCsvFormula($listInfo['weburl']), neutralizeCsvFormula($listInfo['name']));
 				foreach ($this->seLIst as $index => $seInfo){
 
-					$rankInfo = $positionInfo[$seInfo['id']];
+					$rankInfo = $positionInfo[$seInfo['id']] ?? [];
 					$prevRank = isset($rankInfo[$fromTimeTxt]) ? $rankInfo[$fromTimeTxt] : "";
 					$currRank = isset($rankInfo[$toTimeTxt]) ? $rankInfo[$toTimeTxt] : "";
 					$rankDiff = "";
@@ -1464,11 +1464,11 @@ class ReportController extends Controller {
     			foreach($indexList as $keywordId => $rankValue){
     				$listInfo = $keywordList[$keywordId];
     				$positionInfo = $listInfo['position_info'];
-    			
+
     				$valueList = array(neutralizeCsvFormula($listInfo['weburl']), neutralizeCsvFormula($listInfo['name']));
     				foreach ($this->seLIst as $index => $seInfo){
 
-    					$rankInfo = $positionInfo[$seInfo['id']];
+    					$rankInfo = $positionInfo[$seInfo['id']] ?? [];
     					$prevRank = isset($rankInfo[$fromTimeShort]) ? $rankInfo[$fromTimeShort] : "";
     					$currRank = isset($rankInfo[$toTimeShort]) ? $rankInfo[$toTimeShort] : "";
     					$rankDiff = "";
