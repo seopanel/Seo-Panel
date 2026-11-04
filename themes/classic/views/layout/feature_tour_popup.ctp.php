@@ -373,7 +373,12 @@ function tourText($key, $default) {
                     <div class="sp-tour-field-err" id="tour_web_err_review"></div>
 
                     <button type="button" class="sp-confirm-btn sp-confirm-btn-confirm" id="tour_web_submit_btn" onclick="window._tourSubmitWebsite()" style="margin-top:10px;">
-                        <i class="fas fa-plus" style="margin-right:5px;"></i><?php echo tourText('tour_add_website_btn', 'Add Website') ?>
+                        <!-- fa-check, not fa-plus: this is the tour's one-time "save my
+                             first website and continue" action (see tour_step2_heading
+                             above, "Add Your First Website"), not an "add another entry"
+                             button like the real Website Manager's - a plus icon here
+                             read as "add one more website" out of context -->
+                        <i class="fas fa-check" style="margin-right:5px;"></i><?php echo tourText('tour_add_website_btn', 'Add Website') ?>
                     </button>
                 <?php } ?>
             </div>
