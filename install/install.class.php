@@ -32,7 +32,14 @@ class Install {
 		$phpClass = "red";
 		$phpSupport = "No";
 		$phpVersion = phpversion();
-		if (intval($phpVersion) >= 5) {			
+		// was `intval($phpVersion) >= 5`, stale since at least PHP 5.4
+		// (the label here still said "5.4.0" while the actual check
+		// would pass any PHP 5.x at all, 5.0-5.3 included) - 8.1 is the
+		// real floor this codebase works to: it's the exact version
+		// where mysqli's default error-reporting behavior changed, and
+		// DBI::connectDatabase()/MysqliHelper both explicitly code
+		// around that cutover rather than either side of it
+		if (version_compare($phpVersion, '8.1.0', '>=')) {
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -129,7 +136,7 @@ class Install {
 			<table width="100%" class="formtab">
 				<tr><th colspan="2" class="header">Server Compatibility</th></tr>
 				<tr>
-					<th>PHP Version >= 5.4.0</th>
+					<th>PHP Version >= 8.1.0</th>
 					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 				</tr>
 				<tr>
@@ -803,7 +810,14 @@ class Install {
 		$phpClass = "red";
 		$phpSupport = "No";
 		$phpVersion = phpversion();
-		if (intval($phpVersion) >= 5) {			
+		// was `intval($phpVersion) >= 5`, stale since at least PHP 5.4
+		// (the label here still said "5.4.0" while the actual check
+		// would pass any PHP 5.x at all, 5.0-5.3 included) - 8.1 is the
+		// real floor this codebase works to: it's the exact version
+		// where mysqli's default error-reporting behavior changed, and
+		// DBI::connectDatabase()/MysqliHelper both explicitly code
+		// around that cutover rather than either side of it
+		if (version_compare($phpVersion, '8.1.0', '>=')) {
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -901,7 +915,7 @@ class Install {
 			<table width="100%" class="formtab">
 				<tr><th colspan="2" class="header">System Compatibility</th></tr>
 				<tr>
-					<th>PHP Version >= 5.4.0</th>
+					<th>PHP Version >= 8.1.0</th>
 					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 				</tr>
 				<tr>
