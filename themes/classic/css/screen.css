@@ -1824,6 +1824,11 @@ div.tab button.active {	background-color: #ccc;}
     font-weight: 700;
 }
 
+.spapi-free-badge-sep {
+    opacity: 0.55;
+    margin: 0 2px;
+}
+
 .spapi-upgrade-contact {
     margin-top: 12px;
     font-size: 13px;
