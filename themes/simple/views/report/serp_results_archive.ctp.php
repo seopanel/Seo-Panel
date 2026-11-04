@@ -230,7 +230,7 @@
 								$resultBase = preg_replace('#^https?://(www\.)?#i', '', $resultUrl);
 								$isMatch    = !empty($matchBase) && (stripos($resultBase, $matchBase) === 0);
 							?>
-							<tr class="serp-archive-row" data-txt="<?php echo htmlspecialchars(strtolower(($result['title'] ?: '') . ' ' . $resultUrl))?>" <?php echo $isMatch ? 'style="background:#fdf2da;"' : ''?>>
+							<tr class="serp-archive-row" data-txt="<?php echo htmlspecialchars(strtolower(($result['title'] ?? '') . ' ' . $resultUrl))?>" <?php echo $isMatch ? 'style="background:#fdf2da;"' : ''?>>
 								<td class="text-center text-muted"><?php echo intval($result['rank'])?></td>
 								<td style="font-size:0.85rem; word-break:break-all;">
 									<?php if ($isMatch): ?>
@@ -238,7 +238,7 @@
 									<?php endif; ?>
 									<a href="<?php echo htmlspecialchars($resultUrl)?>" target="_blank" rel="noopener"
 									   <?php echo $isMatch ? 'style="font-weight:600;"' : ''?>>
-										<?php echo htmlspecialchars($result['title'] ?: $resultUrl)?>
+										<?php echo htmlspecialchars($result['title'] ?? $resultUrl)?>
 									</a>
 									<br><a href="<?php echo htmlspecialchars($resultUrl)?>" target="_blank" rel="noopener" style="color:#8a8ea3; font-weight:400; font-size:13px;"><?php echo htmlspecialchars($resultUrl)?></a>
 								</td>

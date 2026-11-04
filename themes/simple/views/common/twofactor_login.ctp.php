@@ -20,7 +20,7 @@
 								Code
 							</label>
 							<input type="text" class="form-control login-input" id="code" name="code" required="required" placeholder="123456" autocomplete="one-time-code" inputmode="numeric" autofocus>
-							<?php echo $errMsg['code'] ? $errMsg['code']."<br>" : ""?>
+							<?php echo !empty($errMsg['code']) ? $errMsg['code']."<br>" : ""?>
 						</div>
 
 						<button name="verify" type="submit" class="btn btn-primary btn-login">

@@ -58,7 +58,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		<tr>
 			<th><?php echo $spText['common']['Name']?>: </th>
 			<td>
-				<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'], ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
+				<input type="text" name="search_name" value="<?php echo htmlentities($searchInfo['search_name'] ?? '', ENT_QUOTES)?>" onblur="<?php echo $submitLink?>" class="form-control">
 			</td>
 			<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 			<td>
@@ -129,7 +129,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 	}
 
 	// url parameters
-	$mainLink = SP_WEBPATH."/reports.php?sec=reportsum&website_id=$websiteId&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
+	$mainLink = SP_WEBPATH."/reports.php?sec=reportsum&website_id=$websiteId&from_time=$fromTime&to_time=$toTime&search_name=" . ($searchInfo['search_name'] ?? '');
 	$directLink = $mainLink . "&order_col=$orderCol&order_val=$orderVal&pageno=$pageNo";
 	
 	// export links
@@ -260,7 +260,7 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				<?php }?>
 				<?php
 				foreach ($seList as $index => $seInfo){
-					$rankInfo = $positionInfo[$seInfo['id']];
+					$rankInfo = $positionInfo[$seInfo['id']] ?? [];
 					$prevRank = isset($rankInfo[$fromTime]) ? $rankInfo[$fromTime] : "";
 					$currRank = isset($rankInfo[$toTime]) ? $rankInfo[$toTime] : "";
 					$rankDiffTxt = "";

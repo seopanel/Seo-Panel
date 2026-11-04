@@ -192,10 +192,10 @@ if (!empty($noWebsites)) {
 										<th>#</th>
 										<th><?php echo $spText['common']['Name']?></th>
 										<th><?php echo $spTextSocialMedia['Platform']?></th>
-										<th><?php echo $spText['common']['Followers']?></th>
-										<th><?php echo $spText['common']['Likes']?></th>
+										<th><?php echo $spText['label']['Followers']?></th>
+										<th><?php echo $spText['label']['Likes']?></th>
 										<th><?php echo $spTextSocialMedia['Last Checked']?></th>
-										<th><?php echo $spText['common']['Actions']?></th>
+										<th><?php echo $spText['common']['Action']?></th>
 									</tr>
 								</thead>
 								<tbody>

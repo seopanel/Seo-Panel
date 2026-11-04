@@ -39,7 +39,7 @@
 		<td class="td_right_col">
 			<select name="website_id" id="website_id" onchange="doLoad('website_id', 'websites.php', 'weburlarea', 'sec=updateurl')" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $post['website_id']){
+					<?php if($websiteInfo['id'] == ($post['website_id'] ?? null)){
 					    $websiteUrl = $websiteInfo['url'];
 					    ?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -48,8 +48,8 @@
 					<?php }?>
 				<?php }?>
 			</select>
-			<span id="weburlarea"><input type="hidden" name="weburl" id="weburl" value="<?php echo $websiteUrl?>"></span>
-			<?php echo $errMsg['website_id']?>
+			<span id="weburlarea"><input type="hidden" name="weburl" id="weburl" value="<?php echo $websiteUrl ?? ''?>"></span>
+			<?php echo $errMsg['website_id'] ?? ''?>
 			<div class="float-right mt-2">
 				<a href="javascript:void(0);" onclick="crawlMetaData('websites.php?sec=crawlmeta&keyinput=keywords', 'crawlstats')" class="btn btn-info btn-sm">&#171&#171 <?php echo $spText['common']['Crawl Meta Data']?></a>
 				<span id="crawlstats" class="ml-2"></span>
@@ -68,7 +68,7 @@
 			<?php echo $this->render('country/countryselectbox', 'ajax'); ?>
 		</td>
 	</tr>
-	<?php $post['searchengines'] = is_array($post['searchengines']) ? $post['searchengines'] : array(); ?>
+	<?php $post['searchengines'] = is_array($post['searchengines'] ?? null) ? $post['searchengines'] : array(); ?>
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Search Engine']?>:</td>
 		<td class="td_right_col">
@@ -78,7 +78,7 @@
 					<option value="<?php echo $seInfo['id']?>" <?php echo $selected?>><?php echo $seInfo['domain']?></option>
 				<?php }?>
 			</select>
-			<?php echo $errMsg['searchengines']?>
+			<?php echo $errMsg['searchengines'] ?? ''?>
 			<br>
 			<input type="checkbox" id="select_all" onclick="selectAllOptions('searchengines', true); $('clear_all').checked=false;"> <?php echo $spText['label']['Select All']?>
 			&nbsp;&nbsp;
@@ -88,8 +88,8 @@
 	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['common']['Keywords']?>:</td>
 		<td class="td_right_col">
-			<textarea name="keywords" rows="10" id="webkeywords" class="form-control"><?php echo $post['keywords']?></textarea>
-			<p><?php echo $errMsg['keywords']?></p>
+			<textarea name="keywords" rows="10" id="webkeywords" class="form-control"><?php echo $post['keywords'] ?? ''?></textarea>
+			<p><?php echo $errMsg['keywords'] ?? ''?></p>
 			<p style="font-size: 12px;"><?php echo $spTextKeyword['Insert keywords separated with comma']?></p>
 			<P><b>Eg:</b> google seo tools,seo tools,seo</P>
 		</td>

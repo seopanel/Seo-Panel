@@ -17,7 +17,7 @@
         if (!empty($custSubMenu)) {
             $ovTabView = "active";
         } else {
-            switch ($post['dashboard']) {
+            switch ($post['dashboard'] ?? '') {
                 case "reports":
                     $dbTabClass = "active";
                     break;

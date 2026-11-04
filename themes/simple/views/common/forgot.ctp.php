@@ -21,8 +21,8 @@
 								<i class="fas fa-envelope"></i>
 								<?php echo $spText['login']['Email']?>
 							</label>
-							<input type="email" name="email" value="<?php echo htmlentities($post['email'], ENT_QUOTES)?>" required="required" class="form-control forgot-input" id="email" placeholder="<?php echo $spText['login']['Email placeholder']?>" autocomplete="email">
-							<?php echo $errMsg['email']?>
+							<input type="email" name="email" value="<?php echo htmlentities($post['email'] ?? '', ENT_QUOTES)?>" required="required" class="form-control forgot-input" id="email" placeholder="<?php echo $spText['login']['Email placeholder']?>" autocomplete="email">
+							<?php echo $errMsg['email'] ?? ''?>
 						</div>
 
 						<div class="form-group">
@@ -39,9 +39,9 @@
 								<div class="captcha-wrapper">
 									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image" alt="<?php echo htmlspecialchars($spText['login']['Enter the code as it is shown'])?>">
 								</div>
-								<input type="text" name="code" value="<?php echo $post['code']?>" required="required" class="form-control forgot-input" id="code" placeholder="Enter the code">
+								<input type="text" name="code" value="<?php echo $post['code'] ?? ''?>" required="required" class="form-control forgot-input" id="code" placeholder="Enter the code">
 							<?php }?>
-							<?php echo $errMsg['code']?>
+							<?php echo $errMsg['code'] ?? ''?>
 						</div>
 
 						<?php if (!isLoggedIn()) { ?>

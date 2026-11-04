@@ -37,8 +37,8 @@
 	<tr class="white_row">
 		<td class="td_left_col"><label for="keywordname"><?php echo $spText['common']['Name']?>:</label></td>
 		<td class="td_right_col">
-			<input type="text" id="keywordname" name="name" value="<?php echo $post['name']?>" class="form-control">
-			<?php echo $errMsg['name']?>
+			<input type="text" id="keywordname" name="name" value="<?php echo $post['name'] ?? ''?>" class="form-control">
+			<?php echo $errMsg['name'] ?? ''?>
 		</td>
 	</tr>
 	<tr class="blue_row">
@@ -46,14 +46,14 @@
 		<td class="td_right_col">
 			<select name="website_id" id="keyword_website_id" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
-					<?php if($websiteInfo['id'] == $post['website_id']){?>
+					<?php if($websiteInfo['id'] == ($post['website_id'] ?? null)){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
 					<?php }else{?>
 						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
 					<?php }?>
 				<?php }?>
 			</select>
-			<?php echo $errMsg['website_id']?>
+			<?php echo $errMsg['website_id'] ?? ''?>
 		</td>
 	</tr>
 	<tr class="white_row">
@@ -68,7 +68,7 @@
 			<?php echo $this->render('country/countryselectbox', 'ajax'); ?>
 		</td>
 	</tr>
-	<?php $post['searchengines'] = is_array($post['searchengines']) ? $post['searchengines'] : array(); ?>
+	<?php $post['searchengines'] = is_array($post['searchengines'] ?? null) ? $post['searchengines'] : array(); ?>
 	<tr class="white_row">
 		<td class="td_left_col"><label for="searchengines"><?php echo $spText['common']['Search Engine']?>:</label></td>
 		<td class="td_right_col">
@@ -77,7 +77,7 @@
 					<?php $selected = in_array($seInfo['id'], $post['searchengines']) ? "selected" : ""?>
 					<option value="<?php echo $seInfo['id']?>" <?php echo $selected?>><?php echo $seInfo['domain']?></option>
 				<?php }?>
-			</select> <?php echo $errMsg['searchengines']?>
+			</select> <?php echo $errMsg['searchengines'] ?? ''?>
 			<br>
 			<input type="checkbox" id="select_all" onclick="selectAllOptions('searchengines', true); $('clear_all').checked=false;"> <label for="select_all"><?php echo $spText['label']['Select All']?></label>
 			&nbsp;&nbsp;

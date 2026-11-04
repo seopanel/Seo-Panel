@@ -192,7 +192,7 @@ if (!empty($noWebsites)) {
 										<th><?php echo $spTextReview['Total Reviews']?></th>
 										<th><?php echo $spTextReview['Average Rating']?></th>
 										<th><?php echo $spTextSocialMedia['Last Checked']?></th>
-										<th><?php echo $spText['common']['Actions']?></th>
+										<th><?php echo $spText['common']['Action']?></th>
 									</tr>
 								</thead>
 								<tbody>

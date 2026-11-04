@@ -42,7 +42,7 @@
 								<select name="utype_id" class="form-control register-input" id="utype_id">
 									<?php
 									foreach ($userTypeList as $userTypeInfo) {
-										$selected = ($post['utype_id'] == $userTypeInfo['id']) ? "selected" : "";
+										$selected = (($post['utype_id'] ?? null) == $userTypeInfo['id']) ? "selected" : "";
 										$typeLabel = ucfirst($userTypeInfo['user_type']) . " - ";
 
 										// if user type have price
@@ -57,7 +57,7 @@
 									}
 									?>
 								</select>
-								<?php echo $errMsg['utype_id'] ? "<br>". $errMsg['utype_id'] : $errMsg['utype_id']?>
+								<?php echo !empty($errMsg['utype_id']) ? "<br>". $errMsg['utype_id'] : ''?>
 								<div style="margin-top: 8px;">
 									<a href="<?php echo SP_WEBPATH . "/register.php?sec=pricing"; ?>" class="pricing-link">
 										<i class="fas fa-info-circle"></i>
@@ -99,7 +99,7 @@
 									}
 									?>
 								</select>
-								<?php echo $errMsg['pg_id']?>
+								<?php echo $errMsg['pg_id'] ?? ''?>
 							</div>
 							<?php
 						} else {
@@ -117,8 +117,8 @@
 								<i class="fas fa-user"></i>
 								<?php echo $spText['login']['Username']?>
 							</label>
-							<input type="text" name="userName" value="<?php echo $post['userName']?>" class="form-control register-input" id="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
-							<?php echo $errMsg['userName']?>
+							<input type="text" name="userName" value="<?php echo $post['userName'] ?? ''?>" class="form-control register-input" id="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
+							<?php echo $errMsg['userName'] ?? ''?>
 						</div>
 
 						<div class="row">
@@ -129,7 +129,7 @@
 										<?php echo $spText['login']['Password']?>
 									</label>
 									<input type="password" name="password" value="" class="form-control register-input" id="password" required="required" placeholder="<?php echo $spText['login']['Password placeholder']?>" autocomplete="new-password">
-									<?php echo $errMsg['password']?>
+									<?php echo $errMsg['password'] ?? ''?>
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -155,8 +155,8 @@
 										<i class="fas fa-user"></i>
 										<?php echo $spText['login']['First Name']?>
 									</label>
-									<input type="text" name="firstName" value="<?php echo $post['firstName']?>" class="form-control register-input" id="firstName" required="required" placeholder="<?php echo $spTextRegister['First name placeholder']?>" autocomplete="given-name">
-									<?php echo $errMsg['firstName']?>
+									<input type="text" name="firstName" value="<?php echo $post['firstName'] ?? ''?>" class="form-control register-input" id="firstName" required="required" placeholder="<?php echo $spTextRegister['First name placeholder']?>" autocomplete="given-name">
+									<?php echo $errMsg['firstName'] ?? ''?>
 								</div>
 							</div>
 							<div class="col-md-6">
@@ -165,8 +165,8 @@
 										<i class="fas fa-user"></i>
 										<?php echo $spText['login']['Last Name']?>
 									</label>
-									<input type="text" name="lastName" value="<?php echo $post['lastName']?>" class="form-control register-input" id="lastName" required="required" placeholder="<?php echo $spTextRegister['Last name placeholder']?>" autocomplete="family-name">
-									<?php echo $errMsg['lastName']?>
+									<input type="text" name="lastName" value="<?php echo $post['lastName'] ?? ''?>" class="form-control register-input" id="lastName" required="required" placeholder="<?php echo $spTextRegister['Last name placeholder']?>" autocomplete="family-name">
+									<?php echo $errMsg['lastName'] ?? ''?>
 								</div>
 							</div>
 						</div>
@@ -176,8 +176,8 @@
 								<i class="fas fa-envelope"></i>
 								<?php echo $spText['login']['Email']?>
 							</label>
-							<input type="email" name="email" value="<?php echo $post['email']?>" class="form-control register-input" id="email" required="required" placeholder="your@email.com" autocomplete="email">
-							<?php echo $errMsg['email']?>
+							<input type="email" name="email" value="<?php echo $post['email'] ?? ''?>" class="form-control register-input" id="email" required="required" placeholder="your@email.com" autocomplete="email">
+							<?php echo $errMsg['email'] ?? ''?>
 						</div>
 
 						<div class="register-section-title">
@@ -199,9 +199,9 @@
 								<div class="captcha-wrapper">
 									<img src="<?php echo SP_WEBPATH?>/visual-captcha.php" class="captcha-image" alt="<?php echo htmlspecialchars($spText['login']['Enter the code as it is shown'])?>">
 								</div>
-								<input type="text" name="code" value="<?php echo $post['code']?>" class="form-control register-input" id="code" required="required" placeholder="Enter the code">
+								<input type="text" name="code" value="<?php echo $post['code'] ?? ''?>" class="form-control register-input" id="code" required="required" placeholder="Enter the code">
 							<?php }?>
-							<?php echo $errMsg['code']?>
+							<?php echo $errMsg['code'] ?? ''?>
 						</div>
 
 						<div class="register-actions">
