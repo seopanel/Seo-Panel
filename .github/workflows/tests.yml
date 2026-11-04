@@ -25,6 +25,87 @@ on:
   workflow_dispatch:
 
 jobs:
+  installUpgradeHttpTests:
+    runs-on: ubuntu-latest
+
+    # Drives install/index.php and install/upgrade.php over real HTTP,
+    # the same way a real browser does - unlike the spTests job below,
+    # which seeds the database directly and never touches install/ at
+    # all. That gap is exactly why a whole chain of real install/upgrade
+    # bugs (an unbounded telemetry DNS lookup, a blank-UI gap, a stale
+    # service worker intercepting the install request, gzip compression
+    # breaking the live progress bar, a progress callback that flooded
+    # the page with 1400+ inline <script> blocks, and a login lockout
+    # for every admin upgrading from a pre-7.0.0 database) went
+    # undetected by every check that existed before this job. See
+    # tests/install_upgrade_http_test.php for what each check guards.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Check out sp (full history, for the 6.0.0 upgrade-seed tag)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # PHP 8.1+ because that's this project's real documented minimum
+      # (install/install.class.php's own requirements check) - the
+      # installer and login's rate-limit handling both depend on PHP
+      # 8.1's mysqli_report() behavior change, see install/dbi.class.php
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli, curl, gd, mbstring, xml, dom, simplexml, zip, json, fileinfo
+          coverage: none
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 30); do
+            mysqladmin ping -h 127.0.0.1 -u root -prootpass --silent && break
+            sleep 2
+          done
+
+      - name: Extract the 6.0.0 upgrade-seed files
+        run: |
+          git show 6.0.0:install/data/seopanel.sql > /tmp/old_seopanel.sql
+          git show 6.0.0:install/data/textlang.sql > /tmp/old_textlang.sql
+
+      - name: Prepare a fresh-extraction webroot
+        run: |
+          : > config/sp-config.php
+          chmod 666 config/sp-config.php
+          chmod 777 tmp
+
+      - name: Start the PHP built-in server
+        run: |
+          php -S 127.0.0.1:8080 &
+          for i in $(seq 1 15); do
+            curl -sf -o /dev/null http://127.0.0.1:8080/install/ && break
+            sleep 1
+          done
+
+      - name: Run the install/upgrade HTTP test
+        env:
+          SEOPANEL_URL: http://127.0.0.1:8080
+          SEOPANEL_WEBROOT: ${{ github.workspace }}
+          SEOPANEL_DB_HOST: 127.0.0.1
+          SEOPANEL_DB_USER: root
+          SEOPANEL_DB_PASS: rootpass
+          SEOPANEL_OLD_SEOPANEL_SQL: /tmp/old_seopanel.sql
+          SEOPANEL_OLD_TEXTLANG_SQL: /tmp/old_textlang.sql
+        run: php tests/install_upgrade_http_test.php
+
   spTests:
     runs-on: ubuntu-latest
 
