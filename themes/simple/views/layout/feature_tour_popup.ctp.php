@@ -788,6 +788,21 @@ function tourText($key, $default) {
     window.featureTourPauseOnLinkClick = function() {
         _tourSaveStep();
         $('#sp_tour_overlay').fadeOut(200);
+        // Every one of these links opens in a new tab (target="_blank"),
+        // so fading out the overlay above only affects the tab the user
+        // stays on - the new tab is a completely fresh page load, which
+        // re-runs getTourState() server-side and reopens the tour on top
+        // of the very page this link was pointing at (most visible on
+        // the Settings rows, e.g. Seo Panel API). A cookie is the only
+        // way to signal "suppress the next auto-show" across that
+        // tab boundary - localStorage/sessionStorage don't help here
+        // since the new tab's fresh document.ready() fires before any
+        // JS in it could read same-tab state, and this needs to reach
+        // the SERVER before it decides whether to echo the auto-show
+        // script at all. 10s is generous for the new tab's first
+        // request to land; default.ctp.php clears the cookie as soon as
+        // it's consumed so it only ever suppresses that one page load.
+        document.cookie = 'sp_tour_suppress_once=1; path=/; max-age=10; SameSite=Lax';
     };
 
     function _tourDismiss(callback) {

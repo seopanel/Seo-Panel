@@ -238,7 +238,23 @@
         $spTourCtrl = new FeatureTourController();
         $spTourState = $spTourCtrl->getTourState(isLoggedIn());
         include_once(SP_VIEWPATH . "/layout/feature_tour_popup.ctp.php");
-        if (!empty($spTourState['show'])) {
+        // every tour link opens in a new tab and sets this cookie right
+        // before doing so (see featureTourPauseOnLinkClick() in
+        // feature_tour_popup.ctp.php) - the fresh page load in that new
+        // tab would otherwise re-trigger the auto-show below on top of
+        // the very page the user just navigated to from the tour. Read
+        // (not setcookie()'d away) here - by this point in the layout
+        // a few hundred lines of HTML/head content have already been
+        // echoed, so headers are long since sent and a PHP-side
+        // setcookie() would silently fail. Cleared via JS instead
+        // (below) immediately after being consumed, so it only ever
+        // suppresses this one page load, not every page the user
+        // visits afterward within the cookie's short lifetime.
+        $suppressTourOnce = !empty($_COOKIE['sp_tour_suppress_once']);
+        if ($suppressTourOnce) {
+            echo '<script>document.cookie = "sp_tour_suppress_once=; path=/; max-age=0";</script>';
+        }
+        if (!empty($spTourState['show']) && !$suppressTourOnce) {
             $tourStep = intval($spTourState['step']);
             echo '<script>$(document).ready(function(){ window.featureTourShow(' . $tourStep . '); });</script>';
         }
