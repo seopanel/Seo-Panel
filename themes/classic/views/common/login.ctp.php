@@ -24,7 +24,7 @@
 								<?php echo $spText['login']['Username']?>
 							</label>
 							<input type="text" class="form-control login-input" id="userName" name="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
-							<?php echo $errMsg['userName']?>
+							<?php echo $errMsg['userName'] ?? ''?>
 						</div>
 
 						<div class="form-group">
@@ -33,7 +33,7 @@
 								<?php echo $spText['login']['Password']?>
 							</label>
 							<input type="password" class="form-control login-input" id="password" name="password" required="required" placeholder="<?php echo $spText['login']['Password placeholder']?>" autocomplete="current-password">
-							<?php echo $errMsg['password'] ? $errMsg['password']."<br>" : ""?>
+							<?php echo ($errMsg['password'] ?? '') ? $errMsg['password']."<br>" : ""?>
 						</div>
 
 						<div class="form-group text-right">

@@ -27,7 +27,7 @@ class UserController extends Controller{
 	function index($info=[]){
 		
 		if(!isset($info['referer'])) {
-			$info['red_referer'] = isValidReferer($_SERVER['HTTP_REFERER']);
+			$info['red_referer'] = isValidReferer($_SERVER['HTTP_REFERER'] ?? '');
 			$this->set('post', $info);
 		}
 				
