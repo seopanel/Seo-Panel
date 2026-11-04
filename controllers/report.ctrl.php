@@ -1200,9 +1200,9 @@ class ReportController extends Controller {
 	}
 	
 	# func to show quick rank report
-	function showQuickRankChecker($keywordInfo=[]) {		
-		$keywordInfo['searchengines'] = $keywordInfo['se_id'];
-		$this->showAll = $keywordInfo['show_all'];
+	function showQuickRankChecker($keywordInfo=[]) {
+		$keywordInfo['searchengines'] = $keywordInfo['se_id'] ?? '';
+		$this->showAll = $keywordInfo['show_all'] ?? false;
 		
 		$seController = New SearchEngineController();
 		$this->seList = $seController->__getAllCrawlFormatedSearchEngines();
@@ -1212,15 +1212,16 @@ class ReportController extends Controller {
 		$resultList = array();
 		$pending = false;
 		$aio = null;
-		if(!empty($crawlResult[$keywordInfo['se_id']]['status'])){
-			$resultList = $crawlResult[$keywordInfo['se_id']]['matched'];
-			$pending = empty($resultList) && !empty($crawlResult[$keywordInfo['se_id']]['pending']);
+		$seId = $keywordInfo['se_id'] ?? '';
+		if(!empty($crawlResult[$seId]['status'])){
+			$resultList = $crawlResult[$seId]['matched'];
+			$pending = empty($resultList) && !empty($crawlResult[$seId]['pending']);
 
-			if (!empty($crawlResult[$keywordInfo['se_id']]['aio'])) {
+			if (!empty($crawlResult[$seId]['aio'])) {
 				include_once(SP_CTRLPATH."/aioverview.ctrl.php");
 				$subdomainPolicy = defined('SP_AIO_SUBDOMAIN_MATCH') ? SP_AIO_SUBDOMAIN_MATCH : 'registrable';
-				$websiteUrl = formatUrl($keywordInfo['url'], false);
-				$aio = AIOverviewController::computeCitation($crawlResult[$keywordInfo['se_id']]['aio'], $websiteUrl, $subdomainPolicy);
+				$websiteUrl = formatUrl($keywordInfo['url'] ?? '', false);
+				$aio = AIOverviewController::computeCitation($crawlResult[$seId]['aio'], $websiteUrl, $subdomainPolicy);
 			}
 		}
 		$this->set('list', $resultList);

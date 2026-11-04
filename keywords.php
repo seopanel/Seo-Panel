@@ -126,8 +126,8 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "keywordbox":
-			$controller->set('keyNull', $_GET['keyNull']);
-			$controller->showKeywordSelectBox($userId, $_GET['website_id']);
+			$controller->set('keyNull', $_GET['keyNull'] ?? '');
+			$controller->showKeywordSelectBox($userId, $_GET['website_id'] ?? '');
 			break;
 
 		default:
