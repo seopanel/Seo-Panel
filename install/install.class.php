@@ -87,8 +87,7 @@ class Install {
 				// unclosed HTML (no </div>/</body>/</html>) with no way
 				// forward for a user who just lands on /install/ or
 				// resubmits the install form after already installing
-				echo "<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>";
-				echo "<p><a href='".SP_WEBPATH."/login.php'>Go to login</a></p>";
+				$this->showAlreadyInstalledPage(SP_INSTALLED);
 				$this->showDefaultFooter();
 				exit;
 			}
@@ -240,7 +239,17 @@ class Install {
 		</div>
 		</form>
 		<script>
+		var installSubmitted = false;
 		function validateInstallForm() {
+			// guards against a slow-looking submit (the install can take a
+			// real handful of seconds) being clicked/resubmitted twice,
+			// which fires a second install against the now-partially-
+			// populated database and surfaces as a confusing
+			// "Duplicate entry" error
+			if (installSubmitted) {
+				return false;
+			}
+
 			var errors = [];
 			var errDiv = document.getElementById('validationErrors');
 
@@ -266,6 +275,12 @@ class Install {
 			}
 
 			errDiv.style.display = 'none';
+			installSubmitted = true;
+			var submitBtn = document.querySelector('#installForm input[type="submit"]');
+			if (submitBtn) {
+				submitBtn.disabled = true;
+				submitBtn.value = 'Installing…';
+			}
 			return true;
 		}
 
@@ -432,8 +447,7 @@ class Install {
 				// unclosed HTML (no </div>/</body>/</html>) with no way
 				// forward for a user who just lands on /install/ or
 				// resubmits the install form after already installing
-				echo "<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>";
-				echo "<p><a href='".SP_WEBPATH."/login.php'>Go to login</a></p>";
+				$this->showAlreadyInstalledPage(SP_INSTALLED);
 				$this->showDefaultFooter();
 				exit;
 			}
@@ -477,12 +491,14 @@ class Install {
 			return;
 		}
 
+		$this->updateInstallProgress('Finalizing installation…');
+
 		# write to config file
 		$this->writeConfigFile($info);
-		
+
 		# create API Key if not exists
-		$this->createSeoPanelAPIKey($db);		
-		
+		$this->createSeoPanelAPIKey($db);
+
 		// Best-effort telemetry ping - must never be able to hold up the
 		// install response. This used to gate on gethostbynamel('seopanel.org'),
 		// a raw DNS lookup with NO timeout parameter in PHP: on a server
@@ -518,6 +534,8 @@ class Install {
 		$sql = "update users set email='".addslashes($info['email'])."' where id=1";
 		$db->query($sql);
 
+		$this->updateInstallProgress('Setting up plugins…');
+
 		// auto-install + activate the plugins shipped with this release
 		// (ArticleSubmitter, QuickWebProxy, SeoDiary, MetaTagGenerator -
 		// see CLAUDE.md's "Active Plugins" list) so a fresh install has
@@ -535,6 +553,8 @@ class Install {
 		// select timezones
 		$sql = "select * from timezone order by id";
 		$timezoneList = $db->select($sql);
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Requirements</div>
@@ -755,21 +775,19 @@ class Install {
 
 			$errMsg = $db->importDatabaseFile($file['path'], $block, $onProgress);
 			if ($block && $db->error) {
-				?>
-				<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
-				<?php
-				flush();
+				$this->hideInstallProgress();
 				return $errMsg;
 			}
 
 			$linesDoneBefore += $fileLineCounts[$key];
 		}
-		?>
-		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
-		<?php
-		flush();
-		if (ob_get_level() > 0) { @ob_flush(); }
 
+		// deliberately NOT hiding the progress wrap here on success - the
+		// caller (proceedInstallation()/proceedUpgrade()) still has real
+		// work left (config write, plugin activation, telemetry, etc.)
+		// and must keep updating/eventually hide it itself via
+		// updateInstallProgress()/hideInstallProgress(), so the page never
+		// goes blank between "import done" and the final success page.
 		return '';
 	}
 
@@ -1095,6 +1113,8 @@ class Install {
 		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
 
+		$this->updateInstallProgress('Finalizing upgrade…');
+
 		# create API Key if not exists
 		$this->createSeoPanelAPIKey($db);
 
@@ -1124,6 +1144,8 @@ class Install {
 				}
 			}
 		}
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Check</div>
@@ -1181,8 +1203,66 @@ class Install {
 		</form>
 		<?php
 	}
-	
-	
+
+	/**
+	 * Shared "already installed" interstitial - shown when checkRequirements()
+	 * or proceedInstallation() find SP_INSTALLED already defined. Styled to
+	 * match the rest of the wizard (steps header, content-section, button)
+	 * rather than the plain unstyled paragraph+link this used to be.
+	 */
+	function showAlreadyInstalledPage($version) {
+		?>
+		<h1 class="BlockHeader">Already Installed</h1>
+		<div class="content-section">
+			<div class="info-box">
+				<h3>Seo Panel is already installed</h3>
+				<p>Version <?php echo htmlspecialchars($version); ?> is currently running on this system.</p>
+			</div>
+			<div class="alert alert-info">
+				<strong>Starting over?</strong> Remove or empty the existing database and clear <b>config/sp-config.php</b> first, then reload this page.
+			</div>
+		</div>
+		<div class="button-section">
+			<a href="<?php echo SP_WEBPATH; ?>/login.php" class="button" style="text-decoration:none; display:inline-block;">Go to Login &rarr;</a>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Updates the live progress bar left on screen by importWithProgress()
+	 * without hiding it - used to bridge the steps AFTER the SQL import
+	 * finishes (config write, plugin activation, telemetry ping, etc.) so
+	 * the page never goes visually blank/frozen between "import done" and
+	 * the final success page. Before this, importWithProgress() hid the
+	 * progress bar the moment the SQL import itself finished, leaving
+	 * several seconds of no visible feedback while proceedInstallation()
+	 * kept working - easily mistaken for a hang, and the natural reaction
+	 * (resubmitting the form) fires a second, overlapping install against
+	 * the same now-partially-populated database ("Duplicate entry" errors).
+	 */
+	function updateInstallProgress($text, $percent = 100) {
+		?>
+		<script>
+		(function(){
+			var fill = document.getElementById('installProgressFill');
+			var text = document.getElementById('installProgressText');
+			if (fill) { fill.style.width = '<?php echo (int) $percent; ?>%'; }
+			if (text) { text.textContent = '<?php echo addslashes($text); ?>'; }
+		})();
+		</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+	}
+
+	function hideInstallProgress() {
+		?>
+		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+	}
+
 	# func to show default install header
 	function showDefaultHeader() {
 		?>

@@ -332,6 +332,26 @@ td.warning {
     opacity: 0.9;
 }
 
+/* Info box (e.g. "already installed") */
+.info-box {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #ffffff;
+    padding: 25px;
+    text-align: center;
+    border-radius: 8px;
+    margin: 15px 0;
+}
+
+.info-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+}
+
+.info-box p {
+    margin: 0;
+    opacity: 0.9;
+}
+
 /* Credentials box */
 .credentials-box {
     background: #f8f9fa;
