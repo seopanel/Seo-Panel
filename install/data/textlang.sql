@@ -33348,3 +33348,14 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('zh', 'panel', 'Scheduler Health', '调度器状态'),
 ('ja', 'panel', 'Scheduler Health', 'スケジューラの状態'),
 ('ar', 'panel', 'Scheduler Health', 'حالة المجدول');
+
+-- Dashboard > Analytics tab: Detailed Statistics table column headers -
+-- were referenced in themes/classic/views/dashboard/analytics_main.ctp.php
+-- but never seeded, so every visitor saw a raw PHP warning in place of
+-- each header (same class of bug as SP_AI_INSIGHTS_EMAIL_NOTIFICATION/
+-- SP_SETUP_WIZARD before it). English only, matching this project's
+-- convention of leaving other languages for the community.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'common', 'Current Value', 'Current Value'),
+('en', 'common', 'Previous Value', 'Previous Value'),
+('en', 'common', 'Change', 'Change');

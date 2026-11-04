@@ -2177,3 +2177,13 @@ ALTER TABLE `auditorreports` ADD COLUMN `fetch_fail_count` tinyint(3) UNSIGNED N
 -- button (the latter uses directory_link directly, with no
 -- addHttpToUrl() upgrade-to-https fallback like the name link has).
 UPDATE `featured_directories` SET `directory_link` = 'https://directory.seopanel.org/submit.php?LINK_TYPE=featured' WHERE `id` = 1 AND `directory_link` = 'http://directory.seopanel.org/submit.php?LINK_TYPE=featured';
+
+-- Dashboard > Analytics/Search Console/Website Analytics/Directory
+-- Submission tabs' shared "Detailed Statistics" table column headers -
+-- referenced in each view but never seeded, so every visitor saw a raw
+-- PHP warning in place of each header (same class of bug as
+-- SP_AI_INSIGHTS_EMAIL_NOTIFICATION/SP_SETUP_WIZARD before it).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'common', 'Current Value', 'Current Value'),
+('en', 'common', 'Previous Value', 'Previous Value'),
+('en', 'common', 'Change', 'Change');

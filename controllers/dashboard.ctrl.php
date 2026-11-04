@@ -27,7 +27,7 @@ class DashboardController extends Controller {
     function __construct() {
         parent::__construct();
     	$this->set('pageScriptPath', $this->pageScriptPath);
-    	$this->set( 'pageNo', $_REQUEST['pageno']);
+    	$this->set( 'pageNo', $_REQUEST['pageno'] ?? '');
     }
 
     /**
