@@ -17,5 +17,20 @@ self.addEventListener('activate', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+	// Scope defaults to "/" (this file is served from the site root), so
+	// without this check a service worker registered from any earlier
+	// logged-in session at this origin keeps intercepting requests on
+	// EVERY later visit - including a fresh install/upgrade run at the
+	// same URL, started from a completely different database. Streamed,
+	// flush()-based responses (install/upgrade's live progress bar - see
+	// Install::importWithProgress()) passed through a service worker's
+	// fetch() re-dispatch are a known rough edge: browsers often buffer
+	// the whole response before delivering any of it to the page instead
+	// of truly streaming it, which makes a successful install look
+	// frozen partway through even though the server already finished.
+	// The installer/upgrader must always hit the network directly.
+	if (event.request.url.indexOf('/install/') !== -1 || event.request.url.indexOf('/upgrade.php') !== -1) {
+		return;
+	}
 	event.respondWith(fetch(event.request));
 });
