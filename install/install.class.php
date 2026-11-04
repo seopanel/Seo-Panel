@@ -521,31 +521,31 @@ class Install {
 		$this->createSeoPanelAPIKey($db);
 
 		// Best-effort telemetry ping - must never be able to hold up the
-		// install response. This used to gate on gethostbynamel('seopanel.org'),
-		// a raw DNS lookup with NO timeout parameter in PHP: on a server
-		// with restricted/firewalled outbound network access, that call
-		// can hang indefinitely, leaving the browser stuck showing only
-		// the page header right after the progress bar reaches 100% -
-		// even though the database import (the only part that actually
-		// matters) already completed. A direct curl call with short,
-		// explicit connect/total timeouts replaces both the DNS
-		// pre-check and Spider::getContent() (whose shared timeout
-		// defaults are tuned for crawling slow third-party sites, not
-		// for a one-off localhost-adjacent install step).
+		// install response, not even briefly. This started out gated on
+		// gethostbynamel('seopanel.org'), a raw DNS lookup with NO
+		// timeout parameter in PHP, then became a direct curl_exec()
+		// with short (3s connect / 5s total) timeouts - safer than an
+		// unbounded hang, but still a real window where this request
+		// sends ZERO bytes to the browser while curl blocks. That silent
+		// gap, sitting right where real users keep reporting the install
+		// "freezing" even after every earlier fix in this chain, is
+		// exactly the kind of dead air a browser/corporate proxy/local
+		// security software can treat as a stalled connection and give
+		// up on - especially on a real network with different DNS/
+		// connectivity characteristics than this project's own dev/CI
+		// environment, where the blocking call never reproduced the
+		// problem. A non-critical analytics ping must never be able to
+		// introduce ANY blocking gap here, so it's dispatched as a fully
+		// detached background process instead: PHP does not wait on it
+		// at all, and if shell_exec is unavailable (common on locked-
+		// down shared hosting) the ping is simply skipped rather than
+		// falling back to anything that blocks.
 		include(SP_INSTALL_CONFIG_FILE);
 		include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
 		$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
 		$installUpdateUrl .= "&version=".SP_INSTALLED;
-		if (function_exists('curl_init')) {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $installUpdateUrl);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-			@curl_exec($ch);
-			curl_close($ch);
+		if (function_exists('shell_exec')) {
+			@shell_exec('curl -s -m 5 ' . escapeshellarg($installUpdateUrl) . ' > /dev/null 2>&1 &');
 		}
 		
 		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
