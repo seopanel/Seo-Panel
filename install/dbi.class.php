@@ -145,6 +145,7 @@ class DBI{
 			return false;
 		}
 		$totalLines = count($lines);
+		$lastProgressTime = 0;
 
 		// bug fix: with $block=false (the upgrade path - a replayed
 		// migration can legitimately fail on a statement that already
@@ -192,10 +193,25 @@ class DBI{
 				$tmpline = '';
 			}
 
-			// throttled to every 25 lines - frequent enough to feel live,
-			// infrequent enough that the flush() overhead never dominates
-			if ($onProgress !== null && ($lineIndex % 25 === 0 || $lineIndex === $totalLines - 1)) {
-				call_user_func($onProgress, $lineIndex + 1, $totalLines);
+			// throttled by wall-clock time (not line count): a fixed
+			// "every 25 lines" meant a file's update count scaled with
+			// its size, not its import time - textlang.sql alone is
+			// ~33k lines, so the old throttle emitted 1400+ separate
+			// flush()'d inline <script> blocks into a single response.
+			// Each one synchronously blocks the HTML parser and forces
+			// a DOM mutation; that volume is enough to visibly stall a
+			// browser's rendering well before the network transfer
+			// itself finishes - reported as the page never advancing
+			// past an earlier progress step even though the import
+			// completes normally server-side. Capping to at most ~5
+			// updates/second keeps the bar feeling live regardless of
+			// file size while keeping the total script count bounded.
+			if ($onProgress !== null) {
+				$now = microtime(true);
+				if ($lineIndex === $totalLines - 1 || ($now - $lastProgressTime) >= 0.2) {
+					call_user_func($onProgress, $lineIndex + 1, $totalLines);
+					$lastProgressTime = $now;
+				}
 			}
 		}
 	}
