@@ -483,22 +483,32 @@ class Install {
 		# create API Key if not exists
 		$this->createSeoPanelAPIKey($db);		
 		
-		if(gethostbynamel('seopanel.org')){
-		    include_once(SP_INSTALL_DIR.'/../libs/spider.class.php');
-		    // NOT include_once: SP_INSTALL_CONFIG_FILE was already
-		    // include_once()'d above (the already-installed guard) back
-		    // when config/sp-config.php was still blank, so PHP would
-		    // silently skip re-reading it here and leave SP_WEBPATH and
-		    // friends undefined - fataling sp-config-extra.php below,
-		    // which assumes they're already defined. writeConfigFile()
-		    // has since rewritten the file with real values, so this
-		    // needs a genuine re-read, not a no-op.
-		    include(SP_INSTALL_CONFIG_FILE);
-		    include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
-			$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
-			$installUpdateUrl .= "&version=".SP_INSTALLED;
-			$spider = New Spider();
-			$spider->getContent($installUpdateUrl, false, false);
+		// Best-effort telemetry ping - must never be able to hold up the
+		// install response. This used to gate on gethostbynamel('seopanel.org'),
+		// a raw DNS lookup with NO timeout parameter in PHP: on a server
+		// with restricted/firewalled outbound network access, that call
+		// can hang indefinitely, leaving the browser stuck showing only
+		// the page header right after the progress bar reaches 100% -
+		// even though the database import (the only part that actually
+		// matters) already completed. A direct curl call with short,
+		// explicit connect/total timeouts replaces both the DNS
+		// pre-check and Spider::getContent() (whose shared timeout
+		// defaults are tuned for crawling slow third-party sites, not
+		// for a one-off localhost-adjacent install step).
+		include(SP_INSTALL_CONFIG_FILE);
+		include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
+		$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
+		$installUpdateUrl .= "&version=".SP_INSTALLED;
+		if (function_exists('curl_init')) {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $installUpdateUrl);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+			@curl_exec($ch);
+			curl_close($ch);
 		}
 		
 		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
