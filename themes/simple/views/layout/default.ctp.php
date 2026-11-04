@@ -364,7 +364,13 @@
     }
     ?>
 
-    <div class="container-fluid" style="margin-bottom: 50px;">
+    <!-- sp-main-content: flex-grows to fill the viewport on a page shorter
+         than it (see body's own comment in screen.css), pushing footer-sp
+         down to the true bottom instead of leaving dead space below it -
+         a dedicated class since .container-fluid alone is also used
+         elsewhere on this same page (including the footer itself) and
+         can't be targeted on its own. -->
+    <div class="container-fluid sp-main-content" style="margin-bottom: 50px;">
     	<div class="row">
     		<?php echo $viewContent?>
     	</div>
