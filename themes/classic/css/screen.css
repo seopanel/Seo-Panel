@@ -3715,6 +3715,31 @@ a.btn, a.btn:hover {
    whole page down by the inset clears it. */
 body {
     padding-top: env(safe-area-inset-top, 0px);
+    /* Sticky footer: on a page shorter than the viewport, plain document
+       flow (see footer-sp's own comment on why this isn't position:fixed
+       anymore) left the footer sitting right after the short content,
+       with a large, visually dead gap of plain body background between
+       it and the actual bottom of the viewport - looked like the page
+       just stopped partway down. flex-column + min-height:100vh here,
+       paired with footer-sp's margin-top:auto below, pushes the footer
+       (and anything after it in the DOM) down to the true bottom of the
+       viewport when content is short, while changing nothing for a page
+       taller than the viewport - footer-sp's margin-top:auto has no free
+       space left to absorb in that case, so it just follows the content
+       exactly as before. */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Sticky footer, part 2: the content wrapper grows to absorb any extra
+   space in the flex column above (see body's own comment), so footer-sp
+   lands at the true bottom of a short page instead of right after the
+   content with dead space below it. flex-shrink:0 matters here - without
+   it, a page TALLER than the viewport could have this shrink below its
+   own content height instead of just scrolling normally like before. */
+.sp-main-content {
+    flex: 1 0 auto;
 }
 
 /* === PWA mobile bottom tab bar (see menu/pwa_bottom_nav.ctp.php) ===
