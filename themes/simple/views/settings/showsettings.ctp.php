@@ -106,12 +106,19 @@ if ($category == "moz") {
 			</div>
 		</div>
 		<?php
+		// Shown immediately (not hidden-until-clicked) - unlike the
+		// global auto-popup in default.ctp.php, which defers while the
+		// Feature Tour hasn't been finished/skipped ANYWHERE in the app
+		// yet (to avoid two full-screen overlays racing on the same
+		// page), that deferral doesn't apply here: this page is reached
+		// via the tour's own step 3 link, which opens in a separate tab,
+		// and the tour is prevented from reopening in that tab (see
+		// sp_tour_suppress_once in default.ctp.php). A user arriving on
+		// the page whose entire purpose is registering for the Seo
+		// Panel API, specifically because they clicked a link about
+		// registering for it, should see the registration flow without
+		// an extra click on the "Register" button below.
 		include(SP_VIEWPATH."/settings/spapi_register_popup.ctp.php");
-		?>
-		<script type="text/javascript">
-		$('#spapi_popup_overlay').hide();
-		</script>
-		<?php
 	}
 }
 ?>
