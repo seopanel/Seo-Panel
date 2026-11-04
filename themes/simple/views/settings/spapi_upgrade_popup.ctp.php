@@ -132,7 +132,7 @@ window.spapiUpgradeLoadPlans = function() {
 							html += '<div class="spapi-plan-detail"><i class="fas fa-check"></i>' + plan.features[j] + '</div>';
 						}
 					}
-					html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt" style="margin-right:5px;"></i>Get Started</span></div>';
+					html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt"></i>Get Started</span></div>';
 					html += '</div>';
 				}
 				$('#spapi_upgrade_plans_list').html(html);

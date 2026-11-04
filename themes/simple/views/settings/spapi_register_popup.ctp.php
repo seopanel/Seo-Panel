@@ -171,9 +171,9 @@ window.spapiLoadPlans = function() {
 						}
 					}
 					if (!isFree) {
-						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt" style="margin-right:5px;"></i>Get Started</span></div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt"></i>Get Started</span></div>';
 					} else {
-						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn cta-free"><i class="fas fa-check-circle" style="margin-right:5px;"></i>Select</span></div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn cta-free"><i class="fas fa-check-circle"></i>Select</span></div>';
 					}
 					html += '</div>';
 				}

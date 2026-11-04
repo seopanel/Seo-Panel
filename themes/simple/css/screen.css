@@ -3948,7 +3948,10 @@ a:hover .far {
 }
 
 .spapi-plan-cta-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
     width: 100%;
     font-size: 11px;
     font-weight: 700;
@@ -3959,7 +3962,6 @@ a:hover .far {
     border: 1px solid #bee3f8;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
-    text-align: center;
     box-sizing: border-box;
 }
 
