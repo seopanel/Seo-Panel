@@ -182,7 +182,7 @@ $resp = httpPost("$baseUrl/install/", array(
 
 check($resp['code'] === 200, 'HTTP 200');
 check(stripos($resp['headers'], 'Content-Encoding: gzip') === false,
-	'response is not gzip-compressed (install/install.class.php disables it explicitly)');
+	'response is not gzip-compressed (mod_deflate buffers flush() output and breaks the live progress bar)');
 check(strpos($resp['body'], 'Installation Complete') !== false,
 	'reached the "Installation Complete" page');
 check(strpos($resp['body'], 'Duplicate entry') === false,
@@ -191,8 +191,8 @@ check(strpos($resp['body'], 'already installed') === false,
 	'did not hit the "already installed" guard');
 
 $scriptCount = substr_count($resp['body'], 'installProgressFill');
-check($scriptCount === 0,
-	"response has no live-progress script blocks at all ($scriptCount - the whole flush()-based streaming mechanism was removed as too fragile across real-world browsers/networks; regression guard against it quietly coming back)");
+check($scriptCount > 0 && $scriptCount < 200,
+	"progress-update script count is sane ($scriptCount - regression guard against emitting 1400+ inline <script> blocks on a large import)");
 
 $row = dbQuery($dbHost, $dbUser, $dbPass,
 	"SELECT COUNT(*) AS c FROM information_schema.tables WHERE table_schema='$dbFresh'");
@@ -344,8 +344,8 @@ if ($skipUpgrade) {
 			'admin session was accepted (not bounced to the login-required guard)');
 
 		$scriptCount2 = substr_count($resp2['body'], 'installProgressFill');
-		check($scriptCount2 === 0,
-			"upgrade response has no live-progress script blocks at all ($scriptCount2)");
+		check($scriptCount2 < 200,
+			"upgrade progress-update script count is sane ($scriptCount2)");
 
 		$row = dbQuery($dbHost, $dbUser, $dbPass,
 			"SELECT set_val FROM settings WHERE set_name='SP_VERSION_NUMBER'", $dbUpgrade);

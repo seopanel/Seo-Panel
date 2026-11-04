@@ -572,6 +572,8 @@ class Install {
 			return;
 		}
 
+		$this->updateInstallProgress('Finalizing installation…');
+
 		# write to config file
 		$this->writeConfigFile($info);
 
@@ -613,6 +615,8 @@ class Install {
 		$sql = "update users set email='".addslashes($info['email'])."' where id=1";
 		$db->query($sql);
 
+		$this->updateInstallProgress('Setting up plugins…');
+
 		// auto-install + activate the plugins shipped with this release
 		// (ArticleSubmitter, QuickWebProxy, SeoDiary, MetaTagGenerator -
 		// see CLAUDE.md's "Active Plugins" list) so a fresh install has
@@ -630,6 +634,8 @@ class Install {
 		// select timezones
 		$sql = "select * from timezone order by id";
 		$timezoneList = $db->select($sql);
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Requirements</div>
@@ -757,42 +763,112 @@ class Install {
 	}
 
 	/**
-	 * Imports one or more SQL files. Used by both proceedInstallation()
-	 * (fresh install) and proceedUpgrade() (existing installs can
-	 * replay many version-increment files).
+	 * Imports one or more SQL files while streaming a live progress bar
+	 * to the browser, instead of leaving the request looking hung for
+	 * however long a large database file takes. Used by both
+	 * proceedInstallation() (fresh install) and proceedUpgrade()
+	 * (existing installs can replay many version-increment files).
 	 *
-	 * This used to stream a live progress bar to the browser via
-	 * repeated flush() calls mid-response. Removed after it proved too
-	 * fragile across real-world browsers/networks/intermediaries to
-	 * trust for a worldwide release: across one testing session it was
-	 * fixed for an unbounded DNS lookup, a blank-UI gap, a stale service
-	 * worker intercepting the request, gzip compression buffering the
-	 * stream, a flood of 1400+ inline <script> blocks on a large import,
-	 * and a blocking telemetry call - and still intermittently appeared
-	 * to hang on at least one real browser even after every one of those
-	 * fixes, with every one of them verified working via curl and
-	 * automated headless-browser testing but not reliably reproducible
-	 * or debuggable against that specific real-world environment. A
-	 * plain, fully-synchronous response - the browser's own native
-	 * loading indicator is the only "progress bar" now - cannot get
-	 * stuck partway through, because nothing is delivered partway
-	 * through: there is no longer anything in this response for a proxy,
-	 * compressor, service worker, or stall-detection heuristic to
-	 * interfere with.
+	 * Deliberately NOT a separate AJAX/polling endpoint: this installer
+	 * is one synchronous request per step already, has to run unmodified
+	 * on the widest range of shared hosting, and flush()-ing progress
+	 * into the same response is the simplest thing that works within
+	 * that existing architecture - no new endpoint, no server-side state
+	 * to track between requests, nothing that can be blocked by
+	 * disable_functions on a locked-down host the way exec()/proc_open()
+	 * based approaches could be.
 	 *
-	 * $files is an array of ['path' => ..., 'label' => ...] (the label
-	 * is unused now but kept so callers don't need to change their call
-	 * sites). Returns '' on success, or an error message on the same
-	 * convention importDatabaseFile() itself uses ($db->error will also
-	 * be set).
+	 * $files is an array of ['path' => ..., 'label' => ...]. Returns ''
+	 * on success, or an error message on the same convention
+	 * importDatabaseFile() itself uses ($db->error will also be set).
 	 */
 	function importWithProgress($db, $files, $block = true, $stepsHtml = null, $heading = 'Installing Seo Panel') {
-		foreach ($files as $file) {
-			$errMsg = $db->importDatabaseFile($file['path'], $block);
+		if ($stepsHtml === null) {
+			$stepsHtml = '<div class="step completed"><span class="step-number"></span> Requirements</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step active"><span class="step-number">2</span> Database</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step"><span class="step-number">3</span> Complete</div>';
+		}
+
+		// ask any upstream proxy (nginx) not to buffer this response, and
+		// flush out any output buffering layer PHP itself may have
+		// started (the output_buffering ini setting) - otherwise our
+		// flush() calls below queue up and all arrive at once at the end
+		if (!headers_sent()) {
+			@header('X-Accel-Buffering: no');
+		}
+		while (ob_get_level() > 0) {
+			@ob_end_flush();
+		}
+
+		$fileLineCounts = array();
+		$totalLines = 0;
+		foreach ($files as $key => $file) {
+			// count(false) is a TypeError on PHP8 (not just a suppressible
+			// warning), so a missing/unreadable migration file must not
+			// reach count() at all - it previously fataled the whole
+			// upgrade/install chain here, before the real import loop
+			// below even got a chance to error_log() and move on
+			$lines = @file($file['path']);
+			$fileLineCounts[$key] = is_array($lines) ? count($lines) : 0;
+			$totalLines += $fileLineCounts[$key];
+		}
+		?>
+		<div id="installProgressWrap">
+			<div class="steps"><?php echo $stepsHtml; ?></div>
+			<h1 class="BlockHeader"><?php echo htmlspecialchars($heading); ?></h1>
+			<div class="content-section">
+				<div class="install-progress-track">
+					<div id="installProgressFill" class="install-progress-fill" style="width:0%;"></div>
+				</div>
+				<p id="installProgressText" class="install-progress-text">Preparing&hellip;</p>
+			</div>
+		</div>
+		<!-- padding to push this past small output buffers some hosts/proxies use before they start forwarding chunks
+		<?php echo str_repeat(' ', 4096); ?>
+		-->
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		$linesDoneBefore = 0;
+		foreach ($files as $key => $file) {
+			$label = $file['label'];
+			$baseline = $linesDoneBefore;
+
+			$onProgress = function($linesDone, $fileTotalLines) use ($label, $totalLines, $baseline) {
+				$overallDone = $baseline + $linesDone;
+				$percent = $totalLines > 0 ? min(100, (int) round(($overallDone / $totalLines) * 100)) : 100;
+				?>
+				<script>
+				(function(){
+					var fill = document.getElementById('installProgressFill');
+					var text = document.getElementById('installProgressText');
+					if (fill) { fill.style.width = '<?php echo $percent; ?>%'; }
+					if (text) { text.textContent = '<?php echo addslashes($label); ?>… (<?php echo $percent; ?>%)'; }
+				})();
+				</script>
+				<?php
+				flush();
+				if (ob_get_level() > 0) { @ob_flush(); }
+			};
+
+			$errMsg = $db->importDatabaseFile($file['path'], $block, $onProgress);
 			if ($block && $db->error) {
+				$this->hideInstallProgress();
 				return $errMsg;
 			}
+
+			$linesDoneBefore += $fileLineCounts[$key];
 		}
+
+		// deliberately NOT hiding the progress wrap here on success - the
+		// caller (proceedInstallation()/proceedUpgrade()) still has real
+		// work left (config write, plugin activation, telemetry, etc.)
+		// and must keep updating/eventually hide it itself via
+		// updateInstallProgress()/hideInstallProgress(), so the page never
+		// goes blank between "import done" and the final success page.
 		return '';
 	}
 
@@ -1130,6 +1206,8 @@ class Install {
 		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
 
+		$this->updateInstallProgress('Finalizing upgrade…');
+
 		# create API Key if not exists
 		$this->createSeoPanelAPIKey($db);
 
@@ -1159,6 +1237,8 @@ class Install {
 				}
 			}
 		}
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Check</div>
@@ -1239,6 +1319,41 @@ class Install {
 			<a href="<?php echo SP_WEBPATH; ?>/login.php" class="button" style="text-decoration:none; display:inline-block;">Go to Login &rarr;</a>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Updates the live progress bar left on screen by importWithProgress()
+	 * without hiding it - used to bridge the steps AFTER the SQL import
+	 * finishes (config write, plugin activation, telemetry ping, etc.) so
+	 * the page never goes visually blank/frozen between "import done" and
+	 * the final success page. Before this, importWithProgress() hid the
+	 * progress bar the moment the SQL import itself finished, leaving
+	 * several seconds of no visible feedback while proceedInstallation()
+	 * kept working - easily mistaken for a hang, and the natural reaction
+	 * (resubmitting the form) fires a second, overlapping install against
+	 * the same now-partially-populated database ("Duplicate entry" errors).
+	 */
+	function updateInstallProgress($text, $percent = 100) {
+		?>
+		<script>
+		(function(){
+			var fill = document.getElementById('installProgressFill');
+			var text = document.getElementById('installProgressText');
+			if (fill) { fill.style.width = '<?php echo (int) $percent; ?>%'; }
+			if (text) { text.textContent = '<?php echo addslashes($text); ?>'; }
+		})();
+		</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+	}
+
+	function hideInstallProgress() {
+		?>
+		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
 	}
 
 	# func to show default install header
