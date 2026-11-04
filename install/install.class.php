@@ -26,6 +26,53 @@ class Install {
 	// determined/recognized cleanly, surfaced on the Upgrade Complete page
 	var $upgradeVersionNote = null;
 
+	// holds the open file handle for acquireInstallLock()'s flock() -
+	// must stay referenced for the lock to remain held for the rest of
+	// the request (PHP releases a flock() automatically when its handle
+	// is closed or garbage collected, which an unused local variable
+	// could be at any point)
+	var $installLockHandle = null;
+
+	/**
+	 * Acquires an exclusive, non-blocking file lock for the rest of this
+	 * request, to prevent two concurrent install/upgrade submissions
+	 * racing against the same database. Without this, clicking "Install"
+	 * twice - easy to do with no live progress feedback while the import
+	 * runs, which can take up to 30 seconds - fires two requests that
+	 * both try to import the same SQL into the same tables at the same
+	 * time. Confirmed by deliberately firing two overlapping requests:
+	 * one completes normally, the other hits a near-instant duplicate-key
+	 * error and renders as a confusing partial failure, even though the
+	 * other request is quietly succeeding in the background at the same
+	 * moment - exactly what real users were hitting.
+	 *
+	 * Returns true if the lock was acquired (held until the script ends,
+	 * no explicit release needed), false if another install/upgrade is
+	 * already running. Fails OPEN (returns true) if the lock file simply
+	 * can't be created - e.g. a read-only data/ directory on some host -
+	 * rather than blocking every install anywhere this path isn't
+	 * writable; the race this guards against is far rarer than that.
+	 */
+	function acquireInstallLock() {
+		// tmp/ (not install/data/) deliberately - this project's own
+		// documented install step ("Set tmp/ directory to 777") exists
+		// precisely because the web server's user often can't write into
+		// whatever directory the uploaded files themselves are owned by
+		// on real hosting. Confirmed hitting exactly that here: fopen()
+		// on a path under install/data/ silently failed (the directory
+		// is owned by the deploying user, not world-writable) -
+		// triggering the fail-open fallback below on EVERY request, so
+		// the lock never actually locked anything. tmp/ is the one path
+		// this codebase already requires to be writable by whatever user
+		// the web server runs as.
+		$lockFile = SP_INSTALL_DIR . '/../tmp/.install.lock';
+		$this->installLockHandle = @fopen($lockFile, 'c');
+		if (!$this->installLockHandle) {
+			return true;
+		}
+		return flock($this->installLockHandle, LOCK_EX | LOCK_NB);
+	}
+
 	/**
 	 * Must run before ANY output - disables response compression for the
 	 * whole install/upgrade request. mod_deflate (Apache) and PHP's own
@@ -472,6 +519,19 @@ class Install {
 				$this->showDefaultFooter();
 				exit;
 			}
+		}
+
+		if (!$this->acquireInstallLock()) {
+			?>
+			<h1 class="BlockHeader">Installation In Progress</h1>
+			<div class="content-section">
+				<div class="alert alert-warning">
+					<strong>Another installation request is already running.</strong>
+					<p>This page was likely submitted more than once. Please wait a minute, then reload this page - the install will either show "Already Installed" (it finished) or let you try again.</p>
+				</div>
+			</div>
+			<?php
+			return;
 		}
 
 		// if mysqli function exists
@@ -1026,21 +1086,33 @@ class Install {
 			$this->checkUpgradeRequirements(true);
 			return;
 		}
-		
+
+		if (!$this->acquireInstallLock()) {
+			?>
+			<h1 class="BlockHeader">Upgrade In Progress</h1>
+			<div class="content-section">
+				<div class="alert alert-warning">
+					<strong>Another upgrade request is already running.</strong>
+					<p>This page was likely submitted more than once. Please wait a minute, then reload this page.</p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
 		include_once(SP_INSTALL_CONFIG_FILE);
 		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
-		
+
 		// check database connection
 		$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 		if($db->error){
 			$this->checkUpgradeRequirements(true, $errMsg);
 			return;
 		}
-		
-		// loop through upgrade files and import data to db - streamed with
-		// a live progress bar the same way proceedInstallation() is,
-		// since someone upgrading from a much older version can end up
-		// replaying many version-increment files here
+
+		// loop through upgrade files and import data to db - someone
+		// upgrading from a much older version can end up replaying many
+		// version-increment files here
 		$upgradeFileList = $this->getUpgradeDBFiles($db);
 		$upgradeFiles = array();
 		foreach ($upgradeFileList as $index => $dbFile) {

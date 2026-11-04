@@ -205,6 +205,90 @@ check(strpos(file_get_contents($configFile), "SP_INSTALLED") !== false,
 	'config/sp-config.php was written with SP_INSTALLED set');
 
 // ---------------------------------------------------------------------
+// Test 1b: two concurrent submissions must not corrupt each other
+// ---------------------------------------------------------------------
+// Removing the live progress bar (see install.class.php's
+// importWithProgress()) means a submit gives zero visual feedback for
+// up to ~30 seconds - exactly the condition under which a real user
+// clicked "Install" a second time, or the browser resubmitted the
+// form. Without a server-side lock, that fires two requests that both
+// import into the same empty database at once: one wins the race, the
+// other hits a near-instant MySQL duplicate-key error and renders as a
+// confusing failure even though the first request is quietly
+// succeeding at that same moment. Install::acquireInstallLock() guards
+// against this - this test fires two real overlapping HTTP requests
+// (not simulated) and asserts exactly one succeeds while the other
+// gets a clear "already running" message instead of a duplicate-key
+// error.
+
+echo "\n=== Concurrent double-submit smoke test ===\n";
+
+$dbRace = getenv('SEOPANEL_DB_RACE') ?: 'sp_test_race';
+dbQuery($dbHost, $dbUser, $dbPass, "DROP DATABASE IF EXISTS `$dbRace`");
+dbQuery($dbHost, $dbUser, $dbPass, "CREATE DATABASE `$dbRace` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+@unlink($webRoot . '/tmp/.install.lock');
+file_put_contents($configFile, '');
+chmod($configFile, 0666);
+
+$raceFields = array(
+	'sec' => 'proceedinstall',
+	'db_engine' => 'mysql',
+	'db_host' => $dbHost,
+	'db_name' => $dbRace,
+	'db_user' => $dbUser,
+	'db_pass' => $dbPass,
+	'email' => 'racetest@example.com',
+);
+
+$ch1 = curl_init("$baseUrl/install/");
+curl_setopt($ch1, CURLOPT_POST, true);
+curl_setopt($ch1, CURLOPT_POSTFIELDS, http_build_query($raceFields));
+curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch1, CURLOPT_TIMEOUT, 60);
+
+$ch2 = curl_init("$baseUrl/install/");
+curl_setopt($ch2, CURLOPT_POST, true);
+curl_setopt($ch2, CURLOPT_POSTFIELDS, http_build_query($raceFields));
+curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch2, CURLOPT_TIMEOUT, 60);
+
+$mh = curl_multi_init();
+curl_multi_add_handle($mh, $ch1);
+curl_multi_add_handle($mh, $ch2);
+// stagger the second request by ~1s (matching the real-world gap between
+// a user's two clicks) rather than firing both at the exact same
+// instant - still well within the ~5-30s the first request is running
+$ch2Started = false;
+$running = null;
+do {
+	curl_multi_exec($mh, $running);
+	if (!$ch2Started) {
+		usleep(1000 * 1000);
+		$ch2Started = true;
+	}
+	curl_multi_select($mh);
+} while ($running > 0);
+
+$body1 = curl_multi_getcontent($ch1);
+$body2 = curl_multi_getcontent($ch2);
+curl_multi_remove_handle($mh, $ch1);
+curl_multi_remove_handle($mh, $ch2);
+curl_multi_close($mh);
+curl_close($ch1);
+curl_close($ch2);
+
+$completeCount = (strpos($body1, 'Installation Complete') !== false ? 1 : 0)
+	+ (strpos($body2, 'Installation Complete') !== false ? 1 : 0);
+$inProgressCount = (strpos($body1, 'Installation In Progress') !== false ? 1 : 0)
+	+ (strpos($body2, 'Installation In Progress') !== false ? 1 : 0);
+$duplicateErrorCount = (strpos($body1, 'Duplicate entry') !== false ? 1 : 0)
+	+ (strpos($body2, 'Duplicate entry') !== false ? 1 : 0);
+
+check($completeCount === 1, "exactly one of the two concurrent requests completed the install (got $completeCount)");
+check($inProgressCount === 1, "exactly one of the two concurrent requests got the \"already running\" message (got $inProgressCount)");
+check($duplicateErrorCount === 0, "neither concurrent request surfaced a raw MySQL duplicate-key error ($duplicateErrorCount did)");
+
+// ---------------------------------------------------------------------
 // Test 2: upgrade from the previous major release (6.0.0 -> 7.0.0)
 // ---------------------------------------------------------------------
 
