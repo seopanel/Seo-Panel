@@ -2277,9 +2277,26 @@ PHP;
 		$windowStart = intval(floor(time() / 60));
 		$bucketKey = addslashes(substr($bucketKeyBase, 0, 100));
 
-		$this->db->query("INSERT INTO ai_visibility_rate_limit (bucket_key, window_start, hit_count)
+		$insertOk = $this->db->query("INSERT INTO ai_visibility_rate_limit (bucket_key, window_start, hit_count)
 				VALUES ('$bucketKey', $windowStart, 1)
 				ON DUPLICATE KEY UPDATE hit_count = hit_count + 1");
+
+		// bug fix: this previously failed CLOSED - if the query failed for
+		// any reason (most importantly, ai_visibility_rate_limit not
+		// existing yet on a database that hasn't run install/data/upgrade.sql's
+		// CREATE TABLE for it), $row stayed empty and this returned false,
+		// i.e. "rate limited". __checkLoginRateLimit() uses this to gate
+		// the login form's credential check entirely - so on any
+		// pre-upgrade database, EVERY login attempt silently failed
+		// regardless of password, with no way to tell why. That's a hard
+		// lockout for exactly the admin who needs to log in to reach
+		// install/upgrade.php (which itself requires an authenticated
+		// session) and run the very upgrade that would create this table.
+		// A rate limiter that is itself broken or not yet provisioned
+		// must fail open, never closed.
+		if (!$insertOk) {
+			return true;
+		}
 
 		$row = $this->dbHelper->getRow('ai_visibility_rate_limit', "bucket_key='$bucketKey' and window_start=$windowStart");
 		return !empty($row) && intval($row['hit_count']) <= $capPerMinute;
