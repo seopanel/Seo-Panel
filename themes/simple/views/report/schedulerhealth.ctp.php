@@ -161,7 +161,13 @@
         <p style="color:#666; font-size:13px; margin-top:0;">
             <?php echo $spTextPanel['jobqueuedesc'] ?? 'The chunked scheduler processes each tool in small, resumable steps instead of one long-running pass - faster to recover from an interruption, and the only mode this page\'s backlog/failure details below apply to. Fresh installs have this on by default; an install that upgraded from an older version may still have it off. There is no downside to enabling it.'; ?>
         </p>
-        <form method="post" action="cron.php">
+        <!-- AJAX submit (scriptDoLoadPost), not a plain form POST - a real
+             browser navigation to cron.php lands outside admin-panel.php's
+             shell entirely: no navbar/sidebar/CSS, and the page's own
+             static help-modal markup (normally hidden by Bootstrap's own
+             CSS, never loaded on a bare response) renders as plain visible
+             content instead. -->
+        <form method="post" id="shJobQueueForm" onsubmit="scriptDoLoadPost('cron.php', 'shJobQueueForm', 'content', ''); return false;">
             <input type="hidden" name="sec" value="save_job_queue_settings">
             <div class="sh-form-row">
                 <label><input type="checkbox" name="job_queue_enabled" value="1" <?php echo !empty($jobQueueEnabled) ? 'checked' : ''; ?>> <?php echo $spTextPanel['Enable resumable job queue'] ?? 'Enable resumable job queue'; ?></label>
@@ -280,7 +286,7 @@
             <?php echo $spTextPanel['pingtriggerdesc'] ?? "Point an external cron/uptime service (or your own crontab) at this URL to trigger short, budget-limited cron runs - useful on hosts where you can't set up a real system cron job."; ?>
         </p>
 
-        <form method="post" action="cron.php">
+        <form method="post" id="shPingSettingsForm" onsubmit="scriptDoLoadPost('cron.php', 'shPingSettingsForm', 'content', ''); return false;">
             <input type="hidden" name="sec" value="save_ping_settings">
             <div class="sh-form-row">
                 <label><input type="checkbox" name="ping_enabled" value="1" <?php echo !empty($pingEnabled) ? 'checked' : ''; ?>> <?php echo $spTextPanel['Enable ping trigger'] ?? 'Enable ping trigger'; ?></label>
@@ -300,7 +306,7 @@
         <div class="sh-empty"><?php echo $spTextPanel['No secret generated yet - generate one below before enabling the ping trigger.'] ?? 'No secret generated yet - generate one below before enabling the ping trigger.'; ?></div>
         <?php endif; ?>
 
-        <form method="post" action="cron.php" onsubmit="return confirm('<?php echo $spTextPanel['Regenerating the secret will invalidate the current ping URL. Continue?'] ?? 'Regenerating the secret will invalidate the current ping URL. Continue?'; ?>');">
+        <form method="post" id="shRegenSecretForm" onsubmit="if (!confirm('<?php echo $spTextPanel['Regenerating the secret will invalidate the current ping URL. Continue?'] ?? 'Regenerating the secret will invalidate the current ping URL. Continue?'; ?>')) { return false; } scriptDoLoadPost('cron.php', 'shRegenSecretForm', 'content', ''); return false;">
             <input type="hidden" name="sec" value="regenerate_ping_secret">
             <button type="submit" class="sh-btn secondary"><i class="fas fa-key"></i> <?php echo $spTextPanel['Generate new secret'] ?? 'Generate new secret'; ?></button>
         </form>
