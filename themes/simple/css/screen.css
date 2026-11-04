@@ -4040,6 +4040,19 @@ a:hover .far {
     margin-top: 4px;
 }
 
+.spapi-free-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 12px;
+    background: #d4edda;
+    color: #1e7e34;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
 .spapi-upgrade-contact {
     margin-top: 12px;
     font-size: 13px;

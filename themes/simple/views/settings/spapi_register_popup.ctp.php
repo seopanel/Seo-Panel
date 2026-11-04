@@ -13,7 +13,7 @@
 					</div>
 					<div class="spapi-upgrade-alert-text">
 						<div>Connect to the <strong>Seo Panel API</strong> to unlock additional SEO features and services.</div>
-						<div class="spapi-upgrade-alert-sub">Registration is completely free — no credit card required.</div>
+						<div class="spapi-free-badge"><i class="fas fa-check-circle"></i> Registration is completely free — no credit card required.</div>
 					</div>
 				</div>
 			</div>
