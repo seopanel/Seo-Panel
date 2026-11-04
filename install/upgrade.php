@@ -28,6 +28,7 @@ session_start();
 error_reporting(0);
 
 $install = New Install();
+$install->disableOutputCompression();
 
 # installation configiration
 define("SP_INSTALL_DIR", getcwd());

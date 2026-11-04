@@ -26,6 +26,27 @@ class Install {
 	// determined/recognized cleanly, surfaced on the Upgrade Complete page
 	var $upgradeVersionNote = null;
 
+	/**
+	 * Must run before ANY output - disables response compression for the
+	 * whole install/upgrade request. mod_deflate (Apache) and PHP's own
+	 * zlib.output_compression both buffer output internally to compress
+	 * it efficiently, which defeats importWithProgress()'s flush()-based
+	 * live progress bar: real browsers always send "Accept-Encoding:
+	 * gzip", so on any host with compression enabled (confirmed present
+	 * here, invisible to a plain curl test since curl doesn't request
+	 * compression by default) the progress updates get buffered and
+	 * delivered in uneven, stalled-looking bursts instead of flowing
+	 * live - easily read as the install being frozen even though the
+	 * server is working the whole time and the response does eventually
+	 * arrive complete.
+	 */
+	function disableOutputCompression() {
+		@ini_set('zlib.output_compression', '0');
+		if (function_exists('apache_setenv')) {
+			@apache_setenv('no-gzip', '1');
+		}
+	}
+
 	# func to check requirements
 	function checkRequirements($error=false) {		
 		
