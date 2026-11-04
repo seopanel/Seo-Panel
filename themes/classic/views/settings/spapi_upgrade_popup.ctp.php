@@ -103,6 +103,7 @@ window.spapiUpgradeLoadPlans = function() {
 				for (var i = 0; i < plans.length; i++) {
 					var plan = plans[i];
 					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : (plan.serp_limit || 0);
+					var searchVolumeLimit = (plan.limits && plan.limits.SEARCH_VOLUME) ? plan.limits.SEARCH_VOLUME : (plan.search_volume_limit || 0);
 					var icon = planIcons[i] || 'fa-layer-group';
 					var isPopularUpgrade = i === 0;
 					html += '<div class="spapi-plan-card" data-plan-index="' + i + '" onclick="window.spapiUpgradeSelectPlan(' + i + ')">';
@@ -122,6 +123,9 @@ window.spapiUpgradeLoadPlans = function() {
 					}
 					if (serpLimit) {
 						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
+					}
+					if (searchVolumeLimit) {
+						html += '<div class="spapi-plan-detail"><i class="fas fa-chart-line"></i>' + searchVolumeLimit.toLocaleString() + ' search volume lookups/mo</div>';
 					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {

@@ -131,6 +131,7 @@ window.spapiLoadPlans = function() {
 					var priceText = isFree ? 'Free' : '$' + plan.price + '<span>/mo</span>';
 					var icon = planIcons[i] || 'fa-layer-group';
 					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : (plan.serp_limit || 0);
+					var searchVolumeLimit = (plan.limits && plan.limits.SEARCH_VOLUME) ? plan.limits.SEARCH_VOLUME : (plan.search_volume_limit || 0);
 
 					if (isFree) {
 						window.spapiSelectedPlan = i;
@@ -160,6 +161,9 @@ window.spapiLoadPlans = function() {
 					}
 					if (serpLimit) {
 						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
+					}
+					if (searchVolumeLimit) {
+						html += '<div class="spapi-plan-detail"><i class="fas fa-chart-line"></i>' + searchVolumeLimit.toLocaleString() + ' search volume lookups/mo</div>';
 					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {
