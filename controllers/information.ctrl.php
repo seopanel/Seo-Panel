@@ -33,7 +33,7 @@ class InformationController extends Controller {
 	function showNews($secInfo='') {
 		
 		// switch trhough sections
-		switch($secInfo['sec_name']){
+		switch($secInfo['sec_name'] ?? ''){
 				
 			default:
 				
