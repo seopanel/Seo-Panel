@@ -700,7 +700,7 @@ class Install {
 							<?php
 							foreach ($timezoneList as $timezoneInfo) {
 								?>
-								<option value="<?php echo $timezoneInfo['timezone_name']?>"><?php echo $timezoneInfo['timezone_label']?></option>
+								<option value="<?php echo $timezoneInfo['timezone_name']?>" data-offset="<?php echo $timezoneInfo['gmt_diff']?>"><?php echo $timezoneInfo['timezone_label']?></option>
 								<?php
 							}
 							?>
@@ -719,14 +719,31 @@ class Install {
 		</form>
 		<script type="text/javascript">
 		(function() {
-			// Auto-select timezone based on browser
+			// Auto-select timezone based on browser. This list is a curated ~90-zone
+			// set (one representative city per UTC offset), not the full IANA tz
+			// database, so an exact name match (eg. "Europe/Paris") often doesn't
+			// exist even though the browser reports it correctly - fall back to
+			// matching on the browser's current UTC offset (data-offset, from the
+			// same gmt_diff this list is already grouped by) when that happens.
 			try {
 				var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-				if (tz) {
-					var tzSel = document.getElementById('install_time_zone');
-					if (tzSel) {
+				var tzSel = document.getElementById('install_time_zone');
+				if (tz && tzSel) {
+					var matchedTz = false;
+					for (var i = 0; i < tzSel.options.length; i++) {
+						if (tzSel.options[i].value === tz) {
+							tzSel.selectedIndex = i;
+							matchedTz = true;
+							break;
+						}
+					}
+					if (!matchedTz) {
+						var offsetMin = -new Date().getTimezoneOffset();
+						var sign = offsetMin < 0 ? '-' : '+';
+						var absMin = Math.abs(offsetMin);
+						var offsetStr = sign + ('0' + Math.floor(absMin / 60)).slice(-2) + ':' + ('0' + (absMin % 60)).slice(-2);
 						for (var i = 0; i < tzSel.options.length; i++) {
-							if (tzSel.options[i].value === tz) {
+							if (tzSel.options[i].getAttribute('data-offset') === offsetStr) {
 								tzSel.selectedIndex = i;
 								break;
 							}
