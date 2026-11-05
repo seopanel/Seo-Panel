@@ -2,7 +2,7 @@
 	<div class="sp-confirm-box" style="max-width: 600px; width: 95%">
 		<div class="sp-confirm-header">
 			<i class="fas fa-cloud-download-alt"></i>
-			<span><?php echo $spTextSettings['Upgrade Now']?></span>
+			<span><?php echo !empty($spTextSettings['Upgrade Now']) ? $spTextSettings['Upgrade Now'] : 'Upgrade Now'?></span>
 		</div>
 		<div class="sp-confirm-body">
 			<div id="online_upgrade_message"></div>

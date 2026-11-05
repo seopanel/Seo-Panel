@@ -293,7 +293,17 @@ class SettingsController extends Controller{
 
 	    echo $oldVersion ? showErrorMsg($message, false) : showSuccessMsg($message, false);
 	    if ($oldVersion) {
-	        echo '<div class="text-center" style="margin-top:10px;"><a class="btn btn-primary" href="javascript:void(0);" onclick="window.onlineUpgradeStart()">'.$this->spTextSettings['Upgrade Now'].'</a></div>';
+	        // 'Upgrade Now' (texts table, category 'settings') was only
+	        // added 2026-09-05 - on a database old enough to predate that
+	        // row, $spTextSettings['Upgrade Now'] is simply missing, so
+	        // this rendered a blank button instead of a fatal error (array
+	        // access on a missing key is just a warning, unlike the
+	        // undefined-constant class of bug fixed earlier for settings).
+	        // Same fix shape: a safe literal fallback, since the generic
+	        // $spText['label']/$spText['common'] groups loaded this early
+	        // don't reliably have an equivalent string either.
+	        $upgradeNowLabel = !empty($this->spTextSettings['Upgrade Now']) ? $this->spTextSettings['Upgrade Now'] : 'Upgrade Now';
+	        echo '<div class="text-center" style="margin-top:10px;"><a class="btn btn-primary" href="javascript:void(0);" onclick="window.onlineUpgradeStart()">'.$upgradeNowLabel.'</a></div>';
 	    }
 	}
 
