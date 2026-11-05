@@ -953,6 +953,27 @@ class Install {
 	}
 
 
+	/**
+	 * The version this build actually upgrades TO - read from
+	 * sp-config-sample.php's own SP_INSTALLED line (the same source
+	 * writeConfigFile() copies from on a fresh install), not from the
+	 * SP_INSTALLED constant, which at this point in the upgrade flow is
+	 * still whatever the user's live config/sp-config.php says - their
+	 * CURRENT (pre-upgrade) version, not the target. proceedUpgrade()
+	 * already does this exact lookup to patch the user's config file
+	 * once the upgrade finishes; this is the same logic, reusable
+	 * wherever the page needs to tell the admin what they're upgrading
+	 * TO before that point (e.g. the "Upgrade to vX" button label,
+	 * previously showing their current version instead).
+	 */
+	function getUpgradeTargetVersion() {
+		$sampleConfig = @file_get_contents(SP_INSTALL_CONFIG_SAMPLE);
+		if ($sampleConfig !== false && preg_match("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'([^']+)'\\s*\\)/", $sampleConfig, $m)) {
+			return $m[1];
+		}
+		return defined('SP_INSTALLED') ? SP_INSTALLED : '';
+	}
+
 	# func to check upgrade requirements
 	function checkUpgradeRequirements($error=false, $errorMsg='') {
 
@@ -1099,7 +1120,8 @@ class Install {
 		<input type="hidden" value="<?php echo $configClass;?>" name="config">
 		<input type="hidden" value="<?php echo $dbClass;?>" name="db_support">
 		<input type="hidden" value="proceedupgrade" name="sec">
-		<?php $submitLabel = defined('SP_INSTALLED') ? "Upgrade to v".SP_INSTALLED : "Upgrade Seo Panel"; ?>
+		<?php $upgradeTargetVersion = $this->getUpgradeTargetVersion(); ?>
+		<?php $submitLabel = $upgradeTargetVersion ? "Upgrade to v".$upgradeTargetVersion : "Upgrade Seo Panel"; ?>
 		<div class="button-section">
 			<input type="submit" value="<?php echo $submitLabel?> &rarr;" name="submit" class="button">
 		</div>
