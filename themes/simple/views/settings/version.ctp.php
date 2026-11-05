@@ -37,5 +37,21 @@
 			</a>
 		</td>
 	</tr>
+	<tr class="white_row">
+		<td colspan="2" class="text-center" style="padding: 15px;">
+			<!-- Direct link to the manual upgrade wizard (install/upgrade.php)
+				 - previously the only way an admin could reach it was typing
+				 the URL themselves; this "Upgrade Now" / "View Update" page
+				 only ever linked to the automated online-download flow
+				 (window.onlineUpgradeStart()), which downloads and replaces
+				 files first. An admin who already uploaded newer files
+				 themselves (the standard self-hosted upgrade method) just
+				 needs to run the DB migration, with nothing to download. -->
+			<a class="btn btn-outline-primary" href="<?php echo SP_WEBPATH; ?>/install/upgrade.php" target="_blank">
+				<i class="fas fa-database"></i> Run Database Migration
+			</a>
+			<div style="font-size:12px; color:#6c757d; margin-top:8px;">Already uploaded newer files yourself? Use this to finish migrating the database.</div>
+		</td>
+	</tr>
 </table>
 <?php include(SP_VIEWPATH."/settings/online_upgrade_popup.ctp.php"); ?>
