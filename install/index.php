@@ -45,20 +45,20 @@ $install->showDefaultHeader();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 	
-	switch($_POST['sec']){
-		
+	switch($_POST['sec'] ?? ''){
+
 		case "startinstall":
 			$install->startInstallation($_POST);
 			break;
-		
+
 		case "proceedinstall":
 			$install->proceedInstallation($_POST);
-			break;			
+			break;
 	}
-	
+
 }else{
-	
-	switch($_GET['sec']){
+
+	switch($_GET['sec'] ?? ''){
 
 		default:
 			$install->checkRequirements();
