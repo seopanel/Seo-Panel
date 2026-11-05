@@ -104,7 +104,7 @@
 </head>
 <body class="bg-light">
     <script type="text/javascript">
-    var spdemo = <?php echo SP_DEMO; ?>;
+    var spdemo = <?php echo (defined('SP_DEMO') ? intval(SP_DEMO) : 0); ?>;
     var wantproceed = '<?php  echo $spText['label']['wantproceed']; ?>';
     </script>
     

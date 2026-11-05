@@ -143,7 +143,72 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 			define($settingsInfo['set_name'], $settingsInfo['set_val']);
 		}
 	}
-	
+
+	// Every setting below was introduced by some later upgrade_vX_vY.sql
+	// migration and is read unconditionally (no defined() guard) in one
+	// or more view/controller files - fine for any database that has
+	// actually run that migration, but a pre-upgrade admin logging in on
+	// an older database - which is exactly what they need to do to REACH
+	// the upgrade wizard in the first place, since it requires an
+	// authenticated session - hits "Uncaught Error: Undefined constant
+	// ..." on whichever page happens to reference it first. SP_DEMO alone
+	// is referenced, unguarded, in well over a hundred view files across
+	// both themes, including the shared layout every single page (login
+	// included) renders through - a hard lockout identical in shape to
+	// the SP_SPAPI_REGISTERED rate-limit lockout fixed earlier, just one
+	// level more fundamental. Retrofitting defined() checks into every
+	// call site isn't practical; defining each one's real fresh-install
+	// default here (see install/data/seopanel.sql) protects all of them
+	// at once, for any database old enough to predate any of these -
+	// found by diffing seopanel.sql's current setting names against the
+	// oldest schema this project has a git tag for (4.1.0) and checking
+	// which of the new ones are actually read without a defined() guard
+	// anywhere. A real admin's own settings still win: this only fills
+	// in a constant the query above found no row for at all.
+	if (!defined('QWP_PROXY_BLOCK_URLS')) { define('QWP_PROXY_BLOCK_URLS', ''); }
+	if (!defined('SA_EXCLUDE_FILE_EXTENSIONS')) { define('SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso'); }
+	if (!defined('SP_AIO_RETENTION_DAYS')) { define('SP_AIO_RETENTION_DAYS', '90'); }
+	if (!defined('SP_AIO_ROLLING_WINDOW')) { define('SP_AIO_ROLLING_WINDOW', '7'); }
+	if (!defined('SP_AIO_STALE_DAYS')) { define('SP_AIO_STALE_DAYS', '7'); }
+	if (!defined('SP_AIO_SUBDOMAIN_MATCH')) { define('SP_AIO_SUBDOMAIN_MATCH', 'registrable'); }
+	if (!defined('SP_CRON_JOB_TIMING_RETENTION_DAYS')) { define('SP_CRON_JOB_TIMING_RETENTION_DAYS', '14'); }
+	if (!defined('SP_CRON_PING_ENABLED')) { define('SP_CRON_PING_ENABLED', '0'); }
+	if (!defined('SP_CRON_PING_SECRET')) { define('SP_CRON_PING_SECRET', ''); }
+	if (!defined('SP_CRON_RUN_LOG_RETENTION_DAYS')) { define('SP_CRON_RUN_LOG_RETENTION_DAYS', '30'); }
+	if (!defined('SP_DEFAULT_COUNTRY')) { define('SP_DEFAULT_COUNTRY', 'US'); }
+	if (!defined('SP_DEMO')) { define('SP_DEMO', '0'); }
+	if (!defined('SP_DFS_API_LOGIN')) { define('SP_DFS_API_LOGIN', ''); }
+	if (!defined('SP_DFS_API_PASSWORD')) { define('SP_DFS_API_PASSWORD', ''); }
+	if (!defined('SP_DFS_BALANCE')) { define('SP_DFS_BALANCE', '0'); }
+	if (!defined('SP_ENABLE_DFS')) { define('SP_ENABLE_DFS', '0'); }
+	if (!defined('SP_ENABLE_DFS_BACKLINK')) { define('SP_ENABLE_DFS_BACKLINK', '0'); }
+	if (!defined('SP_ENABLE_DFS_BACK_SATU')) { define('SP_ENABLE_DFS_BACK_SATU', '0'); }
+	if (!defined('SP_ENABLE_DFS_REVIEW')) { define('SP_ENABLE_DFS_REVIEW', '1'); }
+	if (!defined('SP_ENABLE_DFS_SANDBOX')) { define('SP_ENABLE_DFS_SANDBOX', '0'); }
+	if (!defined('SP_ENABLE_DFS_SEARCH_VOLUME')) { define('SP_ENABLE_DFS_SEARCH_VOLUME', '1'); }
+	if (!defined('SP_ENABLE_DFS_SERP')) { define('SP_ENABLE_DFS_SERP', '1'); }
+	if (!defined('SP_ENABLE_LOCAL_AI')) { define('SP_ENABLE_LOCAL_AI', '0'); }
+	if (!defined('SP_ENABLE_RECAPTCHA')) { define('SP_ENABLE_RECAPTCHA', '0'); }
+	if (!defined('SP_ENABLE_SPAPI_SEARCH_VOLUME')) { define('SP_ENABLE_SPAPI_SEARCH_VOLUME', '1'); }
+	if (!defined('SP_ENABLE_SPAPI_SERP')) { define('SP_ENABLE_SPAPI_SERP', '1'); }
+	if (!defined('SP_FEATURE_TOUR')) { define('SP_FEATURE_TOUR', '1'); }
+	if (!defined('SP_GDPR_COOKIE_BANNER')) { define('SP_GDPR_COOKIE_BANNER', '0'); }
+	if (!defined('SP_HOSTED_VERSION')) { define('SP_HOSTED_VERSION', '0'); }
+	if (!defined('SP_JOB_QUEUE_BUDGET_SECONDS')) { define('SP_JOB_QUEUE_BUDGET_SECONDS', '20'); }
+	if (!defined('SP_JOB_QUEUE_ENABLED')) { define('SP_JOB_QUEUE_ENABLED', '1'); }
+	if (!defined('SP_JOB_QUEUE_RETENTION_DAYS')) { define('SP_JOB_QUEUE_RETENTION_DAYS', '7'); }
+	if (!defined('SP_LOCAL_AI_MODEL')) { define('SP_LOCAL_AI_MODEL', 'llama3.2:3b'); }
+	if (!defined('SP_LOCAL_AI_URL')) { define('SP_LOCAL_AI_URL', 'http://localhost:11434'); }
+	if (!defined('SP_RECAPTCHA_SECRET_KEY')) { define('SP_RECAPTCHA_SECRET_KEY', ''); }
+	if (!defined('SP_RECAPTCHA_SITE_KEY')) { define('SP_RECAPTCHA_SITE_KEY', ''); }
+	if (!defined('SP_SENDGRID_API')) { define('SP_SENDGRID_API', '0'); }
+	if (!defined('SP_SPAPI_EMAIL')) { define('SP_SPAPI_EMAIL', ''); }
+	if (!defined('SP_SPAPI_KEY')) { define('SP_SPAPI_KEY', ''); }
+	if (!defined('SP_SPAPI_NAME')) { define('SP_SPAPI_NAME', ''); }
+	if (!defined('SP_SPAPI_REGISTERED')) { define('SP_SPAPI_REGISTERED', '0'); }
+	if (!defined('SP_SPAPI_URL')) { define('SP_SPAPI_URL', 'https://api.seopanel.org/api/v1'); }
+	if (!defined('SP_USE_SAMPLE_API_DATA')) { define('SP_USE_SAMPLE_API_DATA', '0'); }
+
 	// set system timezone
 	if (defined('SP_TIME_ZONE') && (SP_TIME_ZONE != '') ) {
 	
