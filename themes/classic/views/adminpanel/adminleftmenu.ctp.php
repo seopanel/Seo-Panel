@@ -162,12 +162,16 @@ foreach($menuList as $i => $menuInfo){
 			
 		case "api-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'apimanager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'apimanager.php';</script>
 			<ul id='subui'>
 				<?php if (isAdmin()) {?>
+					<!-- showMenu() (js/common.js) always clicks this submenu's
+					     FIRST <a> to pick the default page for the top-level
+					     "API Manager" icon - listed first so that's Seo Panel
+					     API Settings, not API Connection -->
+					<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('apimanager.php?sec=showconnect', 'content')"><?php echo $spTextPanel['API Connection']?></a></li>
     				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?sec=apisettings', 'content')"><?php echo $spTextPanel['API Settings']?></a></li>
-				<li><a href="javascript:void(0);" onclick="scriptDoLoad('settings.php?category=seopanel_api', 'content')"><?php echo $spTextPanel['Seo Panel API Settings']?></a></li>
 				<?php }?>
 			</ul>
 			<?php
