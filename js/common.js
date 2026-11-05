@@ -39,6 +39,15 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 		type: "POST",
 		url:scriptUrl,
 		data: scriptArgs,
+		// jQuery's own default is 0 (no timeout - waits forever), so a
+		// request that stalls instead of erroring (a dropped connection,
+		// a hung upstream network call) never reaches the error handler
+		// below and the loading spinner shown above just sits there
+		// indefinitely. 45s comfortably covers every normal in-app
+		// request (nothing routed through scriptDoLoad*() is meant to run
+		// that long - slow operations like install/upgrade use their own
+		// separate streamed progress mechanism, not this).
+		timeout: 45000,
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -62,7 +71,9 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
     jQuery.ajax({
          type: "get",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
+         // see the matching comment in scriptDoLoadPost() above
+         timeout: 45000,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -185,6 +196,8 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
          type: "POST",
          url:scriptUrl,
          data: scriptArgs,
+         // see the matching comment in scriptDoLoadPost() above
+         timeout: 45000,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
@@ -634,6 +647,8 @@ function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
 		type: "POST",
 		url: scriptUrl,
 		data: scriptArgs,
+		// see the matching comment in scriptDoLoadPost() above
+		timeout: 45000,
 		success: function(data){
 			document.getElementById(scriptPos).innerHTML = data;
 			jQuery("#"+scriptPos).find("script").each(function(i) {

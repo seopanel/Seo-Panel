@@ -56,6 +56,8 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	                "dataType" : "html",
 	                "url" : scriptUrl,
 	                "data" : scriptArgs + "&fromPopUp=1",
+	                // see the matching comment on scriptDoLoadPost() in common.js
+	                "timeout" : 45000,
 	                beforeSend: function(){
 	                	$("#dialogContent").html('<div id="loading_content"></div>');
 	                },
@@ -114,6 +116,8 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
 	                "dataType" : "html",
 	                "url" : scriptUrl,
 	                "data" : formData,
+	                // see the matching comment on scriptDoLoadPost() in common.js
+	                "timeout" : 45000,
 	                beforeSend: function(){
 	                	$("#dialogContent").html('<div id="loading_content"></div>');
 	                },
@@ -153,6 +157,8 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             "url" : scriptUrl,
             // same missing-separator issue fixed in common.js's scriptDoLoadPost()
             "data" : $('#dialogContent #'+scriptForm).serialize() + '&' + scriptArgs + "&fromPopUp=1",
+            // see the matching comment on scriptDoLoadPost() in common.js
+            "timeout" : 45000,
             beforeSend: function(){
             	$(scriptPos).html(loadingContent);
             },
@@ -179,6 +185,8 @@ function scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading) {
             "dataType" : "html",
             "url" : scriptUrl,
             "data" : scriptArgs + "&fromPopUp=1",
+            // see the matching comment on scriptDoLoadPost() in common.js
+            "timeout" : 45000,
             beforeSend: function(){
             	$(scriptPos).html(loadingContent);
             },

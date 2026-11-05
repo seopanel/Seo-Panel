@@ -338,9 +338,18 @@ class FeatureTourController extends Controller {
         if (!SettingsController::isLocalAIEnabled()) {
             return false;
         }
+        // bug fix: unlike DataForSEO/MOZ just above, this had no caching -
+        // getConnectionStatus() (this file) fires on every page load via
+        // feature_tour.php?sec=connection_status, so anyone with Local AI
+        // enabled paid a live network round-trip to their Ollama host on
+        // literally every page, forever (not just once a day like its
+        // siblings) - a real source of per-click latency, worse if that
+        // host is ever slow/unreachable.
         include_once(SP_CTRLPATH . "/localai.ctrl.php");
-        $connResult = (new LocalAIController())->__checkOllamaConnection(SP_LOCAL_AI_URL);
-        return !empty($connResult['status']);
+        return $this->__cachedLiveCheck('localai_check', function() {
+            $connResult = (new LocalAIController())->__checkOllamaConnection(SP_LOCAL_AI_URL);
+            return !empty($connResult['status']);
+        });
     }
 
     /*
