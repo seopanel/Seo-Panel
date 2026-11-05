@@ -142,12 +142,30 @@ class Install {
 			$gdSupport = "Yes ( GD  {$version['GD Version']} )";
 			$gdClass = "green";
 		}
-		
+
+		// not a hard requirement (no hidden input / blocking check below,
+		// same as GD above) - only Website Analytics' GA4 reporting needs
+		// it, via the bundled Google Analytics Data API client's protobuf
+		// library, which calls bcmath's bccomp() directly to compare
+		// int64 metric values with no fallback. Without it, every GA4
+		// report/quick-check request fatals with "Call to undefined
+		// function Google\Protobuf\Internal\bccomp()" - and since
+		// display_errors is off outside SP_DEBUG, that's a silent HTTP
+		// 500 with no clue why. Surfaced here so it's caught before an
+		// admin ever hits that feature, rather than discovered by them
+		// hitting a dead button with no explanation.
+		$bcmathClass = "red";
+		$bcmathSupport = "No (required for Google Analytics reporting)";
+		if(function_exists('bccomp')){
+			$bcmathSupport = "Yes";
+			$bcmathClass = "green";
+		}
+
 		$configClass = "red";
 		$configSupport = "Not found";
 		$configFile = SP_INSTALL_CONFIG_FILE;
 		if(file_exists($configFile)){
-			
+
 			include_once(SP_INSTALL_CONFIG_FILE);
 			if(defined('SP_INSTALLED')){
 				// previously die()'d a bare fragment here, skipping
@@ -217,6 +235,10 @@ class Install {
 				<tr>
 					<th>GD Graphics Support</th>
 					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>BCMath Support</th>
+					<td class="<?php echo $bcmathClass;?>"><?php echo $bcmathSupport; ?></td>
 				</tr>
 				<tr>
 					<th>Config File</th>
@@ -1022,24 +1044,36 @@ class Install {
 			$version = gd_info();
 			$gdSupport = "Yes ( GD  {$version['GD Version']} )";
 			$gdClass = "green";
-		}		
-			
+		}
+
+		// not a hard requirement (no hidden input / blocking check below,
+		// same as GD above) - see the matching note in checkRequirements()
+		// for why this matters: without it, GA4 reporting fatals with
+		// "Call to undefined function Google\Protobuf\Internal\bccomp()",
+		// silently (display_errors is off outside SP_DEBUG).
+		$bcmathClass = "red";
+		$bcmathSupport = "No (required for Google Analytics reporting)";
+		if(function_exists('bccomp')){
+			$bcmathSupport = "Yes";
+			$bcmathClass = "green";
+		}
+
 		$tmpClass = "red";
 		$tmpSupport = "Not found";
 		$tmpFile = SP_INSTALL_DIR.'/../tmp';
 		if(file_exists($tmpFile)){
 			$tmpSupport = "Found, Unwritable<br><p class='note'><b>Command:</b> chmod -R 777 tmp/</p>";
-			if(is_writable($tmpFile)){				
-				$tmpSupport = "Found, Writable";				
+			if(is_writable($tmpFile)){
+				$tmpSupport = "Found, Writable";
 				$tmpClass = "green";
-			}			
+			}
 		}
-		
+
 		$configClass = "red";
 		$configSupport = "Not found";
 		$configFile = SP_INSTALL_CONFIG_FILE;
 		if(file_exists($configFile)){
-			$configSupport = "Found";				
+			$configSupport = "Found";
 			$configClass = "green";
 		}
 
@@ -1135,6 +1169,10 @@ class Install {
 				<tr>
 					<th>GD Graphics Support</th>
 					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>BCMath Support</th>
+					<td class="<?php echo $bcmathClass;?>"><?php echo $bcmathSupport; ?></td>
 				</tr>
 				<tr>
 					<th>Config File</th>

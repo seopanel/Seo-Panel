@@ -6,7 +6,7 @@ RUN apt-get update \
         libpng-dev \
         libcurl4-openssl-dev \
         libonig-dev \
-    && docker-php-ext-install mysqli gd curl zip mbstring \
+    && docker-php-ext-install mysqli gd curl zip mbstring bcmath \
     && a2enmod rewrite proxy proxy_http headers \
     && rm -rf /var/lib/apt/lists/*
 
