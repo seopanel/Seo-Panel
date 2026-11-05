@@ -1056,8 +1056,44 @@ class Install {
 				$dbSupport = "Connected to database successfully";				
 				$dbClass = "green";
 			}
-		}		
-		
+		}
+
+		// bug fix: this page always offered "Upgrade to vX" regardless of
+		// whether the database was already on that version - so an admin
+		// who'd already completed the upgrade (via this same wizard, or
+		// the Settings > Version online-upgrade flow) and revisited this
+		// URL saw the exact same upgrade prompt as someone who genuinely
+		// needed it, with nothing distinguishing the two. Query the same
+		// settings.SP_VERSION_NUMBER getUpgradeDBFiles() itself treats as
+		// authoritative (not the config file's SP_INSTALLED, which is a
+		// separate value patched at the end of a successful upgrade and
+		// could in principle drift from the DB) and skip straight to a
+		// confirmation if there's nothing left to apply.
+		$alreadyUpToDateVersion = null;
+		if ($dbClass == 'green' && !$error) {
+			$versionInfo = $db->select("Select set_val from settings where set_name='SP_VERSION_NUMBER'", true);
+			$currentDbVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '';
+			$upgradeTargetVersion = $this->getUpgradeTargetVersion();
+			if ($currentDbVersion && $upgradeTargetVersion && version_compare($currentDbVersion, $upgradeTargetVersion, '>=')) {
+				$alreadyUpToDateVersion = $currentDbVersion;
+			}
+		}
+
+		if ($alreadyUpToDateVersion !== null) {
+			?>
+			<h1 class="BlockHeader">Already Up To Date</h1>
+			<div class="content-section">
+				<div class="alert alert-success">
+					Your Seo Panel installation is already running v<?php echo htmlspecialchars($alreadyUpToDateVersion); ?> - there's nothing to upgrade.
+				</div>
+			</div>
+			<div class="button-section">
+				<a href="<?php echo SP_WEBPATH; ?>/login.php" class="button" style="text-decoration:none; display:inline-block;">Go to Login &rarr;</a>
+			</div>
+			<?php
+			return;
+		}
+
 		$errMsg = "";
 		if($error){
 			if(empty($errorMsg)){
