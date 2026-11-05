@@ -388,6 +388,29 @@ class Install {
 		$handle = fopen(SP_INSTALL_CONFIG_FILE, "w");
 		fwrite($handle, $cfgData);
 		fclose($handle);
+
+		// Force OPcache to drop whatever it has cached for this exact
+		// file path. proceedInstallation() already include_once()'d this
+		// same file earlier (the "already installed" guard), back when
+		// it was still empty - with opcache.revalidate_freq at its
+		// common default of 2s, a later include() of the freshly-
+		// rewritten file can still be served that stale, empty-file
+		// compiled result if the whole import finished in under that
+		// window, which happens often enough to be a real, intermittent
+		// bug: SP_WEBPATH (and everything else this file defines) comes
+		// back undefined, and config/sp-config-extra.php - included
+		// right after on the assumption those constants already exist -
+		// fatals immediately. That fatal error is silent in production
+		// (display_errors is off for the installer) and simply looks
+		// like the install hanging: a PHP fatal error still halts
+		// execution outright even with error display disabled, so the
+		// response just stops dead at that exact point with nothing
+		// further ever sent. Confirmed via a live repro with error
+		// display temporarily turned on, which caught it as "Uncaught
+		// Error: Undefined constant SP_WEBPATH in sp-config-extra.php".
+		if (function_exists('opcache_invalidate')) {
+			@opcache_invalidate(SP_INSTALL_CONFIG_FILE, true);
+		}
 	}
 	
 	function getWebPath(){
