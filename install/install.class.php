@@ -1300,6 +1300,22 @@ class Install {
 			}
 		}
 
+		// bug fix: the dashboard's daily "New Seo Panel Version Available"
+		// popup (version_upgrade_popup.ctp.php) caches its outdated/
+		// uptodate verdict once per calendar day (information_list,
+		// info_type='version_check_popup' - see
+		// SettingsController::showVersionUpgradePopup()). If that cache
+		// was already populated as "outdated" earlier TODAY - trivially
+		// true for anyone who checked the dashboard before running this
+		// exact upgrade - it stayed "outdated" for the rest of the day
+		// even immediately after a successful upgrade, since nothing
+		// cleared it: the popup would tell an admin who just upgraded to
+		// the latest version that they still need to upgrade. The
+		// installed version just changed, so any same-day cached verdict
+		// is stale by definition; clear it so the next dashboard load
+		// re-checks for real instead of trusting pre-upgrade data.
+		$db->query("DELETE FROM information_list WHERE info_type='version_check_popup'");
+
 		$this->hideInstallProgress();
 		?>
 		<div class="steps">
