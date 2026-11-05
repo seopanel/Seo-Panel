@@ -36,6 +36,14 @@ window.versionUpgradeSkip = function() {
 
 window.versionUpgradeGoToSettings = function() {
 	$('#version_upgrade_overlay').fadeOut(200);
+	// The Seo Panel API register/upgrade popups auto-show on every
+	// logged-in page (default.ctp.php) independently of this one, so
+	// either can already be open underneath when this fires - without
+	// closing it too, "View Update" just swapped the page content behind
+	// it while leaving that overlay sitting on top, blocking the very
+	// Settings > Version page this button is supposed to take you to.
+	$('#spapi_popup_overlay').fadeOut(200);
+	$('#spapi_upgrade_overlay').fadeOut(200);
 	scriptDoLoad('settings.php?sec=version', 'content');
 };
 </script>
