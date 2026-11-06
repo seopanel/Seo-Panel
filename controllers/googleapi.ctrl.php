@@ -217,7 +217,16 @@ class GoogleAPIController extends Controller{
 				$tokenInfo['access_token'] = $tkInfo['access_token'];
 				$tokenInfo['token_type'] = $tkInfo['token_type'];
 				$tokenInfo['expires_in'] = $tkInfo['expires_in'];
-				$tokenInfo['refresh_token'] = $tkInfo['refresh_token'];
+				// Google only returns refresh_token on the very first
+				// consent (or when the auth URL forces prompt=consent) -
+				// a re-auth of an already-authorized app omits it, which
+				// is expected, not an error. Just silences the warning;
+				// insertUserToken() below always inserts a fresh row
+				// (see updateUserToken() for the separate access-token
+				// refresh path), so a reconnect without one does still
+				// store a row with a blank refresh_token - a pre-existing
+				// behavior this isn't changing.
+				$tokenInfo['refresh_token'] = $tkInfo['refresh_token'] ?? '';
 				$this->tokenCtrler->insertUserToken($tokenInfo);
 				$ret['status'] = true;
 			} catch (Exception $e) {

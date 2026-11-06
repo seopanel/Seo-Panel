@@ -129,7 +129,25 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 
 	// include common functions
 	include_once(SP_INCPATH.'/sp-common.php');
-	
+
+	// UserTokenController (OAuth access/refresh tokens) and UserController's
+	// TOTP secret encryption both call sodium_crypto_secretbox()/the
+	// SODIUM_* constants directly. ext-sodium has shipped with PHP core
+	// since 7.2, but isn't guaranteed compiled in - confirmed missing on
+	// this project's own XAMPP/Linux bundle (no sodium.so in the PHP
+	// extension dir at all), which fatals every encrypt/decrypt call
+	// (e.g. "Undefined constant SODIUM_CRYPTO_SECRETBOX_KEYBYTES"),
+	// breaking Google Analytics/Search Console connect and TOTP
+	// enrollment outright. paragonie/sodium_compat is the standard fix
+	// for exactly this gap - WordPress core and phpMyAdmin (both already
+	// present on this very machine) bundle the same library for the same
+	// reason. Its autoloader only defines the sodium_*()/SODIUM_* symbols
+	// when they don't already exist, so requiring it unconditionally is
+	// safe and a no-op wherever the native extension is present.
+	if (!extension_loaded('sodium')) {
+	    include_once(SP_LIBPATH.'/sodium_compat/autoload.php');
+	}
+
 	# create database object
 	include_once(SP_LIBPATH."/database.class.php");
 	$dbObj = New Database(DB_ENGINE);
