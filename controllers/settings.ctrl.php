@@ -200,6 +200,30 @@ class SettingsController extends Controller{
 
 		if (!empty($changedSettingNames)) {
 			$this->logAuditEvent('settings.update', 'settings', null, $postInfo['category'] ?? null, implode(', ', $changedSettingNames));
+
+			// FeatureTourController::__cachedLiveCheck() caches a
+			// DataForSEO/MOZ live-check result for the rest of the
+			// calendar day (information_list.info_type =
+			// 'dataforseo_check'/'moz_check'), to avoid re-hitting those
+			// APIs on every Setup Tour refresh. But nothing was ever
+			// invalidating that cache - so if the tour's own check had
+			// already cached an "error" earlier today (e.g. credentials
+			// were still blank/wrong at the time), saving GOOD
+			// credentials right here didn't help: the tour kept showing
+			// "NOT SET UP" for the rest of the day even after the admin
+			// just verified a working connection on this very settings
+			// page. Deleting the stale row on save forces the next tour
+			// check to do a fresh live call instead of trusting it.
+			$liveCheckCacheByField = array(
+				'SP_DFS_API_LOGIN'    => 'dataforseo_check',
+				'SP_DFS_API_PASSWORD' => 'dataforseo_check',
+				'SP_MOZ_API_SECRET'   => 'moz_check',
+			);
+			$staleInfoTypes = array_unique(array_intersect_key($liveCheckCacheByField, array_flip($changedSettingNames)));
+			if (!empty($staleInfoTypes)) {
+				$quotedTypes = implode(',', array_map(function($t) { return "'" . addslashes($t) . "'"; }, $staleInfoTypes));
+				$this->db->query("DELETE FROM information_list WHERE info_type IN ($quotedTypes)");
+			}
 		}
 
 		$this->set('saved', 1);
