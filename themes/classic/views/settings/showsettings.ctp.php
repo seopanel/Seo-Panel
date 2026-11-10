@@ -48,7 +48,18 @@ $curSettingsHelp = $settingsHelpInfo[$category] ?? $settingsHelpInfo['system'];
 <?php
 // if saved successfully
 if (!empty($saved)) {
-    showSuccessMsg($spTextSettings['allsettingssaved'], false);
+    $savedMsg = $spTextSettings['allsettingssaved'];
+    // Mail Settings specifically - right after saving is exactly when an
+    // admin wants to confirm the new SMTP/Sendgrid config actually sends
+    // mail, rather than having to go find Test Email Settings in the left
+    // menu separately. Same scriptDoLoad() AJAX-shell navigation that
+    // link itself uses (adminleftmenu.ctp.php), not a plain href, so it
+    // swaps #content in place instead of a full page reload.
+    if ($category == 'mail') {
+        $savedMsg .= ' <a href="javascript:void(0);" onclick="scriptDoLoad(\'settings.php?sec=test_email\', \'content\')">'
+            . htmlspecialchars($spTextPanel['Test Email Settings'] ?? 'Test Email Settings') . ' &gt;&gt;</a>';
+    }
+    showSuccessMsg($savedMsg, false);
 }
 
 // save process failed
