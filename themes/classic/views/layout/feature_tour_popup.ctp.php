@@ -642,7 +642,15 @@ function tourText($key, $default) {
 
             <!-- Step 7: SEO Tools -->
             <div class="sp-wizard-panel" id="sp_tpanel_7">
-                <h5><i class="fas fa-tools" style="margin-right:6px;"></i><?php echo $spText['common']['Seo Tools'] ?? 'Seo Tools' ?></h5>
+                <?php
+                // Own tour-specific heading rather than reusing
+                // $spText['common']['Seo Tools'] (the actual top nav menu
+                // label, shared site-wide, e.g. menu/usermenu.ctp.php) -
+                // the grid below now includes AI Visibility alongside the
+                // eleven classic SEO tools, so "Seo Tools" alone undersold
+                // it.
+                ?>
+                <h5><i class="fas fa-tools" style="margin-right:6px;"></i><?php echo tourText('tour_step7_heading', 'Seo and AI Tools') ?></h5>
                 <p><?php echo tourText('tour_step7_body', 'The <strong>Tools</strong> menu is where the actual work happens - twelve tools in one place. Click any card to open it in a new tab:') ?></p>
                 <div class="sp-tour-tool-grid">
                     <a class="sp-tour-tool-card" href="<?php echo SP_WEBPATH ?>/seo-tools.php?menu_sec=ai-visibility" target="_blank" onclick="window.featureTourPauseOnLinkClick()"><span class="sp-tour-tool-open"><i class="fas fa-external-link-alt"></i></span><span class="sp-tour-tool-icon"><i class="fas fa-robot"></i></span><span class="sp-tour-tool-label"><?php echo $spTextSeoTools['ai-visibility'] ?? 'AI Visibility' ?></span></a>
