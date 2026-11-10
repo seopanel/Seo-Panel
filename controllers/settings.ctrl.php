@@ -582,14 +582,7 @@ class SettingsController extends Controller{
 	    include_once(SP_CTRLPATH . "/spapi.ctrl.php");
 	    $spapiCtrler = new SPAPIController();
 	    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData();
-
-	    if (!empty($logInfo['needs_upgrade'])) {
-	        $newStatus = !empty($logInfo['upgrade_reason']) ? $logInfo['upgrade_reason'] : 'expired';
-	    } elseif (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
-	        $newStatus = $logInfo['log_message'];
-	    } else {
-	        $newStatus = 'ok';
-	    }
+	    $newStatus = SettingsController::mapSpApiLogStatus($logInfo);
 
 	    if ($newStatus !== $status) {
 	        $informationCtrler->updateTodayInformation($newStatus, 'spapi_check');
@@ -597,6 +590,21 @@ class SettingsController extends Controller{
 	    }
 
 	    return $status;
+	}
+
+	// Shared with checkSpApiCon's live "Verify connection" check below
+	// (settings.php) so both ways of hitting the real spAPI usage
+	// endpoint reduce $logInfo to the exact same cache-friendly status
+	// string ('ok', 'unconfirmed', 'expired', 'monthly_limit', or a raw
+	// error message).
+	public static function mapSpApiLogStatus($logInfo) {
+	    if (!empty($logInfo['needs_upgrade'])) {
+	        return !empty($logInfo['upgrade_reason']) ? $logInfo['upgrade_reason'] : 'expired';
+	    }
+	    if (isset($logInfo['crawl_status']) && $logInfo['crawl_status'] == 0) {
+	        return $logInfo['log_message'];
+	    }
+	    return 'ok';
 	}
 
 	// func to check whether Local AI (Ollama) is enabled+configured - cheap

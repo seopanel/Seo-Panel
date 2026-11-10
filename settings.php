@@ -205,6 +205,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
 			    $spapiCtrler = new SPAPIController();
 			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
+
+			    // This is a live, real-time check - unlike the daily cache
+			    // AlertController::updateSpApiAlerts() maintains (which the
+			    // Setup Tour's badge and the upgrade popup both read), this
+			    // can run many times a day and always hits the real spAPI
+			    // endpoint. When it's testing the key that's ACTUALLY saved
+			    // right now (not some unsaved edit still sitting in the
+			    // field), sync its fresh result into that same cache so a
+			    // manual Verify click immediately corrects a stale badge
+			    // (e.g. a key that worked this morning and was revoked
+			    // since) instead of leaving it wrong until the cache
+			    // naturally expires at midnight.
+			    if (defined('SP_SPAPI_KEY') && $_GET['api_key'] === SP_SPAPI_KEY) {
+			        include_once(SP_CTRLPATH."/information.ctrl.php");
+			        (new InformationController())->updateTodayInformation(SettingsController::mapSpApiLogStatus($logInfo), 'spapi_check');
+			    }
+
 			    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
 			    $upgradeBtn = in_array($upgradeReason, ['expired', 'monthly_limit']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
 
