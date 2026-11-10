@@ -497,6 +497,7 @@
                             // never leave the current page.
                             $diaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
                                 . "&action=newDiary"
+                                . "&in_modal=1"
                                 . "&title=" . urlencode($rec['title'])
                                 . "&description=" . urlencode($rec['description']);
                             $diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> " . addslashes($spTextRec['Add to SEO Diary'] ?? 'Add to SEO Diary') . "')";

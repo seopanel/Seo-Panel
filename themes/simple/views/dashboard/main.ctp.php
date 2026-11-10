@@ -395,6 +395,7 @@ if (!function_exists('renderStatTile')) {
 						// seo-plugins.php used to hit).
 						$diaryUrl = SP_WEBPATH . "/seo-plugins.php?pid=" . intval($seoDiaryPluginId)
 							. "&action=newDiary"
+							. "&in_modal=1"
 							. "&title=" . urlencode($aiFindingTitle)
 							. "&description=" . urlencode($aiFindingDesc);
 						$diaryOnclick = "openAjaxModalSP('" . addslashes($diaryUrl) . "', '<i class=&quot;fas fa-book&quot;></i> Add to SEO Diary')";
