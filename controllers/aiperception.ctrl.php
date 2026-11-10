@@ -131,6 +131,13 @@ class AiPerceptionController extends Controller {
 		}
 		$this->set('websiteId', $websiteId);
 
+		// same Share of Voice summary showTracking() builds - shown here
+		// too (condition is identical: only once something is actually
+		// scheduled) so a user who already set up tracking sees where
+		// they stand without leaving the page they land on by default
+		$this->set('shareOfVoice', !empty($websiteId) ? $this->__getShareOfVoice($websiteId) : null);
+		$this->set('competitorShareOfVoice', !empty($websiteId) ? $this->__getCompetitorShareOfVoice($websiteId) : []);
+
 		$this->set('providers', $this->__getUserProviders($userId));
 		$this->set('spTextAIV', $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']));
 		$this->render('aiperception/check');

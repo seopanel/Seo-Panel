@@ -114,6 +114,39 @@
 	<?php } ?>
 </div>
 
+<?php if (!empty($shareOfVoice) || $shareOfVoice === 0) { ?>
+	<!-- same scheduled-tracking Share of Voice card as tracking.ctp.php -
+	     only appears once this website actually has scheduled tracking
+	     results, so it never shows for a website that's only ever used
+	     the one-off "Ask" above -->
+	<div class="aiv-card" style="max-width:480px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-balance-scale"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextAIV['Share of Voice vs. Competitors'] ?? 'Share of Voice vs. Competitors'?></div>
+		</div>
+		<?php
+		$compareRows = [['label' => $spTextAIV['You'] ?? 'You', 'share' => $shareOfVoice, 'you' => true]];
+		foreach ($competitorShareOfVoice as $c) {
+			$compareRows[] = ['label' => $c['name'], 'share' => $c['share'], 'you' => false];
+		}
+		?>
+		<?php foreach ($compareRows as $row) { ?>
+			<div style="margin-bottom:10px;">
+				<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+					<span style="font-weight:<?php echo $row['you'] ? '700' : '500'; ?>;"><?php echo htmlspecialchars($row['label']); ?></span>
+					<span style="color:#8a8ea3;"><?php echo ($row['share'] === null) ? '&mdash;' : intval($row['share']) . '%'; ?></span>
+				</div>
+				<div style="background:#eef0f5; border-radius:6px; height:10px; overflow:hidden;">
+					<div style="height:100%; width:<?php echo intval($row['share'] ?? 0); ?>%; background:<?php echo $row['you'] ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#c3c6d4'; ?>;"></div>
+				</div>
+			</div>
+		<?php } ?>
+		<div style="margin-top:4px;">
+			<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php?sec=tracking', 'content', '&website_id=<?php echo intval($websiteId)?>')" class="aiv-discover-cta" style="font-size:12.5px;"><?php echo $spTextAIV['Go to Scheduled Tracking'] ?? 'Go to Scheduled Tracking'?> <i class="fas fa-arrow-right"></i></a>
+		</div>
+	</div>
+<?php } ?>
+
 <div class="aiv-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
 	<div class="aiv-card-icon" style="flex-shrink:0;background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);"><i class="fas fa-calendar-check"></i></div>
 	<div style="flex:1;min-width:220px;">
