@@ -619,11 +619,21 @@ function tourText($key, $default) {
             <div class="sp-wizard-panel" id="sp_tpanel_6">
                 <h5><i class="fas fa-chart-line" style="margin-right:6px;"></i><?php echo tourText('tour_step6_heading', 'Your Dashboard') ?></h5>
                 <p><?php echo tourText('tour_step6_body', 'Pick a website from the dropdown to see its ranking trends, top keywords, and recent activity at a glance.') ?></p>
-                <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
-                    <span class="sp-tour-link-icon"><i class="fas fa-chart-line"></i></span>
-                    <span class="sp-tour-link-text"><strong><?php echo $spText['common']['Dashboard'] ?? 'Dashboard' ?></strong><small><?php echo tourText('tour_dashboard_desc', 'The screen you land on after logging in') ?></small></span>
-                    <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
-                </a>
+                <?php
+                // Wrapped in sp-tour-link-list purely for its own
+                // margin-bottom - same reason Step 4/5 wrap their rows in
+                // it before a following sp-wizard-info-box - a bare
+                // sp-tour-link-row carries no margin of its own, so
+                // without this the info box right below sat flush against
+                // it with zero gap. Confirmed live via screenshot.
+                ?>
+                <div class="sp-tour-link-list">
+                    <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                        <span class="sp-tour-link-icon"><i class="fas fa-chart-line"></i></span>
+                        <span class="sp-tour-link-text"><strong><?php echo $spText['common']['Dashboard'] ?? 'Dashboard' ?></strong><small><?php echo tourText('tour_dashboard_desc', 'The screen you land on after logging in') ?></small></span>
+                        <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
+                    </a>
+                </div>
                 <div class="sp-wizard-info-box">
                     <i class="fas fa-info-circle" style="color:#1a73e8; margin-right:6px;"></i>
                     <?php echo tourText('tour_step6_info', 'Every tool you connect (Analytics, Social Media, Reviews...) gets its own dashboard tab here too.') ?>
