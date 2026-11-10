@@ -113,7 +113,7 @@
 			<div class="sg-step-badge">3</div>
 			<div>
 				<div class="sg-step-title"><?php echo $spTextAIV['Copy & paste'] ?? 'Copy & paste'?></div>
-				<div class="sg-step-desc"><?php echo $spTextAIV['Generate & Save, then paste the script into your page\'s'] ?? 'Generate & Save, then paste the script into your page\'s'?> <code>&lt;head&gt;</code></div>
+				<div class="sg-step-desc"><?php echo $spTextAIV['Click Generate, then paste the script into your page\'s'] ?? 'Click Generate, then paste the script into your page\'s'?> <code>&lt;head&gt;</code></div>
 			</div>
 		</div>
 	</div>
@@ -211,7 +211,7 @@
 
 		<div>
 			<a href="javascript:void(0);" onclick="scriptDoLoadPost('schema-generator.php', 'sg_form', 'content')" class="btn btn-primary">
-				<i class="fas fa-magic"></i> <?php echo $spTextAIV['Generate & Save'] ?? 'Generate & Save'?>
+				<i class="fas fa-magic"></i> <?php echo $spTextAIV['Generate'] ?? 'Generate'?>
 			</a>
 			<?php if (in_array($schemaType, $savedTypes, true)) { ?>
 				<form id="sg_remove_form" onsubmit="return false;" style="display:inline;">
