@@ -27,23 +27,31 @@
 	</div>
 </div>
 
-<p style="color:#666; font-size:13px; margin:0 0 10px;">
-	A record of security-relevant admin actions - who did what, when, and from where.
-</p>
-
-<form method="get" action="javascript:void(0);" style="margin-bottom:10px;">
-	<label>
-		Filter by action:
-		<select name="actionfilter" class="custom-select" style="width:auto; display:inline-block;" onchange="scriptDoLoad('settings.php?sec=auditlog&actionfilter=' + encodeURIComponent(this.value), 'content', 'layout=ajax')">
-			<option value="">All actions</option>
-			<?php foreach ($actionList as $row) { ?>
-				<option value="<?php echo htmlspecialchars($row['action']); ?>" <?php echo ($actionFilter === $row['action']) ? 'selected' : ''; ?>>
-					<?php echo htmlspecialchars($row['action']); ?>
-				</option>
-			<?php } ?>
-		</select>
-	</label>
-</form>
+<?php
+// table.search, not a bare <form><label> - the standard filter-row
+// pattern every other classic list page (Website Manager, User
+// Manager, etc.) uses, via the same include(_styles.ctp.php) +
+// aiv-page-head header this page already shares with them. The bare
+// form read as visually inconsistent with the rest of the theme - the
+// inline description paragraph is dropped too, since the help modal
+// above already covers it and no other classic list page duplicates
+// its own explanation inline like this did.
+?>
+<table class="search">
+	<tr>
+		<th>Filter by action: </th>
+		<td>
+			<select name="actionfilter" class="custom-select" onchange="scriptDoLoad('settings.php?sec=auditlog&actionfilter=' + encodeURIComponent(this.value), 'content', 'layout=ajax')">
+				<option value="">All actions</option>
+				<?php foreach ($actionList as $row) { ?>
+					<option value="<?php echo htmlspecialchars($row['action']); ?>" <?php echo ($actionFilter === $row['action']) ? 'selected' : ''; ?>>
+						<?php echo htmlspecialchars($row['action']); ?>
+					</option>
+				<?php } ?>
+			</select>
+		</td>
+	</tr>
+</table>
 
 <?php echo $pagingDiv?>
 <table class="list">
