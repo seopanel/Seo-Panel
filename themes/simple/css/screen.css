@@ -4321,3 +4321,29 @@ a:hover .far {
     color: #34a853;
     margin-bottom: 10px;
 }
+
+/* Setup Tour refresh-result line (feature_tour_popup.ctp.php) - label
+   neutral, detail colored by connected/failed, matching classic. */
+.sp-tour-refresh-result-row {
+    font-size: 11px;
+    font-weight: 600;
+    text-align: right;
+    padding: 2px 0 0 0;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.25s ease;
+}
+.sp-tour-refresh-result-row.sp-tour-refresh-result-show {
+    opacity: 1;
+    max-height: 36px;
+}
+.sp-tour-refresh-result-label {
+    color: #8a8ea3;
+}
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-ok {
+    color: #1f9d55;
+}
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-fail {
+    color: #c0392b;
+}

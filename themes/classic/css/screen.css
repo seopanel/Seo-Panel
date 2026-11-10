@@ -3709,7 +3709,6 @@ a.btn, a.btn:hover {
    removed by its own setTimeout in featureTourRefreshConnections(). */
 .sp-tour-refresh-result-row {
     font-size: 11px;
-    color: #1f9d55;
     font-weight: 600;
     text-align: right;
     padding: 2px 0 0 0;
@@ -3720,7 +3719,22 @@ a.btn, a.btn:hover {
 }
 .sp-tour-refresh-result-row.sp-tour-refresh-result-show {
     opacity: 1;
-    max-height: 20px;
+    max-height: 36px;
+}
+/* Fixed "Checked latest status" part - neutral, same tone as the
+   pending/optional badges, so the colored detail next to it is what
+   actually draws the eye. */
+.sp-tour-refresh-result-label {
+    color: #8a8ea3;
+}
+/* The real check result (e.g. "Success" or "Invalid or revoked API
+   key") - colored by whether that service is actually connected,
+   matching .sp-tour-badge-connected/.sp-tour-badge-important above. */
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-ok {
+    color: #1f9d55;
+}
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-fail {
+    color: #c0392b;
 }
 
 /* === Safe-area insets (notch / Dynamic Island / status bar / home

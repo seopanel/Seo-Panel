@@ -970,7 +970,17 @@ function tourText($key, $default) {
     // fresh click on the SAME row clears any pending hide from a
     // previous one rather than letting that old timer remove the new
     // message early.
-    function _tourShowRefreshResult(triggerEl, message) {
+    //
+    // detail/isConnected are optional - the label alone covers the
+    // credential-presence-only checks (google/mail/proxy) and cron,
+    // which have no live check result to show. Label and detail are
+    // built as separate text nodes (never string-concatenated) so a
+    // detail string straight from a third-party API response can never
+    // be interpreted as markup, and given two different colors instead
+    // of the old " — label — message" dash separator: a neutral color
+    // for the fixed label, green/red for the detail depending on
+    // whether that service actually connected.
+    function _tourShowRefreshResult(triggerEl, label, detail, isConnected) {
         if (!triggerEl) return;
         var $row = $(triggerEl).closest('.sp-tour-link-row');
         if (!$row.length) return;
@@ -979,7 +989,15 @@ function tourText($key, $default) {
             clearTimeout($existing.data('sp-tour-hide-timeout'));
             $existing.remove();
         }
-        var $msg = $('<div class="sp-tour-refresh-result-row"></div>').text(message);
+        var $msg = $('<div class="sp-tour-refresh-result-row"></div>');
+        $msg.append($('<span class="sp-tour-refresh-result-label"></span>').text(label));
+        if (detail) {
+            $msg.append(' ').append(
+                $('<span class="sp-tour-refresh-result-detail"></span>')
+                    .addClass(isConnected ? 'sp-tour-refresh-result-ok' : 'sp-tour-refresh-result-fail')
+                    .text(detail)
+            );
+        }
         $row.after($msg);
         // triggers the opacity/max-height transition on the NEXT tick,
         // rather than starting already-visible with no fade-in
@@ -1020,15 +1038,13 @@ function tourText($key, $default) {
                 // the same real Success/error text the settings page's
                 // own Verify button would show (empty for the
                 // credential-presence-only checks like google/mail/proxy,
-                // which have no live check to report). Append it to the
-                // generic confirmation so clicking Refresh actually says
-                // what the check found, not just that one ran.
+                // which have no live check to report). Passed through to
+                // _tourShowRefreshResult() as its own colored detail span
+                // so clicking Refresh actually says what the check found,
+                // not just that one ran.
                 var clickedService = triggerEl ? $(triggerEl).closest('.sp-tour-link-row').find('.sp-tour-badges').data('service') : null;
-                var resultMessage = TOUR_I18N.refreshChecked;
-                if (clickedService && status[clickedService] && status[clickedService].message) {
-                    resultMessage += ' — ' + status[clickedService].message;
-                }
-                _tourShowRefreshResult(triggerEl, resultMessage);
+                var clickedInfo = clickedService ? status[clickedService] : null;
+                _tourShowRefreshResult(triggerEl, TOUR_I18N.refreshChecked, clickedInfo ? clickedInfo.message : '', clickedInfo ? clickedInfo.connected : false);
             },
             complete: function() {
                 $btn.removeClass('sp-tour-refreshing');

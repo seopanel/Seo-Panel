@@ -249,7 +249,7 @@ class FeatureTourController extends Controller {
      */
     function __isSpApiConnected() {
         if (!defined('SP_SPAPI_REGISTERED') || !SP_SPAPI_REGISTERED) {
-            return false;
+            return array('connected' => false, 'message' => '');
         }
         // information.ctrl.php must load before alerts.ctrl.php's own
         // updateSpApiAlerts() runs - that method uses InformationController
@@ -262,7 +262,32 @@ class FeatureTourController extends Controller {
         include_once(SP_CTRLPATH . "/alerts.ctrl.php");
         (new AlertController())->updateSpApiAlerts();
         $todayInfo = (new InformationController())->__getTodayInformation('spapi_check');
-        return !empty($todayInfo) && $todayInfo['page'] === 'ok';
+        $rawStatus = !empty($todayInfo) ? $todayInfo['page'] : '';
+
+        // Same four cached states updateSpApiAlerts() itself branches on
+        // (see its own alert_message strings above) - mapped to the same
+        // wording here so the tour's refresh result reads like the alert
+        // banner would, rather than the bare cache keyword. Anything else
+        // is already a real error string straight from the spAPI call
+        // (e.g. "Invalid or revoked API key") and gets shown as-is.
+        switch ($rawStatus) {
+            case 'ok':
+                $message = $_SESSION['text']['label']['Success'];
+                break;
+            case 'unconfirmed':
+                $message = 'Please verify your email address to activate your Seo Panel API account.';
+                break;
+            case 'expired':
+                $message = 'Your Seo Panel API subscription has expired.';
+                break;
+            case 'monthly_limit':
+                $message = 'Monthly API request limit reached.';
+                break;
+            default:
+                $message = $rawStatus;
+        }
+
+        return array('connected' => $rawStatus === 'ok', 'message' => $message);
     }
 
     /*
