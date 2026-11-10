@@ -189,26 +189,42 @@ class FeatureTourController extends Controller {
      * there's no quota/money cost to checking for real instead of just
      * trusting a saved value (see each __is*Connected() method's own
      * comment for specifics).
+     *
+     * Each entry is normalized to {connected, message} - seopanel_api,
+     * dataforseo, moz, and local_ai already have a real message from
+     * their own live check (what the Verify button on the settings page
+     * itself would show); the credential-presence-only checks (google,
+     * mail, proxy) and cron just get an empty message, which the tour
+     * popup's JS falls back to its own generic "Checked latest status"
+     * text for.
      */
     function getConnectionStatus() {
         include_once(SP_CTRLPATH . "/settings.ctrl.php");
+
+        $normalize = function($result) {
+            if (is_array($result)) {
+                return array('connected' => !empty($result['connected']), 'message' => (string) ($result['message'] ?? ''));
+            }
+            return array('connected' => (bool) $result, 'message' => '');
+        };
+
         $status = array(
-            'seopanel_api' => $this->__isSpApiConnected(),
-            'dataforseo'   => $this->__isDataForSeoConnected(),
+            'seopanel_api' => $normalize($this->__isSpApiConnected()),
+            'dataforseo'   => $normalize($this->__isDataForSeoConnected()),
             // SP_MOZ_API_ACCESS_ID is a legacy field, hidden from the
             // settings UI (display=0) - a real user can never fill it in,
             // and MozController itself only ever reads SP_MOZ_API_SECRET
             // ("API Token" in the UI) for real API calls.
-            'moz'          => $this->__isMozConnected(),
-            'google'       => defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== '',
+            'moz'          => $normalize($this->__isMozConnected()),
+            'google'       => $normalize(defined('SP_GOOGLE_API_CLIENT_ID') && SP_GOOGLE_API_CLIENT_ID !== '' && defined('SP_GOOGLE_API_CLIENT_SECRET') && SP_GOOGLE_API_CLIENT_SECRET !== ''),
             // Not gated on SP_SMTP_MAIL ("Enable SMTP") - per the app's
             // author, mail is sometimes sent through an API-based
             // provider rather than that toggle, so a filled-in host is
             // enough to call this configured.
-            'mail'         => defined('SP_SMTP_HOST') && SP_SMTP_HOST !== '',
-            'local_ai'     => $this->__isLocalAiConnected(),
-            'proxy'        => defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY,
-            'cron'         => $this->__isCronDetected(),
+            'mail'         => $normalize(defined('SP_SMTP_HOST') && SP_SMTP_HOST !== ''),
+            'local_ai'     => $normalize($this->__isLocalAiConnected()),
+            'proxy'        => $normalize(defined('SP_ENABLE_PROXY') && SP_ENABLE_PROXY),
+            'cron'         => $normalize($this->__isCronDetected()),
         );
         header('Content-Type: application/json');
         echo json_encode($status);
@@ -261,23 +277,46 @@ class FeatureTourController extends Controller {
     }
 
     /*
-     * Shared once-a-day cache for a simple ok/error live check - used by
-     * DataForSEO and MOZ below, which both just need "did the free
-     * account-info call succeed", unlike seopanel_api's own richer
-     * unconfirmed/expired/error states (see __isSpApiConnected(), which
-     * has its own caching via updateSpApiAlerts() for that reason and
-     * doesn't use this).
+     * Shared once-a-day cache for a simple connected/not-connected live
+     * check - used by DataForSEO and MOZ below, which both just need "did
+     * the free account-info call succeed", unlike seopanel_api's own
+     * richer unconfirmed/expired/error states (see __isSpApiConnected(),
+     * which has its own caching via updateSpApiAlerts() for that reason
+     * and doesn't use this). $liveCheckFn returns/this returns
+     * array('connected' => bool, 'message' => string) - message is
+     * whatever the live check's own Verify-button-equivalent result text
+     * was, so the tour's refresh confirmation can show the SAME detail
+     * ("Success", or the real API error) rather than a generic line.
+     *
+     * bug fix: this used to cache a FAILURE for the rest of the day too,
+     * same as a success - so if the tour's very first check of the day
+     * ran before working credentials were saved (or hit a transient
+     * blip), the badge kept showing "Not set up" for the rest of the day
+     * even after the admin fixed it and verified a working connection
+     * right there on the settings page. These calls are already
+     * documented as free/no-quota-cost above, so there's no caching
+     * benefit to a cached failure, only user-visible staleness - only a
+     * CONNECTED result is ever cached now; a failure always re-checks
+     * live next time.
      */
     function __cachedLiveCheck($infoType, $liveCheckFn) {
         include_once(SP_CTRLPATH . "/information.ctrl.php");
         $infoCtrler = new InformationController();
         $todayInfo = $infoCtrler->__getTodayInformation($infoType);
         if (!empty($todayInfo)) {
-            return $todayInfo['page'] === 'ok';
+            // json_decode() of a pre-fix plain 'ok'/'error' string
+            // returns null, so an old cache row just falls through to a
+            // fresh live check below rather than needing a migration
+            $cached = json_decode($todayInfo['page'], true);
+            if (!empty($cached['connected'])) {
+                return array('connected' => true, 'message' => (string) ($cached['message'] ?? ''));
+            }
         }
-        $ok = (bool) $liveCheckFn();
-        $infoCtrler->updateTodayInformation($ok ? 'ok' : 'error', $infoType);
-        return $ok;
+        $result = $liveCheckFn();
+        if (!empty($result['connected'])) {
+            $infoCtrler->updateTodayInformation(json_encode($result), $infoType);
+        }
+        return $result;
     }
 
     /*
@@ -290,12 +329,12 @@ class FeatureTourController extends Controller {
      */
     function __isDataForSeoConnected() {
         if (!defined('SP_DFS_API_LOGIN') || SP_DFS_API_LOGIN === '' || !defined('SP_DFS_API_PASSWORD') || SP_DFS_API_PASSWORD === '') {
-            return false;
+            return array('connected' => false, 'message' => '');
         }
         include_once(SP_CTRLPATH . "/dataforseo.ctrl.php");
         return $this->__cachedLiveCheck('dataforseo_check', function() {
             $connResult = (new DataForSEOController())->__checkAPIConnection(SP_DFS_API_LOGIN, SP_DFS_API_PASSWORD);
-            return !empty($connResult['status']);
+            return array('connected' => !empty($connResult['status']), 'message' => (string) ($connResult['message'] ?? ''));
         });
     }
 
@@ -308,12 +347,12 @@ class FeatureTourController extends Controller {
      */
     function __isMozConnected() {
         if (!defined('SP_MOZ_API_SECRET') || SP_MOZ_API_SECRET === '') {
-            return false;
+            return array('connected' => false, 'message' => '');
         }
         include_once(SP_CTRLPATH . "/moz.ctrl.php");
         return $this->__cachedLiveCheck('moz_check', function() {
             list($usageData, $logInfo) = (new MozController())->__getMozUsageData(SP_MOZ_API_SECRET, true);
-            return !empty($logInfo['crawl_status']);
+            return array('connected' => !empty($logInfo['crawl_status']), 'message' => (string) ($logInfo['log_message'] ?? ''));
         });
     }
 
@@ -324,22 +363,20 @@ class FeatureTourController extends Controller {
      * "Verify" button on the Local AI settings page itself) is a plain
      * local/LAN call to the user's own self-hosted server - not a
      * third-party API, so there's no quota/money (or even network
-     * egress) cost at all. Unlike DataForSEO/MOZ/seopanel_api above,
-     * deliberately NOT run through __cachedLiveCheck()'s once-a-day
-     * cache - a self-hosted dev box is far more likely to be started/
-     * stopped within the same day than a third-party account's
-     * subscription status is, and there's no cost reason to delay
-     * noticing that. __checkOllamaConnection() itself keeps a short
-     * (5 second) timeout, so an unreachable server doesn't stall the
-     * page.
+     * egress) cost at all. Still goes through __cachedLiveCheck()'s
+     * once-a-day cache like DataForSEO/MOZ/seopanel_api above (see the
+     * "bug fix" comment just below - this used to skip it and that was
+     * the actual bug, not the other way around), capped at caching only
+     * a successful connection, never a failure - a self-hosted dev box
+     * going down mid-day still gets noticed on the very next check.
      */
     function __isLocalAiConnected() {
         include_once(SP_CTRLPATH . "/settings.ctrl.php");
         if (!SettingsController::isLocalAIEnabled()) {
-            return false;
+            return array('connected' => false, 'message' => '');
         }
-        // bug fix: unlike DataForSEO/MOZ just above, this had no caching -
-        // getConnectionStatus() (this file) fires on every page load via
+        // bug fix: this had no caching at all - getConnectionStatus()
+        // (this file) fires on every page load via
         // feature_tour.php?sec=connection_status, so anyone with Local AI
         // enabled paid a live network round-trip to their Ollama host on
         // literally every page, forever (not just once a day like its
@@ -348,7 +385,7 @@ class FeatureTourController extends Controller {
         include_once(SP_CTRLPATH . "/localai.ctrl.php");
         return $this->__cachedLiveCheck('localai_check', function() {
             $connResult = (new LocalAIController())->__checkOllamaConnection(SP_LOCAL_AI_URL);
-            return !empty($connResult['status']);
+            return array('connected' => !empty($connResult['status']), 'message' => (string) ($connResult['message'] ?? ''));
         });
     }
 

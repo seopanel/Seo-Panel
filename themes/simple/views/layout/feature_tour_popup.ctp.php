@@ -1012,10 +1012,23 @@ function tourText($key, $default) {
             data: { sec: 'connection_status' },
             dataType: 'json',
             success: function(status) {
-                $.each(status, function(service, isConnected) {
-                    _tourUpdateConnectionBadge(service, isConnected);
+                $.each(status, function(service, info) {
+                    _tourUpdateConnectionBadge(service, info.connected);
                 });
-                _tourShowRefreshResult(triggerEl, TOUR_I18N.refreshChecked);
+                // getConnectionStatus() (feature_tour.ctrl.php) now
+                // returns {connected, message} per service - message is
+                // the same real Success/error text the settings page's
+                // own Verify button would show (empty for the
+                // credential-presence-only checks like google/mail/proxy,
+                // which have no live check to report). Append it to the
+                // generic confirmation so clicking Refresh actually says
+                // what the check found, not just that one ran.
+                var clickedService = triggerEl ? $(triggerEl).closest('.sp-tour-link-row').find('.sp-tour-badges').data('service') : null;
+                var resultMessage = TOUR_I18N.refreshChecked;
+                if (clickedService && status[clickedService] && status[clickedService].message) {
+                    resultMessage += ' — ' + status[clickedService].message;
+                }
+                _tourShowRefreshResult(triggerEl, resultMessage);
             },
             complete: function() {
                 $btn.removeClass('sp-tour-refreshing');

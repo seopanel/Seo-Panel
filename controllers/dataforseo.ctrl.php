@@ -57,6 +57,13 @@ class DataForSEOController extends Controller {
                                 $balance = isset($taskInfo['result'][0]['money']['balance']) ? $taskInfo['result'][0]['money']['balance'] : 0;
                                 $connResult['balance'] = $balance;
                                 $this->updateAPIBalance($balance);
+                                // $connResult['message'] above still held
+                                // its initial generic error-fallback text
+                                // at this point - harmless while nothing
+                                // read it on a success path, but the
+                                // Setup Tour's refresh result now shows
+                                // this message verbatim even on success
+                                $connResult['message'] = $_SESSION['text']['label']['Success'];
                                 $taskFound = true;
                             } else {
                                 $connResult['status'] = false;
