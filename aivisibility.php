@@ -40,6 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 	switch ($_POST['sec']) {
 
+		// overview.ctp.php's own Website/Period selectors and "Show
+		// Records" button all submit via scriptDoLoadPost() (sec=overview),
+		// but only the GET switch below had a matching case for it - a
+		// POST here had no case to catch it at all, so it silently fell
+		// through to the default case and showed the Setup tab instead,
+		// no matter what website/period was actually picked. showOverview()
+		// itself doesn't care which superglobal $info came from, same as
+		// every other action shared between both switches here.
+		case "overview":
+			$controller->showOverview($_POST);
+			break;
+
 		case "installstatus":
 			$controller->showInstallStatus($_POST);
 			break;
