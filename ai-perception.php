@@ -82,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showTracking($_GET);
 			break;
 
+		case "view-result":
+			$controller->showResultDetail($_GET);
+			break;
+
 		case "suggest-prompts":
 			$controller->suggestPrompts($_GET);
 			break;

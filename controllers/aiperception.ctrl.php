@@ -349,8 +349,12 @@ class AiPerceptionController extends Controller {
 		$websiteId = intval($websiteId);
 		$prompts = $this->db->select("SELECT id, prompt_text FROM llm_perception_prompts WHERE website_id=$websiteId AND status=1 ORDER BY id");
 		foreach ($prompts as &$prompt) {
+			// id included so the tracking view can link to showResultDetail()
+			// below - the raw response_text itself is deliberately NOT
+			// selected here (this list can be long; no reason to pull every
+			// full response just to render a mentioned/not-mentioned badge)
 			$prompt['results'] = $this->db->select(
-				"SELECT r.provider, r.checked_date, r.mentioned, r.sentiment FROM llm_perception_results r
+				"SELECT r.id, r.provider, r.checked_date, r.mentioned, r.sentiment FROM llm_perception_results r
 				 WHERE r.prompt_id={$prompt['id']} AND r.checked_date = (
 					 SELECT MAX(r2.checked_date) FROM llm_perception_results r2
 					 WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
@@ -359,6 +363,37 @@ class AiPerceptionController extends Controller {
 			);
 		}
 		return $prompts;
+	}
+
+	/*
+	 * Shows the full raw AI response behind one tracking result - the
+	 * tracking table itself only ever shows a derived Mentioned/Not
+	 * mentioned badge (+ sentiment icon), never the actual text a
+	 * provider returned, so there was previously no way to see what the
+	 * AI actually said. Ownership verified via a double join back through
+	 * the prompt to its website, same shape as removePrompt()/
+	 * removeCompetitor() above. Rendered with no layout - this is loaded
+	 * into the shared #ajaxModalSP (js/popup.js), not a full page.
+	 */
+	function showResultDetail($info) {
+		$userId = isLoggedIn();
+		$resultId = intval($info['result_id'] ?? 0);
+
+		$result = $this->db->select(
+			"SELECT r.*, p.prompt_text FROM llm_perception_results r
+			 JOIN llm_perception_prompts p ON p.id = r.prompt_id
+			 JOIN websites w ON w.id = p.website_id
+			 WHERE r.id=$resultId AND (w.user_id=$userId OR " . (isAdmin() ? '1=1' : '1=0') . ")",
+			true
+		);
+		if (empty($result['id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$this->set('result', $result);
+		$this->set('spTextAIV', $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']));
+		$this->render('aiperception/result_detail', '');
 	}
 
 	// func to compute overall share of voice: of every (prompt, provider)

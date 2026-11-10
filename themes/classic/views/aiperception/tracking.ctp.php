@@ -227,7 +227,21 @@
 									<span class="badge badge-secondary py-1 px-2 text-light"><?php echo $spTextAIV['Not mentioned'] ?? 'Not mentioned'?></span>
 								<?php } ?>
 							</td>
-							<td><?php echo htmlspecialchars($result['checked_date'])?></td>
+							<td>
+								<?php echo htmlspecialchars($result['checked_date'])?>
+								<?php
+								// The badge above is only ever a derived Mentioned/Not
+								// mentioned verdict - this is the one place to actually
+								// read what the AI said, loaded into the shared modal
+								// rather than a full page (see showResultDetail()'s own
+								// comment).
+								$viewResultUrl = SP_WEBPATH . '/ai-perception.php?sec=view-result&result_id=' . intval($result['id']);
+								$viewResultOnclick = "openAjaxModalSP('" . addslashes($viewResultUrl) . "', '<i class=&quot;fas fa-robot&quot;></i> " . addslashes($spTextAIV['AI Response'] ?? 'AI Response') . "')";
+								?>
+								<a href="javascript:void(0);" onclick="<?php echo htmlspecialchars($viewResultOnclick, ENT_QUOTES)?>" style="margin-left:8px;font-size:12px;" title="<?php echo htmlspecialchars($spTextAIV['View response'] ?? 'View response')?>">
+									<i class="fas fa-eye"></i>
+								</a>
+							</td>
 							<?php if ($i === 0) { ?>
 								<td rowspan="<?php echo $rowspan?>">
 									<form id="aip_remove_prompt_form_<?php echo $prompt['id']?>" onsubmit="return false;">
