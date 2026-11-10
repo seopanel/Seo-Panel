@@ -5,6 +5,18 @@
 // never trimmed/summarized - this is specifically the "what did the AI
 // actually say" view the tracking table itself has no room for.
 $isError = strpos($result['response_text'], 'ERROR:') === 0;
+
+// Every provider here (OpenAI/Anthropic/Google) replies in loose
+// Markdown - **bold** was showing as literal asterisks since this was
+// just htmlspecialchars()'d into a <pre>. Escape FIRST (this is
+// third-party, untrusted text), then turn only the escaped text's own
+// **pairs** into real <strong> tags - safe regardless of what the raw
+// response contains, since anything that looks like a tag has already
+// been neutralized to harmless text (&lt;...&gt;) by the time this runs.
+function aipFormatResponse($text) {
+    $escaped = htmlspecialchars($text);
+    return preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $escaped);
+}
 ?>
 <div style="padding:4px 2px;">
 	<div style="font-size:11px;color:#8a8ea3;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">
@@ -47,6 +59,6 @@ $isError = strpos($result['response_text'], 'ERROR:') === 0;
 			<?php echo htmlspecialchars(substr($result['response_text'], strlen('ERROR:')))?>
 		</div>
 	<?php } else { ?>
-		<pre style="white-space:pre-wrap;word-break:break-word;background:#fafbfd;border:1px solid #e8edf5;border-radius:8px;padding:14px 16px;font-family:inherit;font-size:13px;color:#2a2a3d;max-height:50vh;overflow-y:auto;margin:0;"><?php echo htmlspecialchars($result['response_text'])?></pre>
+		<pre style="white-space:pre-wrap;word-break:break-word;background:#fafbfd;border:1px solid #e8edf5;border-radius:8px;padding:14px 16px;font-family:inherit;font-size:13px;color:#2a2a3d;max-height:50vh;overflow-y:auto;margin:0;"><?php echo aipFormatResponse($result['response_text'])?></pre>
 	<?php } ?>
 </div>
