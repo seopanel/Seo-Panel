@@ -298,7 +298,21 @@
                     <div style="font-size:9px;color:#b0b4c0;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;" title="AI Overview presence is each keyword's latest measured state, not a historical count - doesn't change with the Period selector above">current snapshot</div>
                 </div>
             </div>
-            <a href="<?php echo SP_WEBPATH?>/aivisibility.php?sec=aioverview&website_id=<?php echo intval($websiteId)?>" class="aiv-btn aiv-btn-outline" style="text-decoration:none;">
+            <?php
+            // Not a direct link to aivisibility.php - that front
+            // controller hardcodes layout='ajax' for every action (same
+            // reason "More details" below, for SERP Results, avoids
+            // reports.php directly), so a real browser navigation there
+            // renders a bare fragment with no page chrome at all -
+            // confirmed live via screenshot. seo-tools.php?menu_sec=
+            // ai-visibility&default_args=... is a real full page, and
+            // default_args (SeoToolsController::index()) lands it
+            // directly on the AI SERP Overview sub-page via the exact
+            // same scriptDoLoad() call its own left menu uses, instead of
+            // just the tool's default Summary view.
+            $aioReportArgs = 'sec=aioverview&website_id=' . intval($websiteId);
+            ?>
+            <a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=ai-visibility&default_args=<?php echo urlencode($aioReportArgs)?>" class="aiv-btn aiv-btn-outline" style="text-decoration:none;">
                 <i class="fas fa-search"></i> View full AI Overview report
             </a>
         </div>
