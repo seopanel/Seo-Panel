@@ -3708,10 +3708,10 @@ a.btn, a.btn:hover {
    row rather than the title. Faded in on arrival, faded out and
    removed by its own setTimeout in featureTourRefreshConnections(). */
 .sp-tour-refresh-result-row {
-    font-size: 11px;
+    font-size: 12.5px;
     font-weight: 600;
     text-align: right;
-    padding: 2px 0 0 0;
+    padding: 6px 0 0 0;
     opacity: 0;
     max-height: 0;
     overflow: hidden;
@@ -3719,13 +3719,13 @@ a.btn, a.btn:hover {
 }
 .sp-tour-refresh-result-row.sp-tour-refresh-result-show {
     opacity: 1;
-    max-height: 36px;
+    max-height: 42px;
 }
-/* Fixed "Checked latest status" part - neutral, same tone as the
-   pending/optional badges, so the colored detail next to it is what
-   actually draws the eye. */
+/* Fixed "Checked latest status" part - neutral but dark enough to read
+   as a real label, not a faint hint; the colored detail next to it
+   still carries the actual result. */
 .sp-tour-refresh-result-label {
-    color: #8a8ea3;
+    color: #4b5165;
 }
 /* The real check result (e.g. "Success" or "Invalid or revoked API
    key") - colored by whether that service is actually connected,
