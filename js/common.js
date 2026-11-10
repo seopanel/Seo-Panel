@@ -640,8 +640,18 @@ function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 // confused deputy), same class of fix already applied to every other
 // GET-based state/action-triggering bug this session.
 function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
+	if (!scriptArgs) { scriptArgs = ''; }
 	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
-	scriptArgs += "&base_url=" + encodeURIComponent(baseUrl);
+	// bug fix: settings.php's own routing only reads 'sec' from the
+	// QUERY STRING on a GET request (switch($_GET['sec'])) - the
+	// checkOllamaAPI case was moved to a separate switch($_POST['sec'])
+	// block (see settings.php's own comment on that case) specifically
+	// so this stays a real POST, but scriptUrl's own "?sec=checkOllamaAPI"
+	// only ever lands in $_GET, never $_POST, no matter the HTTP method.
+	// Without 'sec' repeated here in the POST body itself,
+	// switch($_POST['sec']) never matches any case, nothing gets
+	// printed, and the button silently showed nothing at all.
+	scriptArgs += "&sec=checkOllamaAPI&base_url=" + encodeURIComponent(baseUrl);
 	showLoadingIcon(scriptPos);
 	jQuery.ajax({
 		type: "POST",
