@@ -421,7 +421,7 @@ class RecommendationsController extends Controller {
             $dateFrom  = $kw['date_from'];
             $dateTo    = $kw['date_to'];
 
-            $title = addslashes("Keyword \"{$kw['name']}\" is ranking at avg position {$pos} — boost it to page 1");
+            $title = addslashes("Keyword \"{$kw['name']}\" is stuck at avg position {$pos}, just off page 1");
             $desc  = addslashes(
                 "Over the last 30 days ({$dateFrom} to {$dateTo}) this keyword accumulated {$imp} impressions " .
                 "at an average position of {$pos} (page 2/3). " .

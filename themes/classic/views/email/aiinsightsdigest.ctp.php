@@ -25,12 +25,13 @@ foreach ($newInsightsByWebsite as $websiteId => $websiteInfo) {
             $colors = !empty($typeColors[$rec['type']]) ? $typeColors[$rec['type']] : $typeColors['todo'];
             ?>
         <tr>
-            <td style="padding:8px 0;border-bottom:1px solid #f2f2f2;">
-                <span style="background:<?php echo $colors['bg']?>;color:<?php echo $colors['fg']?>;font-size:10px;font-weight:bold;padding:2px 8px;border-radius:10px;text-transform:uppercase;"><?php echo $colors['label']?></span><br>
-                <span style="font-weight:bold;color:#333333;"><?php echo htmlspecialchars($rec['title'])?></span><br>
+            <td style="padding:12px 14px;background-color:<?php echo $colors['bg']?>;border-left:4px solid <?php echo $colors['fg']?>;">
+                <span style="color:<?php echo $colors['fg']?>;font-size:10px;font-weight:bold;letter-spacing:0.5px;"><?php echo strtoupper($colors['label'])?></span><br>
+                <span style="font-weight:bold;color:#333333;font-size:13px;"><?php echo htmlspecialchars($rec['title'])?></span><br>
                 <span style="font-size:12px;color:#777777;"><?php echo htmlspecialchars($rec['description'])?></span>
             </td>
         </tr>
+        <tr><td style="height:8px;line-height:8px;font-size:1px;">&nbsp;</td></tr>
         <?php }?>
     </table>
     <?php
