@@ -9,23 +9,23 @@
     $websiteLink = SP_WEBPATH . "/aivisibility.php?sec=overview&website_id=" . intval($websiteId);
     $aioRate = !empty($s['aio']['present']) ? round((intval($s['aio']['cited']) / intval($s['aio']['present'])) * 100) : null;
     ?>
-    <table cellspacing="0" cellpadding="0" width="100%" style="margin-bottom:20px;">
+    <table cellspacing="0" cellpadding="0" width="100%" style="margin-bottom:16px;border-collapse:collapse;font-family:Tahoma, verdana, arial, sans-serif;">
         <tr>
-            <td colspan="3" style="font-size:14px;font-weight:bold;padding-bottom:8px;">
+            <td colspan="3" style="background-color:#DAE5EE;border-bottom:1px solid #B0C2CC;padding:8px 12px;font-size:13px;font-weight:bold;">
                 <a href="<?php echo $websiteLink?>" style="text-decoration:none;color:#333333;"><?php echo htmlspecialchars($s['name'])?></a>
             </td>
         </tr>
         <tr>
-            <td style="padding:8px 12px 8px 0;border-bottom:1px solid #f2f2f2;">
-                <span style="font-size:20px;font-weight:bold;color:#5c4fd6;"><?php echo intval($s['referrals'])?></span><br>
+            <td width="33%" style="background-color:#F4F7FA;padding:14px 12px;text-align:center;border-right:1px solid #ffffff;">
+                <span style="font-size:22px;font-weight:bold;color:#5c4fd6;"><?php echo intval($s['referrals'])?></span><br>
                 <span style="font-size:11px;color:#777777;"><?php echo $aivTexts['AI Referrals'] ?? 'AI Referrals'?></span>
             </td>
-            <td style="padding:8px 12px;border-bottom:1px solid #f2f2f2;">
-                <span style="font-size:20px;font-weight:bold;color:#5c4fd6;"><?php echo intval($s['bot_hits'])?></span><br>
+            <td width="33%" style="background-color:#F4F7FA;padding:14px 12px;text-align:center;border-right:1px solid #ffffff;">
+                <span style="font-size:22px;font-weight:bold;color:#5c4fd6;"><?php echo intval($s['bot_hits'])?></span><br>
                 <span style="font-size:11px;color:#777777;"><?php echo $aivTexts['AI Bot Crawls'] ?? 'AI Bot Crawls'?></span>
             </td>
-            <td style="padding:8px 0 8px 12px;border-bottom:1px solid #f2f2f2;">
-                <span style="font-size:20px;font-weight:bold;color:#5c4fd6;"><?php echo $aioRate !== null ? $aioRate . '%' : '&mdash;'?></span><br>
+            <td width="34%" style="background-color:#F4F7FA;padding:14px 12px;text-align:center;">
+                <span style="font-size:22px;font-weight:bold;color:#5c4fd6;"><?php echo $aioRate !== null ? $aioRate . '%' : 'N/A'?></span><br>
                 <span style="font-size:11px;color:#777777;"><?php echo $aivTexts['AI Overview Citations'] ?? 'AI Overview Citations'?></span>
             </td>
         </tr>

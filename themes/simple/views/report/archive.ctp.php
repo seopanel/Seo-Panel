@@ -126,6 +126,14 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 
 <div id='subcontent' class="dashboard">
 <?php
+if (!empty($aiVisibilityReport)) {
+    ?>
+    <div class="table-responsive"><?php echo $aiVisibilityReport;?></div>
+    <br>
+    <?php
+}
+?>
+<?php
 $seCount = count($seList);
 if (!empty($keywordPos) && !empty($seCount)) {
 	$svExtra = !empty($showSearchVolume) ? 1 : 0;
