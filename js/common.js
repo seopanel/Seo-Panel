@@ -51,7 +51,23 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
-	            eval($(this).text());
+	            // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
 	         });
 	     },
 	     error: function() {
@@ -77,7 +93,23 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
-                eval($(this).text());
+                // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
              });
          },
          error: function() {
@@ -201,7 +233,23 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
-                eval($(this).text());
+                // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
              });
          },
          error: function() {
@@ -662,7 +710,23 @@ function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
 		success: function(data){
 			document.getElementById(scriptPos).innerHTML = data;
 			jQuery("#"+scriptPos).find("script").each(function(i) {
-				eval($(this).text());
+				// jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
 			});
 		},
 		error: function() {
