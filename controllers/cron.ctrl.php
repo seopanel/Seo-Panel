@@ -2314,7 +2314,26 @@ class CronController extends Controller {
 		// a partial buffer either.
 		ob_start();
 
-		register_shutdown_function(function() {
+		// $didFinishCleanly guards this: a registered shutdown function
+		// can't be unregistered, and PHP always runs it at the true end
+		// of the whole HTTP request, not just when THIS function returns.
+		// A caller like testCronNow() that echoes its own JSON response
+		// after this method returns does so into php.ini's own implicit
+		// output_buffering level (on by default under this host's mod_php
+		// - confirmed live, output_buffering=4096 - so ob_get_level() is
+		// never actually 0) - without this guard, that leftover shutdown
+		// function fires again on the caller's own exit, sees that open
+		// buffer, and silently ob_end_clean()s away the caller's own
+		// already-echoed response, leaving a 200 with Content-Length: 0.
+		// Confirmed live: the tour's "Test cron now" always came back
+		// empty (jQuery's ajax error handler, not the real success path)
+		// until this flag was added. Only skips the shutdown function's
+		// OWN cleanup on a clean return - a genuine mid-run crash still
+		// leaves $didFinishCleanly false, so the safety net below still
+		// fires exactly as before.
+		$didFinishCleanly = false;
+		register_shutdown_function(function() use (&$didFinishCleanly) {
+			if ($didFinishCleanly) return;
 			if (ob_get_level() > 0) ob_end_clean();
 			$this->finishRunLog('incomplete');
 			$this->releaseSchedulerLock();
@@ -2395,6 +2414,7 @@ class CronController extends Controller {
 		ob_end_clean();
 		$this->finishRunLog('completed');
 		$this->releaseSchedulerLock();
+		$didFinishCleanly = true;
 		return true;
 	}
 

@@ -279,7 +279,15 @@ function tourText($key, $default) {
                         <?php echo tourText('tour_step2_already_set', "You're all set - nothing to do here.") ?>
                     </div>
                     <?php if ($tourFirstWebsite) { ?>
-                        <a class="sp-tour-link-row" href="<?php echo SP_WEBPATH ?>/overview.php?website_id=<?php echo intval($tourFirstWebsite['id']) ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
+                        <?php
+                        // Goes to Website Manager (the list of ALL
+                        // websites), not this one site's own Overview -
+                        // the hint right below promises "manage all of
+                        // them", which a single-site Overview link
+                        // couldn't actually do. Per-site detail is still
+                        // one more click away from there.
+                        ?>
+                        <a class="sp-tour-link-row" href="<?php echo tourSettingsLink('websites.php', 'websites') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <span class="sp-tour-link-icon"><i class="fas fa-globe"></i></span>
                             <span class="sp-tour-link-text"><strong><?php echo htmlspecialchars($tourFirstWebsite['name']) ?></strong><small><?php echo htmlspecialchars($tourFirstWebsite['url']) ?></small></span>
                             <?php if ($tourFirstWebsiteKeywordCount > 0) { ?>
@@ -288,7 +296,7 @@ function tourText($key, $default) {
                             <i class="fas fa-arrow-right sp-tour-link-arrow"></i>
                         </a>
                         <?php if ($tourWebsiteCount > 1) { ?>
-                            <div class="sp-tour-form-hint"><?php echo sprintf(tourText('tour_more_websites', '+ %d more %s - click above to manage all of them'), $tourWebsiteCount - 1, tourText(($tourWebsiteCount - 1) == 1 ? 'tour_website_singular' : 'tour_website_plural', ($tourWebsiteCount - 1) == 1 ? 'website' : 'websites')) ?></div>
+                            <div class="sp-tour-form-hint sp-tour-more-websites-hint"><?php echo sprintf(tourText('tour_more_websites', '+ %d more %s - click above to manage all of them'), $tourWebsiteCount - 1, tourText(($tourWebsiteCount - 1) == 1 ? 'tour_website_singular' : 'tour_website_plural', ($tourWebsiteCount - 1) == 1 ? 'website' : 'websites')) ?></div>
                         <?php } ?>
                     <?php } ?>
                 <?php } else { ?>
@@ -557,10 +565,24 @@ function tourText($key, $default) {
                     // hasn't changed yet). See
                     // FeatureTourController::testCronNow().
                     ?>
-                    <div class="sp-tour-form-hint" id="tour_cron_test_hint">
-                        <?php echo tourText('tour_cron_test_label', "Not sure it's actually working?") ?>
-                        <a href="javascript:void(0);" id="tour_cron_test_link" onclick="window.featureTourTestCronNow()"><?php echo tourText('tour_test_cron_link', 'Test cron now') ?></a>
-                        <span id="tour_cron_test_result"></span>
+                    <div class="sp-tour-cron-test-box">
+                        <div class="sp-tour-cron-test-row">
+                            <span><?php echo tourText('tour_cron_test_label', "Not sure it's actually working?") ?></span>
+                            <a href="javascript:void(0);" id="tour_cron_test_link" onclick="window.featureTourTestCronNow()"><?php echo tourText('tour_test_cron_link', 'Test cron now') ?></a>
+                        </div>
+                        <?php
+                        // Own block-level line below the test row, not an
+                        // inline continuation of it - run together on one
+                        // line, a longer result ("Something went wrong.
+                        // Please try again.") read as part of the same
+                        // sentence as the link/label, and the static ping-
+                        // trigger hint just below (which used to share
+                        // sp-tour-form-hint's own negative margin-top, made
+                        // for hugging a form field, not a sibling hint) could
+                        // ride up and crowd whatever this wrapped onto -
+                        // confirmed live via screenshot.
+                        ?>
+                        <div id="tour_cron_test_result" class="sp-tour-cron-test-result"></div>
                     </div>
                     <?php
                     // Resumable job queue needs no mention here - it's on by
@@ -574,8 +596,11 @@ function tourText($key, $default) {
                     // small secondary link rather than a second full row,
                     // reached via the same Reports Manager tab (Scheduler
                     // Health, cron.php?sec=health) as Cron Command above.
+                    // Its own dedicated class (not sp-tour-form-hint) for
+                    // the same reason as the test box above - no negative
+                    // margin fighting the box's own spacing.
                     ?>
-                    <div class="sp-tour-form-hint">
+                    <div class="sp-tour-cron-ping-hint">
                         <?php echo tourText('tour_cron_ping_hint', "Can't set up a real crontab on your host?") ?>
                         <a href="<?php echo tourSettingsLink('cron.php?sec=health', 'report-manager') ?>" target="_blank" onclick="window.featureTourPauseOnLinkClick()">
                             <?php echo sprintf(tourText('tour_cron_ping_hint_link', 'Use the %s instead.'), $spTextPanel['External ping trigger'] ?? 'External Ping Trigger') ?>
@@ -716,7 +741,7 @@ function tourText($key, $default) {
         notAddedSuffix: <?php echo json_encode(tourText('tour_not_added_suffix', 'not added: %s')) ?>,
         genericError: <?php echo json_encode(tourText('tour_generic_error', 'Something went wrong. Please try again.')) ?>,
         testCronLink: <?php echo json_encode(tourText('tour_test_cron_link', 'Test cron now')) ?>,
-        testingCron: <?php echo json_encode(tourText('tour_testing_cron', 'Running a real test pass - this can take up to 20 seconds...')) ?>,
+        testingCron: <?php echo json_encode(tourText('tour_testing_cron', 'Running a real test pass - this can take up to 30 seconds...')) ?>,
         cronTestBusy: <?php echo json_encode(tourText('tour_cron_test_busy', 'A cron run is already in progress - try again shortly.')) ?>,
         cronTestDone: <?php echo json_encode(tourText('tour_cron_test_done', 'Test run completed - see the status above.')) ?>,
         refreshChecked: <?php echo json_encode(tourText('tour_refresh_checked', 'Checked latest status')) ?>,
@@ -1036,15 +1061,27 @@ function tourText($key, $default) {
                 // getConnectionStatus() (feature_tour.ctrl.php) now
                 // returns {connected, message} per service - message is
                 // the same real Success/error text the settings page's
-                // own Verify button would show (empty for the
-                // credential-presence-only checks like google/mail/proxy,
-                // which have no live check to report). Passed through to
-                // _tourShowRefreshResult() as its own colored detail span
-                // so clicking Refresh actually says what the check found,
-                // not just that one ran.
+                // own Verify button would show, but empty for the
+                // credential-presence-only checks (google/mail/proxy),
+                // which have no live check to report at all. Rather than
+                // show a bare "Checked latest status" with nothing next
+                // to it for those, fall back to the same connected/
+                // not-connected wording the badge itself just got set to
+                // - still real information (confirms the click actually
+                // did something), just not a live API result.
                 var clickedService = triggerEl ? $(triggerEl).closest('.sp-tour-link-row').find('.sp-tour-badges').data('service') : null;
                 var clickedInfo = clickedService ? status[clickedService] : null;
-                _tourShowRefreshResult(triggerEl, TOUR_I18N.refreshChecked, clickedInfo ? clickedInfo.message : '', clickedInfo ? clickedInfo.connected : false);
+                var detail = '';
+                if (clickedInfo) {
+                    if (clickedInfo.message) {
+                        detail = clickedInfo.message;
+                    } else if (clickedService === 'cron') {
+                        detail = clickedInfo.connected ? TOUR_I18N.detected : TOUR_I18N.notDetected;
+                    } else {
+                        detail = clickedInfo.connected ? TOUR_I18N.connected : TOUR_I18N.notSetUp;
+                    }
+                }
+                _tourShowRefreshResult(triggerEl, TOUR_I18N.refreshChecked, detail, clickedInfo ? clickedInfo.connected : false);
             },
             complete: function() {
                 $btn.removeClass('sp-tour-refreshing');
@@ -1056,9 +1093,12 @@ function tourText($key, $default) {
     // same lock/deadline mechanism the real ping trigger uses - see
     // FeatureTourController::testCronNow()) - unlike every refresh button
     // above, which only re-checks a status that was already whatever it
-    // already was. Can take up to ~20 seconds (SP_JOB_QUEUE_BUDGET_SECONDS),
-    // so this gets its own loading state rather than reusing the quick
-    // spin-icon pattern the sub-second refresh buttons use.
+    // already was. SP_JOB_QUEUE_BUDGET_SECONDS (20 by default) is a soft
+    // deadline checked between work units, not a hard cutoff - a real run
+    // measured live on this budget took ~26-28s end to end, so both the
+    // copy below and this ajax call's own timeout carry enough margin
+    // above the budget setting to not misreport a genuinely-still-running
+    // test as "something went wrong".
     window.featureTourTestCronNow = function() {
         var $link = $('#tour_cron_test_link');
         var $result = $('#tour_cron_test_result');
@@ -1066,23 +1106,23 @@ function tourText($key, $default) {
         $link.addClass('sp-tour-testing');
         var originalText = $link.text();
         $link.text(TOUR_I18N.testingCron);
-        $result.text('').css('color', '');
+        $result.text('').removeClass('sp-tour-refresh-result-ok sp-tour-refresh-result-fail sp-tour-cron-test-busy');
         $.ajax({
             url: '<?php echo SP_WEBPATH ?>/feature_tour.php',
             type: 'POST',
             data: { sec: 'test_cron_now' },
             dataType: 'json',
-            timeout: 35000,
+            timeout: 45000,
             success: function(res) {
                 if (res.status === 'busy') {
-                    $result.text(TOUR_I18N.cronTestBusy).css('color', '#c98a13');
+                    $result.text(TOUR_I18N.cronTestBusy).addClass('sp-tour-cron-test-busy');
                     return;
                 }
                 _tourUpdateConnectionBadge('cron', !!res.detected);
-                $result.text(TOUR_I18N.cronTestDone).css('color', '#1f9d55');
+                $result.text(TOUR_I18N.cronTestDone).addClass('sp-tour-refresh-result-ok');
             },
             error: function() {
-                $result.text(TOUR_I18N.genericError).css('color', '#c0392b');
+                $result.text(TOUR_I18N.genericError).addClass('sp-tour-refresh-result-fail');
             },
             complete: function() {
                 $link.removeClass('sp-tour-testing');

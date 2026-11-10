@@ -4347,3 +4347,41 @@ a:hover .far {
 .sp-tour-refresh-result-detail.sp-tour-refresh-result-fail {
     color: #c0392b;
 }
+
+/* Step 2's "+N more websites" hint and the Cron step's Test-now box -
+   see feature_tour_popup.ctp.php / classic's screen.css for context. */
+.sp-tour-more-websites-hint {
+    font-size: 13px;
+    padding: 8px 2px 0 2px;
+    margin-top: 0;
+}
+.sp-tour-cron-test-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 0;
+}
+.sp-tour-cron-test-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+}
+.sp-tour-cron-test-result {
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.sp-tour-cron-test-result:not(:empty) {
+    margin-top: 6px;
+}
+.sp-tour-cron-test-result.sp-tour-cron-test-busy {
+    color: #c98a13;
+}
+.sp-tour-cron-ping-hint {
+    font-size: 13px;
+    color: #64748b;
+    padding: 0 2px;
+}
