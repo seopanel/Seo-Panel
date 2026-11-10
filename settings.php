@@ -232,6 +232,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			        $monthlyUsed  = $usageData['monthly_used'] ?? 0;
 			        $serpLimit    = $usageData['serp_limit'] ?? 0;
 			        $serpUsed     = $usageData['serp_used'] ?? 0;
+			        // api.account.ctrl.php (spAPI server) returns this
+			        // alongside serp_limit/serp_used, same per-type usage
+			        // shape - just never read on this side, so the Search
+			        // Volume quota was invisible here even though it's
+			        // tracked and shown right next to it on the spAPI
+			        // admin's own usage dashboard.
+			        $searchVolumeLimit = $usageData['search_volume_limit'] ?? 0;
+			        $searchVolumeUsed  = $usageData['search_volume_used'] ?? 0;
 			        $planName     = $usageData['plan_name'] ?? '';
 			        $msg = "{$_SESSION['text']['label']['Success']}";
 			        if ($planName) {
@@ -240,6 +248,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			        $msg .= "<br>Monthly Usage: <b>$monthlyUsed/$monthlyLimit</b>";
 			        if ($serpLimit > 0) {
 			            $msg .= "<br>SERP Usage: <b>$serpUsed/$serpLimit</b>";
+			        }
+			        if ($searchVolumeLimit > 0) {
+			            $msg .= "<br>Search Volume Usage: <b>$searchVolumeUsed/$searchVolumeLimit</b>";
 			        }
 			        if ($upgradeBtn) {
 			            $msg .= "<br>Monthly limit reached." . $upgradeBtn;
