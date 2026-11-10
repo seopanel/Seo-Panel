@@ -1691,12 +1691,28 @@ class ReportController extends Controller {
 				$reviewReport = $reviewCtrler->viewReportSummary($filterList, true, $cronUserId);
 			}
 
-			// AI Visibility data is no longer embedded here - it now lives
-			// solely on its own dashboard tab (moved there so it isn't
-			// duplicated in two places). AIVisibilityController::
-			// viewReportSummary() itself is left in place, just unreferenced
-			// from this combined report - still directly tested, and a
-			// reasonable thing to re-wire elsewhere later if needed.
+			// AI Visibility data stays off the interactive combined Overall
+			// Report Summary page - it already has its own dashboard tab,
+			// and duplicating it here was the thing this section used to
+			// explicitly avoid. But the *emailed* report is a separate
+			// surface users never otherwise see AI Visibility on unless
+			// they already get the independent weekly digest, so fold a
+			// summary in there specifically - gated by the same
+			// ai_visibility_email_notification setting sendWeeklyDigests()
+			// already respects, so turning that toggle off silences both.
+			if (!empty($cronUserId)) {
+				$aivRepSetInfo = $this->getUserReportSettings($cronUserId);
+				if (!empty($aivRepSetInfo['ai_visibility_email_notification'])) {
+					include_once(SP_CTRLPATH."/aivisibility.ctrl.php");
+					$aiVisibilityCtrler = new AIVisibilityController();
+					$aiVisibilityCtrler->spTextAIV = $aiVisibilityCtrler->getLanguageTexts('aivisibility', $_SESSION['lang_code']);
+					$aiVisibilityCtrler->set('spTextAIV', $aiVisibilityCtrler->spTextAIV);
+					$filterList['from_time'] = $fromTimeShort;
+					$filterList['to_time'] = $toTimeShort;
+					$aiVisibilityReport = $aiVisibilityCtrler->viewReportSummary($filterList, true, $cronUserId);
+				}
+			}
+
 			if ($exportVersion) {
 				$exportContent .= $websiteSearchReport;
 				$exportContent .= $keywordSearchReport;
@@ -1710,6 +1726,7 @@ class ReportController extends Controller {
 				$this->set('socialMediaReport', $socialMediaReport);
 				$this->set('reviewReport', $reviewReport);
 				$this->set('analyticsReport', $analyticsReport);
+				$this->set('aiVisibilityReport', $aiVisibilityReport ?? '');
 			}
 			
 		}

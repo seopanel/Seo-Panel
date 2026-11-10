@@ -4,67 +4,75 @@
 // report section's own *_report_summary.ctp.php already uses. No own
 // filter form: website_id/date range always come from the parent
 // Overall Report page, matching how $summaryPage=true is the only way
-// AIVisibilityController::viewReportSummary() is ever actually called.
+// AIVisibilityController::viewReportSummary() is ever actually called -
+// in practice that's always the emailed report, so every style here is
+// a plain inline attribute rather than a class, matching the rest of
+// email/*.ctp.php - an email client only ever keeps what's inlined or
+// in the email's own <style> block (email/emailhead.ctp.php), never an
+// external stylesheet, so a class-only style here would render as
+// plain unstyled text exactly like this did before this rewrite.
 
 if (!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 	$pdfVersion ? showPdfHeader($spTextAIV['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary') : showPrintHeader($spTextAIV['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary');
 } else {
-	echo showSectionHead($spTextAIV['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary');
+	?>
+	<div style="background-color:#DAE5EE;border-bottom:1px solid #B0C2CC;padding:8px 12px;font-weight:bold;font-size:14px;color:#343333;font-family:Tahoma, verdana, arial, sans-serif;">
+		<?php echo $spTextAIV['AI Visibility Report Summary'] ?? 'AI Visibility Report Summary'?>
+	</div>
+	<?php
 }
 ?>
 
-<table class="search" width="80%">
-	<tr>
-		<th><?php echo $spText['common']['Period']?>:</th>
-		<td><?php echo htmlspecialchars($fromTime)?> &ndash; <?php echo htmlspecialchars($toTime)?></td>
-	</tr>
-</table>
+<div style="font-size:12px;color:#777777;padding:8px 0 4px;">
+	<?php echo $spText['common']['Period']?>: <?php echo htmlspecialchars($fromTime)?> <?php echo $spText['common']['to'] ?? 'to'?> <?php echo htmlspecialchars($toTime)?>
+</div>
 
 <?php if (empty($summaryByWebsite)) { ?>
-	<p><?php echo $spTextAIV['No websites to report on.'] ?? 'No websites to report on.'?></p>
+	<p style="font-size:12px;color:#777777;"><?php echo $spTextAIV['No websites to report on.'] ?? 'No websites to report on.'?></p>
 <?php } else { ?>
 	<?php foreach ($summaryByWebsite as $summary) { ?>
-		<h4 style="margin-top:18px;"><?php echo htmlspecialchars($summary['name'])?></h4>
-		<table class="cust_tab" width="100%" cellpadding="6" style="border-collapse:collapse;">
-			<tr>
-				<th style="border:1px solid #ddd;text-align:left;"><?php echo $spTextAIV['Signal'] ?? 'Signal'?></th>
-				<th style="border:1px solid #ddd;text-align:left;"><?php echo $spTextAIV['Score'] ?? 'Score'?></th>
-				<th style="border:1px solid #ddd;text-align:left;"><?php echo $spText['common']['Details'] ?? 'Details'?></th>
+		<div style="font-weight:bold;font-size:13px;color:#333333;margin-top:16px;padding-bottom:4px;"><?php echo htmlspecialchars($summary['name'])?></div>
+
+		<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Tahoma, verdana, arial, sans-serif;">
+			<tr style="background-color:#DAE5EE;border-bottom:1px solid #B0C2CC;">
+				<td style="padding:6px 8px;font-weight:bold;font-size:11px;color:#343333;border-right:1px solid #B0C2CC;"><?php echo $spTextAIV['Signal'] ?? 'Signal'?></td>
+				<td style="padding:6px 8px;font-weight:bold;font-size:11px;color:#343333;border-right:1px solid #B0C2CC;"><?php echo $spTextAIV['Score'] ?? 'Score'?></td>
+				<td style="padding:6px 8px;font-weight:bold;font-size:11px;color:#343333;"><?php echo $spText['common']['Details'] ?? 'Details'?></td>
 			</tr>
-			<tr>
-				<td style="border:1px solid #ddd;"><strong><?php echo $spTextAIV['AI Visibility Score'] ?? 'AI Visibility Score'?></strong></td>
-				<td style="border:1px solid #ddd;"><strong><?php echo $summary['score']['overall'] !== null ? intval($summary['score']['overall']) . '%' : '&mdash;'?></strong></td>
-				<td style="border:1px solid #ddd;"><?php echo $spTextAIV['blends every AI-era signal this panel tracks into one number'] ?? 'blends every AI-era signal this panel tracks into one number'?></td>
+			<tr style="background-color:#F4F7FA;">
+				<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><strong><?php echo $spTextAIV['AI Visibility Score'] ?? 'AI Visibility Score'?></strong></td>
+				<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><strong><?php echo $summary['score']['overall'] !== null ? intval($summary['score']['overall']) . '%' : 'N/A'?></strong></td>
+				<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo $spTextAIV['blends every AI-era signal this panel tracks into one number'] ?? 'blends every AI-era signal this panel tracks into one number'?></td>
 			</tr>
-			<?php foreach ($summary['score']['components'] as $component) { ?>
-				<tr>
-					<td style="border:1px solid #ddd;"><?php echo htmlspecialchars($spTextAIV[$component['label']] ?? $component['label'])?></td>
-					<td style="border:1px solid #ddd;"><?php echo $component['measured'] ? intval($component['score']) . '%' : '&mdash;'?></td>
-					<td style="border:1px solid #ddd;"><?php echo htmlspecialchars($component['detail'])?></td>
+			<?php $rowNum = 0; foreach ($summary['score']['components'] as $component) { $rowNum++; ?>
+				<tr style="background-color:<?php echo ($rowNum % 2 == 1) ? '#FFFFFF' : '#F4F7FA'?>;">
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo htmlspecialchars($spTextAIV[$component['label']] ?? $component['label'])?></td>
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo $component['measured'] ? intval($component['score']) . '%' : 'N/A'?></td>
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo htmlspecialchars($component['detail'])?></td>
 				</tr>
 			<?php } ?>
 		</table>
 
-		<table class="cust_tab" width="100%" cellpadding="6" style="border-collapse:collapse;margin-top:8px;">
-			<tr>
-				<th style="border:1px solid #ddd;text-align:left;" colspan="3"><?php echo $spTextAIV['AI Referral ROI'] ?? 'AI Referral ROI'?></th>
+		<table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Tahoma, verdana, arial, sans-serif;margin-top:10px;">
+			<tr style="background-color:#DAE5EE;border-bottom:1px solid #B0C2CC;">
+				<td colspan="2" style="padding:6px 8px;font-weight:bold;font-size:11px;color:#343333;"><?php echo $spTextAIV['AI Referral ROI'] ?? 'AI Referral ROI'?></td>
 			</tr>
 			<?php if (empty($summary['roi']['configured'])) { ?>
-				<tr>
-					<td style="border:1px solid #ddd;" colspan="3"><?php echo $spTextAIV['Google Analytics not connected for this website.'] ?? 'Google Analytics not connected for this website.'?></td>
+				<tr style="background-color:#F4F7FA;">
+					<td colspan="2" style="padding:6px 8px;font-size:11px;color:#343333;"><?php echo $spTextAIV['Google Analytics not connected for this website.'] ?? 'Google Analytics not connected for this website.'?></td>
 				</tr>
 			<?php } else { ?>
-				<tr>
-					<td style="border:1px solid #ddd;"><?php echo $spTextAIV['Sessions from AI Platforms'] ?? 'Sessions from AI Platforms'?></td>
-					<td style="border:1px solid #ddd;" colspan="2"><?php echo number_format($summary['roi']['sessions'])?></td>
+				<tr style="background-color:#F4F7FA;">
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo $spTextAIV['Sessions from AI Platforms'] ?? 'Sessions from AI Platforms'?></td>
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo number_format($summary['roi']['sessions'])?></td>
 				</tr>
-				<tr>
-					<td style="border:1px solid #ddd;"><?php echo $spTextAIV['Conversions from AI Platforms'] ?? 'Conversions from AI Platforms'?></td>
-					<td style="border:1px solid #ddd;" colspan="2"><?php echo number_format($summary['roi']['conversions'])?></td>
+				<tr style="background-color:#FFFFFF;">
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo $spTextAIV['Conversions from AI Platforms'] ?? 'Conversions from AI Platforms'?></td>
+					<td style="padding:6px 8px;font-size:11px;color:#343333;border-bottom:1px solid #e3e3e3;"><?php echo number_format($summary['roi']['conversions'])?></td>
 				</tr>
-				<tr>
-					<td style="border:1px solid #ddd;"><?php echo $spTextAIV['Conversion Rate'] ?? 'Conversion Rate'?></td>
-					<td style="border:1px solid #ddd;" colspan="2"><?php echo $summary['roi']['conversionRate'] !== null ? $summary['roi']['conversionRate'] . '%' : '&mdash;'?></td>
+				<tr style="background-color:#F4F7FA;">
+					<td style="padding:6px 8px;font-size:11px;color:#343333;"><?php echo $spTextAIV['Conversion Rate'] ?? 'Conversion Rate'?></td>
+					<td style="padding:6px 8px;font-size:11px;color:#343333;"><?php echo $summary['roi']['conversionRate'] !== null ? $summary['roi']['conversionRate'] . '%' : 'N/A'?></td>
 				</tr>
 			<?php } ?>
 		</table>
