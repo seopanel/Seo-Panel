@@ -17,7 +17,11 @@ if (!function_exists('getReviewPlatformColor')) {
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 } else { ?>
-<form id='review_dashboard_form' method="post">
+<!-- Website/Period selection now lives in the shared filter bar above
+     #main_dashboard_nav (userhome.ctp.php) - this form is kept (hidden,
+     not removed) since the controller/view below still read its field
+     names; the shared bar drives reloads directly via GET instead. -->
+<form id='review_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -58,7 +62,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextReview['Review Statistics']?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-4 text-center">
 							<h6 class="mb-3"><?php echo $spTextReview['Total Review Links']?></h6>
 							<h3>
@@ -188,7 +192,7 @@ if (!empty($noWebsites)) {
 										<th><?php echo $spTextReview['Total Reviews']?></th>
 										<th><?php echo $spTextReview['Average Rating']?></th>
 										<th><?php echo $spTextSocialMedia['Last Checked']?></th>
-										<th><?php echo $spText['common']['Actions']?></th>
+										<th><?php echo $spText['common']['Action']?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -254,6 +258,16 @@ function drawAllCharts() {
 	drawReviewComparisonChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spReviewChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spReviewChartResizeTimer);
+		spReviewChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw review count distribution pie chart
 function drawReviewCountChart() {
 	<?php if (!empty($reviewDistribution)) { ?>
@@ -269,6 +283,7 @@ function drawReviewCountChart() {
 	var options = {
 		title: 'Reviews Distribution by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('review_count_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -301,6 +316,7 @@ function drawReviewRatingChart() {
 	var options = {
 		title: 'Average Rating by Platform',
 		pieHole: 0.4,
+		width: spChartWidth('review_rating_chart'),
 		height: 350,
 		colors: [
 			<?php
@@ -333,6 +349,7 @@ function drawReviewTrendsChart() {
 
 	var options = {
 		title: 'Review Growth Over Time',
+		width: spChartWidth('review_trends_chart'),
 		height: 400,
 		colors: ['#17a2b8', '#ffc107'],
 		legend: { position: 'bottom' },
@@ -374,6 +391,7 @@ function drawReviewComparisonChart() {
 
 	var options = {
 		title: 'Top 10 Review Links by Review Count',
+		width: spChartWidth('review_comparison_chart'),
 		height: 400,
 		legend: { position: 'none' },
 		chartArea: { width: '70%', height: '80%' },
@@ -388,28 +406,8 @@ function drawReviewComparisonChart() {
 	<?php } ?>
 }
 
-// Sync website selection with other tabs
-$(document).ready(function() {
-	if (sessionStorage.getItem('sp_review_auto_loading')) {
-		sessionStorage.removeItem('sp_review_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_review_auto_loading', '1');
-			scriptDoLoadPost('review_dashboard.php', 'review_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

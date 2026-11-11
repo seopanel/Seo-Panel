@@ -5,7 +5,7 @@
 		<th><?php echo $spText['label']['Followers']?></th>
 	</tr>
 	<tr>
-		<td><?php echo $smLink?></td>
+		<td><?php echo htmlspecialchars($smLink, ENT_QUOTES)?></td>
 		<td>
 			<?php echo ($smType == 'facebook') ? $statInfo['likes'] : "-";?>
 		</td>

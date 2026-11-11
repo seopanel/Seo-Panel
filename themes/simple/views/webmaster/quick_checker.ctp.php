@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextTools['Quick Checker']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Quick Checker']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#wmQuickHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="wmQuickHelpModal" tabindex="-1" role="dialog" aria-labelledby="wmQuickHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-bolt"></i></div>
+				<h5 class="modal-title" id="wmQuickHelpModalLabel">About Webmaster Tools Quick Checker</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Pick a website and a date range to query Google Search Console live and see overall clicks/impressions/CTR/average position, plus a per-keyword breakdown, right now.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Nothing is saved - this is a live check, unlike the other reports in this section which show previously-saved data. Needs Google Search Console connected under Settings &gt; Connections.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search" style="width: 60%">
 	<tr>
@@ -7,9 +35,9 @@
 			<select name="website_id" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>

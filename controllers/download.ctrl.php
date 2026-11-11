@@ -32,9 +32,41 @@ class DownloadController extends Controller{
 			switch($fileSec) {
 				case "sitemap":
 				default:
-					$file = SP_TMPPATH."/".$fileName;
+					// IDOR fix: previously read straight from the shared
+					// SP_TMPPATH root with no ownership check at all - any
+					// logged-in user could download any other user's
+					// sitemap just by guessing/knowing its filename.
+					// SitemapController now writes every sitemap under a
+					// per-user subdirectory (see its constructor); scoping
+					// the read to THIS caller's own subdirectory - derived
+					// from their own session, never from $fileInfo/client
+					// input - means a filename they don't own simply
+					// doesn't exist at the path they're allowed to read.
+					$userId = intval(isLoggedIn());
+					$baseDir = SP_TMPPATH."/sitemap/".$userId;
+					$file = $baseDir."/".$fileName;
 					break;
 			}
+
+			// Defense in depth on top of isValidFile()'s blocklist (a
+			// blocklist is inherently fragile - str_replace()-ing out
+			// '../'/'./'/'..' once doesn't catch every shape, e.g. a
+			// literal null byte or a platform-specific separator quirk),
+			// with a real canonicalization + prefix check: resolve both
+			// paths with realpath() (following symlinks, collapsing any
+			// remaining '..' segments) and verify the target actually
+			// lives inside the caller's own directory. The trailing
+			// separator on $realBaseDir matters - without it, a sibling
+			// directory that merely SHARES the base dir's name as a
+			// prefix (e.g. "sitemap/5-evil" against a naive "sitemap/5"
+			// check) would wrongly pass.
+			$realBaseDir = realpath($baseDir);
+			$realFile = realpath($file);
+			if ($realBaseDir === false || $realFile === false || strpos($realFile, $realBaseDir . DIRECTORY_SEPARATOR) !== 0) {
+				echo "<font style='color:red;'>You are not allowed to access this file!</font>";
+				exit;
+			}
+			$file = $realFile;
 
 			// Set appropriate Content-Type based on file type
 			if ($fileType == 'gz' || pathinfo($fileName, PATHINFO_EXTENSION) == 'gz') {

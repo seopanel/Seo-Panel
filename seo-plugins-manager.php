@@ -34,35 +34,37 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "update":
 			$controller->updateSeoPlugin($_POST);
 			break;
-			
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "upgrade":
+			$controller->upgradeSeoPlugin($_POST['pid']);
+			break;
+
+		case "reinstall":
+			$controller->reInstallSeoPlugin($_POST['pid']);
+			break;
+
 		default:
 		    $controller->listSeoPlugins('', false, $_POST);
 		    break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "changestatus":
 			$status = empty($_GET['status']) ? 1 : 0;
-			$controller->changeStatus($_GET['seoplugin_id'], $status);			
+			$controller->changeStatus($_GET['seoplugin_id'], $status);
 			$controller->listSeoPlugins('', false, $_GET);
 			break;
-			
+
 		case "edit":
 			$controller->editSeoPlugin($_GET);
 			break;
-			
+
 		case "listinfo":
 			$controller->listPluginInfo($_GET['pid']);
-			break;
-			
-		case "upgrade":
-			$controller->upgradeSeoPlugin($_GET['pid']);
-			break;
-			
-		case "reinstall":
-			$controller->reInstallSeoPlugin($_GET['pid']);
 			break;
 
 		default:

@@ -1,5 +1,32 @@
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel["Crawl Log Manager"]); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#crawlLogMgrHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="crawlLogMgrHelpModal" tabindex="-1" role="dialog" aria-labelledby="crawlLogMgrHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-clipboard-list"></i></div>
+				<h5 class="modal-title" id="crawlLogMgrHelpModalLabel">About Crawl Log Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>This logs every crawl SEO Panel has made, including rank checks, backlink checks, and site audits, showing the URL fetched, which proxy was used, and whether it succeeded. Filter by report type, proxy, search engine, or date range, and drill into any row for the full request and response details.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>It's the first place to look when a tool's results seem wrong, since it shows exactly what was requested and what came back.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
-echo showSectionHead($spTextPanel["Crawl Log Manager"]);
 $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 ?>
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>">
@@ -85,16 +112,16 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 	<strong><?php echo $spTextPanel["Current Time"]?>:</strong> <?php echo date("Y-m-d H:i:s <b>T(P)</b>"); ?>
 </div>
 <?php echo $pagingDiv?>
-<table class="list">
+<table class="list crawl-log-table">
 	<tr class="listHead">
-		<td><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
-		<td><?php echo $spText['common']['Id']?></td>
-		<td><?php echo $spText['label']['Report Type']?></td>
-		<td><?php echo $spText['label']['Reference']?></td>
-		<td><?php echo $spText['label']['Subject']?></td>
-		<td><?php echo $spText['common']['Details']?></td>
-		<td><?php echo $spText['common']['Status']?></td>
-		<td><?php echo $spText['label']['Updated']?></td>
+		<td style="width: 3%"><input type="checkbox" id="checkall" onclick="checkList('checkall')"></td>
+		<td style="width: 5%"><?php echo $spText['common']['Id']?></td>
+		<td style="width: 8%"><?php echo $spText['label']['Report Type']?></td>
+		<td style="width: 32%"><?php echo $spText['label']['Reference']?></td>
+		<td style="width: 10%"><?php echo $spText['label']['Subject']?></td>
+		<td style="width: 18%"><?php echo $spText['common']['Details']?></td>
+		<td style="width: 8%"><?php echo $spText['common']['Status']?></td>
+		<td style="width: 10%"><?php echo $spText['label']['Updated']?></td>
 		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
@@ -130,10 +157,10 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content')";
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td><?php echo $logLink?></td>
-				<td><?php echo $listInfo['crawl_type']?></td>
-				<td><?php echo $listInfo['ref_id']?></td>
-				<td><?php echo $listInfo['subject']?></td>
-				<td><?php echo stripslashes($listInfo['log_message'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['crawl_type'])?></td>
+				<td class="crawl-log-truncate" title="<?php echo htmlspecialchars($listInfo['ref_id'])?>"><?php echo htmlspecialchars($listInfo['ref_id'])?></td>
+				<td class="crawl-log-truncate" title="<?php echo htmlspecialchars($listInfo['subject'])?>"><?php echo htmlspecialchars($listInfo['subject'])?></td>
+				<td class="crawl-log-truncate" title="<?php echo htmlspecialchars(stripslashes($listInfo['log_message']))?>"><?php echo htmlspecialchars(stripslashes($listInfo['log_message']))?></td>
 				<td class="text-center">
 					<?php
 					if ($listInfo['crawl_status']) {

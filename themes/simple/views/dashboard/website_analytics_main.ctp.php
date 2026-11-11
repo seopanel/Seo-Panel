@@ -38,7 +38,11 @@ if (!function_exists('getSpamScoreLabel')) {
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 } else { ?>
-<form id='website_analytics_dashboard_form' method="post">
+<!-- Website/Period selection now lives in the shared filter bar above
+     #main_dashboard_nav (userhome.ctp.php) - this form is kept (hidden,
+     not removed) since the controller/view below still read its field
+     names; the shared bar drives reloads directly via GET instead. -->
+<form id='website_analytics_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -79,7 +83,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Website Analytics'] ?? 'Website Analytics'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-2 text-center">
 							<h6 class="mb-3">
 								<?php echo $spText['common']['Domain Authority']?>
@@ -228,32 +232,45 @@ if (!empty($noWebsites)) {
 	</div>
 	<?php } ?>
 
-	<!-- Backlinks and Indexed Pages Trends -->
+	<!-- Backlinks and Indexed Pages Trends - both cards always render (not
+	     just when their own chart has data) so an empty one doesn't leave
+	     a blank gap next to a populated sibling; each shows a plain
+	     "no data yet" placeholder in its own card-body instead. -->
 	<div class="row mb-4">
-		<?php if (!empty($backlinkTrends)) { ?>
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spTextDashboard['Backlink Trends'] ?? 'Backlink Trends'?></h4>
 				</div>
 				<div class="card-body">
+					<?php if (!empty($backlinkTrends)) { ?>
 					<div id="backlink_trends_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+					<div class="text-center text-muted" style="padding:60px 20px;">
+						<i class="fas fa-link" style="font-size:28px;display:block;margin-bottom:10px;color:#9296a8;"></i>
+						<?php echo $spTextDashboard['No backlink trend data yet'] ?? 'No backlink trend data yet.'?>
+					</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
-		<?php } ?>
-		<?php if (!empty($saturationTrends)) { ?>
 		<div class="col-md-6">
 			<div class="card">
 				<div class="card-header card-header-gradient-blue">
 					<h4><?php echo $spTextDashboard['Indexed Pages Trends'] ?? 'Indexed Pages Trends'?></h4>
 				</div>
 				<div class="card-body">
+					<?php if (!empty($saturationTrends)) { ?>
 					<div id="saturation_trends_chart" style="width: 100%; height: 350px;"></div>
+					<?php } else { ?>
+					<div class="text-center text-muted" style="padding:60px 20px;">
+						<i class="fas fa-server" style="font-size:28px;display:block;margin-bottom:10px;color:#9296a8;"></i>
+						<?php echo $spTextDashboard['No indexed pages trend data yet'] ?? 'No indexed pages trend data yet.'?>
+					</div>
+					<?php } ?>
 				</div>
 			</div>
 		</div>
-		<?php } ?>
 	</div>
 
 	<!-- Detailed Statistics Table -->
@@ -393,6 +410,16 @@ function drawAllCharts() {
 	drawSaturationTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spWebsiteAnalyticsChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spWebsiteAnalyticsChartResizeTimer);
+		spWebsiteAnalyticsChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw authority trends line chart
 function drawAuthorityTrendsChart() {
 	<?php if (!empty($analyticsTrends)) { ?>
@@ -409,6 +436,7 @@ function drawAuthorityTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Authority & Spam Score Over Time'] ?? 'Authority & Spam Score Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('authority_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853', '#EA4335'],
 		legend: { position: 'bottom' },
@@ -446,6 +474,7 @@ function drawBacklinkTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Backlinks Over Time'] ?? 'Backlinks Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('backlink_trends_chart'),
 		height: 350,
 		colors: ['#17a2b8', '#28a745'],
 		legend: { position: 'bottom' },
@@ -482,6 +511,7 @@ function drawSaturationTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Indexed Pages Over Time'] ?? 'Indexed Pages Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('saturation_trends_chart'),
 		height: 350,
 		colors: ['#dc3545', '#007bff'],
 		legend: { position: 'bottom' },
@@ -502,33 +532,8 @@ function drawSaturationTrendsChart() {
 	<?php } ?>
 }
 
-// Sync website selection with other tabs
-$(document).ready(function() {
-	// Save website selection when dropdown changes
-	$('#website_id').on('change', function() {
-		sessionStorage.setItem('sp_selected_website_id', $(this).val());
-	});
-
-	if (sessionStorage.getItem('sp_wa_auto_loading')) {
-		sessionStorage.removeItem('sp_wa_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_wa_auto_loading', '1');
-			scriptDoLoadPost('<?php echo SP_WEBPATH?>/website_analytics_dashboard.php', 'website_analytics_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

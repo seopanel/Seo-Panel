@@ -126,7 +126,21 @@ class Validation{
         return $msg;
     }
     
-    function checkPasswords($pass1, $pass2){
+    // bug fix: this only ever checked length + that the two fields match -
+    // any 6-32 character string was accepted, including the single most
+    // common leaked/guessed passwords (e.g. "password", "123456") and a
+    // password identical to the username itself. Per NIST 800-63B,
+    // blocking known-weak/breached passwords is a more effective control
+    // than forced composition rules (must-have-a-symbol etc.), which
+    // mostly just push people toward predictable substitutions - so
+    // that's the shape added here, as two NEW checks rather than
+    // changing the existing length/match messages (both come from the
+    // `texts` table and are already translated into several languages -
+    // changing their English content would leave every other language's
+    // translation silently wrong until someone updates it separately).
+    // $username is optional so every existing call site keeps working
+    // unchanged; passed where available (every real caller has it).
+    function checkPasswords($pass1, $pass2, $username = null){
         if(strlen($pass1) < 6 || strlen($pass1) > 32){
             $msg = $_SESSION['text']['common']['password632'];
             $this->flagErr = true;
@@ -135,7 +149,37 @@ class Validation{
             $msg = $_SESSION['text']['common']['passwordnotmatch'];
             $this->flagErr = true;
         }
+        if ($username !== null && $pass1 !== '' && strcasecmp($pass1, $username) === 0) {
+            $msg = $_SESSION['text']['common']['passwordsameasusername'] ?? 'Your password cannot be the same as your username.';
+            $this->flagErr = true;
+        }
+        if ($this->__isCommonPassword($pass1)) {
+            $msg = $_SESSION['text']['common']['passwordtoocommon'] ?? 'That password is too common and easily guessed - please choose a different one.';
+            $this->flagErr = true;
+        }
         return $msg;
+    }
+
+    // a short, deliberately non-exhaustive list of the passwords that show
+    // up at the very top of essentially every real-world credential-
+    // stuffing/breach-list analysis - blocking just these catches a
+    // meaningful share of the weakest real passwords for near-zero cost,
+    // without trying to be (or claim to be) a full breached-password
+    // database. Case-insensitive; checked as an exact match, not a
+    // substring, so it can't reject an otherwise-strong password that
+    // merely contains one of these as a fragment.
+    function __isCommonPassword($password) {
+        static $commonPasswords = null;
+        if ($commonPasswords === null) {
+            $commonPasswords = array_flip([
+                'password', 'password1', 'password123', '12345678', '123456789',
+                '1234567890', 'qwerty123', 'qwertyui', 'letmein123', 'admin123',
+                'welcome123', 'iloveyou1', 'monkey123', 'football1', 'baseball1',
+                'dragon123', 'master123', 'sunshine1', 'princess1', 'trustno1',
+                'abc123456', '123123123', '111111111', 'passw0rd', 'changeme123',
+            ]);
+        }
+        return isset($commonPasswords[strtolower((string) $password)]);
     }
     
     function checkGenName($entry){
@@ -276,13 +320,37 @@ class Validation{
     
     function checkUrl($url) {
         $msg = '';
-        
-        $url = formatUrl($url, TRUE);
-        if(strlen( $url) == 0){
+
+        $formattedUrl = formatUrl($url, TRUE);
+        // reject anything containing HTML-special characters - a
+        // legitimate URL never contains a literal <, >, ", or ' (they'd
+        // be percent-encoded), and this field was previously accepted
+        // with no character validation at all, then echoed unescaped on
+        // the admin's Website Manager page (stored XSS - any non-admin
+        // customer could plant a payload that ran in an admin's browser
+        // the next time they viewed the website list)
+        // Deliberately NOT also rejecting a currently-unresolvable or
+        // private/reserved target here (e.g. via
+        // Spider::isPrivateOrRestrictedTarget()) - tried that first, but a
+        // domain that simply doesn't resolve YET (DNS not propagated, a
+        // transient resolver hiccup, or - as this exact scenario surfaced
+        // in testing - any subdomain of a real registered domain that was
+        // never actually created, which is the normal shape of a test
+        // fixture) is not itself a security signal, and hard-rejecting
+        // registration over it is a real false-positive/usability cost for
+        // no actual protection: registering a malicious URL alone does
+        // nothing - the SSRF only happens when the server actually FETCHES
+        // it, and that path is already fully covered by
+        // Spider::getContent()'s own unconditional guard (every scheduled
+        // crawl of "my websites" - backlink/saturation/rank checkers, Site
+        // Auditor, MetaTagGenerator - goes through it). That fetch-time
+        // block is sufficient; this validation stays scoped to character
+        // safety only.
+        if (strlen($formattedUrl) == 0 || preg_match('/[<>"\']/', $url)) {
             $msg = $_SESSION['text']['common']['Invalid Url'];
             $this->flagErr = true;
         }
-        
+
         return $msg;
     }
 }

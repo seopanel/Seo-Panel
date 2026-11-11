@@ -1,5 +1,31 @@
-<?php 
-echo showSectionHead($spTextPanel['Sync Search Engines']); 
+<?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Sync Search Engines']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#seSyncHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="seSyncHelpModal" tabindex="-1" role="dialog" aria-labelledby="seSyncHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-sync"></i></div>
+				<h5 class="modal-title" id="seSyncHelpModalLabel">About Sync Search Engines</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Pulls the latest list of supported search engines from SEO Panel's own update source, so new engines become available without a full software update.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php
 Session::showSessionMessges();
 echo $pagingDiv
 ?>

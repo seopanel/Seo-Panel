@@ -1,4 +1,27 @@
-<?php echo showSectionHead($spText['common']['Edit User Type']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spText['common']['Edit User Type']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#editUserTypeHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="editUserTypeHelpModal" tabindex="-1" role="dialog" aria-labelledby="editUserTypeHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-id-card"></i></div>
+				<h5 class="modal-title" id="editUserTypeHelpModalLabel">About Edit User Type</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Change this role's name, description, website/keyword count caps, and which plugins and SEO tools users of this type can access.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <form id="editUserType">
 <input type="hidden" name="sec" value="update"/>
 <input type="hidden" name="old_user_type" value="<?php echo $post['old_user_type']?>"/>

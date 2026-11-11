@@ -29,10 +29,26 @@ class IndexController extends Controller{
 		$this->set('spTextHome', $spTextHome);
 		$this->set('post', $searchInfo);
 		if(isLoggedIn()){
+			// the shared website/period selector bar (userhome.ctp.php,
+			// above #main_dashboard_nav) needs the caller's own website
+			// list regardless of which tab happens to be active on first
+			// load - OverviewController::showOverView() already sets this
+			// same 'siteList' var when it renders this same view directly
+			// (the Keywords tab's own top-level entry point), this is the
+			// other render path (plain '/') that was missing it.
+			include_once(SP_CTRLPATH . "/website.ctrl.php");
+			$websiteList = (new WebsiteController())->__getAllWebsites(isLoggedIn(), true);
+			$this->set('siteList', $websiteList);
 			$this->render('user/userhome');
 		}else{
 		    $spTextGuest = $this->getLanguageTexts('guest', $_SESSION['lang_code']);
 		    $this->set('spTextGuest', $spTextGuest);
+		    // the tool grid on the guest homepage shows each tool's real,
+		    // translated name (e.g. $spTextTools['ai-visibility']) - this
+		    // category was never loaded for guests before, so every tool
+		    // heading rendered blank (silently, since PHP treats an
+		    // undefined array key as empty string rather than an error)
+		    $this->set('spTextTools', $this->getLanguageTexts('seotools', $_SESSION['lang_code']));
 			$this->render('home');
 		}
 	}

@@ -13,7 +13,7 @@
 					</div>
 					<div class="spapi-upgrade-alert-text">
 						<div>Connect to the <strong>Seo Panel API</strong> to unlock additional SEO features and services.</div>
-						<div class="spapi-upgrade-alert-sub">Registration is completely free — no credit card required.</div>
+						<div class="spapi-free-badge"><i class="fas fa-check-circle"></i> Completely free <span class="spapi-free-badge-sep">&bull;</span> No credit card required</div>
 					</div>
 				</div>
 			</div>
@@ -131,6 +131,7 @@ window.spapiLoadPlans = function() {
 					var priceText = isFree ? 'Free' : '$' + plan.price + '<span>/mo</span>';
 					var icon = planIcons[i] || 'fa-layer-group';
 					var serpLimit = (plan.limits && plan.limits.SERP) ? plan.limits.SERP : (plan.serp_limit || 0);
+					var searchVolumeLimit = (plan.limits && plan.limits.SEARCH_VOLUME) ? plan.limits.SEARCH_VOLUME : (plan.search_volume_limit || 0);
 
 					if (isFree) {
 						window.spapiSelectedPlan = i;
@@ -161,15 +162,18 @@ window.spapiLoadPlans = function() {
 					if (serpLimit) {
 						html += '<div class="spapi-plan-detail"><i class="fas fa-search"></i>' + serpLimit.toLocaleString() + ' SERPs/mo</div>';
 					}
+					if (searchVolumeLimit) {
+						html += '<div class="spapi-plan-detail"><i class="fas fa-chart-line"></i>' + searchVolumeLimit.toLocaleString() + ' search volume lookups/mo</div>';
+					}
 					if (plan.features && Array.isArray(plan.features)) {
 						for (var j = 0; j < plan.features.length; j++) {
 							html += '<div class="spapi-plan-detail"><i class="fas fa-check"></i>' + plan.features[j] + '</div>';
 						}
 					}
 					if (!isFree) {
-						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt" style="margin-right:5px;"></i>Get Started</span></div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn"><i class="fas fa-external-link-alt"></i>Get Started</span></div>';
 					} else {
-						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn cta-free"><i class="fas fa-check-circle" style="margin-right:5px;"></i>Select</span></div>';
+						html += '<div class="spapi-plan-cta"><span class="spapi-plan-cta-btn cta-free"><i class="fas fa-check-circle"></i>Select</span></div>';
 					}
 					html += '</div>';
 				}

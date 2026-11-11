@@ -31,6 +31,14 @@ define( 'SP_ABSPATH', $abspath );
 // global variable for sp db connection id
 $SP_DB_CONN_OBJ = false;
 
+// since PHP 8.1, mysqli defaults to throwing mysqli_sql_exception on any SQL
+// error instead of returning false - but the whole app (select()/query() in
+// mysqlihelper.class.php, and every caller's `if (!$result)` check) is built
+// around the pre-8.1 false-return behavior. Without this, a bad query is an
+// uncaught fatal error instead of the graceful false + error_log() the app
+// expects.
+mysqli_report(MYSQLI_REPORT_OFF);
+
 if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 	
 	# loads seo panel main config file
@@ -58,13 +66,53 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 
 	# debug settings
 	if (SP_DEBUG){
-		@ini_set("display_erros", "On");
+		@ini_set("display_errors", "On");
 		@ini_set("display_startup_errors", "On");
 		error_reporting(E_ALL ^ E_NOTICE);
 	} else {
-		@ini_set("display_erros", "Off");
+		// "display_erros" (misspelled) previously here meant this call
+		// silently no-oped on an unknown ini key, so display_errors was
+		// NEVER actually turned off by SP_DEBUG=0 - only error_reporting()
+		// was. An uncaught fatal error/exception bypasses error_reporting()
+		// entirely and is printed whenever display_errors is On, so on any
+		// host whose php.ini ships it On by default (common on shared/
+		// budget hosting, which this self-hosted app explicitly targets),
+		// a real fatal error could leak a full stack trace and file paths
+		// to an unauthenticated visitor even with SP_DEBUG=0.
+		@ini_set("display_errors", "Off");
 		@ini_set("display_startup_errors", "Off");
 		error_reporting(0);
+	}
+
+	// security headers - previously never set anywhere (checked: no
+	// .htaccess rule, no header() call in any entry point), so every
+	// page - including the login page and every authenticated admin
+	// page - could be framed by any external site, enabling classic
+	// clickjacking/UI-redress attacks (e.g. an invisible iframe over a
+	// fake "claim your prize" button, positioned so a real click lands
+	// on this app's own "Delete"/"Activate" button instead). Set here so
+	// every entry point gets it for free, rather than requiring each of
+	// the ~100 top-level PHP files to set it individually. Only two,
+	// deliberately conservative headers - not a full CSP: this codebase
+	// has inline <script> blocks throughout (checked extensively this
+	// session), so a real Content-Security-Policy would need
+	// 'unsafe-inline' anyway (minimal real protection) or a large,
+	// separate refactor to nonce/hash every inline script - out of scope
+	// here. Not Strict-Transport-Security either - this is a self-hosted
+	// app not guaranteed to always be served over HTTPS; forcing HSTS on
+	// an HTTP-only install would break it, the same reasoning already
+	// applied to the Secure cookie flag in Session::startSession().
+	if (!headers_sent()) {
+		// SAMEORIGIN (not DENY) - this app is never meant to be framed
+		// by a THIRD-PARTY site, but same-origin framing is left
+		// available in case any current or future feature relies on it
+		header('X-Frame-Options: SAMEORIGIN');
+		// blocks a browser from MIME-sniffing a response into an
+		// executable type (e.g. treating an uploaded/served file as
+		// text/html) against the Content-Type it was actually served
+		// with - cheap, zero-risk hardening, no legitimate behavior here
+		// depends on sniffing being allowed
+		header('X-Content-Type-Options: nosniff');
 	}
 
 	# system settings
@@ -81,7 +129,25 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 
 	// include common functions
 	include_once(SP_INCPATH.'/sp-common.php');
-	
+
+	// UserTokenController (OAuth access/refresh tokens) and UserController's
+	// TOTP secret encryption both call sodium_crypto_secretbox()/the
+	// SODIUM_* constants directly. ext-sodium has shipped with PHP core
+	// since 7.2, but isn't guaranteed compiled in - confirmed missing on
+	// this project's own XAMPP/Linux bundle (no sodium.so in the PHP
+	// extension dir at all), which fatals every encrypt/decrypt call
+	// (e.g. "Undefined constant SODIUM_CRYPTO_SECRETBOX_KEYBYTES"),
+	// breaking Google Analytics/Search Console connect and TOTP
+	// enrollment outright. paragonie/sodium_compat is the standard fix
+	// for exactly this gap - WordPress core and phpMyAdmin (both already
+	// present on this very machine) bundle the same library for the same
+	// reason. Its autoloader only defines the sodium_*()/SODIUM_* symbols
+	// when they don't already exist, so requiring it unconditionally is
+	// safe and a no-op wherever the native extension is present.
+	if (!extension_loaded('sodium')) {
+	    include_once(SP_LIBPATH.'/sodium_compat/autoload.php');
+	}
+
 	# create database object
 	include_once(SP_LIBPATH."/database.class.php");
 	$dbObj = New Database(DB_ENGINE);
@@ -95,7 +161,72 @@ if(file_exists(SP_ABSPATH."/config/sp-config.php")){
 			define($settingsInfo['set_name'], $settingsInfo['set_val']);
 		}
 	}
-	
+
+	// Every setting below was introduced by some later upgrade_vX_vY.sql
+	// migration and is read unconditionally (no defined() guard) in one
+	// or more view/controller files - fine for any database that has
+	// actually run that migration, but a pre-upgrade admin logging in on
+	// an older database - which is exactly what they need to do to REACH
+	// the upgrade wizard in the first place, since it requires an
+	// authenticated session - hits "Uncaught Error: Undefined constant
+	// ..." on whichever page happens to reference it first. SP_DEMO alone
+	// is referenced, unguarded, in well over a hundred view files across
+	// both themes, including the shared layout every single page (login
+	// included) renders through - a hard lockout identical in shape to
+	// the SP_SPAPI_REGISTERED rate-limit lockout fixed earlier, just one
+	// level more fundamental. Retrofitting defined() checks into every
+	// call site isn't practical; defining each one's real fresh-install
+	// default here (see install/data/seopanel.sql) protects all of them
+	// at once, for any database old enough to predate any of these -
+	// found by diffing seopanel.sql's current setting names against the
+	// oldest schema this project has a git tag for (4.1.0) and checking
+	// which of the new ones are actually read without a defined() guard
+	// anywhere. A real admin's own settings still win: this only fills
+	// in a constant the query above found no row for at all.
+	if (!defined('QWP_PROXY_BLOCK_URLS')) { define('QWP_PROXY_BLOCK_URLS', ''); }
+	if (!defined('SA_EXCLUDE_FILE_EXTENSIONS')) { define('SA_EXCLUDE_FILE_EXTENSIONS', 'zip,gz,tar,png,jpg,jpeg,gif,mp3,flv,pdf,m4a,avi,mov,wmv,mp4,doc,docx,xls,xlsx,ppt,pptx,rar,7z,exe,dmg,iso'); }
+	if (!defined('SP_AIO_RETENTION_DAYS')) { define('SP_AIO_RETENTION_DAYS', '90'); }
+	if (!defined('SP_AIO_ROLLING_WINDOW')) { define('SP_AIO_ROLLING_WINDOW', '7'); }
+	if (!defined('SP_AIO_STALE_DAYS')) { define('SP_AIO_STALE_DAYS', '7'); }
+	if (!defined('SP_AIO_SUBDOMAIN_MATCH')) { define('SP_AIO_SUBDOMAIN_MATCH', 'registrable'); }
+	if (!defined('SP_CRON_JOB_TIMING_RETENTION_DAYS')) { define('SP_CRON_JOB_TIMING_RETENTION_DAYS', '14'); }
+	if (!defined('SP_CRON_PING_ENABLED')) { define('SP_CRON_PING_ENABLED', '0'); }
+	if (!defined('SP_CRON_PING_SECRET')) { define('SP_CRON_PING_SECRET', ''); }
+	if (!defined('SP_CRON_RUN_LOG_RETENTION_DAYS')) { define('SP_CRON_RUN_LOG_RETENTION_DAYS', '30'); }
+	if (!defined('SP_DEFAULT_COUNTRY')) { define('SP_DEFAULT_COUNTRY', 'US'); }
+	if (!defined('SP_DEMO')) { define('SP_DEMO', '0'); }
+	if (!defined('SP_DFS_API_LOGIN')) { define('SP_DFS_API_LOGIN', ''); }
+	if (!defined('SP_DFS_API_PASSWORD')) { define('SP_DFS_API_PASSWORD', ''); }
+	if (!defined('SP_DFS_BALANCE')) { define('SP_DFS_BALANCE', '0'); }
+	if (!defined('SP_ENABLE_DFS')) { define('SP_ENABLE_DFS', '0'); }
+	if (!defined('SP_ENABLE_DFS_BACKLINK')) { define('SP_ENABLE_DFS_BACKLINK', '0'); }
+	if (!defined('SP_ENABLE_DFS_BACK_SATU')) { define('SP_ENABLE_DFS_BACK_SATU', '0'); }
+	if (!defined('SP_ENABLE_DFS_REVIEW')) { define('SP_ENABLE_DFS_REVIEW', '1'); }
+	if (!defined('SP_ENABLE_DFS_SANDBOX')) { define('SP_ENABLE_DFS_SANDBOX', '0'); }
+	if (!defined('SP_ENABLE_DFS_SEARCH_VOLUME')) { define('SP_ENABLE_DFS_SEARCH_VOLUME', '1'); }
+	if (!defined('SP_ENABLE_DFS_SERP')) { define('SP_ENABLE_DFS_SERP', '1'); }
+	if (!defined('SP_ENABLE_LOCAL_AI')) { define('SP_ENABLE_LOCAL_AI', '0'); }
+	if (!defined('SP_ENABLE_RECAPTCHA')) { define('SP_ENABLE_RECAPTCHA', '0'); }
+	if (!defined('SP_ENABLE_SPAPI_SEARCH_VOLUME')) { define('SP_ENABLE_SPAPI_SEARCH_VOLUME', '1'); }
+	if (!defined('SP_ENABLE_SPAPI_SERP')) { define('SP_ENABLE_SPAPI_SERP', '1'); }
+	if (!defined('SP_FEATURE_TOUR')) { define('SP_FEATURE_TOUR', '1'); }
+	if (!defined('SP_GDPR_COOKIE_BANNER')) { define('SP_GDPR_COOKIE_BANNER', '0'); }
+	if (!defined('SP_HOSTED_VERSION')) { define('SP_HOSTED_VERSION', '0'); }
+	if (!defined('SP_JOB_QUEUE_BUDGET_SECONDS')) { define('SP_JOB_QUEUE_BUDGET_SECONDS', '20'); }
+	if (!defined('SP_JOB_QUEUE_ENABLED')) { define('SP_JOB_QUEUE_ENABLED', '1'); }
+	if (!defined('SP_JOB_QUEUE_RETENTION_DAYS')) { define('SP_JOB_QUEUE_RETENTION_DAYS', '7'); }
+	if (!defined('SP_LOCAL_AI_MODEL')) { define('SP_LOCAL_AI_MODEL', 'llama3.2:3b'); }
+	if (!defined('SP_LOCAL_AI_URL')) { define('SP_LOCAL_AI_URL', 'http://localhost:11434'); }
+	if (!defined('SP_RECAPTCHA_SECRET_KEY')) { define('SP_RECAPTCHA_SECRET_KEY', ''); }
+	if (!defined('SP_RECAPTCHA_SITE_KEY')) { define('SP_RECAPTCHA_SITE_KEY', ''); }
+	if (!defined('SP_SENDGRID_API')) { define('SP_SENDGRID_API', '0'); }
+	if (!defined('SP_SPAPI_EMAIL')) { define('SP_SPAPI_EMAIL', ''); }
+	if (!defined('SP_SPAPI_KEY')) { define('SP_SPAPI_KEY', ''); }
+	if (!defined('SP_SPAPI_NAME')) { define('SP_SPAPI_NAME', ''); }
+	if (!defined('SP_SPAPI_REGISTERED')) { define('SP_SPAPI_REGISTERED', '0'); }
+	if (!defined('SP_SPAPI_URL')) { define('SP_SPAPI_URL', 'https://api.seopanel.org/api/v1'); }
+	if (!defined('SP_USE_SAMPLE_API_DATA')) { define('SP_USE_SAMPLE_API_DATA', '0'); }
+
 	// set system timezone
 	if (defined('SP_TIME_ZONE') && (SP_TIME_ZONE != '') ) {
 	

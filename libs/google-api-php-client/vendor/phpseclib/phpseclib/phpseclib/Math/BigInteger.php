@@ -45,7 +45,6 @@
  * @author    Jim Wigginton <terrafrost@php.net>
  * @copyright 2006 Jim Wigginton
  * @license   http://www.opensource.org/licenses/mit-license.html  MIT License
- * @link      http://pear.php.net/package/Math_BigInteger
  */
 
 namespace phpseclib\Math;
@@ -164,23 +163,23 @@ class BigInteger
      *
      * @see __construct()
      */
-    protected static $base;
-    protected static $baseFull;
-    protected static $maxDigit;
-    protected static $msb;
+    static $base;
+    static $baseFull;
+    static $maxDigit;
+    static $msb;
 
     /**
      * $max10 in greatest $max10Len satisfying
      * $max10 = 10**$max10Len <= 2**$base.
      */
-    protected static $max10;
+    static $max10;
 
     /**
      * $max10Len in greatest $max10Len satisfying
      * $max10 = 10**$max10Len <= 2**$base.
      */
-    protected static $max10Len;
-    protected static $maxDigit2;
+    static $max10Len;
+    static $maxDigit2;
     /**#@-*/
 
     /**
@@ -244,7 +243,7 @@ class BigInteger
      * ?>
      * </code>
      *
-     * @param $x base-10 number or base-$base number if $base set.
+     * @param int|string|resource $x base-10 number or base-$base number if $base set.
      * @param int $base
      * @return \phpseclib\Math\BigInteger
      * @access public
@@ -252,8 +251,17 @@ class BigInteger
     function __construct($x = 0, $base = 10)
     {
         if (!defined('MATH_BIGINTEGER_MODE')) {
+
+            // https://github.com/php/php-src/commit/e0a0e216a909dc4ee4ea7c113a5f41d49525f02e broke GMP
+            // https://github.com/php/php-src/commit/424ba0f2ff9677d16b4e339e90885bd4bc49fcf1 fixed it
+            // see https://github.com/php/php-src/issues/16870 for more info
+            if (version_compare(PHP_VERSION, '8.2.25', '<=')) {
+                $gmpOK = true;
+            } else {
+                $gmpOK = !in_array(PHP_VERSION_ID, array(80226, 80314, 80400, 80401));
+            }
             switch (true) {
-                case extension_loaded('gmp'):
+                case extension_loaded('gmp') && $gmpOK:
                     define('MATH_BIGINTEGER_MODE', self::MODE_GMP);
                     break;
                 case extension_loaded('bcmath'):
@@ -266,23 +274,27 @@ class BigInteger
 
         if (extension_loaded('openssl') && !defined('MATH_BIGINTEGER_OPENSSL_DISABLE') && !defined('MATH_BIGINTEGER_OPENSSL_ENABLED')) {
             // some versions of XAMPP have mismatched versions of OpenSSL which causes it not to work
-            ob_start();
-            @phpinfo();
-            $content = ob_get_contents();
-            ob_end_clean();
-
-            preg_match_all('#OpenSSL (Header|Library) Version(.*)#im', $content, $matches);
-
             $versions = array();
-            if (!empty($matches[1])) {
-                for ($i = 0; $i < count($matches[1]); $i++) {
-                    $fullVersion = trim(str_replace('=>', '', strip_tags($matches[2][$i])));
 
-                    // Remove letter part in OpenSSL version
-                    if (!preg_match('/(\d+\.\d+\.\d+)/i', $fullVersion, $m)) {
-                        $versions[$matches[1][$i]] = $fullVersion;
-                    } else {
-                        $versions[$matches[1][$i]] = $m[0];
+            // avoid generating errors (even with suppression) when phpinfo() is disabled (common in production systems)
+            if (function_exists('phpinfo')) {
+                ob_start();
+                @phpinfo();
+                $content = ob_get_contents();
+                ob_end_clean();
+
+                preg_match_all('#OpenSSL (Header|Library) Version(.*)#im', $content, $matches);
+
+                if (!empty($matches[1])) {
+                    for ($i = 0; $i < count($matches[1]); $i++) {
+                        $fullVersion = trim(str_replace('=>', '', strip_tags($matches[2][$i])));
+
+                        // Remove letter part in OpenSSL version
+                        if (!preg_match('/(\d+\.\d+\.\d+)/i', $fullVersion, $m)) {
+                            $versions[$matches[1][$i]] = $fullVersion;
+                        } else {
+                            $versions[$matches[1][$i]] = $m[0];
+                        }
                     }
                 }
             }
@@ -360,12 +372,16 @@ class BigInteger
             case 256:
                 switch (MATH_BIGINTEGER_MODE) {
                     case self::MODE_GMP:
-                        $sign = $this->is_negative ? '-' : '';
-                        $this->value = gmp_init($sign . '0x' . bin2hex($x));
+                        $this->value = function_exists('gmp_import') ?
+                            gmp_import($x) :
+                            gmp_init('0x' . bin2hex($x));
+                        if ($this->is_negative) {
+                            $this->value = gmp_neg($this->value);
+                        }
                         break;
                     case self::MODE_BCMATH:
                         // round $len to the nearest 4 (thanks, DavidMJ!)
-                        $len = (strlen($x) + 3) & 0xFFFFFFFC;
+                        $len = (strlen($x) + 3) & ~3;
 
                         $x = str_pad($x, $len, chr(0), STR_PAD_LEFT);
 
@@ -401,7 +417,7 @@ class BigInteger
                     $x = substr($x, 1);
                 }
 
-                $x = preg_replace('#^(?:0x)?([A-Fa-f0-9]*).*#', '$1', $x);
+                $x = preg_replace('#^(?:0x)?([A-Fa-f0-9]*).*#s', '$1', $x);
 
                 $is_negative = false;
                 if ($base < 0 && hexdec($x[0]) >= 8) {
@@ -437,7 +453,10 @@ class BigInteger
                 // (?<!^)(?:-).*: find any -'s that aren't at the beginning and then any characters that follow that
                 // (?<=^|-)0*: find any 0's that are preceded by the start of the string or by a - (ie. octals)
                 // [^-0-9].*: find any non-numeric characters and then any characters that follow that
-                $x = preg_replace('#(?<!^)(?:-).*|(?<=^|-)0*|[^-0-9].*#', '', $x);
+                $x = preg_replace('#(?<!^)(?:-).*|(?<=^|-)0*|[^-0-9].*#s', '', $x);
+                if (!strlen($x) || $x == '-') {
+                    $x = '0';
+                }
 
                 switch (MATH_BIGINTEGER_MODE) {
                     case self::MODE_GMP:
@@ -476,7 +495,7 @@ class BigInteger
                     $x = substr($x, 1);
                 }
 
-                $x = preg_replace('#^([01]*).*#', '$1', $x);
+                $x = preg_replace('#^([01]*).*#s', '$1', $x);
                 $x = str_pad($x, strlen($x) + (3 * strlen($x)) % 4, 0, STR_PAD_LEFT);
 
                 $str = '0x';
@@ -531,11 +550,11 @@ class BigInteger
             $temp = $comparison < 0 ? $this->add(new static(1)) : $this->copy();
             $bytes = $temp->toBytes();
 
-            if (empty($bytes)) { // eg. if the number we're trying to convert is -1
+            if (!strlen($bytes)) { // eg. if the number we're trying to convert is -1
                 $bytes = chr(0);
             }
 
-            if (ord($bytes[0]) & 0x80) {
+            if ($this->precision <= 0 && (ord($bytes[0]) & 0x80)) {
                 $bytes = chr(0) . $bytes;
             }
 
@@ -548,9 +567,13 @@ class BigInteger
                     return $this->precision > 0 ? str_repeat(chr(0), ($this->precision + 1) >> 3) : '';
                 }
 
-                $temp = gmp_strval(gmp_abs($this->value), 16);
-                $temp = (strlen($temp) & 1) ? '0' . $temp : $temp;
-                $temp = pack('H*', $temp);
+                if (function_exists('gmp_export')) {
+                    $temp = gmp_export($this->value);
+                } else {
+                    $temp = gmp_strval(gmp_abs($this->value), 16);
+                    $temp = (strlen($temp) & 1) ? '0' . $temp : $temp;
+                    $temp = pack('H*', $temp);
+                }
 
                 return $this->precision > 0 ?
                     substr(str_pad($temp, $this->precision >> 3, chr(0), STR_PAD_LEFT), -($this->precision >> 3)) :
@@ -569,7 +592,7 @@ class BigInteger
 
                 while (bccomp($current, '0', 0) > 0) {
                     $temp = bcmod($current, '16777216');
-                    $value = chr($temp >> 16) . chr($temp >> 8) . chr($temp) . $value;
+                    $value = chr($temp >> 16) . chr(($temp >> 8) & 0xFF) . chr($temp & 0xFF) . $value;
                     $current = bcdiv($current, '16777216', 0);
                 }
 
@@ -644,11 +667,11 @@ class BigInteger
     {
         $hex = $this->toHex($twos_compliment);
         $bits = '';
-        for ($i = strlen($hex) - 8, $start = strlen($hex) & 7; $i >= $start; $i-=8) {
-            $bits = str_pad(decbin(hexdec(substr($hex, $i, 8))), 32, '0', STR_PAD_LEFT) . $bits;
+        for ($i = strlen($hex) - 6, $start = strlen($hex) % 6; $i >= $start; $i-=6) {
+            $bits = str_pad(decbin(hexdec(substr($hex, $i, 6))), 24, '0', STR_PAD_LEFT) . $bits;
         }
         if ($start) { // hexdec('') == 0
-            $bits = str_pad(decbin(hexdec(substr($hex, 0, $start))), 8, '0', STR_PAD_LEFT) . $bits;
+            $bits = str_pad(decbin(hexdec(substr($hex, 0, $start))), 8 * $start, '0', STR_PAD_LEFT) . $bits;
         }
         $result = $this->precision > 0 ? substr($bits, -$this->precision) : ltrim($bits, '0');
 
@@ -693,6 +716,7 @@ class BigInteger
         }
 
         $temp = $this->copy();
+        $temp->bitmask = false;
         $temp->is_negative = false;
 
         $divisor = new static();
@@ -712,6 +736,33 @@ class BigInteger
         }
 
         return $result;
+    }
+
+    /**
+     * Return the size of a BigInteger in bits
+     *
+     * @return int
+     */
+    function getLength()
+    {
+        if (MATH_BIGINTEGER_MODE != self::MODE_INTERNAL) {
+            return strlen($this->toBits());
+        }
+
+        $max = count($this->value) - 1;
+        return $max != -1 ?
+            $max * self::$base + intval(ceil(log($this->value[$max] + 1, 2))) :
+            0;
+    }
+
+    /**
+     * Return the size of a BigInteger in bytes
+     *
+     * @return int
+     */
+    function getLengthInBytes()
+    {
+        return (int) ceil($this->getLength() / 8);
     }
 
     /**
@@ -805,6 +856,44 @@ class BigInteger
     }
 
     /**
+     *  __serialize() magic method
+     *
+     * __sleep / __wakeup were depreciated in PHP 8.5
+     * Will be called, automatically, when serialize() is called on a Math_BigInteger object.
+     *
+     * @see self::__unserialize()
+     * @access public
+     */
+    function __serialize()
+    {
+        $result = array('hex' => $this->toHex(true));
+        if ($this->precision > 0) {
+            $result['precision'] = $this->precision;
+        }
+        return $result;
+    }
+
+    /**
+     *  __unserialize() magic method
+     *
+     * __sleep / __wakeup were depreciated in PHP 8.5
+     * Will be called, automatically, when unserialize() is called on a Math_BigInteger object.
+     *
+     * @see self::__serialize()
+     * @access public
+     */
+    function __unserialize($data)
+    {
+        $temp = new BigInteger($data['hex'], -16);
+        $this->value = $temp->value;
+        $this->is_negative = $temp->is_negative;
+        if (isset($data['precision']) && $data['precision'] > 0) {
+            // recalculate $this->bitmask
+            $this->setPrecision($data['precision']);
+        }
+    }
+
+    /**
      *  __debugInfo() magic method
      *
      * Will be called, automatically, when print_r() or var_dump() are called
@@ -829,7 +918,7 @@ class BigInteger
             $opts[] = 'OpenSSL';
         }
         if (!empty($opts)) {
-            $engine.= ' (' . implode($opts, ', ') . ')';
+            $engine.= ' (' . implode('.', $opts) . ')';
         }
         return array(
             'value' => '0x' . $this->toHex(true),
@@ -1547,7 +1636,9 @@ class BigInteger
             $temp_value = array($quotient_value[$q_index]);
             $temp = $temp->multiply($y);
             $temp_value = &$temp->value;
-            $temp_value = array_merge($adjust, $temp_value);
+            if (count($temp_value)) {
+                $temp_value = array_merge($adjust, $temp_value);
+            }
 
             $x = $x->subtract($temp);
 
@@ -1977,7 +2068,7 @@ class BigInteger
      *
      * @see self::_slidingWindow()
      * @access private
-     * @param \phpseclib\Math\BigInteger
+     * @param \phpseclib\Math\BigInteger $n
      * @return \phpseclib\Math\BigInteger
      */
     function _mod2($n)
@@ -2671,7 +2762,7 @@ class BigInteger
      * Note how the same comparison operator is used.  If you want to test for equality, use $x->equals($y).
      *
      * @param \phpseclib\Math\BigInteger $y
-     * @return int < 0 if $this is less than $y; > 0 if $this is greater than $y, and 0 if they are equal.
+     * @return int that is < 0 if $this is less than $y; > 0 if $this is greater than $y, and 0 if they are equal.
      * @access public
      * @see self::equals()
      * @internal Could return $this->subtract($x), but that's not as fast as what we do do.
@@ -2680,7 +2771,14 @@ class BigInteger
     {
         switch (MATH_BIGINTEGER_MODE) {
             case self::MODE_GMP:
-                return gmp_cmp($this->value, $y->value);
+                $r = gmp_cmp($this->value, $y->value);
+                if ($r < -1) {
+                    $r = -1;
+                }
+                if ($r > 1) {
+                    $r = 1;
+                }
+                return $r;
             case self::MODE_BCMATH:
                 return bccomp($this->value, $y->value, 0);
         }
@@ -2860,8 +2958,7 @@ class BigInteger
         switch (MATH_BIGINTEGER_MODE) {
             case self::MODE_GMP:
                 $temp = new static();
-                $temp->value = gmp_xor($this->value, $x->value);
-
+                $temp->value = gmp_xor(gmp_abs($this->value), gmp_abs($x->value));
                 return $this->_normalize($temp);
             case self::MODE_BCMATH:
                 $left = $this->toBytes();
@@ -2877,6 +2974,7 @@ class BigInteger
 
         $length = max(count($this->value), count($x->value));
         $result = $this->copy();
+        $result->is_negative = false;
         $result->value = array_pad($result->value, $length, 0);
         $x->value = array_pad($x->value, $length, 0);
 
@@ -2900,7 +2998,7 @@ class BigInteger
         // (will always result in a smaller number.  ie. ~1 isn't 1111 1110 - it's 0)
         $temp = $this->toBytes();
         if ($temp == '') {
-            return '';
+            return $this->_normalize(new static());
         }
         $pre_msb = decbin(ord($temp[0]));
         $temp = ~$temp;
@@ -3066,7 +3164,7 @@ class BigInteger
      *
      * Byte length is equal to $length. Uses \phpseclib\Crypt\Random if it's loaded and mt_rand if it's not.
      *
-     * @param int $length
+     * @param int $size
      * @return \phpseclib\Math\BigInteger
      * @access private
      */
@@ -3213,6 +3311,11 @@ class BigInteger
             $min = $temp;
         }
 
+        $length = $max->getLength();
+        if ($length > 8196) {
+            user_error('Generation of random prime numbers larger than 8196 has been disabled');
+        }
+
         static $one, $two;
         if (!isset($one)) {
             $one = new static(1);
@@ -3320,7 +3423,14 @@ class BigInteger
      */
     function isPrime($t = false)
     {
-        $length = strlen($this->toBytes());
+        $length = $this->getLength();
+        // OpenSSL limits RSA keys to 16384 bits. The length of an RSA key is equal to the length of the modulo, which is
+        // produced by multiplying the primes p and q by one another. The largest number two 8196 bit primes can produce is
+        // a 16384 bit number so, basically, 8196 bit primes are the largest OpenSSL will generate and if that's the largest
+        // that it'll generate it also stands to reason that that's the largest you'll be able to test primality on
+        if ($length > 8196) {
+            user_error('Primality testing is not supported for numbers larger than 8196 bits');
+        }
 
         if (!$t) {
             // see HAC 4.49 "Note (controlling the error probability)"
@@ -3435,7 +3545,7 @@ class BigInteger
                     break;
                 }
             }
-            $s = 26 * $i + $j - 1;
+            $s = 26 * $i + $j;
             $r->_rshift($s);
         }
 
@@ -3533,7 +3643,7 @@ class BigInteger
      *
      * Removes leading zeros and truncates (if necessary) to maintain the appropriate precision
      *
-     * @param \phpseclib\Math\BigInteger
+     * @param \phpseclib\Math\BigInteger $result
      * @return \phpseclib\Math\BigInteger
      * @see self::_trim()
      * @access private
@@ -3546,7 +3656,14 @@ class BigInteger
         switch (MATH_BIGINTEGER_MODE) {
             case self::MODE_GMP:
                 if ($this->bitmask !== false) {
+                    $flip = gmp_cmp($result->value, gmp_init(0)) < 0;
+                    if ($flip) {
+                        $result->value = gmp_neg($result->value);
+                    }
                     $result->value = gmp_and($result->value, $result->bitmask->value);
+                    if ($flip) {
+                        $result->value = gmp_neg($result->value);
+                    }
                 }
 
                 return $result;
@@ -3561,6 +3678,7 @@ class BigInteger
         $value = &$result->value;
 
         if (!count($value)) {
+            $result->is_negative = false;
             return $result;
         }
 
@@ -3602,8 +3720,8 @@ class BigInteger
     /**
      * Array Repeat
      *
-     * @param $input Array
-     * @param $multiplier mixed
+     * @param array $input
+     * @param mixed $multiplier
      * @return array
      * @access private
      */
@@ -3617,8 +3735,8 @@ class BigInteger
      *
      * Shifts binary strings $shift bits, essentially multiplying by 2**$shift.
      *
-     * @param $x String
-     * @param $shift Integer
+     * @param string $x (by reference)
+     * @param int $shift
      * @return string
      * @access private
      */
@@ -3633,8 +3751,8 @@ class BigInteger
 
         $carry = 0;
         for ($i = strlen($x) - 1; $i >= 0; --$i) {
-            $temp = ord($x[$i]) << $shift | $carry;
-            $x[$i] = chr($temp);
+            $temp = (ord($x[$i]) << $shift) | $carry;
+            $x[$i] = chr($temp & 0xFF);
             $carry = $temp >> 8;
         }
         $carry = ($carry != 0) ? chr($carry) : '';
@@ -3646,8 +3764,8 @@ class BigInteger
      *
      * Shifts binary strings $shift bits, essentially dividing by 2**$shift and returning the remainder.
      *
-     * @param $x String
-     * @param $shift Integer
+     * @param string $x (by referenc)
+     * @param int $shift
      * @return string
      * @access private
      */

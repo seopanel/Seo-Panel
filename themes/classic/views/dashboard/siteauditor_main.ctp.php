@@ -2,7 +2,7 @@
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 ?>
 <?php } elseif (!empty($noProjectForWebsite)) { ?>
-<form id='siteauditor_dashboard_form' method="post">
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -24,6 +24,30 @@
 	<i class="fas fa-exclamation-triangle"></i>
 	<?php echo $spTextSA['No active projects found'] ?? 'No Site Auditor project found for this website.'?>
 	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=newproject')?>" class="alert-link"><?php echo $spTextSA['Create a new project'] ?? 'Create a new project'?></a>
+</div>
+<?php } elseif (!empty($noCrawlResultsYet)) { ?>
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
+<table class="search">
+	<tr>
+		<th><?php echo $spText['common']['Website']?>: </th>
+		<td>
+			<select name="website_id" id="website_id" onchange="scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content')" class="custom-select">
+				<?php foreach($siteList as $websiteInfo){?>
+					<?php if($websiteInfo['id'] == $websiteId){?>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+					<?php }else{?>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+					<?php }?>
+				<?php }?>
+			</select>
+		</td>
+	</tr>
+</table>
+</form>
+<div class="alert alert-info mt-4">
+	<i class="fas fa-info-circle"></i>
+	<?php echo $spTextSA['Project created but not crawled yet'] ?? 'This project has been created but has no crawl results yet.'?>
+	<a href="<?php echo SP_WEBPATH?>/seo-tools.php?menu_sec=site-auditor&default_args=<?php echo urlencode('sec=showrunproject&project_id=' . $projectId)?>" class="alert-link"><?php echo $spTextSA['Run Project'] ?? 'Run the project now'?></a>
 </div>
 <?php } else {
 $crawledVal = isset($crawled) ? $crawled : 1;
@@ -485,6 +509,12 @@ function saToolsUrl($args) {
 @media (max-width: 576px) {
 	.summary-item, .summary-item-quarter {
 		flex: 0 0 100%;
+		/* the base rule's min-width: 250px/220px (set higher up for the
+		   3/4-per-row desktop layouts) isn't needed once an item is
+		   already full width, and can force horizontal overflow on a
+		   narrow phone (320-360px) once .summary-body's own padding is
+		   subtracted from the available width */
+		min-width: 0;
 	}
 	.summary-body {
 		padding: 20px;
@@ -496,7 +526,7 @@ function saToolsUrl($args) {
 }
 </style>
 
-<form id='siteauditor_dashboard_form' method="post">
+<form id='siteauditor_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -570,7 +600,7 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 								<?php
 								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
-								$maxScore = 38; // Maximum possible score from AuditorComponent
+								$maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 								$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 								$circumference = 2 * 3.14159 * 36;
 								$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;
@@ -1025,31 +1055,8 @@ $mainLink = SP_WEBPATH."/seo-tools.php?menu_sec=site-auditor&default_args=".urle
 </div>
 
 <script type="text/javascript">
-// On page load, sync website selection with other tabs
-$(document).ready(function() {
-	// Prevent multiple auto-loads
-	if (sessionStorage.getItem('sp_sa_auto_loading')) {
-		sessionStorage.removeItem('sp_sa_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	// If stored website differs from current and exists in dropdown, auto-select it
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_sa_auto_loading', '1');
-			scriptDoLoadPost('siteauditor_dashboard.php', 'siteauditor_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	// Store current website ID
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

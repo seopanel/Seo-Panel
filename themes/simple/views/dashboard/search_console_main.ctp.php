@@ -2,7 +2,11 @@
 if (!empty($noWebsites)) {
 	include(SP_VIEWPATH.'/dashboard/no_websites.ctp.php');
 } else { ?>
-<form id='search_console_dashboard_form' method="post">
+<!-- Website/Period selection now lives in the shared filter bar above
+     #main_dashboard_nav (userhome.ctp.php) - this form is kept (hidden,
+     not removed) since the controller/view below still read its field
+     names; the shared bar drives reloads directly via GET instead. -->
+<form id='search_console_dashboard_form' method="post" style="display:none;">
 <table class="search">
 	<tr>
 		<th><?php echo $spText['common']['Website']?>: </th>
@@ -43,7 +47,7 @@ if (!empty($noWebsites)) {
 					<h4><?php echo $spTextDashboard['Search Console Overview'] ?? 'Search Console Overview'?></h4>
 				</div>
 				<div class="card-body">
-					<div class="row">
+					<div class="row stat-row">
 						<div class="col-md-3 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-mouse-pointer text-primary"></i> <?php echo $spTextHome['Total Clicks'] ?? 'Total Clicks'?>
@@ -78,7 +82,10 @@ if (!empty($noWebsites)) {
 							<h6 class="mb-3">
 								<i class="fas fa-percentage text-success"></i> <?php echo $spTextHome['Avg. CTR'] ?? 'Avg. CTR'?>
 							</h6>
-							<?php
+							<?php if (empty($scStats['measured'])): ?>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">N/A</span></h3>
+							<small class="text-muted">Not yet measured</small>
+							<?php else:
 							$ctr = $scStats['avg_ctr'];
 							$ctrColor = $ctr >= 5 ? 'success' : ($ctr >= 2 ? 'warning' : 'danger');
 							?>
@@ -92,12 +99,16 @@ if (!empty($noWebsites)) {
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 2)?>%</strong>
 							</small>
 							<?php endif; ?>
+							<?php endif; ?>
 						</div>
 						<div class="col-md-3 text-center">
 							<h6 class="mb-3">
 								<i class="fas fa-sort-numeric-down text-warning"></i> <?php echo $spTextHome['Avg. Position'] ?? 'Avg. Position'?>
 							</h6>
-							<?php
+							<?php if (empty($scStats['measured'])): ?>
+							<h3><span class="badge bg-secondary" style="font-size: 1.5rem; padding: 0.5rem 1rem;">N/A</span></h3>
+							<small class="text-muted">Not yet measured</small>
+							<?php else:
 							$position = $scStats['avg_position'];
 							$posColor = $position <= 10 ? 'success' : ($position <= 30 ? 'warning' : 'danger');
 							?>
@@ -111,12 +122,72 @@ if (!empty($noWebsites)) {
 								<strong><?php echo $icon?> <?php echo $comp['diff'] >= 0 ? '+' : ''?><?php echo round($comp['diff'], 1)?></strong>
 							</small>
 							<?php endif; ?>
+							<?php endif; ?>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
+
+	<!-- AI Traffic & Search Insights -->
+	<div class="row mb-4">
+		<div class="col-md-12">
+			<div class="card">
+				<div class="card-header card-header-gradient-blue">
+					<h4><i class="fas fa-robot"></i> AI Traffic &amp; Search Insights</h4>
+				</div>
+				<div class="card-body">
+					<div class="row mb-3">
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-mouse-pointer text-primary"></i> AI Referral Clicks</h6>
+							<h3><span class="badge bg-primary" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo number_format($aiVisibilityStats['referralHits'] ?? 0)?></span></h3>
+							<small class="text-muted">visits from an AI platform link</small>
+						</div>
+						<div class="col-md-3 text-center">
+							<h6 class="mb-2"><i class="fas fa-eye text-info"></i> AI Overview Impressions</h6>
+							<h3><span class="badge bg-info" style="font-size: 1.4rem; padding: 0.4rem 0.9rem;"><?php echo intval($aiVisibilityStats['aioPresent'] ?? 0)?></span></h3>
+							<small class="text-muted">of <?php echo intval($aiVisibilityStats['aioMeasured'] ?? 0)?> measured keywords</small>
+						</div>
+						<div class="col-md-6">
+							<p class="text-muted mb-2">Combines this Search Console data with Google Analytics data for the same period into one plain-language summary.</p>
+							<?php if (!empty($localAiAvailable)) { ?>
+							<button type="button" class="btn btn-outline-secondary btn-sm" onclick="searchConsoleSummarizeTrafficSearch()">
+								<i class="fa fa-magic"></i> Summarize with AI
+							</button>
+							<div id="trafficSearchSummary" class="alert alert-info mt-2" style="display:none;"></div>
+							<?php } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<?php if (!empty($localAiAvailable)) { ?>
+	<script type="text/javascript">
+	function searchConsoleSummarizeTrafficSearch() {
+		var box = document.getElementById('trafficSearchSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/search_console_dashboard.php',
+			data: {
+				sec: 'summarizetrafficsearch',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+	<?php } ?>
 
 	<!-- Pie Charts Row -->
 	<div class="row mb-4">
@@ -369,6 +440,16 @@ function drawAllCharts() {
 	drawPositionTrendsChart();
 }
 
+// redraw on resize/orientationchange - see analytics_main.ctp.php's own
+// identical comment for why
+(function() {
+	var spSearchConsoleChartResizeTimer;
+	window.addEventListener('resize', function() {
+		clearTimeout(spSearchConsoleChartResizeTimer);
+		spSearchConsoleChartResizeTimer = setTimeout(drawAllCharts, 200);
+	});
+})();
+
 // Draw clicks vs impressions pie chart
 function drawClicksImpressionsChart() {
 	<?php
@@ -384,6 +465,7 @@ function drawClicksImpressionsChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Click Distribution'] ?? 'Click Distribution'?>',
+		width: spChartWidth('clicks_impressions_chart'),
 		height: 300,
 		colors: ['#4285F4', '#EA4335'],
 		chartArea: { width: '90%', height: '80%' },
@@ -403,7 +485,7 @@ function drawCTRGaugeChart() {
 	]);
 
 	var options = {
-		width: '100%',
+		width: spChartWidth('ctr_gauge_chart'),
 		height: 300,
 		redFrom: 0, redTo: 2,
 		yellowFrom: 2, yellowTo: 5,
@@ -432,6 +514,7 @@ function drawSourceClicksChart() {
 
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks by Search Engine'] ?? 'Clicks by Search Engine'?>',
+		width: spChartWidth('source_clicks_chart'),
 		height: 300,
 		colors: [<?php
 			$colors = [];
@@ -466,6 +549,7 @@ function drawPerformanceTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Clicks & Impressions Over Time'] ?? 'Clicks & Impressions Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('performance_trends_chart'),
 		height: 400,
 		colors: ['#4285F4', '#34A853'],
 		legend: { position: 'bottom' },
@@ -510,6 +594,7 @@ function drawCTRTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['CTR Over Time'] ?? 'CTR Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('ctr_trends_chart'),
 		height: 350,
 		colors: ['#34A853'],
 		legend: { position: 'bottom' },
@@ -546,6 +631,7 @@ function drawPositionTrendsChart() {
 	var options = {
 		title: '<?php echo $spTextDashboard['Position Over Time'] ?? 'Position Over Time'?>',
 		curveType: 'function',
+		width: spChartWidth('position_trends_chart'),
 		height: 350,
 		colors: ['#FBBC05'],
 		legend: { position: 'bottom' },
@@ -567,33 +653,8 @@ function drawPositionTrendsChart() {
 	<?php } ?>
 }
 
-// Sync website selection with other tabs
-$(document).ready(function() {
-	// Save website selection when dropdown changes
-	$('#website_id').on('change', function() {
-		sessionStorage.setItem('sp_selected_website_id', $(this).val());
-	});
-
-	if (sessionStorage.getItem('sp_sc_auto_loading')) {
-		sessionStorage.removeItem('sp_sc_auto_loading');
-		return;
-	}
-
-	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
-	var currentWebsiteId = '<?php echo $websiteId?>';
-
-	if (storedWebsiteId && storedWebsiteId != currentWebsiteId) {
-		if ($('#website_id option[value="' + storedWebsiteId + '"]').length) {
-			$('#website_id').val(storedWebsiteId);
-			sessionStorage.setItem('sp_sc_auto_loading', '1');
-			scriptDoLoadPost('<?php echo SP_WEBPATH?>/search_console_dashboard.php', 'search_console_dashboard_form', 'content');
-			return;
-		}
-	}
-
-	if (currentWebsiteId) {
-		sessionStorage.setItem('sp_selected_website_id', currentWebsiteId);
-	}
-});
+// website-selection sync now lives in spInitSharedFilterBar() (js/common.js),
+// driven by the shared filter bar above #main_dashboard_nav - this tab's
+// own copy of that restore-from-sessionStorage logic is retired.
 </script>
 <?php } ?>

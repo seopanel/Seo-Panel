@@ -80,35 +80,37 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
 		case "edit_plugin_user_type_settings":
 			$controller->updatePluginUserTypeSettings($_POST);
 			break;
-		
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['userTypeId'], 1);
+			$controller->listUserTypes($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['userTypeId'], 0);
+			$controller->listUserTypes($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteUserType($_POST['userTypeId']);
+			$controller->listUserTypes($_POST);
+			break;
+
 	}
 } else {
-	
+
 	switch($_GET['sec']) {
-		
+
 		case "new":
 			$controller->newUserType($_GET);
 			break;
-		
+
 		case "edit":
 			$controller->editUserType($_GET['userTypeId']);
-			break;	
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['userTypeId'], 1);			
-			$controller->listUserTypes($_GET);
 			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['userTypeId'], 0);
-			$controller->listUserTypes($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteUserType($_GET['userTypeId']);
-			$controller->listUserTypes($_GET);
-			break;
-		
+
 		case "edit_plugin_user_type_settings":
 			$controller->editPluginUserTypeSettings($_GET['user_type_id'], $_GET['plugin_id'], $_GET['class_name']);
 			break;

@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextTools['Graphical Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Graphical Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#anGraphHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="anGraphHelpModal" tabindex="-1" role="dialog" aria-labelledby="anGraphHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-chart-area"></i></div>
+				<h5 class="modal-title" id="anGraphHelpModalLabel">About Graphical Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Charts a per-source Google Analytics metric trend over time for one website, instead of showing it as a table. Bounce rate is excluded from the combined chart by default, since it's an inverse metric.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads from already-saved GA4 data only - no live API call.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
@@ -7,9 +35,9 @@
 			<select name="website_id" id="website_id" onchange="doLoad('website_id', 'analytics.php', 'source_area', 'sec=source_box')" class="custom-select">
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>

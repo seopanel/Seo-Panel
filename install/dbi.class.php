@@ -25,17 +25,49 @@ class DBI{
 
 	var $connectionId = false; 	# db connectio id
 	var $error = false;   		# error while databse operations
+	var $nonBlockingFailedCount = 0;	# statements that failed with $block=false (see importDatabaseFile())
+	var $nonBlockingFailedSamples = array();
 	
 	function connectDatabase($dbServer, $dbUser, $dbPassword, $dbName){
+
+		// since PHP 8.1, mysqli defaults to throwing mysqli_sql_exception on
+		// any SQL error instead of returning false - this class (and every
+		// caller checking $db->error / a query's return value) is built
+		// around the pre-8.1 false-return behavior. Unlike the main app,
+		// this installer has no sp-load.php bootstrap of its own to set
+		// this once, so it's set here directly.
+		mysqli_report(MYSQLI_REPORT_OFF);
 
 		try {
 			$this->connectionId = @mysqli_connect($dbServer, $dbUser, $dbPassword, $dbName);
 
 			if (!$this->connectionId){
 				$this->error = true;
-				$error = "Database connection failed. Please check your credentials.";
+				// bug fix: this always showed the same generic message
+				// regardless of the real cause (wrong password, unknown
+				// database, unreachable host) - the target user here
+				// (shared hosting, no SSH, phpMyAdmin at best) has no
+				// other way to self-diagnose which one it is.
+				// mysqli_connect_error() is server-generated text, not
+				// attacker input, so safe to surface directly.
+				$error = "Database connection failed: " . mysqli_connect_error();
 				return $error;
 			}
+
+			// without this, the connection charset falls back to
+			// mysqli/MySQL's own default (commonly latin1), while every
+			// install/upgrade SQL file and column here is utf8/utf8mb4 -
+			// MysqliHelper (the main app's own equivalent class) already
+			// does this right after connecting; this installer-only
+			// class never did. Confirmed real impact: a non-ASCII
+			// literal in an upgrade file (e.g. a currency symbol update)
+			// gets misread byte-by-byte under the wrong charset, so its
+			// character count no longer matches its real length -
+			// "Data too long for column" on a column it actually fits
+			// in once read correctly - or, for a statement that doesn't
+			// hit a length limit, silently stores corrupted text instead
+			// of erroring at all.
+			mysqli_set_charset($this->connectionId, 'utf8mb4');
 
 			return true;
 		} catch (Exception $e) {
@@ -70,7 +102,7 @@ class DBI{
 		
 		mysqli_free_result($res);
 		if ($fetchFirst){
-			return $returnArr[0];
+			return $returnArr[0] ?? null;
 		}
 		return $returnArr;
 	}
@@ -84,34 +116,104 @@ class DBI{
 		return $error;
 	}
 	
-	function importDatabaseFile($filename, $block=true){
-		
+	// $onProgress, if given, is called periodically as callable($linesDone, $totalLines) -
+	// lets the caller stream a progress bar update to the browser during a large import
+	// (see Install::importWithProgress()) without changing anything about how the file
+	// itself is parsed/executed.
+	function importDatabaseFile($filename, $block=true, $onProgress=null){
+
 		# temporary variable, used to store current query
 		$tmpline = '';
-		
+
 		# read in entire file
-		$lines = file($filename);
-		
+		// count(false) is a TypeError on PHP8, so a missing/unreadable
+		// migration file must not reach count() at all. $block=true is
+		// the strict fresh-install path (the core schema/language files
+		// are required - silently treating a missing one as "nothing to
+		// import" would let the installer report success over an empty
+		// database); $block=false is the lenient upgrade/optional-plugin-
+		// file path, where skipping a file that doesn't exist (e.g. a
+		// plugin with no extra schema) and just logging it is correct.
+		$lines = @file($filename);
+		if (!is_array($lines)) {
+			$msg = "could not read migration file $filename (missing or unreadable)";
+			error_log("SEO Panel installer: $msg");
+			if ($block) {
+				$this->error = true;
+				return $msg;
+			}
+			return false;
+		}
+		$totalLines = count($lines);
+		$lastProgressTime = 0;
+
+		// bug fix: with $block=false (the upgrade path - a replayed
+		// migration can legitimately fail on a statement that already
+		// applied, so the whole chain must keep going), every failed
+		// statement was previously discarded completely - no log, no
+		// count, nothing - and proceedUpgrade() always rendered
+		// "Upgraded successfully" regardless. Accumulated onto $this
+		// (not a local var) since this method runs once per migration
+		// file, across many files in one upgrade run - the caller reads
+		// the running total off $db after the whole chain finishes. Each
+		// failure is also error_log()'d immediately (independent of
+		// $block), same fix shape as MysqliHelper::showError() in the
+		// main app.
+
 		# loop through each line
-		foreach ($lines as $line){			
-			
+		foreach ($lines as $lineIndex => $line){
+
 			# skip it if it's a comment
 			if (substr($line, 0, 2) == '--' || $line == '')
 				continue;
-		 
+
 			# add this line to the current segment
 			$tmpline .= $line;
-			
+
 			# if it has a semicolon at the end, it's the end of the query
 			if (substr(trim($line), -1, 1) == ';'){
-				
+
 				if(!empty($tmpline)){
 					$errMsg = $this->query($tmpline);
-					if($block && $this->error) return $errMsg;
+					if ($this->error) {
+						error_log("SEO Panel installer: statement failed in $filename: $errMsg | statement: " . trim($tmpline));
+						if ($block) return $errMsg;
+						$this->nonBlockingFailedCount++;
+						if (count($this->nonBlockingFailedSamples) < 5) {
+							$this->nonBlockingFailedSamples[] = $errMsg;
+						}
+						// query() leaves $this->error=true for the REST of
+						// this object's lifetime (getError() never resets
+						// it) - clear it back to false so a later,
+						// genuinely successful statement isn't misreported
+						// as having failed too
+						$this->error = false;
+					}
 				}
 				$tmpline = '';
 			}
-		}		
+
+			// throttled by wall-clock time (not line count): a fixed
+			// "every 25 lines" meant a file's update count scaled with
+			// its size, not its import time - textlang.sql alone is
+			// ~33k lines, so the old throttle emitted 1400+ separate
+			// flush()'d inline <script> blocks into a single response.
+			// Each one synchronously blocks the HTML parser and forces
+			// a DOM mutation; that volume is enough to visibly stall a
+			// browser's rendering well before the network transfer
+			// itself finishes - reported as the page never advancing
+			// past an earlier progress step even though the import
+			// completes normally server-side. Capping to at most ~5
+			// updates/second keeps the bar feeling live regardless of
+			// file size while keeping the total script count bounded.
+			if ($onProgress !== null) {
+				$now = microtime(true);
+				if ($lineIndex === $totalLines - 1 || ($now - $lastProgressTime) >= 0.2) {
+					call_user_func($onProgress, $lineIndex + 1, $totalLines);
+					$lastProgressTime = $now;
+				}
+			}
+		}
 	}
 }
 ?>

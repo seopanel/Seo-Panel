@@ -83,73 +83,104 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "importlinks":
 		    $controller->importLinks($_POST);
 		    break;
-		
+
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['project_id'], 1);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['project_id'], 0);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteProject($_POST['project_id']);
+			$controller->showAuditorProjects($_POST);
+			break;
+
+		case "deletepage":
+			$controller->__deleteReportPage($_POST['report_id']);
+			$controller->loadReportsPage($_POST);
+			break;
+
+		// state-changing actions moved off GET (same class as delete/
+		// Activate/Inactivate/deletepage above) - js/common.js's
+		// SP_STATE_CHANGING_ACTIONS already lists showrunproject/
+		// recheckreport/checkscore, so the dropdown has sent these via
+		// POST for a while, but no matching POST case existed here -
+		// every one of these dropdown actions silently did nothing
+		// (fell through to default), while the old GET routes stayed
+		// live and CSRF-forgeable via a bare <img src> for the two that
+		// actually write (recheckreport resets crawled state and
+		// deletes auditorpagelinks; checkscore triggers a real crawl +
+		// save). showrunproject itself is read-only (just renders a
+		// view) - no CSRF risk there, but it's fixed the same way for
+		// consistency with the dropdown it's grouped with.
+		case "showrunproject":
+			$controller->showRunProject($_POST['project_id']);
+			break;
+
+		case "recheckreport":
+			$controller->recheckReportPages($_POST['project_id']);
+			$controller->showRunProject($_POST['project_id']);
+			break;
+
+		case "checkscore":
+			$controller->checkPageScore($_POST);
+			break;
+
 		default:
 			$controller->showAuditorProjects($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['project_id'], 1);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['project_id'], 0);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteProject($_GET['project_id']);
-			$controller->showAuditorProjects($_GET);
-			break;
-		
+
 	    case "new":
 	        $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 	        $controller->newProject($_GET);
 	        break;
-		
+
 		case "edit":
 	        $controller->set('spTextSettings', $controller->getLanguageTexts('settings', $_SESSION['lang_code']));
 			$controller->editProject($_GET['project_id']);
 			break;
-		
+
+		// read-only (just renders a view, no write) - kept on GET
+		// because showrunproject.ctp.php's own "Click Here to run
+		// project again" link uses scriptAJAXLinkHref(), which always
+		// issues a GET. No CSRF concern here (nothing is written), only
+		// recheckreport/checkscore below actually needed to move.
 		case "showrunproject":
 			$controller->showRunProject($_GET['project_id']);
 			break;
-		
+
 		case "runproject":
 			$controller->runProject($_GET['project_id']);
 			break;
-			
+
 		case "viewreports":
 			$controller->viewReports($_GET);
 			break;
-	    
+
 	    case "pagedetails":
 			$controller->viewPageDetails($_GET);
 			break;
-			
-		case "recheckreport":
-			$controller->recheckReportPages($_GET['project_id']);
-			$controller->showRunProject($_GET['project_id']);
-			break;
-		    
+
 		case "showreport":
 		    $controller->showProjectReport($_GET);
 		    break;
-		    
-        case "checkscore":
-			$controller->checkPageScore($_GET);
-			break;
-			
-		case "deletepage":
-			$controller->__deleteReportPage($_GET['report_id']);
-			$controller->loadReportsPage($_GET);
-			break;
+
+		case "suggest-meta-description":
+			include_once(SP_CTRLPATH."/localai.ctrl.php");
+			$localAiCtrler = new LocalAIController();
+			header('Content-Type: application/json');
+			echo json_encode($localAiCtrler->suggestMetaDescription(intval($_GET['report_id'] ?? 0), isLoggedIn()));
+			exit;
 			
 		case "croncommand":
 			$controller->showCronCommand();

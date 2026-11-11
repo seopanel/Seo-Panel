@@ -1,4 +1,31 @@
-<?php echo showSectionHead($spTextPanel['Seo Tools Manager']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Seo Tools Manager']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#toolsManagerHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="toolsManagerHelpModal" tabindex="-1" role="dialog" aria-labelledby="toolsManagerHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-toolbox"></i></div>
+				<h5 class="modal-title" id="toolsManagerHelpModalLabel">About Seo Tools Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Turn individual SEO tools (Rank Checker, Site Auditor, Backlinks Checker, and the rest) on or off for this install, and control whether each one runs via cron and/or appears in the Tools menu.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Disabling a tool here hides it from every user's menu - it doesn't delete any data already collected.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 
 <script type="text/javascript">
 $(document).ready(function() {

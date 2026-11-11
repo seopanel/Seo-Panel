@@ -65,27 +65,33 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			break;
 			
 		case "startdircheck":
-			checkAdminLoggedIn();			
+			checkAdminLoggedIn();
 			$controller->startDirectoryCheckStatus($_POST);
 			break;
-		
+
+		// state-changing single-item action - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "delete":
+			$controller->deleteSubmissionReports($_POST['id']);
+			break;
+
 		default:
 			$controller->showWebsiteSubmissionPage($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
+
 		case "skip":
 			$controller->skipSubmission($_GET);
 			break;
-		
+
 		case "unskip":
 			$controller->unSkipSubmission($_GET['id']);
 			$controller->showSkippedDirectories($_GET);
 			break;
-		
+
 		case "reload":
 			$controller->startSubmission($_GET['website_id'], $_GET['dir_id']);
 			break;
@@ -101,11 +107,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "checksub":
 			$controller->checkSubmissionReports($_GET);
 			break;
-			
-		case "delete":
-			$controller->deleteSubmissionReports($_GET['id']);
+
+		case "suggestlisting":
+			$controller->suggestListing($_GET);
 			break;
-		
+
 		case "changeconfirm":
 			$controller->changeConfirmStatus($_GET);
 			$controller->showConfirmStatus($_GET['id']);
@@ -126,7 +132,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showDirectoryManager($_GET);
 			break;
 			
-		case "dirstatus":			
+		case "dirstatus":
+			// the directories table is global/shared across every tenant -
+			// unlike the directorymgr/startdircheck/checkdir cases right
+			// below, this one had no admin check at all, letting any
+			// logged-in non-admin disable/enable any directory for the
+			// whole installation
+			checkAdminLoggedIn();
 			$controller->changeStatusDirectory($_GET['dir_id'], $_GET['status'], true);
 			break;
 			

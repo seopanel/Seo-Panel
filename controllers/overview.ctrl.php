@@ -41,8 +41,21 @@ class OverviewController extends Controller {
 	    $websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : $websiteList[0]['id'];
 	    $this->set('websiteId', $websiteId);
 
-	    $fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-14 days'));
-	    $toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+	    // this tab used to have its own raw from_time/to_time date pickers;
+	    // now driven by the shared filter bar's day/week/month/year preset
+	    // like every other dashboard tab, via the same helper those tabs
+	    // already use. An explicit from_time/to_time is still honored if
+	    // ever passed directly (e.g. a future deep link), since it's a
+	    // strictly more specific request than a period preset.
+	    if (!empty($searchInfo['from_time']) || !empty($searchInfo['to_time'])) {
+	        $fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-30 days'));
+	        $toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+	    } else {
+	        include_once(SP_CTRLPATH . "/dashboard.ctrl.php");
+	        $period = !empty($searchInfo['period']) ? $searchInfo['period'] : 'month';
+	        list($fromTime, $toTime) = (new DashboardController())->__getPeriodDateRange($period);
+	        $this->set('period', $period);
+	    }
 	    $this->set('fromTime', $fromTime);
 	    $this->set('toTime', $toTime);
 
@@ -50,24 +63,62 @@ class OverviewController extends Controller {
 		$this->render('user/userhome');
 	}
 	
+	// $websiteId/$fromDate/$toDate come straight from $_GET in overview.php
+	// with no sanitization at all - $websiteId was never checked against
+	// the caller's own websites (getUserKeywordSearchEngineList() was
+	// called with an empty userId, skipping its own access-scoping
+	// entirely), and all three were echoed raw into a URL that
+	// page_overview.ctp.php/keyword_overview.ctp.php then embed BOTH
+	// inside an HTML attribute and inside a single-quoted inline <script>
+	// string with no escaping either - a crafted from_time/to_time could
+	// break out of either context. Fixed at the source here instead of
+	// in the two view files, since both views build that same URL from
+	// these three values.
 	function showPageOverview($websiteId, $fromDate, $toDate) {
+	    $userId = isLoggedIn();
+	    $websiteId = $this->__sanitizeOverviewWebsiteId($websiteId);
+	    $fromDate = $this->__sanitizeOverviewDate($fromDate, date('Y-m-d', strtotime('-14 days')));
+	    $toDate = $this->__sanitizeOverviewDate($toDate, date('Y-m-d'));
+
 	    $keywordController = new KeywordController();
-	    $seLIst = $keywordController->getUserKeywordSearchEngineList("", $websiteId);
-	    
+	    $seLIst = $keywordController->getUserKeywordSearchEngineList($userId, $websiteId);
+
 	    if (empty($seLIst)) {
 	        showErrorMsg($_SESSION['text']['common']['No Records Found']);
 	    }
-	    
+
 	    $this->set("seList", $seLIst);
 	    $pageOVUrl = SP_WEBPATH . "/$this->baseUrl?sec=page-overview-data&website_id=$websiteId&from_time=$fromDate&to_time=$toDate";
 	    $this->set("pageOVUrl", $pageOVUrl);
 	    $this->render('report/page_overview');
 	}
-	
+
+	// a website_id that doesn't belong to this (non-admin) user, or isn't
+	// numeric at all, is treated as "no website selected" rather than
+	// silently querying someone else's data - see showPageOverview()'s
+	// own comment above for the full IDOR this closes.
+	function __sanitizeOverviewWebsiteId($websiteId) {
+	    $websiteId = intval($websiteId);
+	    if (empty($websiteId)) {
+	        return 0;
+	    }
+	    include_once(SP_CTRLPATH . "/website.ctrl.php");
+	    $websiteController = new WebsiteController();
+	    return $websiteController->__verifyWebsiteOwnership($websiteId) ? $websiteId : 0;
+	}
+
+	// these dates only ever get embedded into a URL (never parameterized
+	// SQL here), so anything other than a plain YYYY-MM-DD has no
+	// legitimate reason to be in them - reject rather than attempt to
+	// escape for whatever context the value eventually lands in.
+	function __sanitizeOverviewDate($date, $default) {
+	    return preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $date) ? $date : $default;
+	}
+
 	function showPageOverviewData($seachInfo) {
-	    $websiteId = intval($seachInfo['website_id']);
+	    $websiteId = $this->__sanitizeOverviewWebsiteId($seachInfo['website_id'] ?? '');
 	    $seId = intval($seachInfo['se_id']);
-	    
+
 	    $conditions = !empty($seachInfo['from_time']) ? " and sr.result_date>='".addslashes($seachInfo['from_time'])."'" : "";
 	    $conditions .= !empty($seachInfo['to_time']) ? " and sr.result_date<='".addslashes($seachInfo['to_time'])."'" : "";
 	    
@@ -91,22 +142,28 @@ class OverviewController extends Controller {
 		$this->render('report/page_overview_data');
 	}
 	
+	// same IDOR/reflected-XSS fix as showPageOverview() above
 	function showKeywordOverview($websiteId, $fromDate, $toDate) {
+	    $userId = isLoggedIn();
+	    $websiteId = $this->__sanitizeOverviewWebsiteId($websiteId);
+	    $fromDate = $this->__sanitizeOverviewDate($fromDate, date('Y-m-d', strtotime('-14 days')));
+	    $toDate = $this->__sanitizeOverviewDate($toDate, date('Y-m-d'));
+
 	    $keywordController = new KeywordController();
-	    $seLIst = $keywordController->getUserKeywordSearchEngineList("", $websiteId);
-	    
+	    $seLIst = $keywordController->getUserKeywordSearchEngineList($userId, $websiteId);
+
 	    if (empty($seLIst)) {
 	        showErrorMsg($_SESSION['text']['common']['No Records Found']);
 	    }
-	    
+
 	    $this->set("seList", $seLIst);
 	    $keywordOVUrl = SP_WEBPATH . "/$this->baseUrl?sec=keyword-overview-data&website_id=$websiteId&from_time=$fromDate&to_time=$toDate";
 	    $this->set("keywordOVUrl", $keywordOVUrl);
 	    $this->render('report/keyword_overview');
 	}
-	
+
 	function showKeywordOverviewData($seachInfo) {
-	    $websiteId = intval($seachInfo['website_id']);
+	    $websiteId = $this->__sanitizeOverviewWebsiteId($seachInfo['website_id'] ?? '');
 	    $seId = intval($seachInfo['se_id']);
 	    
 	    $conditions = !empty($seachInfo['from_time']) ? " and sr.result_date>='".addslashes($seachInfo['from_time'])."'" : "";

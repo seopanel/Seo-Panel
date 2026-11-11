@@ -39,7 +39,7 @@ $(document).ready(function() {
 		foreach($sourceReport as $sourceName => $listInfo){
 			?>
 			<tr>
-				<td><?php echo $sourceName?></td>
+				<td><?php echo htmlspecialchars($sourceName, ENT_QUOTES)?></td>
 				<?php foreach ($metricColList as $metricName => $metricLabel) {?>
 					<td>
 						<?php echo $listInfo[$metricName]?><?php echo $metricName == 'bounceRate' ? "%" : ""?>

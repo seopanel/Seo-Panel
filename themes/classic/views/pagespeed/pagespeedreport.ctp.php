@@ -1,7 +1,35 @@
 <?php
-echo showSectionHead($spTextTools['PageSpeed Reports']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $webUrl = "";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['PageSpeed Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#psReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="psReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="psReportsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-tachometer-alt"></i></div>
+				<h5 class="modal-title" id="psReportsHelpModalLabel">About PageSpeed Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows a date-range history of a website's previously saved desktop and mobile PageSpeed scores, with trend-change indicators and a details panel.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads only already-saved scores - no new API call happens here. Needs data saved by Generate Reports or the scheduled cron first.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
@@ -13,9 +41,9 @@ $webUrl = "";
 					if($websiteInfo['id'] == $websiteId){
 						$webUrl = $websiteInfo['url'];
 						?>
-						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }else{?>
-						<option value="<?php echo $websiteInfo['id']?>"><?php echo $websiteInfo['name']?></option>
+						<option value="<?php echo $websiteInfo['id']?>"><?php echo htmlspecialchars($websiteInfo['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>
@@ -64,7 +92,7 @@ if(empty($websiteId)){
 				<td><a><?php echo $listInfo['desktop_speed_score'].'</a> '. $listInfo['rank_diff_desktop_speed_score']?></td>
 				<td><a><?php echo $listInfo['mobile_speed_score'].'</a> '. $listInfo['rank_diff_mobile_speed_score']?></td>
 				<td>
-					<a href="https://developers.google.com/speed/pagespeed/insights/?url=<?php echo $webUrl; ?>" target="_blank">
+					<a href="https://developers.google.com/speed/pagespeed/insights/?url=<?php echo urlencode($webUrl); ?>" target="_blank">
 						<?php echo $spText['common']['Details']?> &gt;&gt;
 					</a>
 				</td>

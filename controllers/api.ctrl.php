@@ -53,16 +53,61 @@ class APIController extends Controller {
 		return $apiCredInfo;
 	}
 	
-	// function to verify api credentials passed
+	/*
+	 * function to verify api credentials passed - fails closed if either
+	 * stored credential is empty (an empty API_SECRET previously
+	 * authenticated successfully against a request that also omitted
+	 * API_SECRET, since '' == '' is true), rate-limits repeated failures
+	 * per calling IP (reuses AIVisibilityController's existing rate-limit
+	 * bucket, same idiom as MCP/Local AI/AI Perception), and compares
+	 * with hash_equals() instead of == (constant-time, not vulnerable to
+	 * a timing side-channel on the secret).
+	 */
 	function verifyAPICredentials($info) {
 		$apiCredInfo = $this->getAPICredentials();
-		
-		if ( ($apiCredInfo['SP_API_KEY'] == $info['SP_API_KEY']) && ($apiCredInfo['API_SECRET'] == $info['API_SECRET']) ) {
-			return true;
+
+		if (empty($apiCredInfo['SP_API_KEY']) || empty($apiCredInfo['API_SECRET'])) {
+			return false;
 		}
-		
-		return false;
+
+		if (!$this->__checkApiAuthRateLimit()) {
+			return false;
+		}
+
+		$suppliedKey = (string) ($info['SP_API_KEY'] ?? '');
+		$suppliedSecret = (string) ($info['API_SECRET'] ?? '');
+
+		return hash_equals($apiCredInfo['SP_API_KEY'], $suppliedKey) && hash_equals($apiCredInfo['API_SECRET'], $suppliedSecret);
 	}
-	
+
+	// func to check+increment this caller IP's API-auth attempt bucket,
+	// reusing AIVisibilityController's existing rate-limit table/logic -
+	// bounds how many credential guesses an attacker can throw at this
+	// endpoint per minute regardless of source
+	function __checkApiAuthRateLimit() {
+		include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+		$aivCtrler = new AIVisibilityController();
+		$ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+		return $aivCtrler->__checkRateLimit('api-auth:' . $ip, 30);
+	}
+
+	// func to regenerate SP_API_KEY - POST-only, admin-only (apimanager.php
+	// already gates the whole request lifecycle with checkAdminLoggedIn()).
+	// Does not touch API_SECRET, kept separate so rotating one never
+	// accidentally rotates the other - same pattern as the scheduler ping
+	// secret's saveSchedulePingSettings()/regeneratePingSecret() split.
+	function regenerateAPIKey() {
+		$apiKey = bin2hex(random_bytes(24));
+		$this->db->query("UPDATE settings SET set_val='" . addslashes($apiKey) . "' WHERE set_name='SP_API_KEY'");
+		$this->showAPIConnectionManager([]);
+	}
+
+	// func to regenerate API_SECRET - see regenerateAPIKey() above
+	function regenerateAPISecret() {
+		$apiSecret = bin2hex(random_bytes(24));
+		$this->db->query("UPDATE settings SET set_val='" . addslashes($apiSecret) . "' WHERE set_name='API_SECRET'");
+		$this->showAPIConnectionManager([]);
+	}
+
 }
 ?>

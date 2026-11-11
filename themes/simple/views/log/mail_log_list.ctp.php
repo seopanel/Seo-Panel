@@ -1,7 +1,28 @@
-<?php 
-echo showSectionHead($spTextPanel["Mail Log Manager"]);
-$searchFun = "scriptDoLoadPost('log.php', 'listform', 'content', '&sec=mail')";
-?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel["Mail Log Manager"]); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#mailLogMgrHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="mailLogMgrHelpModal" tabindex="-1" role="dialog" aria-labelledby="mailLogMgrHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-mail-bulk"></i></div>
+				<h5 class="modal-title" id="mailLogMgrHelpModalLabel">About Mail Log Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>This logs every email SEO Panel has sent, including notification alerts and scheduled report deliveries, along with its recipients, category, and Success or Fail status. Filter by category, keyword, or date range, and drill into any row for the full send details.</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+<?php $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content', '&sec=mail')"; ?>
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>;return false;">
 <table class="search">
 	<tr>
@@ -80,14 +101,14 @@ $searchFun = "scriptDoLoadPost('log.php', 'listform', 'content', '&sec=mail')";
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td><?php echo $logLink?></td>
-				<td><?php echo stripslashes($listInfo['subject'])?></td>
-				<td><?php echo $listInfo['to_address']?></td>
-				<td><?php echo $listInfo['cc_address']?></td>
-				<td><?php echo $listInfo['from_address']?></td>
+				<td><?php echo htmlspecialchars(stripslashes($listInfo['subject']))?></td>
+				<td><?php echo htmlspecialchars($listInfo['to_address'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['cc_address'])?></td>
+				<td><?php echo htmlspecialchars($listInfo['from_address'])?></td>
 				<td class="text-center">
 					<?php echo showStatusBadge($listInfo['status'], "successfail");?>
 				</td>
-				<td><?php echo $listInfo['mail_category']?></td>
+				<td><?php echo htmlspecialchars($listInfo['mail_category'])?></td>
 				<td><?php echo $listInfo['log_time']?></td>
 			</tr>
 			<?php

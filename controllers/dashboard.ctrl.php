@@ -25,11 +25,64 @@ class DashboardController extends Controller {
     var $pageScriptPath = 'dashboard.php';
         
     function __construct() {
-        parent::__construct();        
+        parent::__construct();
     	$this->set('pageScriptPath', $this->pageScriptPath);
-    	$this->set( 'pageNo', $_REQUEST['pageno']);
+    	$this->set( 'pageNo', $_REQUEST['pageno'] ?? '');
     }
-    
+
+    /**
+     * Computes a period's [fromTime, toTime] and an equal-length
+     * "previous period" [prevFromTime, prevToTime] for trend comparison.
+     * Every show*Dashboard() tab used to duplicate this switch/date-math
+     * independently (7 copies), and all 7 had the same bug: toTime=today,
+     * fromTime=today-N gives an (N+1)-day inclusive window, but
+     * prevFromTime was computed directly as today-2N - only an N-day
+     * window, one day SHORTER than the current one. Any SUM-based metric
+     * (clicks, sessions, follower counts, keyword checks, ...) then
+     * almost always showed a spurious "up" trend purely from summing one
+     * extra day of data, not real growth - worst case on period=day,
+     * where the "current" window (2 days) was literally double the
+     * "previous" one (1 day). Fixed by deriving prevFromTime from
+     * prevToTime using the SAME offset used for fromTime, so both
+     * windows are always exactly the same length.
+     *
+     * $asTimestamp=true returns raw Unix timestamps (for
+     * showDirectorySubmissionDashboard(), whose dirsubmitinfo.submit_time
+     * column is an unquoted UNIX_TIMESTAMP comparison) instead of the
+     * 'Y-m-d' date strings every other caller uses.
+     */
+    function __getPeriodDateRange($period, $asTimestamp = false) {
+        switch ($period) {
+            case 'day':
+                $offset = '-1 day';
+                break;
+            case 'week':
+                $offset = '-7 days';
+                break;
+            case 'year':
+                $offset = '-1 year';
+                break;
+            case 'month':
+            default:
+                $offset = '-30 days';
+                break;
+        }
+
+        if ($asTimestamp) {
+            $toTime = time();
+            $fromTime = strtotime($offset);
+            $prevToTime = $fromTime - 1;
+            $prevFromTime = strtotime($offset, $prevToTime);
+        } else {
+            $toTime = date('Y-m-d');
+            $fromTime = date('Y-m-d', strtotime($offset));
+            $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+            $prevFromTime = date('Y-m-d', strtotime($prevToTime . ' ' . $offset));
+        }
+
+        return [$fromTime, $toTime, $prevFromTime, $prevToTime];
+    }
+
     function showMainDashboard($info=[]) {
         $userId = isLoggedIn();
 
@@ -49,6 +102,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -56,29 +117,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date (one day before current period start to avoid overlap)
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -86,10 +125,18 @@ class DashboardController extends Controller {
         $this->set('prevToTime', $prevToTime);
         
         // get keyword last generated report date in between $fromTime and $toTime
-        $kwResultLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
-        $kwResultLastDate = !empty($kwResultLastDate) ? $kwResultLastDate : $toTime;
+        $kwResultLastDateRaw = $this->__getKeywordLastReportGeneratedDate($websiteId, $fromTime, $toTime);
+        $kwResultLastDate = !empty($kwResultLastDateRaw) ? $kwResultLastDateRaw : $toTime;
         $kwResultPreLastDate = $this->__getKeywordLastReportGeneratedDate($websiteId, $prevFromTime, $prevToTime);
         $kwResultPreLastDate = !empty($kwResultPreLastDate) ? $kwResultPreLastDate : $prevToTime;
+        // Top Keywords and Keyword Distribution below both actually show
+        // data as of $kwResultLastDate (the latest real cron-checked
+        // date in range, which can be well before $toTime if the cron
+        // job hasn't run recently) - surfaced to the view so it can show
+        // an "as of" indicator instead of silently implying the numbers
+        // are current as of today. Null (not the $toTime fallback above)
+        // when there's genuinely no checked date in range at all.
+        $this->set('kwResultLastDate', $kwResultLastDateRaw);
         
         // Get detailed keyword distribution by rank ranges        
         $keywordDistribution = $this->getKeywordDistributionDetails($websiteId, $kwResultLastDate);        
@@ -128,18 +175,81 @@ class DashboardController extends Controller {
         $this->set('rankingTrends', $rankingTrends);
 
         // Get top keywords
-        $topKeywords = $this->getTopKeywords($websiteId, $kwResultLastDate, 15);
+        $topKeywords = $this->getTopKeywords($websiteId, $kwResultLastDate, 10);
         $this->set('topKeywords', $topKeywords);
 
         // Get recent activity
-        $recentActivity = $this->getRecentActivity($websiteId, 15);
+        $recentActivity = $this->getRecentActivity($websiteId, 10);
         $this->set('recentActivity', $recentActivity);
 
         // Get search engine distribution stats
         $searchEngineStats = $this->getSearchEngineStats($websiteId, $fromTime, $toTime);
         $this->set('searchEngineStats', $searchEngineStats);
 
+        // Get AI Visibility stats (AI Overview presence/citation + AI
+        // crawler referral traffic) for the overview card
+        $aiVisibilityStats = $this->getAIVisibilityStats($websiteId, $fromTime, $toTime);
+        $this->set('aiVisibilityStats', $aiVisibilityStats);
+
+        // "Add to SEO Diary" quick action for the AI Visibility card's
+        // headline finding - same deny-by-default access check as
+        // RecommendationsController::showRecommendationsDashboard()
+        // (see that method's own comment for why isPluginActive() alone
+        // isn't enough for a non-admin)
+        include_once(SP_CTRLPATH . "/seoplugins.ctrl.php");
+        $seoDiaryInfo = (new SeoPluginsController())->isPluginActive("SeoDiary");
+        $seoDiaryPluginId = 0;
+        if (!empty($seoDiaryInfo['id'])) {
+            if (isAdmin()) {
+                $seoDiaryPluginId = $seoDiaryInfo['id'];
+            } else {
+                include_once(SP_CTRLPATH . "/user-type.ctrl.php");
+                $userSessInfo = Session::readSession('userInfo');
+                $pluginAccessList = (new UserTypeController())->getPluginAccessSettings($userSessInfo['userTypeId']);
+                $hasAccess = !isset($pluginAccessList[$seoDiaryInfo['id']]['value']) || !empty($pluginAccessList[$seoDiaryInfo['id']]['value']);
+                if ($hasAccess) {
+                    $seoDiaryPluginId = $seoDiaryInfo['id'];
+                }
+            }
+        }
+        $this->set('seoDiaryPluginId', $seoDiaryPluginId);
+
         $this->render('dashboard/main');
+    }
+
+    // Get AI Visibility summary for the main dashboard's overview card:
+    // AI Overview (Google's AI-generated answer box) presence/citation,
+    // reusing AIVisibilityController's own summary helper so the numbers
+    // always match the dedicated AI Visibility report, plus AI crawler
+    // referral traffic (ChatGPT/Perplexity/Gemini/Claude, etc. fetching
+    // pages directly) over the selected period.
+    private function getAIVisibilityStats($websiteId, $fromTime, $toTime) {
+        include_once(SP_CTRLPATH . '/aivisibility.ctrl.php');
+        $aioSummary = (new AIVisibilityController())->__getAioSummaryForWebsite($websiteId);
+
+        $sql = "SELECT platform, SUM(hits) as hits
+                FROM ai_referrals
+                WHERE website_id=" . intval($websiteId) . "
+                    AND hit_date BETWEEN '$fromTime' AND '$toTime'
+                GROUP BY platform
+                ORDER BY hits DESC";
+        $platformRows = $this->db->select($sql);
+
+        $referralHits = 0;
+        $topPlatform = null;
+        foreach ($platformRows as $row) {
+            $referralHits += intval($row['hits']);
+            if ($topPlatform === null) $topPlatform = $row['platform'];
+        }
+
+        return [
+            'aioMeasured' => $aioSummary['measured'],
+            'aioPresent' => $aioSummary['present'],
+            'aioCited' => $aioSummary['cited'],
+            'referralHits' => $referralHits,
+            'topPlatform' => $topPlatform,
+            'platformBreakdown' => $platformRows,
+        ];
     }
 
     function showSocialMediaDashboard($info=[]) {
@@ -161,6 +271,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -168,29 +286,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -208,6 +304,12 @@ class DashboardController extends Controller {
 
         // Calculate social media stats comparison
         $socialMediaComparison = $this->calculateComparison($socialMediaStats, $prevSocialMediaStats);
+        // total_links is a live count of currently-active links, not
+        // bounded by $fromTime/$toTime (see getSocialMediaStats()'s own
+        // comment on why) - it's identical in the current and previous
+        // period calls above, so comparing it always produces a dead
+        // "0%, no change" badge, not a real trend.
+        unset($socialMediaComparison['total_links']);
 
         // Pass social media data to view
         $this->set('socialMediaStats', $socialMediaStats);
@@ -239,6 +341,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -246,29 +356,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -286,6 +374,12 @@ class DashboardController extends Controller {
 
         // Calculate review stats comparison
         $reviewComparison = $this->calculateComparison($reviewStats, $prevReviewStats);
+        // total_links is a live count of currently-active links, not
+        // bounded by $fromTime/$toTime (see getReviewStats()'s own
+        // comment on why) - it's identical in the current and previous
+        // period calls above, so comparing it always produces a dead
+        // "0%, no change" badge, not a real trend.
+        unset($reviewComparison['total_links']);
 
         // Pass review data to view
         $this->set('reviewStats', $reviewStats);
@@ -314,22 +408,6 @@ class DashboardController extends Controller {
 
         return null;
     }
-    
-    function __getWebsiteLastReportGeneratedDate($websiteId, $fromTime, $toTime) {
-        // Find the latest date within the date range where keywords have results with rank > 0
-        $sql = "SELECT MAX(rr.result_date) as last_report_date
-                FROM rankresults rr
-                WHERE rr.website_id=" . intval($websiteId) . "
-                    AND rr.result_date BETWEEN '$fromTime' AND '$toTime'
-                    AND rr.domain_authority > 0";
-        
-        $result = $this->db->select($sql, true);
-        if ($result && !empty($result['last_report_date'])) {
-            return $result['last_report_date'];
-        }
-        
-        return null;
-    }
 
     // Get keyword statistics
     private function getKeywordStats($websiteId, $fromTime, $toTime) {
@@ -349,54 +427,38 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['tracked'] = $result['tracked'];
 
-        // Top 10 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top10
+        // Keywords with NO result ever, any date - was wrongly computed
+        // as total - tracked (period-scoped), which counted a keyword
+        // last checked before the selected period as "never checked"
+        // even though it has real history, just not in this window.
+        $sql = "SELECT COUNT(*) as never_checked
+                FROM keywords k
+                WHERE k.website_id=" . intval($websiteId) . "
+                    AND NOT EXISTS (SELECT 1 FROM searchresults sr WHERE sr.keyword_id = k.id)";
+        $result = $this->db->select($sql, true);
+        $stats['never_checked'] = $result['never_checked'];
+
+        // Rank-bucket counts for $toTime - previously 5 separate COUNT
+        // queries hitting the identical FROM/JOIN/date condition, just
+        // with a different rank range each time; collapsed into one
+        // pass since COUNT(DISTINCT CASE WHEN...) can bucket all 5
+        // independently (top3 is a subset of top10, so both still need
+        // their own CASE WHEN, not a shared running total).
+        $sql = "SELECT
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 10 AND sr.rank > 0 THEN k.id END) as top10,
+                    COUNT(DISTINCT CASE WHEN sr.rank <= 3 AND sr.rank > 0 THEN k.id END) as top3,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 11 AND 20 THEN k.id END) as top20,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 21 AND 50 THEN k.id END) as top50,
+                    COUNT(DISTINCT CASE WHEN sr.rank BETWEEN 51 AND 100 THEN k.id END) as top100
                 FROM keywords k
                     INNER JOIN searchresults sr ON k.id = sr.keyword_id
                 WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank <= 10 AND sr.rank > 0";
+                    AND sr.result_date='$toTime'";
         $result = $this->db->select($sql, true);
         $stats['top10'] = $result['top10'];
-
-        // Top 3 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top3
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank <= 3 AND sr.rank > 0";
-        $result = $this->db->select($sql, true);
         $stats['top3'] = $result['top3'];
-
-        // Top 11-20 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top20
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 11 AND 20";
-        $result = $this->db->select($sql, true);
         $stats['top20'] = $result['top20'];
-
-        // Top 21-50 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top50
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 21 AND 50";
-        $result = $this->db->select($sql, true);
         $stats['top50'] = $result['top50'];
-
-        // Top 51-100 rankings
-        $sql = "SELECT COUNT(DISTINCT k.id) as top100
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$toTime'
-                    AND sr.rank BETWEEN 51 AND 100";
-        $result = $this->db->select($sql, true);
         $stats['top100'] = $result['top100'];
 
         return $stats;
@@ -431,6 +493,14 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        // tracked separately per metric group (each comes from its own
+        // table/tool, so each can independently have never been checked
+        // yet) - a brand-new website with zero rows anywhere defaulted
+        // every one of these to a real 0 via ?? 0 below, which the view
+        // then colored as a genuine (bad) measurement - "0 backlinks",
+        // red "Weak" authority - rather than "not yet checked". Callers
+        // use *_measured to tell the two apart.
+        $stats['backlinks_measured'] = !empty($result);
         $stats['backlinks'] = $result['external_pages_to_page'] ?? 0;
         $stats['external_pages_to_page'] = $result['external_pages_to_page'] ?? 0;
         $stats['external_pages_to_root_domain'] = $result['external_pages_to_root_domain'] ?? 0;
@@ -443,6 +513,7 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        $stats['indexed_measured'] = !empty($result);
         $stats['indexed_pages'] = ($result['google'] ?? 0) + ($result['msn'] ?? 0);
         $stats['google_indexed'] = $result['google'] ?? 0;
         $stats['msn_indexed'] = $result['msn'] ?? 0;
@@ -455,6 +526,7 @@ class DashboardController extends Controller {
                 ORDER BY result_date DESC
                 LIMIT 1";
         $result = $this->db->select($sql, true);
+        $stats['rank_measured'] = !empty($result);
         $stats['spam_score'] = $result['spam_score'] ?? 0;
         $stats['domain_authority'] = $result['domain_authority'] ?? 0;
         $stats['page_authority'] = $result['page_authority'] ?? 0;
@@ -704,7 +776,17 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['total_links'] = $result['total_links'] ?? 0;
 
-        // Get latest social media results within the time period
+        // Get latest social media results as of the period end - deliberately
+        // NOT bounded by $fromTime (contrast getSocialMediaDistribution()'s
+        // own, correctly-unbounded "<= $date" below): if a link's last
+        // crawl falls outside the selected window (e.g. period=week but
+        // cron only runs monthly), bounding this by $fromTime excludes it
+        // from the MAX(report_date) lookup entirely, so COALESCE(SUM(...),0)
+        // silently reports 0 total followers/likes here while the
+        // distribution/top-links widgets below (same page, same data) keep
+        // showing the real, just-stale numbers - a direct on-page
+        // contradiction. Using <= $toTime matches getSocialMediaDistribution()'s
+        // own "latest value as of the period end" semantics.
         // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(smlr.followers), 0) as total_followers,
@@ -713,7 +795,7 @@ class DashboardController extends Controller {
                 LEFT JOIN (
                     SELECT sm_link_id, MAX(report_date) as max_date
                     FROM social_media_link_results
-                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    WHERE report_date <= '$toTime'
                     GROUP BY sm_link_id
                 ) latest ON sml.id = latest.sm_link_id
                 LEFT JOIN social_media_link_results smlr
@@ -811,7 +893,13 @@ class DashboardController extends Controller {
         $result = $this->db->select($sql, true);
         $stats['total_links'] = $result['total_links'] ?? 0;
 
-        // Get latest review results within the time period
+        // Get latest review results as of the period end - same fix as
+        // getSocialMediaStats() above: bounding this by $fromTime excluded
+        // a link's last crawl whenever it fell outside the selected
+        // window, silently reporting 0 total reviews here while the
+        // distribution/top-links widgets below (which already use the
+        // correct, unbounded "<= $date") kept showing the real, just-stale
+        // numbers - a direct on-page contradiction.
         // Using derived table for better performance instead of correlated subquery
         $sql = "SELECT
                     COALESCE(SUM(rlr.reviews), 0) as total_reviews,
@@ -820,7 +908,7 @@ class DashboardController extends Controller {
                 LEFT JOIN (
                     SELECT review_link_id, MAX(report_date) as max_date
                     FROM review_link_results
-                    WHERE report_date BETWEEN '$fromTime' AND '$toTime'
+                    WHERE report_date <= '$toTime'
                     GROUP BY review_link_id
                 ) latest ON rl.id = latest.review_link_id
                 LEFT JOIN review_link_results rlr
@@ -929,6 +1017,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Get Site Auditor project for selected website
@@ -947,11 +1043,6 @@ class DashboardController extends Controller {
         $projectId = $projectInfo['id'];
         $this->set('projectId', $projectId);
 
-        // Get project statistics
-        $projectInfo['total_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id']);
-        $projectInfo['crawled_links'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], true);
-        $projectInfo['last_updated'] = $siteAuditorCtrl->getProjectLastUpdate($projectInfo['id']);
-
         // Status check for crawled filter - default to crawled=1 on first load
         $statusCheck = false;
         $statusVal = 0;
@@ -963,77 +1054,83 @@ class DashboardController extends Controller {
         }
         $this->set('crawled', $crawledVal);
 
-        // Broken links
-        $conditions = " and brocken=1";
-        $projectInfo['brocken'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // Page Authority metrics
+        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
 
-        // Backlinks
+        // Get project statistics - was ~20 separate getCountcrawledLinks()
+        // round trips (one SELECT COUNT(*) per metric) against the same
+        // table/project_id on every single dashboard load. Each metric
+        // still needs its own crawl-filter condition (either the UI's
+        // $statusCheck/$statusVal, always crawled=1 for the "modern SEO
+        // features" group - see that group's own comment below for why -
+        // or no crawl filter at all for total_links), so this folds them
+        // all into one query: one conditional SUM(CASE WHEN ...) per
+        // metric, each embedding whatever crawl condition THAT metric
+        // needs, over a single pass through auditorreports.
+        $filterCrawled = $statusCheck ? "crawled=$statusVal and " : "";
         $seArr = ['google'];
+        $statsSelect = [
+            "count(*) as total_links",
+            "sum(case when crawled=1 then 1 else 0 end) as crawled_links",
+            "max(updated) as last_updated",
+            "sum(case when {$filterCrawled}brocken=1 then 1 else 0 end) as brocken",
+            "sum(case when {$filterCrawled}google_backlinks=0 then 1 else 0 end) as no_backlinks",
+            "sum(case when mobile_friendly=1 and crawled=1 then 1 else 0 end) as mobile_friendly",
+            "sum(case when https_secure=1 and crawled=1 then 1 else 0 end) as https_secure",
+            "sum(case when ai_robot_allowed=1 and crawled=1 then 1 else 0 end) as ai_robot_allowed",
+            "sum(case when has_og_tags=1 and crawled=1 then 1 else 0 end) as has_og_tags",
+            "sum(case when has_twitter_cards=1 and crawled=1 then 1 else 0 end) as has_twitter_cards",
+            "sum(case when blocked_by_robots=0 and crawled=1 then 1 else 0 end) as allowed_by_robots",
+            "sum(case when {$filterCrawled}page_authority >= $paLevelSecond then 1 else 0 end) as pa_excellent",
+            "sum(case when {$filterCrawled}page_authority >= $paLevelFirst and page_authority < $paLevelSecond then 1 else 0 end) as pa_good",
+            "sum(case when {$filterCrawled}page_authority > 0 and page_authority < $paLevelFirst then 1 else 0 end) as pa_low",
+            "sum(case when {$filterCrawled}page_authority = 0 then 1 else 0 end) as pa_none",
+        ];
         foreach ($seArr as $se) {
-            $conditions = " and $se"."_backlinks>0";
-            $projectInfo[$se."_backlinks"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_backlinks>0 then 1 else 0 end) as {$se}_backlinks";
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed>0 then 1 else 0 end) as {$se}_indexed";
+            $statsSelect[] = "sum(case when {$filterCrawled}{$se}_indexed=0 then 1 else 0 end) as {$se}_not_indexed";
+        }
+        $statsSql = "select " . implode(", ", $statsSelect) . " from auditorreports where project_id=" . intval($projectInfo['id']);
+        $stats = $this->db->select($statsSql, true);
+        foreach ($stats as $key => $val) {
+            $projectInfo[$key] = ($key === 'last_updated') ? (empty($val) ? "Not Started" : $val) : intval($val);
         }
 
-        // No backlinks
-        $conditions = " and google_backlinks=0";
-        $projectInfo['no_backlinks'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // auditorprojects.score defaults to 0, same as a genuinely awful
+        // real score would be - a project that was just created and has
+        // never actually been crawled (crawled_links==0) rendered as
+        // "Critical 0%" with every metric showing "Not found", completely
+        // indistinguishable from a site that WAS audited and is really
+        // broken. The view uses this to show a "run your first crawl"
+        // state instead, same treatment the no-project-at-all case above
+        // already gets.
+        $this->set('noCrawlResultsYet', $projectInfo['crawled_links'] == 0);
 
-        // Indexed status
-        foreach ($seArr as $se) {
-            $conditions = " and $se"."_indexed>0";
-            $projectInfo[$se."_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-            $conditions = " and $se"."_indexed=0";
-            $projectInfo[$se."_not_indexed"] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-        }
-
-        // Bing indexed
-        $conditions = " and bing_indexed>0";
-        $projectInfo['bing_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-        $conditions = " and bing_indexed=0";
-        $projectInfo['bing_not_indexed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        // Duplicate meta info
+        // Duplicate meta info - a GROUP BY ... HAVING count>1 query per
+        // column, not a flat per-row condition, so it doesn't fold into
+        // the combined SUM(CASE...) query above.
         $metaArr = array('page_title' => $spTextSA["Duplicate Title"], 'page_description' => $spTextSA['Duplicate Description'], 'page_keywords' => $spTextSA['Duplicate Keywords']);
         $auditorComp = $siteAuditorCtrl->createComponent('AuditorComponent');
         foreach ($metaArr as $meta => $val) {
             $projectInfo["duplicate_".$meta] = $auditorComp->getDuplicateMetaInfoCount($projectInfo['id'], $meta, $statusCheck, $statusVal);
         }
 
-        // Modern SEO features
-        $conditions = " and mobile_friendly=1";
-        $projectInfo['mobile_friendly'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and https_secure=1";
-        $projectInfo['https_secure'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and ai_robot_allowed=1";
-        $projectInfo['ai_robot_allowed'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and has_og_tags=1";
-        $projectInfo['has_og_tags'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and has_twitter_cards=1";
-        $projectInfo['has_twitter_cards'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and blocked_by_robots=0";
-        $projectInfo['allowed_by_robots'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        // Page Authority metrics
-        $paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
-        $paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
-
-        $conditions = " and page_authority >= $paLevelSecond";
-        $projectInfo['pa_excellent'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority >= $paLevelFirst and page_authority < $paLevelSecond";
-        $projectInfo['pa_good'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority > 0 and page_authority < $paLevelFirst";
-        $projectInfo['pa_low'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
-
-        $conditions = " and page_authority = 0";
-        $projectInfo['pa_none'] = $siteAuditorCtrl->getCountcrawledLinks($projectInfo['id'], $statusCheck, $statusVal, $conditions);
+        // Modern SEO features - a not-yet-crawled auditorreports row
+        // defaults ai_robot_allowed=1/mobile_friendly=1 (optimistic -
+        // counted as passing) but https_secure=0/has_og_tags=0/
+        // has_twitter_cards=0/blocked_by_robots=0 (counted as failing,
+        // except blocked_by_robots=0 which counts as ALLOWED here) - so
+        // selecting "Crawled: --Select--" (crawledVal=-1, $statusCheck
+        // false, no crawled filter applied at all) mixed uncrawled rows
+        // into every one of these counts, for reasons that have nothing
+        // to do with the site's actual SEO state. These 6 feature checks
+        // only have a real answer for pages that were actually crawled,
+        // so they always require crawled=1 regardless of the selected
+        // filter (the filter still applies normally to every OTHER
+        // metric above/below, which don't have this inconsistent-default
+        // problem). (Computed above, in $statsSelect.)
 
         $this->set('projectInfo', $projectInfo);
         $this->set('metaArr', $metaArr);
@@ -1065,6 +1162,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: month)
@@ -1072,29 +1177,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'week':
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'month':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1222,6 +1305,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1229,29 +1320,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'month':
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'week':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1261,7 +1330,7 @@ class DashboardController extends Controller {
         // Get website analytics data
         $waStats = $this->getWAStats($websiteId, $fromTime, $toTime);
         $waTrends = $this->getWATrends($websiteId, $fromTime, $toTime);
-        $waSourceDistribution = $this->getWASourceDistribution($websiteId, $toTime);
+        $waSourceDistribution = $this->getWASourceDistribution($websiteId, $fromTime, $toTime);
 
         // Get previous period stats for comparison
         $prevWAStats = $this->getWAStats($websiteId, $prevFromTime, $prevToTime);
@@ -1275,6 +1344,15 @@ class DashboardController extends Controller {
         $this->set('waSourceDistribution', $waSourceDistribution);
         $this->set('prevWAStats', $prevWAStats);
         $this->set('waComparison', $waComparison);
+
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Google Analytics traffic numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
+
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
 
         $this->render('dashboard/analytics_main');
     }
@@ -1296,6 +1374,14 @@ class DashboardController extends Controller {
                 AND report_date BETWEEN '$fromTime' AND '$toTime'";
 
         $result = $this->db->select($sql, true);
+        // same "bare aggregate always returns one row, even with zero
+        // matches" subtlety as getSCStats() - "measured" must check the
+        // raw NULL-ness of an aggregate, not !empty($result). Without
+        // this, a website never connected to Google Analytics (or
+        // connected but not yet synced) got avg_bounce_rate=0 colored
+        // green ("great engagement!"), a confident verdict it hadn't
+        // earned.
+        $stats['measured'] = isset($result['total_users']) && $result['total_users'] !== null;
         $stats['total_users'] = intval($result['total_users'] ?? 0);
         $stats['total_new_users'] = intval($result['total_new_users'] ?? 0);
         $stats['total_sessions'] = intval($result['total_sessions'] ?? 0);
@@ -1326,7 +1412,7 @@ class DashboardController extends Controller {
     }
 
     // Get website analytics source distribution
-    private function getWASourceDistribution($websiteId, $date) {
+    private function getWASourceDistribution($websiteId, $fromTime, $toTime) {
         $sql = "SELECT
                     wa.source_id,
                     ans.source_name,
@@ -1336,8 +1422,7 @@ class DashboardController extends Controller {
                 FROM website_analytics wa
                 LEFT JOIN analytic_sources ans ON wa.source_id = ans.id
                 WHERE wa.website_id=" . intval($websiteId) . "
-                AND wa.report_date <= '$date'
-                AND wa.report_date >= DATE_SUB('$date', INTERVAL 30 DAY)
+                AND wa.report_date BETWEEN '$fromTime' AND '$toTime'
                 GROUP BY wa.source_id, ans.source_name
                 ORDER BY users DESC
                 LIMIT 10";
@@ -1399,6 +1484,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1406,29 +1499,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = date('Y-m-d');
-        switch ($period) {
-            case 'day':
-                $fromTime = date('Y-m-d', strtotime('-1 day'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 days'));
-                break;
-            case 'month':
-                $fromTime = date('Y-m-d', strtotime('-30 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-60 days'));
-                break;
-            case 'year':
-                $fromTime = date('Y-m-d', strtotime('-1 year'));
-                $prevFromTime = date('Y-m-d', strtotime('-2 years'));
-                break;
-            case 'week':
-            default:
-                $fromTime = date('Y-m-d', strtotime('-7 days'));
-                $prevFromTime = date('Y-m-d', strtotime('-14 days'));
-                break;
-        }
-
-        // Calculate previous period end date
-        $prevToTime = date('Y-m-d', strtotime($fromTime . ' -1 day'));
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1453,7 +1524,35 @@ class DashboardController extends Controller {
         $this->set('prevSCStats', $prevSCStats);
         $this->set('scComparison', $scComparison);
 
+        // AI Overview impressions + AI crawler referral clicks - same
+        // helper/shape as the main dashboard's AI Visibility card, reused
+        // here so this tab shows "clicks and impressions from AI sources"
+        // alongside its own Search Console numbers
+        $this->set('aiVisibilityStats', $this->getAIVisibilityStats($websiteId, $fromTime, $toTime));
+
+        include_once(SP_CTRLPATH . '/settings.ctrl.php');
+        $this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
         $this->render('dashboard/search_console_main');
+    }
+
+    /*
+     * AJAX action: on-demand Local AI (Ollama) summary combining Google
+     * Analytics and Search Console data for the same website+date range -
+     * see LocalAIController::summarizeTrafficSearchTrend(). Reachable from
+     * both the Website Analytics and Search Console dashboard tabs (both
+     * point at the same action) since it draws on both tools' data.
+     * Never auto-fired; ownership is enforced by
+     * summarizeTrafficSearchTrend() itself, not re-checked here.
+     */
+    function summarizeTrafficSearchTrend($info) {
+        $userId = isLoggedIn();
+        $fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+        $toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+        include_once(SP_CTRLPATH . '/localai.ctrl.php');
+        $result = (new LocalAIController())->summarizeTrafficSearchTrend($info['website_id'], $userId, $fromTime, $toTime);
+        header('Content-Type: application/json');
+        print json_encode($result);
     }
 
     // Get search console statistics
@@ -1471,6 +1570,15 @@ class DashboardController extends Controller {
                 AND report_date BETWEEN '$fromTime' AND '$toTime'";
 
         $result = $this->db->select($sql, true);
+        // a bare aggregate query with no GROUP BY always returns exactly
+        // one row, even when zero rows matched (SUM/AVG of nothing is
+        // SQL NULL, not absence of a row) - so "measured" has to check
+        // the raw NULL-ness of one of the aggregates, not !empty($result).
+        // Without this, a website never connected to Search Console (or
+        // connected but not yet synced by cron) got avg_position=0
+        // colored green ("#1 ranking!") and avg_ctr=0 colored red
+        // ("terrible CTR!") - both read as real, confident verdicts.
+        $stats['measured'] = isset($result['total_clicks']) && $result['total_clicks'] !== null;
         $stats['total_clicks'] = intval($result['total_clicks'] ?? 0);
         $stats['total_impressions'] = intval($result['total_impressions'] ?? 0);
         $stats['avg_ctr'] = floatval($result['avg_ctr'] ?? 0);
@@ -1571,6 +1679,14 @@ class DashboardController extends Controller {
 
         $this->set('siteList', $websiteList);
         $websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+        // a caller-supplied website_id must belong to one of the caller's
+        // own (already-scoped) websites for a non-admin - otherwise fall
+        // back to their own first website. Previously unchecked here,
+        // across every dashboard tab - any non-admin could view ANY other
+        // user's dashboard data for an arbitrary website_id.
+        if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+            $websiteId = $websiteList[0]['id'];
+        }
         $this->set('websiteId', $websiteId);
 
         // Handle period selection (default: week)
@@ -1578,29 +1694,7 @@ class DashboardController extends Controller {
         $this->set('period', $period);
 
         // Calculate date range based on period
-        $toTime = time();
-        switch ($period) {
-            case 'day':
-                $fromTime = strtotime('-1 day');
-                $prevFromTime = strtotime('-2 days');
-                break;
-            case 'month':
-                $fromTime = strtotime('-30 days');
-                $prevFromTime = strtotime('-60 days');
-                break;
-            case 'year':
-                $fromTime = strtotime('-1 year');
-                $prevFromTime = strtotime('-2 years');
-                break;
-            case 'week':
-            default:
-                $fromTime = strtotime('-7 days');
-                $prevFromTime = strtotime('-14 days');
-                break;
-        }
-
-        // Calculate previous period end time
-        $prevToTime = $fromTime - 1;
+        list($fromTime, $toTime, $prevFromTime, $prevToTime) = $this->__getPeriodDateRange($period, true);
 
         $this->set('fromTime', $fromTime);
         $this->set('toTime', $toTime);
@@ -1626,6 +1720,9 @@ class DashboardController extends Controller {
         $this->set('dsAllTimeStats', $dsAllTimeStats);
         $this->set('prevDSStats', $prevDSStats);
         $this->set('dsComparison', $dsComparison);
+        // all-time, not period-scoped - distinguishes "nothing submitted
+        // to any directory yet" from "nothing submitted in this period"
+        $this->set('noSubmissionsYet', $dsAllTimeStats['total_submissions'] == 0);
 
         $this->render('dashboard/directory_submission_main');
     }

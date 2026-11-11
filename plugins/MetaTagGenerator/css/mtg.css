@@ -1,0 +1,172 @@
+@CHARSET "UTF-8";
+
+/* MetaTagGenerator design system - card-based forms, replacing the old
+   #cust_tab/.form_head/.form_data table look. Loaded unconditionally from
+   MetaTagGenerator::initPlugin() (runs on every action, not just when the
+   plugin-browser menu page happens to render) - see that method's own
+   comment for why that distinction matters. */
+
+.mtg-form,
+.mtg-card {
+    max-width: 900px;
+    margin: 24px auto;
+    background: #fff;
+    border: 1px solid #e3e8f0;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(20, 30, 60, 0.06);
+    padding: 28px 32px;
+}
+.mtg-form-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e8edf5;
+}
+.mtg-form-header i {
+    font-size: 20px;
+    color: #1a73e8;
+}
+.mtg-form-header h3 {
+    margin: 0;
+    font-size: 19px;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+.mtg-form-section {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5a6372;
+    margin: 28px 0 14px;
+    padding-top: 14px;
+    border-top: 1px solid #e8edf5;
+}
+.mtg-form-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+}
+.mtg-form-row {
+    margin-bottom: 16px;
+}
+.mtg-form-row-pair {
+    display: flex;
+    gap: 16px;
+}
+.mtg-form-row-pair .mtg-form-row {
+    flex: 1;
+    min-width: 0;
+}
+.mtg-form label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #5a6372;
+    margin-bottom: 6px;
+}
+.mtg-form input[type="text"],
+.mtg-form select,
+.mtg-form textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px 12px;
+    font-size: 14px;
+    color: #1a1a2e;
+    background: #fafbfd;
+    border: 1px solid #d8dee8;
+    border-radius: 8px;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.mtg-form input[type="text"]:focus,
+.mtg-form select:focus,
+.mtg-form textarea:focus {
+    outline: none;
+    background: #fff;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.12);
+}
+.mtg-form textarea {
+    min-height: 70px;
+    resize: vertical;
+    font-family: inherit;
+}
+.mtg-form-hint {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #8a93a3;
+}
+.mtg-form-hint .mtg-count.over-limit {
+    color: #d93025;
+    font-weight: 700;
+}
+.mtg-form-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mtg-form-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1a73e8;
+}
+.mtg-form-check label {
+    margin: 0;
+    text-transform: none;
+    font-weight: 500;
+    font-size: 13.5px;
+    letter-spacing: normal;
+    color: #333;
+}
+.mtg-ai-suggest {
+    background: #eef2fb;
+    border: 1px solid #d3def5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 20px;
+}
+.mtg-ai-suggest p {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #64748b;
+}
+.mtg-ai-suggest .btn {
+    border-radius: 7px;
+}
+.mtg-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid #e8edf5;
+}
+.mtg-form-actions .btn {
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 600;
+}
+.mtg-form .error {
+    display: block;
+    margin-top: 5px;
+}
+.mtg-save-confirm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #e8f5e9;
+    border: 1px solid #a5d6a7;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    color: #1b5e20;
+    font-weight: 600;
+}
+.mtg-save-confirm i {
+    font-size: 18px;
+    color: #2e7d32;
+}

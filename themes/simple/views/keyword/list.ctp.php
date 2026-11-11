@@ -1,7 +1,35 @@
 <?php
-echo showSectionHead($spTextTools['Keywords Manager']);
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Keywords Manager']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#kwManagerHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="kwManagerHelpModal" tabindex="-1" role="dialog" aria-labelledby="kwManagerHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-key"></i></div>
+				<h5 class="modal-title" id="kwManagerHelpModalLabel">About Keywords Manager</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The list of every keyword you've set up to track, with its website, language and country - filterable by website, status or name. Activate, deactivate or delete keywords individually or in bulk from here.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Only keywords belonging to an active website are listed. Deleting a keyword also removes its saved rank history.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form name="listform" id="listform" onsubmit="<?php echo $searchFun?>;return false;">
 <table class="search">
 	<tr>
@@ -10,7 +38,6 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 		<th class="pl-4"><?php echo $spText['common']['Website']?>: </th>
 		<td>
 			<select name="website_id" id="website_id" onchange="<?php echo $searchFun?>" class="custom-select">
-				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
 						<option value="<?php echo $websiteInfo['id']?>" selected><?php echo $websiteInfo['name']?></option>
@@ -49,11 +76,14 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 		<td><?php echo $spText['common']['Website']?></td>
 		<td><?php echo $spText['common']['Country']?></td>
 		<td><?php echo $spText['common']['lang']?></td>
+		<?php if (!empty($showSearchVolume)): ?>
+		<td class="text-center"><?php echo $spText['keyword']['Search Volume']?></td>
+		<?php endif; ?>
 		<td><?php echo $spText['common']['Status']?></td>
 		<td style="width: 10%"><?php echo $spText['common']['Action']?></td>
 	</tr>
 	<?php
-	$colCount = 7;
+	$colCount = !empty($showSearchVolume) ? 8 : 7;
 	if(count($list) > 0){
 		foreach($list as $i => $listInfo){
             $keywordLink = scriptAJAXLinkHref('keywords.php', 'content', "sec=edit&keywordId={$listInfo['id']}", "{$listInfo['name']}")
@@ -64,6 +94,17 @@ $searchFun = "scriptDoLoadPost('keywords.php', 'listform', 'content')";
 				<td><?php echo $listInfo['website']?></td>
 				<td><?php echo empty($listInfo['country_name']) ? $spText['common']["All"] : $listInfo['country_name']; ?></td>
 				<td><?php echo empty($listInfo['lang_name']) ? $spText['common']["All"] : $listInfo['lang_name']; ?></td>
+				<?php if (!empty($showSearchVolume)): ?>
+				<td class="text-center">
+					<?php if (!is_null($listInfo['search_volume'])): ?>
+						<strong><?php echo number_format($listInfo['search_volume'])?></strong>
+					<?php elseif (!empty($listInfo['sv_status'])): ?>
+						<span class="badge badge-secondary"><?php echo htmlspecialchars($listInfo['sv_status'])?></span>
+					<?php else: ?>
+						&mdash;
+					<?php endif; ?>
+				</td>
+				<?php endif; ?>
 				<td class="text-center"><?php echo showStatusBadge($listInfo['status']);	?></td>
 				<td>
 					<?php

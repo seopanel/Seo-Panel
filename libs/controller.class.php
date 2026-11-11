@@ -31,6 +31,14 @@ class Controller extends Seopanel{
 	var $paging;
 	var $layout = 'default';
 	var $sessionCats = array('common','login','button','label');
+	// set()'s own `$this->data[$varName] = $varValue;` already assumed
+	// this was always an array (PHP auto-vivifies null into one on first
+	// write) - but a controller action that renders a view with zero
+	// prior set() calls (e.g. a plugin's static aboutus() page) left it
+	// genuinely null, and View::getPluginViewContent()'s count($this->
+	// data) is a TypeError on PHP 8+ given null. Declaring the intended
+	// default explicitly closes that gap for every such path at once.
+	var $data = array();
 
 	function __construct(){
 		
@@ -241,6 +249,89 @@ class Controller extends Seopanel{
 	function getViewContent($viewFile){
 		$this->view->data = $this->data;
 		return $this->view->getViewContent($viewFile);
+	}
+
+	// records a security-relevant admin action for later review (Settings
+	// > Audit Log) - who did what, when, from where. Deliberately
+	// denormalizes the actor's username and the target's label (not just
+	// their ids) so the log entry stays readable independently of either
+	// row still existing later (e.g. "user X deleted user Y" must still
+	// read correctly after user Y's own row is gone). $details is
+	// free-form text for anything extra worth capturing (e.g. which
+	// setting names changed) - callers must never put a secret/password
+	// value in here, only in $targetLabel is it borderline-safe (a
+	// username, not a credential).
+	function logAuditEvent($action, $targetType = null, $targetId = null, $targetLabel = null, $details = null) {
+		$actorId = isLoggedIn();
+		$actorUsername = null;
+		if (!empty($actorId)) {
+			$actorInfo = $this->db->select("select username from users where id=" . intval($actorId), true);
+			$actorUsername = $actorInfo['username'] ?? null;
+		}
+		$ip = $_SERVER['REMOTE_ADDR'] ?? null;
+		$now = date('Y-m-d H:i:s');
+
+		$sql = "insert into audit_log
+			(actor_user_id, actor_username, action, target_type, target_id, target_label, details, ip_address, created_at)
+			values (" .
+			(empty($actorId) ? "NULL" : intval($actorId)) . ", " .
+			($actorUsername === null ? "NULL" : "'" . addslashes($actorUsername) . "'") . ", " .
+			"'" . addslashes($action) . "', " .
+			($targetType === null ? "NULL" : "'" . addslashes($targetType) . "'") . ", " .
+			($targetId === null ? "NULL" : intval($targetId)) . ", " .
+			($targetLabel === null ? "NULL" : "'" . addslashes($targetLabel) . "'") . ", " .
+			($details === null ? "NULL" : "'" . addslashes($details) . "'") . ", " .
+			($ip === null ? "NULL" : "'" . addslashes($ip) . "'") . ", " .
+			"'$now')";
+		$this->db->query($sql);
+	}
+
+	// shared by every "Summary" report page's own __get*DateAvailability()
+	// helper (report/webmaster/analytics/social_media/review_manager
+	// controllers) - each builds its own min/max(report_date) SQL (table
+	// names and join conditions differ per page), this just runs it and
+	// normalizes the result row into a plain [min, max] pair.
+	function __getMinMaxDate($sql) {
+		$row = $this->db->select($sql, true);
+		return array($row['min_date'] ?? null, $row['max_date'] ?? null);
+	}
+
+	// shared Day/Week/Month/Year period-preset resolution, used by every
+	// "Summary" report page that offers that dropdown. Split into two
+	// steps so a caller can decide $period (cheap, no DB access) before
+	// deciding whether its own availability query is even worth running -
+	// each page's own fallback for explicit from_time/to_time (when
+	// __resolvePeriodValue() comes back empty/Custom) predates this
+	// feature and legitimately differs per page, so that part stays in
+	// each controller.
+
+	// reads 'period'/'from_time'/'to_time' from the caller's raw request
+	// array and returns the resolved period key ('day'/'week'/'month'/
+	// 'year'), or '' when explicit dates were submitted/should be used
+	// (an invalid/tampered period value is treated the same as not
+	// submitted at all).
+	function __resolvePeriodValue($searchInfo) {
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$hasExplicitDates = !empty($searchInfo['from_time']) || !empty($searchInfo['to_time']);
+		return (!empty($searchInfo['period']) && isset($periodOffsets[$searchInfo['period']])) ? $searchInfo['period'] : ($hasExplicitDates ? '' : 'month');
+	}
+
+	// given an already-resolved (non-empty) $period from
+	// __resolvePeriodValue(), anchors "to" to the latest date this page's
+	// own availability query actually found data for (or $noDataAnchor,
+	// a strtotime()-compatible fallback, e.g. 'today'/'-1 days', when
+	// there's no saved data at all yet - differs per page's own
+	// reporting-lag tolerance), and "from" to that minus the preset's
+	// offset, clamped so it never goes earlier than the earliest
+	// available date. Returns array($fromTimeStamp, $toTimeStamp).
+	function __resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, $noDataAnchor) {
+		$periodOffsets = array('day' => '-1 day', 'week' => '-7 days', 'month' => '-30 days', 'year' => '-1 year');
+		$toTimeStamp = !empty($maxAvailDate) ? strtotime($maxAvailDate) : strtotime($noDataAnchor);
+		$fromTimeStamp = strtotime($periodOffsets[$period], $toTimeStamp);
+		if (!empty($minAvailDate) && $fromTimeStamp < strtotime($minAvailDate)) {
+			$fromTimeStamp = strtotime($minAvailDate);
+		}
+		return array($fromTimeStamp, $toTimeStamp);
 	}
 }
 ?>

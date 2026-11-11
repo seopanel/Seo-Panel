@@ -53,12 +53,12 @@ if(!empty($validationMsg)){
 	</tr>
 	<tr class="white_row">
 		<td class="td_left_col"><?php echo $spText['common']['Name']?>:</td>
-		<td class="td_right_col"><input type="text" name="name" value="<?php echo $post['name']?>" class="form-control"><?php echo $errMsg['name']?></td>
+		<td class="td_right_col"><input type="text" name="name" value="<?php echo htmlspecialchars($post['name'] ?? '')?>" class="form-control"><?php echo $errMsg['name']?></td>
 	</tr>
 	<tr class="blue_row">
 		<td class="td_left_col"><?php echo $spText['common']['Link']?>:</td>
 		<td class="td_right_col">
-			<input type="url" name="url" value="<?php echo $post['url']?>" class="form-control" required="required">
+			<input type="url" name="url" value="<?php echo htmlspecialchars($post['url'] ?? '', ENT_QUOTES)?>" class="form-control" required="required">
 			<?php echo $errMsg['url']?>
 			<?php
 			$serviceSelName = !empty($post['type']) ? $post['type'] : "google";

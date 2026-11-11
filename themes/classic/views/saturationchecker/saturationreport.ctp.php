@@ -1,4 +1,32 @@
-<?php echo showSectionHead($spTextSat['Search Engine Saturation Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextSat['Search Engine Saturation Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#satReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="satReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="satReportsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-table"></i></div>
+				<h5 class="modal-title" id="satReportsHelpModalLabel">About Saturation Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Shows a date-range history of a website's Google and Bing indexed-page counts, with trend indicators, plus an optional AI summary of the trend.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Reads only already-saved history - no new crawling happens here. Needs data saved by Generate Saturation Reports or the scheduled cron first.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form id='search_form'>
 <table class="search">
 	<tr>
@@ -65,8 +93,8 @@
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>"><?php echo $listInfo['result_date']; ?></td>
-				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['google']?>" target="_blank"><?php echo $listInfo['google'].'</a> '. $listInfo['rank_diff_google']?></td>
-				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo $directLinkList['msn']?>" target="_blank"><?php echo $listInfo['msn'].'</a> '. $listInfo['rank_diff_msn']?></td>
+				<td class='td_br_right' style='text-align:left;padding-left:40px;'><a href="<?php echo htmlspecialchars($directLinkList['google'])?>" target="_blank"><?php echo intval($listInfo['google'])?></a> <?php echo $listInfo['rank_diff_google']?></td>
+				<td class='<?php echo $rightBotClass?>' style='text-align:left;padding-left:40px;'><a href="<?php echo htmlspecialchars($directLinkList['msn'])?>" target="_blank"><?php echo intval($listInfo['msn'])?></a> <?php echo $listInfo['rank_diff_msn']?></td>
 			</tr>
 			<?php
 			$i++;
@@ -80,4 +108,36 @@
 		<td class="right"></td>
 	</tr>
 </table>
+
+<?php if (!empty($localAiAvailable) && count($list) > 0) { ?>
+	<div class="mt-2">
+		<button type="button" class="btn btn-outline-secondary btn-sm" onclick="saturationSummarizeTrend()">
+			<i class="fa fa-magic"></i> Summarize with AI
+		</button>
+		<div id="saturationTrendSummary" class="alert alert-info mt-2" style="display:none;"></div>
+	</div>
+	<script type="text/javascript">
+	function saturationSummarizeTrend() {
+		var box = document.getElementById('saturationTrendSummary');
+		box.style.display = 'block';
+		box.innerText = 'Generating...';
+		$.ajax({
+			url: 'saturationchecker.php',
+			data: {
+				sec: 'summarizetrend',
+				website_id: <?php echo intval($websiteId)?>,
+				from_time: <?php echo json_encode($fromTime)?>,
+				to_time: <?php echo json_encode($toTime)?>
+			},
+			dataType: 'json',
+			success: function(data) {
+				box.innerText = (data && data.ok) ? data.summary : ((data && data.error) ? data.error : 'Could not generate a summary.');
+			},
+			error: function() {
+				box.innerText = 'Could not generate a summary.';
+			}
+		});
+	}
+	</script>
+<?php } ?>
 </div>

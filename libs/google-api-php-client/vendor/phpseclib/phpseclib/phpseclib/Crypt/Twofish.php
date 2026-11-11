@@ -369,6 +369,42 @@ class Twofish extends Base
     var $key_length = 16;
 
     /**
+     * Default Constructor.
+     *
+     * Determines whether or not the mcrypt extension should be used.
+     *
+     * $mode could be:
+     *
+     * - CRYPT_MODE_ECB
+     *
+     * - CRYPT_MODE_CBC
+     *
+     * - CRYPT_MODE_CTR
+     *
+     * - CRYPT_MODE_CFB
+     *
+     * - CRYPT_MODE_OFB
+     *
+     * (or the alias constants of the chosen cipher, for example for AES: CRYPT_AES_MODE_ECB or CRYPT_AES_MODE_CBC ...)
+     *
+     * If not explicitly set, CRYPT_MODE_CBC will be used.
+     *
+     * @param int $mode
+     * @access public
+     */
+    function __construct($mode = self::MODE_CBC)
+    {
+        parent::__construct($mode);
+
+        $this->m0 = array_map(array($this, 'safe_intval'), $this->m0);
+        $this->m1 = array_map(array($this, 'safe_intval'), $this->m1);
+        $this->m2 = array_map(array($this, 'safe_intval'), $this->m2);
+        $this->m3 = array_map(array($this, 'safe_intval'), $this->m3);
+        $this->q0 = array_map(array($this, 'safe_intval'), $this->q0);
+        $this->q1 = array_map(array($this, 'safe_intval'), $this->q1);
+    }
+
+    /**
      * Sets the key length.
      *
      * Valid key lengths are 128, 192 or 256 bits
@@ -432,8 +468,10 @@ class Twofish extends Base
                          $m2[$q1[$q0[$j] ^ $key[15]] ^ $key[7]] ^
                          $m3[$q1[$q1[$j] ^ $key[16]] ^ $key[8]];
                     $B = ($B << 8) | ($B >> 24 & 0xff);
-                    $K[] = $A+= $B;
-                    $K[] = (($A+= $B) << 9 | $A >> 23 & 0x1ff);
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = $A;
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = ($A << 9 | $A >> 23 & 0x1ff);
                 }
                 for ($i = 0; $i < 256; ++$i) {
                     $S0[$i] = $m0[$q0[$q0[$i] ^ $s4] ^ $s0];
@@ -456,8 +494,10 @@ class Twofish extends Base
                          $m2[$q1[$q0[$q0[$j] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
                          $m3[$q1[$q1[$q0[$j] ^ $key[24]] ^ $key[16]] ^ $key[8]];
                     $B = ($B << 8) | ($B >> 24 & 0xff);
-                    $K[] = $A+= $B;
-                    $K[] = (($A+= $B) << 9 | $A >> 23 & 0x1ff);
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = $A;
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = ($A << 9 | $A >> 23 & 0x1ff);
                 }
                 for ($i = 0; $i < 256; ++$i) {
                     $S0[$i] = $m0[$q0[$q0[$q1[$i] ^ $s8] ^ $s4] ^ $s0];
@@ -481,8 +521,10 @@ class Twofish extends Base
                          $m2[$q1[$q0[$q0[$q0[$j] ^ $key[31]] ^ $key[23]] ^ $key[15]] ^ $key[7]] ^
                          $m3[$q1[$q1[$q0[$q1[$j] ^ $key[32]] ^ $key[24]] ^ $key[16]] ^ $key[8]];
                     $B = ($B << 8) | ($B >> 24 & 0xff);
-                    $K[] = $A+= $B;
-                    $K[] = (($A+= $B) << 9 | $A >> 23 & 0x1ff);
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = $A;
+                    $A = $this->safe_intval($A + $B);
+                    $K[] = ($A << 9 | $A >> 23 & 0x1ff);
                 }
                 for ($i = 0; $i < 256; ++$i) {
                     $S0[$i] = $m0[$q0[$q0[$q1[$q1[$i] ^ $sc] ^ $s8] ^ $s4] ^ $s0];
@@ -578,9 +620,9 @@ class Twofish extends Base
                   $S1[ $R1        & 0xff] ^
                   $S2[($R1 >>  8) & 0xff] ^
                   $S3[($R1 >> 16) & 0xff];
-            $R2^= $t0 + $t1 + $K[++$ki];
+            $R2^= $this->safe_intval($t0 + $t1 + $K[++$ki]);
             $R2 = ($R2 >> 1 & 0x7fffffff) | ($R2 << 31);
-            $R3 = ((($R3 >> 31) & 1) | ($R3 << 1)) ^ ($t0 + ($t1 << 1) + $K[++$ki]);
+            $R3 = ((($R3 >> 31) & 1) | ($R3 << 1)) ^ $this->safe_intval($t0 + ($t1 << 1) + $K[++$ki]);
 
             $t0 = $S0[ $R2        & 0xff] ^
                   $S1[($R2 >>  8) & 0xff] ^
@@ -590,9 +632,9 @@ class Twofish extends Base
                   $S1[ $R3        & 0xff] ^
                   $S2[($R3 >>  8) & 0xff] ^
                   $S3[($R3 >> 16) & 0xff];
-            $R0^= ($t0 + $t1 + $K[++$ki]);
+            $R0^= $this->safe_intval($t0 + $t1 + $K[++$ki]);
             $R0 = ($R0 >> 1 & 0x7fffffff) | ($R0 << 31);
-            $R1 = ((($R1 >> 31) & 1) | ($R1 << 1)) ^ ($t0 + ($t1 << 1) + $K[++$ki]);
+            $R1 = ((($R1 >> 31) & 1) | ($R1 << 1)) ^ $this->safe_intval($t0 + ($t1 << 1) + $K[++$ki]);
         }
 
         // @codingStandardsIgnoreStart
@@ -634,9 +676,9 @@ class Twofish extends Base
                   $S1[$R1       & 0xff] ^
                   $S2[$R1 >>  8 & 0xff] ^
                   $S3[$R1 >> 16 & 0xff];
-            $R3^= $t0 + ($t1 << 1) + $K[--$ki];
+            $R3^= $this->safe_intval($t0 + ($t1 << 1) + $K[--$ki]);
             $R3 = $R3 >> 1 & 0x7fffffff | $R3 << 31;
-            $R2 = ($R2 >> 31 & 0x1 | $R2 << 1) ^ ($t0 + $t1 + $K[--$ki]);
+            $R2 = ($R2 >> 31 & 0x1 | $R2 << 1) ^ $this->safe_intval($t0 + $t1 + $K[--$ki]);
 
             $t0 = $S0[$R2       & 0xff] ^
                   $S1[$R2 >>  8 & 0xff] ^
@@ -646,9 +688,9 @@ class Twofish extends Base
                   $S1[$R3       & 0xff] ^
                   $S2[$R3 >>  8 & 0xff] ^
                   $S3[$R3 >> 16 & 0xff];
-            $R1^= $t0 + ($t1 << 1) + $K[--$ki];
+            $R1^= $this->safe_intval($t0 + ($t1 << 1) + $K[--$ki]);
             $R1 = $R1 >> 1 & 0x7fffffff | $R1 << 31;
-            $R0 = ($R0 >> 31 & 0x1 | $R0 << 1) ^ ($t0 + $t1 + $K[--$ki]);
+            $R0 = ($R0 >> 31 & 0x1 | $R0 << 1) ^ $this->safe_intval($t0 + $t1 + $K[--$ki]);
         }
 
         // @codingStandardsIgnoreStart
@@ -678,6 +720,8 @@ class Twofish extends Base
         if ($gen_hi_opt_code) {
             $code_hash = str_pad($code_hash, 32) . $this->_hashInlineCryptFunction($this->key);
         }
+
+        $safeint = $this->safe_intval_inline();
 
         if (!isset($lambda_functions[$code_hash])) {
             switch (true) {
@@ -727,9 +771,9 @@ class Twofish extends Base
                           $S1[ $R1        & 0xff] ^
                           $S2[($R1 >>  8) & 0xff] ^
                           $S3[($R1 >> 16) & 0xff];
-                    $R2^= ($t0 + $t1 + '.$K[++$ki].');
+                    $R2^= ' . sprintf($safeint, '$t0 + $t1 + ' . $K[++$ki]) . ';
                     $R2 = ($R2 >> 1 & 0x7fffffff) | ($R2 << 31);
-                    $R3 = ((($R3 >> 31) & 1) | ($R3 << 1)) ^ ($t0 + ($t1 << 1) + '.$K[++$ki].');
+                    $R3 = ((($R3 >> 31) & 1) | ($R3 << 1)) ^ ' . sprintf($safeint, '($t0 + ($t1 << 1) + ' . $K[++$ki] . ')') . ';
 
                     $t0 = $S0[ $R2        & 0xff] ^
                           $S1[($R2 >>  8) & 0xff] ^
@@ -739,16 +783,16 @@ class Twofish extends Base
                           $S1[ $R3        & 0xff] ^
                           $S2[($R3 >>  8) & 0xff] ^
                           $S3[($R3 >> 16) & 0xff];
-                    $R0^= ($t0 + $t1 + '.$K[++$ki].');
+                    $R0^= ' . sprintf($safeint, '($t0 + $t1 + ' . $K[++$ki] . ')') . ';
                     $R0 = ($R0 >> 1 & 0x7fffffff) | ($R0 << 31);
-                    $R1 = ((($R1 >> 31) & 1) | ($R1 << 1)) ^ ($t0 + ($t1 << 1) + '.$K[++$ki].');
+                    $R1 = ((($R1 >> 31) & 1) | ($R1 << 1)) ^ ' . sprintf($safeint, '($t0 + ($t1 << 1) + ' . $K[++$ki] . ')') . ';
                 ';
             }
             $encrypt_block.= '
-                $in = pack("V4", '.$K[4].' ^ $R2,
-                                 '.$K[5].' ^ $R3,
-                                 '.$K[6].' ^ $R0,
-                                 '.$K[7].' ^ $R1);
+                $in = pack("V4", ' . $K[4] . ' ^ $R2,
+                                 ' . $K[5] . ' ^ $R3,
+                                 ' . $K[6] . ' ^ $R0,
+                                 ' . $K[7] . ' ^ $R1);
             ';
 
             // Generating decrypt code:
@@ -769,9 +813,9 @@ class Twofish extends Base
                           $S1[$R1       & 0xff] ^
                           $S2[$R1 >>  8 & 0xff] ^
                           $S3[$R1 >> 16 & 0xff];
-                    $R3^= $t0 + ($t1 << 1) + '.$K[--$ki].';
+                    $R3^= ' . sprintf($safeint, '$t0 + ($t1 << 1) + ' . $K[--$ki]) . ';
                     $R3 = $R3 >> 1 & 0x7fffffff | $R3 << 31;
-                    $R2 = ($R2 >> 31 & 0x1 | $R2 << 1) ^ ($t0 + $t1 + '.$K[--$ki].');
+                    $R2 = ($R2 >> 31 & 0x1 | $R2 << 1) ^ ' . sprintf($safeint, '($t0 + $t1 + '.$K[--$ki] . ')') . ';
 
                     $t0 = $S0[$R2       & 0xff] ^
                           $S1[$R2 >>  8 & 0xff] ^
@@ -781,16 +825,16 @@ class Twofish extends Base
                           $S1[$R3       & 0xff] ^
                           $S2[$R3 >>  8 & 0xff] ^
                           $S3[$R3 >> 16 & 0xff];
-                    $R1^= $t0 + ($t1 << 1) + '.$K[--$ki].';
+                    $R1^= ' . sprintf($safeint, '$t0 + ($t1 << 1) + ' . $K[--$ki]) . ';
                     $R1 = $R1 >> 1 & 0x7fffffff | $R1 << 31;
-                    $R0 = ($R0 >> 31 & 0x1 | $R0 << 1) ^ ($t0 + $t1 + '.$K[--$ki].');
+                    $R0 = ($R0 >> 31 & 0x1 | $R0 << 1) ^ ' . sprintf($safeint, '($t0 + $t1 + '.$K[--$ki] . ')') . ';
                 ';
             }
             $decrypt_block.= '
-                $in = pack("V4", '.$K[0].' ^ $R2,
-                                 '.$K[1].' ^ $R3,
-                                 '.$K[2].' ^ $R0,
-                                 '.$K[3].' ^ $R1);
+                $in = pack("V4", ' . $K[0] . ' ^ $R2,
+                                 ' . $K[1] . ' ^ $R3,
+                                 ' . $K[2] . ' ^ $R0,
+                                 ' . $K[3] . ' ^ $R1);
             ';
 
             $lambda_functions[$code_hash] = $this->_createInlineCryptFunction(

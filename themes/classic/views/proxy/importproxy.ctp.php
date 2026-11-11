@@ -1,4 +1,31 @@
-<?php echo showSectionHead($spTextPanel['Import Proxy']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Import Proxy']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#importProxyHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="importProxyHelpModal" tabindex="-1" role="dialog" aria-labelledby="importProxyHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-file-import"></i></div>
+				<h5 class="modal-title" id="importProxyHelpModalLabel">About Import Proxy</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Bulk-add proxies by pasting a list, one per line, as <code>host, port, username, password</code> (username/password are optional). Entries that already exist in the pool are skipped.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Leave "Check Status" ticked to immediately verify each newly imported proxy.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <form id="import_proxy">
 <input type="hidden" name="sec" value="importproxy"/>
 <table class="list">

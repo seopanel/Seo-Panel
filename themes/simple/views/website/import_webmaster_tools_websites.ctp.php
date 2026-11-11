@@ -1,6 +1,35 @@
-<?php 
-echo showSectionHead($spTextPanel['Import Websites'] . "({$spTextTools['webmaster-tools']})");
+<?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextPanel['Import Websites'] . "({$spTextTools['webmaster-tools']})"); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#webImportWmtHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="webImportWmtHelpModal" tabindex="-1" role="dialog" aria-labelledby="webImportWmtHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-file-upload"></i></div>
+				<h5 class="modal-title" id="webImportWmtHelpModalLabel">About Import Websites (Webmaster Tools)</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Pulls the list of properties already verified in your connected Google Search Console account and adds them here as websites, instead of entering each one manually.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Needs Google Search Console connected under Settings &gt; Connections first.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+<?php
 if (!empty($msg)) {
 	?>
 	<p class="dirmsg">

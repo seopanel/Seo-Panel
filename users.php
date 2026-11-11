@@ -23,9 +23,28 @@
 include_once("includes/sp-load.php");
 
 // check the sections can accessed by user
-$userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription");
-if ( in_array($_GET['sec'], $userIncludeList) || in_array($_POST['sec'], $userIncludeList) ) {
-	isLoggedIn();
+//
+// Was: ORed in_array() across BOTH $_GET['sec'] and $_POST['sec'], then
+// called the non-blocking isLoggedIn() (return value discarded, never
+// redirects) instead of checkLoggedIn() - a request with
+// ?sec=myprofile in the query string (matches the include list, so
+// only the no-op isLoggedIn() ran) and a POST body of sec=update
+// (dispatched by the switch below, which reads $_POST['sec']
+// independently) reached UserController::updateUser() - which trusts
+// its caller entirely - with ZERO real authentication. That's a fully
+// unauthenticated path to promoting any account to admin, overwriting
+// its password/email, or deleting it. Same class of bug for create/
+// delete/activate/inactivate too, since they're all admin-only
+// branches of this same POST switch.
+//
+// Fixed to gate on the EXACT sec value the switch below will actually
+// dispatch on for this request's real REQUEST_METHOD (no cross-method
+// mismatch possible), and to use the real blocking checkLoggedIn()/
+// checkAdminLoggedIn() rather than discarding isLoggedIn()'s return.
+$userIncludeList = array("my-profile", "myprofile", "edit-profile", "renew-profile", "updatemyprofile", "update-subscription", "two-factor", "confirm-two-factor", "disable-two-factor", "regenerate-backup-codes");
+$requestedSec = ($_SERVER['REQUEST_METHOD'] == 'POST') ? ($_POST['sec'] ?? '') : ($_GET['sec'] ?? '');
+if ( in_array($requestedSec, $userIncludeList) ) {
+	checkLoggedIn();
 } else {
 	checkAdminLoggedIn();
 }
@@ -61,7 +80,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "update-subscription":
 			$controller->updateSubscription($_POST);
 			break;
-			
+
+		case "confirm-two-factor":
+			$controller->confirmTwoFactorSetup($_POST);
+			break;
+
+		case "disable-two-factor":
+			$controller->disableTwoFactor($_POST);
+			break;
+
+		case "regenerate-backup-codes":
+			$controller->regenerateBackupCodes($_POST);
+			break;
+
 		case "activateall":
 		    if (!empty($_POST['ids'])) {
     		    foreach($_POST['ids'] as $id) {
@@ -93,29 +124,31 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    $controller->manageWebsiteAccessManager($_POST);
 		    break;
 
+		// state-changing single-item actions - moved off GET, see
+		// js/common.js's doAction() / websites.php's own comment on this
+		case "Activate":
+			$controller->__changeStatus($_POST['userId'], 1);
+			$controller->listUsers($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['userId'], 0);
+			$controller->listUsers($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteUser($_POST['userId']);
+			$controller->listUsers($_POST);
+			break;
+
 		default:
 			$controller->listUsers($_POST);
 			break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
-		
-		case "Activate":
-			$controller->__changeStatus($_GET['userId'], 1);			
-			$controller->listUsers($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['userId'], 0);
-			$controller->listUsers($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteUser($_GET['userId']);
-			$controller->listUsers($_GET);
-			break;
-		
+
 		case "edit":
 			$controller->editUser($_GET['userId']);
 			break;		
@@ -136,7 +169,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "renew-profile":
 			$controller->renewMyProfile();
 			break;
-			
+
+		case "two-factor":
+			$controller->showTwoFactorSetup();
+			break;
+
 		case "website-access-manager":
 			$controller->manageWebsiteAccessManager($_GET);
 			break;

@@ -346,11 +346,21 @@ class WebMasterController extends GoogleAPIController {
 					
 				$this->insertWebsiteAnalytics($websiteId, $info);
 			}
-			
+
 		}
-		
+
+		// none of this method's cron.ctrl.php callers check its return
+		// value at all - a failure here (bad/expired Search Console
+		// refresh token, quota error, API outage) previously left zero
+		// trace anywhere. Same fix already applied to the sibling
+		// AnalyticsController::storeWebsiteAnalytics(); $result['msg'] is
+		// always set on failure by getQueryResults() above.
+		if (empty($result['status']) && !empty($result['msg'])) {
+			error_log("SEO Panel: WebMasterController::storeWebsiteAnalytics() failed for website $websiteId: " . $result['msg']);
+		}
+
 		return $result;
-		
+
 	}
 	
 	/*
@@ -417,6 +427,20 @@ class WebMasterController extends GoogleAPIController {
 		return !empty($info['website_id']) ? true : false;
 	}
 	
+	// func to get the earliest/latest keyword_analytics.report_date
+	// actually synced for the given scope - lets Keyword Search
+	// Summary's default/preset date ranges anchor to real Search
+	// Console data instead of assuming a recent calendar date has a
+	// result. $conditions is the same "and k.website_id=...[and
+	// k.name like ...]" fragment viewKeywordSearchSummary() already
+	// builds for its own query.
+	function __getKeywordAnalyticsDateAvailability($conditions, $source) {
+		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
+		        from webmaster_keywords k, keyword_analytics r
+		        where k.id = r.keyword_id and k.status=1 $conditions and r.source='" . addslashes($source) . "'";
+		return $this->__getMinMaxDate($sql);
+	}
+
 	# func to show webmasterkeyword report summary
 	function viewKeywordSearchSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
 	
@@ -443,45 +467,94 @@ class WebMasterController extends GoogleAPIController {
 				break;
 		}
 
-		$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
-		$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
-		$this->set('fromTime', $fromTime);
-		$this->set('toTime', $toTime);
-	
 		$websiteController = New WebsiteController();
 		$wList = $websiteController->__getAllWebsites($userId, true);
 		$websiteList = [];
 		foreach ($wList as $wInfo) $websiteList[$wInfo['id']] = $wInfo;
-		$websiteList = count($websiteList) ? $websiteList : array(0);
 		$this->set('websiteList', $websiteList);
-		$websiteId = intval($searchInfo['website_id']);
+		$websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : null;
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked, letting any non-admin view ANY
+		// other user's keyword search summary for an arbitrary website_id.
+		if (!empty($websiteId) && !isAdmin() && !isset($websiteList[$websiteId])) {
+			$websiteId = 0;
+		}
+		// resolve to a real website (first one, same default the select
+		// box itself now always pre-selects) only when nothing was
+		// submitted at all - the search form's own select never submits
+		// an empty value any more. An explicit 0 is left alone:
+		// ReportController::sentEmailNotificationForReportGen()'s "Overall
+		// Report Summary" email deliberately passes website_id=0 to mean
+		// every one of this user's websites combined, which still needs
+		// the WEBSITE column below to tell rows apart.
+		if ($websiteId === null) {
+			$websiteId = !empty($websiteList) ? array_key_first($websiteList) : 0;
+		}
 		$this->set('websiteId', $websiteId);
-	
-		// to find order col
-		if (!empty($searchInfo['order_col'])) {
+
+		// to find order col - caller-supplied and lands directly in an
+		// ORDER BY clause with no way to parameterize an identifier
+		// position, so it must be checked against a fixed whitelist (not
+		// just addslashes()'d, which does nothing for an unquoted SQL
+		// identifier) - previously unchecked, letting any logged-in
+		// non-admin run blind SQL injection via ORDER BY (e.g. a
+		// CASE/SLEEP() expression). Same fix shape
+		// AnalyticsController::viewAnalyticsSummary() already uses;
+		// $this->colList is exactly the column set actually SELECTed below.
+		if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->colList)) {
 			$orderCol = $searchInfo['order_col'];
 			$orderVal = getOrderByVal($searchInfo['order_val']);
 		} else {
 			$orderCol = "clicks";
 			$orderVal = 'DESC';
 		}
-	
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
+
+		$websiteIds = array_keys($websiteList);
+		if (!empty($websiteId)) {
+			$conditions = " and k.website_id=" . intval($websiteId);
+		} elseif (!empty($websiteIds)) {
+			$conditions = " and k.website_id in (" . implode(',', $websiteIds) . ")";
+		} else {
+			// no websites at all (e.g. a brand new install's admin with
+			// none created yet) - "in ()" with no values is a SQL syntax
+			// error, so match nothing instead
+			$conditions = " and 1=0";
+		}
+		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
+
+		// Period resolution - two cases, same pattern as Keyword
+		// Position Summary's showKeywordReportSummary(): a day/week/
+		// month/year preset (explicitly picked, or defaulted to
+		// 'month' when nothing was submitted at all, so the dropdown
+		// shows "Month" selected rather than looking unset) anchors
+		// "to" to the latest report_date actually synced from Search
+		// Console for this website, and "from" to that minus the
+		// preset's offset, clamped so it never goes earlier than the
+		// earliest synced date - or explicit from_time/to_time, used
+		// exactly as given.
+		$period = $this->__resolvePeriodValue($searchInfo);
+
+		if (!empty($period)) {
+			list($minAvailDate, $maxAvailDate) = $this->__getKeywordAnalyticsDateAvailability($conditions, $source);
+			list($fromTimeStamp, $toTimeStamp) = $this->__resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, '-2 days');
+			$fromTime = date('Y-m-d', $fromTimeStamp);
+			$toTime = date('Y-m-d', $toTimeStamp);
+		} else {
+			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
+			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
+		}
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+		$this->set('period', $period);
+
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewKeywordReports&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=keyword-search-reports";
-		
-		// set website id to get exact keywords of a user
-		if (!empty($websiteId)) {
-			$conditions = " and k.website_id=$websiteId";
-		} else {
-			$conditions = " and k.website_id in (".implode(',', array_keys($websiteList)).")";
-		}
-		
-		$conditions .= !empty($searchInfo['search_name']) ? " and k.name like '%".addslashes($searchInfo['search_name'])."%'" : "";
-		
+
 		$subSql = "select [cols] from webmaster_keywords k, keyword_analytics r where k.id=r.keyword_id
 		and k.status=1 $conditions and r.source='$source' and r.report_date='$toTime'";
 		
@@ -629,23 +702,31 @@ class WebMasterController extends GoogleAPIController {
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 	
-		// to find order col
-		if (!empty($searchInfo['order_col'])) {
+		// to find order col - same SQLi-via-ORDER-BY risk and fix as
+		// viewKeywordSearchSummary() above; $this->colList is the same
+		// shared metric set both reports render (name/clicks/impressions/
+		// ctr/average_position).
+		if (!empty($searchInfo['order_col']) && array_key_exists($searchInfo['order_col'], $this->colList)) {
 			$orderCol = $searchInfo['order_col'];
 			$orderVal = getOrderByVal($searchInfo['order_val']);
 		} else {
 			$orderCol = "clicks";
 			$orderVal = 'DESC';
 		}
-	
+
+		// moved above $scriptPath's construction - it was previously
+		// assigned AFTER being read into that string below, so
+		// website_id was always empty there and paging to page 2+ of a
+		// website-filtered summary silently dropped the filter
+		$websiteId = intval($searchInfo['website_id']);
+
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewWebsiteSearchSummary&website_id=$websiteId";
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=website-search-reports";
-		
-		$websiteId = intval($searchInfo['website_id']);
+
 		$conditions = !empty($websiteId) ? " and w.id=$websiteId" : "";
 		$conditions .= isAdmin() ? "" : $websiteController->getWebsiteUserAccessCondition($userId);
 		$conditions .= !empty($searchInfo['search_name']) ? " and w.url like '%".addslashes($searchInfo['search_name'])."%'" : "";
@@ -802,9 +883,16 @@ class WebMasterController extends GoogleAPIController {
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked. Same fallback as the other
+		// dashboard/tool fixes this session: their own first website.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$conditions = empty($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from website_search_analytics s,websites w  where s.website_id=w.id
 		and report_date >= '$fromTime' and report_date <= '$toTime' and source='$source' $conditions order by report_date";
@@ -874,20 +962,36 @@ class WebMasterController extends GoogleAPIController {
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own (already-scoped)
+		// websites - previously unchecked. Same fallback as the other
+		// dashboard/tool fixes this session: their own first website.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$keywordList = $this->__getWebmasterKeywords("website_id=$websiteId  and status=1 order by name");
 		$this->set('keywordList', $keywordList);
-		$keywordId = empty ($searchInfo['keyword_id']) ? $keywordList[0]['id'] : $searchInfo['keyword_id'];
+		// keyword_id was previously used verbatim: neither cast to int (a
+		// real SQL injection risk via this raw-interpolated $conditions
+		// string) nor checked against the just-resolved, already-scoped
+		// keywordList (the same second-layer IDOR fixed for link_id in
+		// Social Media/Review Manager this session - keyword_analytics has
+		// no direct website-ownership column of its own to filter on).
+		$keywordId = empty ($searchInfo['keyword_id']) ? $keywordList[0]['id'] : intval($searchInfo['keyword_id']);
+		if (!empty($keywordId) && !isAdmin() && !in_array($keywordId, array_column($keywordList, 'id'))) {
+			$keywordId = $keywordList[0]['id'] ?? '';
+		}
 		$this->set('keywordId', $keywordId);
-	
+
 		$conditions = empty ($keywordId) ? "" : " and s.keyword_id=$keywordId";
 		$sql = "select s.* from keyword_analytics s
 		where report_date>='$fromTimeDate' and report_date<='$toTimeDate' $conditions
 		order by s.report_date";
 		$reportList = $this->db->select($sql);
-		
+
 		$colList = array_keys($this->colList);
 		array_shift($colList);
 		foreach ($colList as $col) $prevRank[$col] = 0;
@@ -951,14 +1055,22 @@ class WebMasterController extends GoogleAPIController {
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same fix as viewKeywordSearchReports() - see that method's comment
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$keywordList = $this->__getWebmasterKeywords("website_id=$websiteId  and status=1 order by name");
 		$this->set('keywordList', $keywordList);
-		$keywordId = empty ($searchInfo['keyword_id']) ? $keywordList[0]['id'] : $searchInfo['keyword_id'];
+		$keywordId = empty ($searchInfo['keyword_id']) ? $keywordList[0]['id'] : intval($searchInfo['keyword_id']);
+		if (!empty($keywordId) && !isAdmin() && !in_array($keywordId, array_column($keywordList, 'id'))) {
+			$keywordId = $keywordList[0]['id'] ?? '';
+		}
 		$this->set('keywordId', $keywordId);
-	
+
 		$conditions = empty ($keywordId) ? "" : " and s.keyword_id=$keywordId";
 		$sql = "select s.* from keyword_analytics s
 		where report_date>='$fromTimeDate' and report_date<='$toTimeDate' $conditions
@@ -1032,9 +1144,14 @@ class WebMasterController extends GoogleAPIController {
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same fix as viewWebsiteSearchReports() - see that method's comment
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
+
 		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* from website_search_analytics s
 		where report_date>='$fromTimeDate' and report_date<='$toTimeDate' $conditions
@@ -1087,12 +1204,16 @@ class WebMasterController extends GoogleAPIController {
 	}
 
 	# func to show quick checker
-	function viewQuickChecker($keywordInfo='') {	
+	function viewQuickChecker($keywordInfo='') {
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		// was reading an undefined $searchInfo (the parameter is named
+		// $keywordInfo) - empty() on an undefined variable is always true,
+		// so a website_id passed to this screen was silently ignored and
+		// the dropdown always fell back to the first website.
+		$websiteId = empty ($keywordInfo['website_id']) ? $websiteList[0]['id'] : intval($keywordInfo['website_id']);
 		$this->set('websiteId', $websiteId);
 		$this->set('fromTime', date('Y-m-d', strtotime('-3 days')));
 		$this->set('toTime', date('Y-m-d', strtotime('-2 days')));
@@ -1101,13 +1222,29 @@ class WebMasterController extends GoogleAPIController {
 
 	# func to do quick report
 	function doQuickChecker($searchInfo = '') {
-	
+
 		if (!empty($searchInfo['website_id'])) {
 			$websiteId = intval($searchInfo['website_id']);
+			// was read into $websiteReport['source'] below without ever
+			// being assigned - undefined-variable warning (harmless only
+			// because the view never reads that key)
+			$source = $this->sourceList[0];
 			$websiteController = New WebsiteController();
+			// this fetches Search Console data using the WEBSITE OWNER's
+			// own connected Google account ($websiteInfo['user_id'] below,
+			// not the requesting user) - so a caller-supplied website_id
+			// was previously never verified to belong to the logged-in
+			// user before being used, letting any non-admin read another
+			// user's real Search Console data for an arbitrary website_id.
+			$userId = isLoggedIn();
+			$websiteList = $websiteController->__getAllWebsites($userId, true);
+			if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+				showErrorMsg($_SESSION['text']['label']['Access denied']);
+				return;
+			}
 			$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
-			$this->set('websiteInfo', $websiteInfo);			
-			
+			$this->set('websiteInfo', $websiteInfo);
+
 			if (!empty($websiteInfo['url'])) {
 				$reportStartDate = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-10 days'));
 				$reportEndDate = !empty($searchInfo['to_time']) ? $searchInfo['to_time'] : date('Y-m-d', strtotime('-2 days'));

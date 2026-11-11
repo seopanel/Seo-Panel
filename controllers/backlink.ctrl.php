@@ -24,11 +24,7 @@
 class BacklinkController extends Controller{
 	var $url;
 	var $colList = array("external_pages_to_page" => "external_pages_to_page", "external_pages_to_root_domain" => "external_pages_to_root_domain");
-	var $backUrlList = array(
-		'google' => 'http://www.google.com/search?hl=en&q=link%3A',
-		'msn' => 'http://www.bing.com/search?q=link%3A',
-	);
-	
+
 	function showBacklink() {
 		$this->render('backlink/showbacklink');
 	}
@@ -51,46 +47,27 @@ class BacklinkController extends Controller{
 			$list[] = str_replace(array("\n", "\r", "\r\n", "\n\r"), "", trim($url));
 		}
 		
+		// $returnLog=true so the view can show an explicit failure state
+		// instead of "-", which it already shows for a genuine 0 too -
+		// the two were indistinguishable here, same root cause already
+		// fixed for the persisted path, generateReports() above.
 		$mozCtrler = new MozController();
-		$mozRankList = $mozCtrler->__getMozRankInfo($list);
+		list($mozRankList, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo($list, true);
 
 		$this->set('mozRankList', $mozRankList);
+		$this->set('mozOk', !empty($mozCrawlInfo['crawl_status']));
 		$this->set('list', $list);
 		$this->render('backlink/findbacklink');
 	}
-	
-	function printBacklink($backlinkInfo){
-		$metric = !empty($backlinkInfo['metric']) ? $backlinkInfo['metric'] : 'external_pages_to_page';
-		$backlinkCount = $this->__getBacklinks($backlinkInfo['url'], $metric);
-		echo $backlinkCount;
-	}
-	
-	function __getBacklinks ($url, $metric = 'external_pages_to_page') {
-		if (SP_DEMO && !empty($_SERVER['REQUEST_METHOD'])) return 0;
 
-		// Use sample API data if enabled (saves API credits)
-		if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
-			return rand(100, 50000);
-		}
-
-		// Get backlink data from Moz API (matches generateReports logic)
-		include_once(SP_CTRLPATH."/moz.ctrl.php");
-		$mozCtrler = new MozController();
-		$mozRankInfo = $mozCtrler->__getMozRankInfo(array($url));
-
-		// Extract backlink count based on metric
-		$backlinkCount = !empty($mozRankInfo[0][$metric]) ? $mozRankInfo[0][$metric] : 0;
-
-		return $backlinkCount;
-	}
-	
 	# func to show genearte reports interface
-	function showGenerateReports($searchInfo=[]) {				
+	function showGenerateReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-						
+		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
+
 		$this->render('backlink/generatereport');
 	}
 	
@@ -120,22 +97,44 @@ class BacklinkController extends Controller{
 		foreach ( $websiteList as $websiteInfo ) {
 			$websiteUrl = addHttpToUrl($websiteInfo['url']);
 
-			// Get all Moz data in one API call
+			// Get all Moz data in one API call. $returnLog=true so a
+			// failed call (bad token, rate limit, network error) can be
+			// told apart from a genuine 0 - without it, __getMozRankInfo()
+			// returns an empty array on EITHER outcome, and the old code
+			// below wrote 0 to backlinkresults either way. Confirmed live:
+			// this is why previously-active sites' backlink counts could
+			// drop to a flat, implausible 0 - not a real loss, a silently
+			// swallowed API failure (see AI Insights' own "latest value
+			// is suspiciously 0" guards, added as a downstream workaround
+			// for this same root cause before it was traced here).
 			include_once(SP_CTRLPATH."/moz.ctrl.php");
 			$mozCtrler = new MozController();
-			$mozRankInfo = $mozCtrler->__getMozRankInfo(array($websiteUrl));
+			list($mozRankInfo, $mozCrawlInfo) = $mozCtrler->__getMozRankInfo(array($websiteUrl), true);
+			$mozOk = !empty($mozCrawlInfo['crawl_status']);
 
-			// Extract backlink data
-			$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
-			$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
-			$this->saveRankResults($websiteInfo, true);
-			echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
+			// Extract backlink data - only trust it, and only save a row
+			// at all, if the call actually succeeded. The rank cross-save
+			// below used to run unconditionally even after this fix -
+			// same root cause, just missed on this second write - so it's
+			// gated on the same $mozOk here now too.
+			if ($mozOk) {
+				$websiteInfo['external_pages_to_page'] = !empty($mozRankInfo[0]['external_pages_to_page']) ? $mozRankInfo[0]['external_pages_to_page'] : 0;
+				$websiteInfo['external_pages_to_root_domain'] = !empty($mozRankInfo[0]['external_pages_to_root_domain']) ? $mozRankInfo[0]['external_pages_to_root_domain'] : 0;
+				$this->saveRankResults($websiteInfo, true);
+				echo "<p class='note notesuccess'>".$this->spTextBack['Saved backlink results of']." <b>$websiteUrl</b>.....</p>";
 
-			// Also save rank data
-			$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
-			$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
-			$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
-			$rankCtrler->saveRankResults($websiteInfo, true);
+				// Also save rank data
+				$websiteInfo['spam_score'] = !empty($mozRankInfo[0]['spam_score']) ? $mozRankInfo[0]['spam_score'] : 0;
+				$websiteInfo['page_authority'] = !empty($mozRankInfo[0]['page_authority']) ? $mozRankInfo[0]['page_authority'] : 0;
+				$websiteInfo['domain_authority'] = !empty($mozRankInfo[0]['domain_authority']) ? $mozRankInfo[0]['domain_authority'] : 0;
+				$rankCtrler->saveRankResults($websiteInfo, true);
+			} else {
+				// log_message is built directly from Moz's own JSON-RPC
+				// error response (external, third-party data) - escaped
+				// before echoing, same bug class already fixed in
+				// SaturationCheckerController::printSearchEngineSaturation()
+				echo "<p class='note error'>".htmlspecialchars($mozCrawlInfo['log_message'] ?? 'Moz API call failed', ENT_QUOTES)." - <b>$websiteUrl</b> backlink results NOT saved (avoiding a false 0).....</p>";
+			}
 		}
 	}
 	
@@ -154,6 +153,12 @@ class BacklinkController extends Controller{
 			$columns[] = $dbCol;
 			$values[] = !empty($matchInfo[$col]) ? intval($matchInfo[$col]) : 0;
 		}
+
+		// broken_backlinks is DataForSEO-only - NULL means "not measured by
+		// this row's provider" (the Moz path never sets it), same convention
+		// as the aio_* columns on searchresults.
+		$columns[] = 'broken_backlinks';
+		$values[] = array_key_exists('broken_backlinks', $matchInfo) ? intval($matchInfo['broken_backlinks']) : 'NULL';
 
 		$sql = "insert into backlinkresults(website_id," . implode(',', $columns) . ",result_date)
 		values({$matchInfo['id']}," . implode(',', $values) . ", '$resultDate')";
@@ -192,26 +197,51 @@ class BacklinkController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval( $searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// a caller-supplied website_id must belong to one of the caller's
+		// own (already-scoped) websites for a non-admin - otherwise fall
+		// back to their own first website, same as when none is given at
+		// all. Previously this was never checked, so any non-admin could
+		// view ANY other user's backlink history just by passing an
+		// arbitrary website_id.
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) {
+			// defaulting to the caller's very first website (by id) is
+			// usually an empty/useless report - a brand new site has no
+			// backlink history yet, while an older one checked regularly
+			// does. Prefer whichever of the caller's own websites most
+			// recently has a result in range, falling back to the
+			// original first-website behavior if none do.
+			$websiteId = $websiteList[0]['id'] ?? '';
+			$ownedIds = implode(',', array_map('intval', array_column($websiteList, 'id')));
+			if ($ownedIds !== '') {
+				$defaultRow = $this->db->select("select website_id from backlinkresults where website_id in ($ownedIds) and result_date >= '$fromTime' and result_date <= '$toTime' order by result_date desc limit 1", true);
+				if (!empty($defaultRow['website_id'])) {
+					$websiteId = $defaultRow['website_id'];
+				}
+			}
+		}
 		$this->set('websiteId', $websiteId);
-		
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from backlinkresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-		
+
 		$i = 0;
 		$colList = $this->colList;
 		foreach ($colList as $col => $dbCol) {
 			$prevRank[$col] = 0;
 		}
-		
+
 		# loop throgh rank
 		foreach ($reportList as $key => $repInfo) {
 			foreach ($colList as $col => $dbCol) {
 				$rankDiff[$col] = '';
-			}			
-			
+			}
+
 			foreach ($colList as $col => $dbCol) {
 				if ($i > 0) {
 					$rankDiff[$col] = ($prevRank[$col] - $repInfo[$dbCol]) * -1;
@@ -223,24 +253,48 @@ class BacklinkController extends Controller{
 				}
 				$reportList[$key]['rank_diff_'.$col] = empty ($rankDiff[$col]) ? '' : $rankDiff[$col];
 			}
-			
+
 			foreach ($colList as $col => $dbCol) {
 				$prevRank[$col] = $repInfo[$dbCol];
 			}
-			
+
 			$i++;
 		}
-		
-		$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
-		$websiteUrl =  @Spider::removeTrailingSlash(formatUrl($websiteInfo['url']));
-		$websiteUrl = urldecode($websiteUrl);
-		$this->set('directLinkList', array(
-		    'google' => $this->backUrlList['google'] . $websiteUrl,		    
-		    'msn' => $this->backUrlList['msn'] . $websiteUrl,
-		));
+
+		$hasBrokenBacklinks = false;
+		foreach ($reportList as $repInfo) {
+			if ($repInfo['broken_backlinks'] !== null) {
+				$hasBrokenBacklinks = true;
+				break;
+			}
+		}
+		$this->set('hasBrokenBacklinks', $hasBrokenBacklinks);
 
 		$this->set('list', array_reverse($reportList, true));
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('backlink/backlinkreport');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) plain-language summary of
+	 * this website's backlink/referring-domain (+ broken backlinks, where
+	 * measured) trend over the selected date range - see
+	 * LocalAIController::summarizeBacklinkTrend(). Never auto-fired;
+	 * returns JSON for the "Summarize with AI" button in
+	 * backlinkreport.ctp.php. Ownership is enforced by
+	 * summarizeBacklinkTrend() itself, not re-checked here.
+	 */
+	function summarizeTrend($info) {
+		$userId = isLoggedIn();
+		$fromTime = !empty($info['from_time']) ? $info['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = !empty($info['to_time']) ? $info['to_time'] : date('Y-m-d');
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->summarizeBacklinkTrend($info['website_id'], $userId, $fromTime, $toTime);
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	# func to get backlink report for a website
@@ -303,14 +357,20 @@ class BacklinkController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		$websiteId = empty ($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		// same ownership check as showReports() above - a non-admin's
+		// caller-supplied website_id must be one of their own websites
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) $websiteId = $websiteList[0]['id'] ?? '';
 		$this->set('websiteId', $websiteId);
-	
-		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";		
+
+		$conditions = empty ($websiteId) ? "" : " and s.website_id=$websiteId";
 		$sql = "select s.* ,w.name from backlinkresults s,websites w where s.website_id=w.id
 		and result_date >= '$fromTime' and result_date <= '$toTime' $conditions order by result_date";
 		$reportList = $this->db->select($sql);
-	
+
 		// if reports not empty
 		$colList = $this->colList;
 		if (!empty($reportList)) {

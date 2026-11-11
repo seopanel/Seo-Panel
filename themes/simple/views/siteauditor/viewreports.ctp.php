@@ -1,4 +1,31 @@
-<?php echo showSectionHead($spTextTools['Auditor Reports']); ?>
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Auditor Reports']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#saReportsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="saReportsHelpModal" tabindex="-1" role="dialog" aria-labelledby="saReportsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-table"></i></div>
+				<h5 class="modal-title" id="saReportsHelpModalLabel">About Auditor Reports</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>View the results of a crawled project: a report summary, per-page link details, or duplicate title/description/keyword lists - exportable as CSV, PDF or a printable view.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>Needs a project that's already been crawled at least once - run a crawl from Auditor Projects first if this is empty.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
 <?php
 if(empty($projectId)) {
 	showErrorMsg($spTextSA['No active projects found'].'!');
@@ -46,9 +73,9 @@ $discoveredVia = isset($_GET['discovered_via']) ? $_GET['discovered_via'] : '';
 			<select id="project_id" name="project_id" onchange="<?php echo $submitJsFunc?>" class="custom-select">
 				<?php foreach($projectList as $list) {?>
 					<?php if($list['id'] == $projectId) {?>
-						<option value="<?php echo $list['id']?>" selected="selected"><?php echo $list['name']?></option>
+						<option value="<?php echo $list['id']?>" selected="selected"><?php echo htmlspecialchars($list['name'])?></option>
 					<?php } else {?>
-						<option value="<?php echo $list['id']?>"><?php echo $list['name']?></option>
+						<option value="<?php echo $list['id']?>"><?php echo htmlspecialchars($list['name'])?></option>
 					<?php }?>
 				<?php }?>
 			</select>

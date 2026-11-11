@@ -57,6 +57,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			}
 			break;
 		
+		case "serparchive":
+			$controller->showSerpResultsArchive($_POST);
+			break;
+
 		case "reportsum":
 			$controller->showKeywordReportSummary($_POST);
 			break;
@@ -78,6 +82,22 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 }else{
 	switch($_GET['sec']){
 		
+		case "serpresults":
+			$controller->showSerpResults($_GET);
+			break;
+
+		case "aiosources":
+			$controller->showAIOverviewSources($_GET);
+			break;
+
+		case "aiocompetitorkeywords":
+			$controller->showAIOverviewCompetitorKeywords($_GET);
+			break;
+
+		case "serparchive":
+			$controller->showSerpResultsArchive($_GET);
+			break;
+
 		case "show-info":
 			$controller->showTimeReport($_GET);
 			break;

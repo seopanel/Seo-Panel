@@ -78,18 +78,26 @@ if (!empty($menuInfo['item_list'])) {
 	
 } else {
 	?>
-	<li class="nav-item <?php echo $homeClass?>">
+	<?php
+	// Home/Dashboard, Tools, Plugins, Settings and Login/Logout below all
+	// carry d-none d-md-block: on mobile they're already one tap away in
+	// the PWA bottom tab bar (see menu/pwa_bottom_nav.ctp.php), so
+	// showing them AGAIN in this dropdown just made it a long, cluttered
+	// list. Donate/Blog/Pricing/Download aren't in the bottom nav, so
+	// those stay visible at every width, same as before.
+	?>
+	<li class="nav-item d-none d-md-block <?php echo $homeClass?>">
 		<a class="nav-link" href="<?php echo SP_WEBPATH?>/">
 			<i class="fas fa-home"></i> <?php echo ($userType == "guest") ? $spText['common']['Home'] : $spText['common']['Dashboard']?>
 		</a>
 	</li>
-	
-	<li class="nav-item <?php echo $seoToolsClass?>">
+
+	<li class="nav-item d-none d-md-block <?php echo $seoToolsClass?>">
 		<a class="nav-link" href="<?php echo SP_WEBPATH?>/seo-tools.php">
 			<i class="fas fa-tools"></i> <?php echo $spText['common']['Tools']?>
 		</a>
 	</li>
-	<li class="nav-item <?php echo $seoPluginsClass?>">
+	<li class="nav-item d-none d-md-block <?php echo $seoPluginsClass?>">
 		<a class="nav-link" href="<?php echo SP_WEBPATH?>/seo-plugins.php?sec=show">
 			<i class="fas fa-wrench"></i> <?php echo $spText['common']['Plugins']?>
 		</a>
@@ -121,20 +129,20 @@ if (!empty($menuInfo['item_list'])) {
 	<?php }?>
 	
 	<?php if ($userType == "guest") {?>
-		<li class="nav-item <?php echo $loginClass?>">
+		<li class="nav-item d-none d-md-block <?php echo $loginClass?>">
 			<a class="nav-link" href="<?php echo SP_WEBPATH?>/login.php">
 			<i class="fas fa-sign-in-alt"></i> <?php echo $spTextLogin['Login']?></a>
-		</li>				
+		</li>
 	<?php } else {?>
-		<li class="nav-item <?php echo $adminClass?>">
+		<li class="nav-item d-none d-md-block <?php echo $adminClass?>">
 			<a class="nav-link" href="<?php echo SP_WEBPATH?>/admin-panel.php">
 				<i class="fas fa-cogs"></i>
 				<?php echo $spTextPanel['Settings']?>
 			</a>
-		</li>		
-		<li class="nav-item <?php echo $loginClass?>">
+		</li>
+		<li class="nav-item d-none d-md-block <?php echo $loginClass?>">
 			<a class="nav-link" href="<?php echo SP_WEBPATH?>/login.php?sec=logout">
 			<i class="fas fa-sign-out-alt"></i> <?php echo $spText['common']['Logout']?></a>
 		</li>
-	<?php }?>	
+	<?php }?>
 <?php }?>

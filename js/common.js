@@ -3,6 +3,21 @@ var buttonList = new Array();
 var scriptList = new Array();
 var needPopup = false;
 
+// bug fix: scriptDoLoad()/scriptDoLoadPost() (below) and the dialog/popup
+// variants in popup.js drive virtually all in-page navigation across the
+// entire panel (every list, edit form, report, and action link), but none
+// of them had an error handler - only success. A session timeout, a PHP
+// fatal error, a 500, or a dropped connection left the loading spinner
+// showing forever with zero feedback and no way to know anything went
+// wrong. This mirrors the working pattern openSerpModalSP() (this file)
+// already uses for its own AJAX call.
+function showAjaxLoadError(targetElementId) {
+	var target = document.getElementById(targetElementId);
+	if (target) {
+		target.innerHTML = '<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>';
+	}
+}
+
 function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading) {
 	if(needPopup) {
 		scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoading);
@@ -10,18 +25,53 @@ function scriptDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadin
 	}
 	
 	if(!scriptArgs){ var scriptArgs = ''; }
-	
-	scriptArgs = jQuery('#'+scriptForm).serialize() + scriptArgs;
+
+	// a '&' is required between the two halves below - without it, e.g.
+	// a non-empty "userid=" from the form merges directly into
+	// "project_id=50..." with no separator, silently swallowing
+	// project_id (and everything after it on the overall field) into
+	// userid's own value instead of its own POST field. Found via
+	// Auditor Projects "Run Project" (confirmSubmit() -> this function)
+	// failing with "Access denied" - project_id never actually arrived.
+	scriptArgs = jQuery('#'+scriptForm).serialize() + '&' + scriptArgs;
 	showLoadingIcon(scriptPos, noLoading);
 	jQuery.ajax({
 		type: "POST",
 		url:scriptUrl,
-		data: scriptArgs, 
+		data: scriptArgs,
+		// jQuery's own default is 0 (no timeout - waits forever), so a
+		// request that stalls instead of erroring (a dropped connection,
+		// a hung upstream network call) never reaches the error handler
+		// below and the loading spinner shown above just sits there
+		// indefinitely. 45s comfortably covers every normal in-app
+		// request (nothing routed through scriptDoLoad*() is meant to run
+		// that long - slow operations like install/upgrade use their own
+		// separate streamed progress mechanism, not this).
+		timeout: 45000,
 		 success: function(data){
 			 document.getElementById(scriptPos).innerHTML = data;
 			 jQuery("#"+scriptPos).find("script").each(function(i) {
-	            eval($(this).text());
+	            // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
 	         });
+	     },
+	     error: function() {
+	         showAjaxLoadError(scriptPos);
 	     }
 	});
 }
@@ -37,14 +87,108 @@ function scriptDoLoad(scriptUrl, scriptPos, scriptArgs, noLoading) {
     jQuery.ajax({
          type: "get",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
+         // see the matching comment in scriptDoLoadPost() above
+         timeout: 45000,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
-                eval($(this).text());
+                // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
      });
+}
+
+// Shared Website/Period selector bar above #main_dashboard_nav
+// (userhome.ctp.php) - drives whichever dashboard tab is currently active,
+// replacing each tab's own duplicate "Website:"/"Period:" controls. Always
+// reloads via a plain GET scriptDoLoad() with explicit website_id/period
+// query args rather than resubmitting each tab's own POST form - every
+// dashboard tab controller already reads these from $_GET as happily as
+// $_POST, so one reload mechanism works uniformly across every tab
+// instead of needing to know each one's own form id/field quirks.
+//
+// periodMode: 'preset' (the common day/week/month/year select, shown) or
+// 'none' (no date-range concept on this tab - Site Auditor, AI
+// Visibility, Reports).
+//
+// navMode: 'ajax' (scriptDoLoad into #content, every tab but one) or
+// 'page' (a real window.location.href navigation) - Keywords
+// (overview.php) always sets $layout='default' (a real full-page
+// response, never an ajax fragment), so an AJAX GET there would stuff a
+// second full page (header, nav, this bar, everything) inside #content.
+// Does a real navigation instead, same as navigateDashboardTab() already
+// does for tab switches - just with period in the URL too now that
+// Keywords uses the same preset as everything else.
+function spInitSharedFilterBar(scriptUrl, periodMode, navMode) {
+	var $websiteSel = $('#sp_shared_website_id');
+	var $periodSel = $('#sp_shared_period');
+	if (!$websiteSel.length) return;
+
+	function doReload() {
+		var websiteId = $websiteSel.val();
+		if (!websiteId) return;
+		sessionStorage.setItem('sp_selected_website_id', websiteId);
+
+		var args = '&website_id=' + websiteId;
+		if (periodMode === 'preset' && $periodSel.length) {
+			var period = $periodSel.val();
+			sessionStorage.setItem('sp_selected_period', period);
+			args += '&period=' + period;
+		}
+
+		if (navMode === 'page') {
+			window.location.href = scriptUrl + '?' + args.substring(1);
+			return;
+		}
+
+		scriptDoLoad(scriptUrl, 'content', args);
+	}
+
+	// restore any previously-chosen website/period, since the tab content
+	// that's already on the page (loaded by userhome.ctp.php's own
+	// dispatch <script>, before this ever runs) has no stored selection
+	// baked in yet - only reload if restoring actually changes anything,
+	// so a fresh session (nothing stored) or a selection that already
+	// matches the page's own default doesn't trigger a pointless reload.
+	var needsReload = false;
+	var storedWebsiteId = sessionStorage.getItem('sp_selected_website_id');
+	if (storedWebsiteId && $websiteSel.find('option[value="' + storedWebsiteId + '"]').length && $websiteSel.val() !== storedWebsiteId) {
+		$websiteSel.val(storedWebsiteId);
+		needsReload = true;
+	}
+	if (periodMode === 'preset' && $periodSel.length) {
+		var storedPeriod = sessionStorage.getItem('sp_selected_period');
+		if (storedPeriod && $periodSel.find('option[value="' + storedPeriod + '"]').length && $periodSel.val() !== storedPeriod) {
+			$periodSel.val(storedPeriod);
+			needsReload = true;
+		}
+	}
+	if (needsReload) {
+		doReload();
+	}
+
+	$websiteSel.off('change.spShared').on('change.spShared', doReload);
+	$periodSel.off('change.spShared').on('change.spShared', doReload);
 }
 
 function createCookie(name,value,days) {
@@ -77,17 +221,39 @@ function sitemapDoLoadPost(scriptUrl, scriptForm, scriptPos, scriptArgs, noLoadi
 	hideDiv('proceed');
 	showDiv('message');
 	if(!scriptArgs){ var scriptArgs = ''; }
-	scriptArgs = jQuery('#'+scriptForm).serialize() + scriptArgs;
+	// same missing-separator issue fixed in scriptDoLoadPost() above
+	scriptArgs = jQuery('#'+scriptForm).serialize() + '&' + scriptArgs;
 	showLoadingIcon(scriptPos, noLoading);
     jQuery.ajax({
          type: "POST",
          url:scriptUrl,
-         data: scriptArgs, 
+         data: scriptArgs,
+         // see the matching comment in scriptDoLoadPost() above
+         timeout: 45000,
          success: function(data){
              document.getElementById(scriptPos).innerHTML = data;
              jQuery("#"+scriptPos).find("script").each(function(i) {
-                eval($(this).text());
+                // jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
              });
+         },
+         error: function() {
+             showAjaxLoadError(scriptPos);
          }
     });
 }
@@ -276,13 +442,28 @@ function confirmSubmit(scriptUrl, scriptForm, scriptPos, scriptArgs) {
 	return false;
 }
 
+// State-changing actions this dropdown can trigger - previously ALL of
+// these (including delete) went out over confirmLoad(), a plain GET
+// request. A GET-triggered destructive action is forgeable by a bare
+// <img src="..."> or link on any page a logged-in victim (admin or not)
+// has open, no JavaScript required - not mitigated by modern browsers'
+// SameSite=Lax cookie default, which explicitly still allows simple/
+// top-level GET requests to carry cookies. Routed through confirmSubmit()
+// instead (POST, via scriptDoLoadPost()) for exactly these - 'listform'
+// is the consistent wrapping form id every list view using this dropdown
+// already defines for its own bulk-select actions; if a given view
+// doesn't have one, jQuery's serialize() on a missing selector just
+// returns an empty string, so this degrades safely rather than breaking.
+var SP_STATE_CHANGING_ACTIONS = ['delete', 'delete_alert', 'Activate', 'Inactivate', 'recheckreport', 'addToWebmasterTools',
+	'showrunproject', 'checkscore', 'deletepage', 'upgrade', 'reinstall', 'deleteSitemap'];
+
 function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 	actVal = document.getElementById(actionDiv).value;
 	scriptArgs += "&sec=" + actVal;
 	switch (actVal) {
-		case "select":		
+		case "select":
 			break;
-		
+
 		case "checkstatus":
 		case "edit":
 		case "reports":
@@ -291,17 +472,19 @@ function doAction(scriptUrl, scriptPos, scriptArgs, actionDiv) {
 		case "website-access-manager":
 			scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 			break;
-	
+
 		default:
 			if(spdemo){
-				if((actVal == 'delete') || (actVal == 'Activate') || (actVal == 'Inactivate') || (actVal == 'recheckreport') || (actVal == 'addToWebmasterTools')
-					|| (actVal == 'showrunproject') || (actVal == 'checkscore') || (actVal == 'deletepage') || (actVal == 'upgrade') || (actVal == 'reinstall') 
-					|| (actVal == 'deleteSitemap')){
+				if(SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1){
 					alertDemoMsg();
 					return false;
 				}
 			}
-			confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			if (SP_STATE_CHANGING_ACTIONS.indexOf(actVal) !== -1) {
+				confirmSubmit(scriptUrl, 'listform', scriptPos, scriptArgs);
+			} else {
+				confirmLoad(scriptUrl, scriptPos, scriptArgs);
+			}
 			break;
 	}
 }
@@ -450,8 +633,40 @@ function urlencode(str) {
 	  return encodeURIComponent(str).replace(/!/g, '%21').replace(/'/g, '%27').replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/\*/g, '%2A').replace(/%20/g, '+');
 }
 
+// Quick-filter box on SERP Results Archive - was originally defined as an
+// inline <script> tag inside its own view, which loads via AJAX
+// innerHTML-swap and never executes embedded <script> tags (same gotcha
+// spToggleSecretVisibility below was already moved here to fix). Typing
+// in the box silently did nothing, since the onkeyup handler called a
+// function that was never actually defined.
+function spQuickFilterRows(rowClass, query) {
+	query = query.toLowerCase();
+	var rows = document.getElementsByClassName(rowClass);
+	for (var i = 0; i < rows.length; i++) {
+		rows[i].style.display = (rows[i].getAttribute('data-txt').indexOf(query) !== -1) ? '' : 'none';
+	}
+}
+
+function spToggleSecretVisibility(fieldId, iconLink) {
+	var field = document.getElementById(fieldId);
+	var icon = iconLink.querySelector('i');
+	if (field.type === 'password') {
+		field.type = 'text';
+		icon.classList.remove('fa-eye');
+		icon.classList.add('fa-eye-slash');
+	} else {
+		field.type = 'password';
+		icon.classList.remove('fa-eye-slash');
+		icon.classList.add('fa-eye');
+	}
+}
+
 function checkMozConnection(scriptUrl, scriptPos, scriptArgs) {
-	apiToken = $('input:text[name=SP_MOZ_API_SECRET]').val();
+	// SP_MOZ_API_SECRET is now type=password (an earlier fix this round
+	// masked every secret settings field) - the :text filter no longer
+	// matches it at all, so .val() silently returned undefined and this
+	// button always sent the literal string "undefined" as the token.
+	apiToken = $('input[name=SP_MOZ_API_SECRET]').val();
 	scriptArgs += "&api_token=" + apiToken;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
@@ -463,7 +678,9 @@ function checkGoogleAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 }
 
 function checkSpApiConnection(scriptUrl, scriptPos, scriptArgs) {
-	apiKey = $('input:text[name=SP_SPAPI_KEY]').val();
+	// same :text-selector-no-longer-matches-a-password-field fix as
+	// checkMozConnection() above
+	apiKey = $('input[name=SP_SPAPI_KEY]').val();
 	scriptArgs += "&api_key=" + apiKey;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
 }
@@ -479,7 +696,9 @@ function resetSpApiToken(scriptPos) {
 			dataType: 'json',
 			success: function(response) {
 				if (response.status == 'success') {
-					$('input:text[name=SP_SPAPI_KEY]').val(response.data.api_key);
+					// same fix as checkSpApiConnection() above - the
+					// field is type=password now, :text never matched it
+					$('input[name=SP_SPAPI_KEY]').val(response.data.api_key);
 					$('#' + scriptPos).html('<span class="success">' + response.message + '</span>');
 				} else {
 					$('#' + scriptPos).html('<span class="error">' + response.message + '</span>');
@@ -494,9 +713,68 @@ function resetSpApiToken(scriptPos) {
 
 function checkDataForSEOAPIConnection(scriptUrl, scriptPos, scriptArgs) {
 	apiLogin = $('input:text[name=SP_DFS_API_LOGIN]').val();
-	apiPassword = $('input:text[name=SP_DFS_API_PASSWORD]').val();
+	// SP_DFS_API_PASSWORD is now type=password - same :text fix as
+	// checkMozConnection() above (SP_DFS_API_LOGIN itself is a plain
+	// login name, still type=text, untouched)
+	apiPassword = $('input[name=SP_DFS_API_PASSWORD]').val();
 	scriptArgs += "&api_login=" + apiLogin + "&api_password=" + apiPassword;
 	scriptDoLoad(scriptUrl, scriptPos, scriptArgs);
+}
+
+// POST, not scriptDoLoad()'s GET - this hands the server a base_url to
+// fetch (the Ollama base URL currently typed in the form, which may not
+// even be saved yet - that's the point, "test before save") and a bare
+// <img src="...settings.php?sec=checkOllamaAPI&base_url=...">  could
+// otherwise force an already-logged-in admin's browser to make the
+// server issue that request to an attacker-chosen target (SSRF via
+// confused deputy), same class of fix already applied to every other
+// GET-based state/action-triggering bug this session.
+function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
+	if (!scriptArgs) { scriptArgs = ''; }
+	baseUrl = $('input:text[name=SP_LOCAL_AI_URL]').val();
+	// bug fix: settings.php's own routing only reads 'sec' from the
+	// QUERY STRING on a GET request (switch($_GET['sec'])) - the
+	// checkOllamaAPI case was moved to a separate switch($_POST['sec'])
+	// block (see settings.php's own comment on that case) specifically
+	// so this stays a real POST, but scriptUrl's own "?sec=checkOllamaAPI"
+	// only ever lands in $_GET, never $_POST, no matter the HTTP method.
+	// Without 'sec' repeated here in the POST body itself,
+	// switch($_POST['sec']) never matches any case, nothing gets
+	// printed, and the button silently showed nothing at all.
+	scriptArgs += "&sec=checkOllamaAPI&base_url=" + encodeURIComponent(baseUrl);
+	showLoadingIcon(scriptPos);
+	jQuery.ajax({
+		type: "POST",
+		url: scriptUrl,
+		data: scriptArgs,
+		// see the matching comment in scriptDoLoadPost() above
+		timeout: 45000,
+		success: function(data){
+			document.getElementById(scriptPos).innerHTML = data;
+			jQuery("#"+scriptPos).find("script").each(function(i) {
+				// jQuery.globalEval(), not a bare eval() - a bare eval() called from
+                // inside this .each() callback (a nested function scope, not
+                // global) runs the script text AS THAT CALLBACK'S OWN LOCAL
+                // SCOPE per JS's "direct eval" rule, so a `function foo(){}`
+                // declaration inside it never actually reaches `window` - it
+                // vanishes once .each() returns. Any onclick="foo()" handler
+                // in the same loaded content then fails with "foo is not
+                // defined", even though the exact same markup works fine on
+                // a real full-page load (where the browser's own parser runs
+                // <script> tags in true global scope to begin with).
+                // jQuery.globalEval() always runs in global scope regardless
+                // of where it's called from, fixing this for every view
+                // loaded through here that defines a function for its own
+                // onclick to call - confirmed live via SeoDiary's Project
+                // Summary "AI Summary" button
+                // (sdGenerateProjectAISummary), which hit exactly this.
+                jQuery.globalEval($(this).text());
+			});
+		},
+		error: function() {
+			showAjaxLoadError(scriptPos);
+		}
+	});
 }
 
 function openTab(tabName, dialog = false) {
@@ -507,19 +785,35 @@ function openTab(tabName, dialog = false) {
 	$(dialogId + '#' + tabName + "Link").addClass('active');
 }
 
-$(function() {	
+$(function() {
 	// Submenu click function
 	$("#subui a").click(function () {
 	    // Remove active classes first
 	    $("#subui a").removeClass("menu_active");
 	    $("#subui li").removeClass("menu_active");
-	    
+
 	    // Add class to clicked <a> and its parent <li>
 	    $(this).addClass("menu_active");
 	    $(this).parent("li").addClass("menu_active");
-	    
+
 	    // Collapse the navbar (for mobile)
 	    $(".navbar-collapse").collapse("hide");
-	});	
+	});
 });
+
+// func to get a Google Chart container's current pixel width, for
+// passing as that chart's own explicit `width` option. Google Charts
+// never redraws itself when its container's size changes later (a
+// well-known limitation) and, left unset, its own auto-detected width
+// isn't reliable on every layout - passing this explicitly, re-read on
+// every draw call (including resize-triggered redraws), is what keeps
+// a chart correctly sized for its actual container instead of
+// overflowing it (which a card's own overflow:hidden then clips
+// instead of visibly shrinking). Returns undefined if the container
+// isn't in the DOM (e.g. its section didn't render for lack of data),
+// same as omitting the option entirely.
+function spChartWidth(containerId) {
+	var el = document.getElementById(containerId);
+	return el ? el.offsetWidth : undefined;
+}
 

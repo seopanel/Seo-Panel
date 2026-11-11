@@ -27,10 +27,20 @@ class DirectoryController extends Controller{
 	var $checkPR = 0;
 	
 	function showSubmissionPage( ) {
-		
+
 		$userId = isLoggedIn();
 		$this->session->setSession('dirsub_pr', '');
-		
+
+		// default new sessions to excluding reciprocal-link directories -
+		// reciprocal linking is a link scheme Google's own guidelines have
+		// long treated as a spam signal, so "opt out of it" is the safer
+		// default; a user who has already made an explicit choice this
+		// session (via the "no_reciprocal" checkbox/sec=checkreciprocal)
+		// keeps that choice untouched
+		if (!isset($_SESSION['no_reciprocal'])) {
+			$this->session->setSession('no_reciprocal', 1);
+		}
+
 		$websiteController = New WebsiteController();
 		$this->set('websiteList', $websiteController->__getAllWebsites($userId, true));
 		
@@ -48,11 +58,20 @@ class DirectoryController extends Controller{
 	}
 	
 	function showWebsiteSubmissionPage($submitInfo, $error=false) {
-		
+
 		if(empty($submitInfo['website_id'])) {
 			showErrorMsg($this->spTextDir['Please select a website to proceed']."!");
 		}
-		
+
+		// previously unchecked - any logged-in non-admin could view (and,
+		// via saveSubmissiondata()/startSubmission() below, overwrite)
+		// another user's website submission page for an arbitrary
+		// website_id
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($submitInfo['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		# check whether the sitemap directory is writable
  		if(!is_writable(SP_TMPPATH ."/".$this->sitemapDir)){
  			showErrorMsg("Directory '<b>".SP_TMPPATH."</b>' is not <b>writable</b>. Please change its <b>permission</b> !");
@@ -66,21 +85,53 @@ class DirectoryController extends Controller{
 			$websiteInfo = $submitInfo;
 		}
 		
-		$this->set('websiteInfo', $websiteInfo);		
+		$this->set('websiteInfo', $websiteInfo);
 		$this->session->setSession('no_captcha', empty($submitInfo['no_captcha']) ? 0 : 1);
 		$this->session->setSession('dirsub_pr', $submitInfo['pagerank']);
 		$this->session->setSession('dirsub_lang', $submitInfo['lang_code']);
-		$this->set('noTitles', $this->noTitles);		
+		$this->set('noTitles', $this->noTitles);
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$this->set('localAiAvailable', SettingsController::isLocalAIEnabled());
+
 		$this->render('directory/showsitesubmission');
+	}
+
+	/*
+	 * AJAX action: on-demand Local AI (Ollama) draft of a directory
+	 * listing title/description for this website - see
+	 * LocalAIController::suggestDirectoryListing(). Never auto-fired;
+	 * returns JSON for the "Suggest with AI" buttons in
+	 * showsitesubmission.ctp.php (one per title/description slot) to
+	 * populate that slot with (the user still reviews and can edit before
+	 * actually submitting anywhere). Ownership is enforced by
+	 * suggestDirectoryListing() itself, not re-checked here.
+	 */
+	function suggestListing($info) {
+		$userId = isLoggedIn();
+		include_once(SP_CTRLPATH . '/localai.ctrl.php');
+		$result = (new LocalAIController())->suggestDirectoryListing($info['website_id'], $userId, $info['avoid'] ?? '');
+		header('Content-Type: application/json');
+		print json_encode($result);
 	}
 	
 	function saveSubmissiondata( $submitInfo ) {
-		
+
 		$submitInfo['website_id']= intval($submitInfo['website_id']);
 		if(empty($submitInfo['website_id'])) {
 			showErrorMsg("Please select a website to proceed!");
 		}
-		
+
+		// previously unchecked - any logged-in non-admin could overwrite
+		// another user's website url/owner_name/owner_email/category/
+		// title/description/keywords (below) and burn their directory
+		// submission quota (via startSubmission() at the end of this
+		// function)
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($submitInfo['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$_SESSION['skipped'][$submitInfo['website_id']] = array();
 		
 		if(!SP_DEMO){
@@ -177,6 +228,17 @@ class DirectoryController extends Controller{
 		$dirId = intval($dirId);
 		$websiteId = intval($websiteId);
 
+		// directly reachable via directories.php?sec=reload - previously
+		// unchecked, letting any non-admin burn another user's directory
+		// submission quota (validateDirectorySubmissionCount() below uses
+		// the TARGET website's user_id, not the caller's) and trigger an
+		// outbound submission crawl using that user's own saved contact
+		// info against the next directory in line
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($websiteId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$websiteController = New WebsiteController();
 		$websiteInfo = $websiteController->__getWebsiteInfo($websiteId);
 		$this->set('websiteId', $websiteId);
@@ -208,7 +270,7 @@ class DirectoryController extends Controller{
 			$sql .= " and pagerank<$prMax and pagerank>=$prMin";
 		}
 		
-		if(!empty($_SESSION['dirsub_lang'])) $sql .= " and lang_code='{$_SESSION['dirsub_lang']}'";
+		if(!empty($_SESSION['dirsub_lang'])) $sql .= " and lang_code='".addslashes($_SESSION['dirsub_lang'])."'";
 		
 		// if reciprocal directory needs to be filtered
 		if(!empty($_SESSION['no_reciprocal'])) {
@@ -233,8 +295,9 @@ class DirectoryController extends Controller{
 		if($ret['error']){
 			$this->set('error', 1);
 			$this->set('msg', $ret['errmsg']);
+			$this->set('trustedMsg', false);
 		}
-		
+
 		$page = $ret['page'];
 		if(!empty($page)){
 			$matches = $this->isCategoryExists($page, $dirInfo['category_col']);		
@@ -339,6 +402,12 @@ class DirectoryController extends Controller{
 		}else{
 			$this->set('error', 1);
 			$this->set('msg', $this->spTextDir['nocatnote']);
+			// our own trusted translation string (texts table), not
+			// third-party content - intentionally contains real <b>
+			// markup ("click Reload or Skip"), unlike $ret['errmsg']/
+			// submitSite()'s regex-matched third-party HTML above/below,
+			// which must stay escaped by default.
+			$this->set('trustedMsg', true);
 		}
 		
 		$this->render('directory/showsubmissionform');				
@@ -371,6 +440,16 @@ class DirectoryController extends Controller{
 
 		$submitInfo['dir_id'] = intval($submitInfo['dir_id']);
 		$submitInfo['website_id'] = intval($submitInfo['website_id']);
+
+		// previously unchecked - any logged-in non-admin could trigger an
+		// actual outbound submission to an external directory using
+		// another user's real name/email/url (postData below), and write
+		// to that user's own dirsubmitinfo history
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($submitInfo['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$dirInfo = $this->__getDirectoryInfo($submitInfo['dir_id']);
 		
 		$websiteController = New WebsiteController();
@@ -467,9 +546,18 @@ class DirectoryController extends Controller{
 	
 	# to skip submission
 	function skipSubmission( $info ) {
-		
+
 		$info['website_id'] = intval($info['website_id']);
 		$info['dir_id'] = intval($info['dir_id']);
+
+		// same IDOR class as startSubmission()/saveSubmissiondata() etc.
+		// above - without this, a bogus skip row for another user's
+		// website_id gets inserted below even though the startSubmission()
+		// call at the end of this function is itself now guarded
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($info['website_id'])) {
+			return;
+		}
+
 		$sql = "Insert into skipdirectories(website_id,directory_id) values({$info['website_id']}, {$info['dir_id']})";
 		$this->db->query($sql);		
 		$this->startSubmission($info['website_id']);
@@ -477,8 +565,21 @@ class DirectoryController extends Controller{
 	
 	# to unskip submission
 	function unSkipSubmission( $skipId ) {
-		
+
 		$skipId = intval($skipId);
+
+		// previously unchecked - any logged-in non-admin could delete
+		// another user's skip-list entries by iterating ids. No direct
+		// owner column on skipdirectories, only a website_id - verified
+		// via a join, same idiom as __verifySubmissionOwnership() above
+		// for dirsubmitinfo.
+		if (!isAdmin()) {
+			$owned = $this->db->getRow('skipdirectories sd, websites w', "sd.id=$skipId and sd.website_id=w.id and w.user_id=" . intval(isLoggedIn()));
+			if (empty($owned)) {
+				return;
+			}
+		}
+
 		$sql = "delete from skipdirectories where id=$skipId";
 		$this->db->query($sql);
 	}
@@ -507,8 +608,14 @@ class DirectoryController extends Controller{
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
 		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own - previously
+		// unchecked, letting any non-admin view another user's skipped-
+		// directory history for an arbitrary website_id
+		if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = $websiteList[0]['id'] ?? 0;
+		}
 		$this->set('websiteId', $websiteId);
-		$this->set('onChange', "scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=skipped')");		
+		$this->set('onChange', "scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=skipped')");
 		
 		$conditions = empty ($websiteId) ? "" : " and ds.website_id=$websiteId";
 		$pageScriptPath = 'directories.php?sec=skipped&website_id='.$websiteId;
@@ -547,8 +654,14 @@ class DirectoryController extends Controller{
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
 		$websiteId = empty ($searchInfo['website_id']) ? $websiteList[0]['id'] : intval($searchInfo['website_id']);
+		// a non-admin's website_id must be one of their own - previously
+		// unchecked, letting any non-admin view another user's directory
+		// submission history for an arbitrary website_id
+		if (!isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = $websiteList[0]['id'] ?? 0;
+		}
 		$this->set('websiteId', $websiteId);
-		$this->set('onChange', "scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=reports')");		
+		$this->set('onChange', "scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=reports')");
 		
 		$conditions = empty ($websiteId) ? "" : " and ds.website_id=$websiteId";
 		$conditions .= empty ($searchInfo['active']) ? "" : " and ds.active=".($searchInfo['active']=='pending' ? 0 : 1);		
@@ -581,9 +694,26 @@ class DirectoryController extends Controller{
 		$this->render('directory/directoryreport');	
 	}
 	
+	// dirsubmitinfo rows carry no direct owner column, only a website_id -
+	// ownership is verified via a join to the websites table instead of
+	// WebsiteController::__verifyWebsiteOwnership()'s direct lookup
+	function __verifySubmissionOwnership($dirSubmitId) {
+		if (isAdmin()) return true;
+		$row = $this->db->getRow('dirsubmitinfo ds, websites w', "ds.id=" . intval($dirSubmitId) . " and ds.website_id=w.id and w.user_id=" . intval(isLoggedIn()));
+		return !empty($row);
+	}
+
 	function changeConfirmStatus($dirInfo){
-		
+
 		$dirInfo['id'] = intval($dirInfo['id']);
+
+		// previously unchecked - any logged-in non-admin could flip
+		// another user's submission confirm status by iterating ids via
+		// directories.php?sec=changeconfirm
+		if (!$this->__verifySubmissionOwnership($dirInfo['id'])) {
+			return;
+		}
+
 		$status = ($dirInfo['confirm']=='Yes') ? 0 : 1;
 		$sql = "Update dirsubmitinfo set status=$status where id=".$dirInfo['id'];
 		$this->db->query($sql);
@@ -605,6 +735,14 @@ class DirectoryController extends Controller{
 	function checkSubmissionStatus($dirInfo){
 
 		$dirInfo['id'] = intval($dirInfo['id']);
+
+		// previously unchecked - any logged-in non-admin could trigger a
+		// crawl against another user's submission record via
+		// directories.php?sec=checkstatus and read back its result
+		if (!$this->__verifySubmissionOwnership($dirInfo['id'])) {
+			return 0;
+		}
+
 		$sql = "select ds.* ,d.domain,d.search_script,w.url
 					from dirsubmitinfo ds,directories d,websites w 
 					where ds.directory_id=d.id and ds.website_id=w.id 
@@ -631,6 +769,16 @@ class DirectoryController extends Controller{
 	function updateSubmissionStatus($dirId, $status){
 		$status = intval($status);
 		$dirId = intval($dirId);
+
+		// guarded independently of checkSubmissionStatus() above - this
+		// is always called right after it with the same id in
+		// directories.php, but would otherwise still write
+		// active=0 for another user's record even when
+		// checkSubmissionStatus() itself was blocked
+		if (!$this->__verifySubmissionOwnership($dirId)) {
+			return;
+		}
+
 		$sql = "Update dirsubmitinfo set active=$status where id=".$dirId;
 		$this->db->query($sql);
 	}
@@ -656,13 +804,21 @@ class DirectoryController extends Controller{
 	}
 	
 	function generateSubmissionReports( $searchInfo ){
-		
+
 		$searchInfo['website_id'] = intval($searchInfo['website_id']);
 		if(empty($searchInfo['website_id'])) {
 			echo "<script>scriptDoLoad('directories.php', 'content', 'sec=checksub');</script>";
 			return;
-		}		
-				
+		}
+
+		// previously unchecked - any logged-in non-admin could list
+		// another user's pending directory submissions for an arbitrary
+		// website_id, same pattern deleteSubmissionReports() below
+		// already guards against
+		if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($searchInfo['website_id'])) {
+			return;
+		}
+
 		$sql = "select ds.* ,d.domain
 								from dirsubmitinfo ds,directories d 
 								where ds.directory_id=d.id  
@@ -674,11 +830,25 @@ class DirectoryController extends Controller{
 	}
 	
 	function deleteSubmissionReports($dirSubId){
-		
 		$dirSubId = intval($dirSubId);
+
+		// previously no ownership check at all - any logged-in non-admin
+		// could delete another user's directory submission report just by
+		// supplying its id
+		if (!isAdmin()) {
+			$userId = isLoggedIn();
+			$subInfo = $this->dbHelper->getRow('dirsubmitinfo', "id=$dirSubId");
+			if (empty($subInfo)) return;
+			include_once(SP_CTRLPATH . "/website.ctrl.php");
+			$websiteInfo = (new WebsiteController())->__getWebsiteInfo($subInfo['website_id']);
+			if (empty($websiteInfo) || intval($websiteInfo['user_id']) !== intval($userId)) {
+				return;
+			}
+		}
+
 		$sql = "delete from dirsubmitinfo where id=$dirSubId";
 		$this->db->query($sql);
-		
+
 		echo "<script>scriptDoLoadPost('directories.php', 'search_form', 'content', '&sec=reports');</script>";
 	}
 	
@@ -919,12 +1089,31 @@ class DirectoryController extends Controller{
 	
 	# function to log submission data
 	function logSubmissionResult($content, $dirId, $websiteId) {
-		
+
 		$filename = SP_TMPPATH."/subres_web".$websiteId."_dir".$dirId.".html";
 		$fp = fopen($filename, 'w');
 		fwrite($fp, $content);
 		fclose($fp);
-		
+
+	}
+
+	/**
+	 * these are write-only debugging snapshots - logSubmissionResult()
+	 * is the only place that ever touches this filename pattern, nothing
+	 * in the app reads them back - so with the Directory Submission
+	 * cron resubmitting every active website to every active directory
+	 * on a schedule, one file per (website, directory) pair accumulates
+	 * in tmp/ forever with no cap. Swept on the same cron cycle as
+	 * clearCrawlLog(), same $daysBefore convention.
+	 * @param int $daysBefore The days before the submission log files to be deleted
+	 */
+	function clearSubmissionLogFiles($daysBefore) {
+		$dateBefore = mktime(0, 0, 0, date('m'), date('d') - $daysBefore, date('y'));
+		foreach (glob(SP_TMPPATH . "/subres_web*_dir*.html") ?: [] as $file) {
+			if (filemtime($file) < $dateBefore) {
+				@unlink($file);
+			}
+		}
 	}
 	
 	# function to get directory script type meta info

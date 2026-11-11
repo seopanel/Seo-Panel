@@ -26,14 +26,14 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 		</tr>
 		<tr>
 			<td style="border-bottom:1px solid #ddd;width:25%;"><strong><?php echo $spTextSA['Project Url']?>:</strong></td>
-			<td style="border-bottom:1px solid #ddd;" colspan="3"><?php echo $projectInfo['url']?></td>
+			<td style="border-bottom:1px solid #ddd;" colspan="3"><?php echo htmlspecialchars($projectInfo['url'])?></td>
 		</tr>
 		<tr>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Updated']?>:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php echo $projectInfo['last_updated']?></td>
 			<td style="border-bottom:1px solid #ddd;"><strong><?php echo $spText['label']['Score']?>:</strong></td>
 			<td style="border-bottom:1px solid #ddd;"><?php
-				$pdfMaxScore = 38;
+				$pdfMaxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating this PDF export's percentage above what the screen/CSV already show for the same project
 				$pdfScorePercentage = $pdfMaxScore > 0 ? min(max(0, $projectInfo['score']) / $pdfMaxScore * 100, 100) : 0;
 				echo round($pdfScorePercentage, 1) . '%';
 			?></td>
@@ -634,6 +634,14 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 @media (max-width: 576px) {
 	.summary-item, .summary-item-quarter {
 		flex: 0 0 100%;
+		/* the base rule's min-width: 250px/220px (for the 3/4-per-row
+		   desktop layouts) is never cleared otherwise - on a phone
+		   narrower than ~340px (after summary-body's own padding is
+		   subtracted) that minimum alone can force this item wider
+		   than the available width, same bug already fixed for this
+		   same summary-item/-quarter pattern on the dashboard tab's
+		   own copy of this page (dashboard/siteauditor_main.ctp.php) */
+		min-width: 0;
 	}
 	.summary-body {
 		padding: 20px;
@@ -669,7 +677,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 							</div>
 							<span class="summary-label"><?php echo $spTextSA['Project Url']?></span>
 						</div>
-						<span class="summary-value"><a href="<?php echo $projectInfo['url']?>" target="_blank"><?php echo $projectInfo['url']?></a></span>
+						<span class="summary-value"><a href="<?php echo htmlspecialchars($projectInfo['url'], ENT_QUOTES)?>" target="_blank"><?php echo htmlspecialchars($projectInfo['url'])?></a></span>
 					</div>
 				</div>
 				<div class="summary-item">
@@ -685,7 +693,7 @@ if(!empty($pdfVersion) || !empty($printVersion)) {
 								<?php
 								$score = round($projectInfo['score'], 2);
 								$isPositive = $score >= 0;
-								$maxScore = 38; // Maximum possible score from AuditorComponent
+								$maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 								$scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 								$circumference = 2 * 3.14159 * 36;
 								$dashOffset = $circumference - ($scorePercentage / 100) * $circumference;

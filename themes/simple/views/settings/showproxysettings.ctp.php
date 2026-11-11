@@ -1,7 +1,35 @@
 <?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 $headLabel = empty($headLabel) ? $spTextPanel['Proxy Settings'] : $headLabel;
-echo showSectionHead($headLabel);
+?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($headLabel); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#proxySettingsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
 
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="proxySettingsHelpModal" tabindex="-1" role="dialog" aria-labelledby="proxySettingsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-exchange-alt"></i></div>
+				<h5 class="modal-title" id="proxySettingsHelpModalLabel">About Proxy Settings</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>Controls whether crawls route through the proxies configured in Proxy Manager - including a separate toggle just for Google API calls, and failover behavior (retry with another proxy, or deactivate a proxy after repeated failures).</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>This only turns proxy usage on/off and tunes its behavior - add the actual proxies themselves under Proxy Manager.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+<?php
 // if saved successfully
 if (!empty($saved)) {
     showSuccessMsg($spTextSettings['allsettingssaved'], false);
@@ -54,10 +82,10 @@ if (!empty($saved)) {
 							<option value="0" <?php echo $selectNo?>><?php echo $spText['common']['No']?></option>
 						</select>
 					<?php }else{?>
-						<input type="text" name="<?php echo $listInfo['set_name']?>" value="<?php echo stripslashes($listInfo['set_val'])?>" class="form-control" style='width:<?php echo $width?>px'>
+						<input type="text" name="<?php echo $listInfo['set_name']?>" value="<?php echo htmlspecialchars(stripslashes($listInfo['set_val']), ENT_QUOTES)?>" class="form-control" style='width:<?php echo $width?>px'>
 					<?php }?>
 				<?php }else{?>
-					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control" style='width:<?php echo $width?>px'><?php echo stripslashes($listInfo['set_val'])?></textarea>
+					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control" style='width:<?php echo $width?>px'><?php echo htmlspecialchars(stripslashes($listInfo['set_val']))?></textarea>
 				<?php }?>
 			</td>
 		</tr>
@@ -68,7 +96,7 @@ if (!empty($saved)) {
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
-    		<a onclick="scriptDoLoad('settings.php?sec=reportsettings', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-warning">
+    		<a onclick="scriptDoLoad('settings.php?sec=proxysettings', 'content', 'layout=ajax')" href="javascript:void(0);" class="btn btn-warning">
          		<?php echo $spText['button']['Cancel']?>
          	</a>
          	<?php $actFun = SP_DEMO ? "alertDemoMsg()" : "confirmSubmit('settings.php', 'updateSettings', 'content')"; ?>

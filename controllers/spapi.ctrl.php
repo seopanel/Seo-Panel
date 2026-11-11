@@ -66,7 +66,14 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 30;
-        $response = $spider->getContent($this->apiUrl . '/account', false, false);
+        // $allowPrivateTarget=true: apiUrl is a fixed constant
+        // (SP_SPAPI_URL), normally the real api.seopanel.org host in
+        // production - never caller-supplied input - so this carries the
+        // same trust reasoning as LocalAIController's Ollama calls. Only
+        // actually matters in a local dev setup where SP_SPAPI_URL is
+        // overridden to point at a local mock (e.g. localhost), which the
+        // SSRF guard would otherwise block.
+        $response = $spider->getContent($this->apiUrl . '/account', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -136,7 +143,8 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 30;
-        $response = $spider->getContent($this->apiUrl . '/reset-token', false, false);
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/reset-token', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -172,7 +180,7 @@ class SPAPIController extends Controller {
      * @param bool $cron Whether called from cron
      * @return array crawlResult keyed by seInfoId
      */
-    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false) {
+    function __getSERPResults($keywordInfo, $showAll = false, $seId = false, $cron = false, $includeAio = false) {
         $crawlResult = array();
         $websiteUrl = formatUrl($keywordInfo['url'], false);
         if (empty($websiteUrl) || empty($keywordInfo['name'])) {
@@ -205,6 +213,7 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['seFound'] = true;
             $crawlResult[$seInfoId]['matched'] = [];
             $crawlResult[$seInfoId]['status'] = false;
+            $crawlResult[$seInfoId]['pending'] = false;
         }
 
         // Call SP API with all SE IDs at once
@@ -219,6 +228,17 @@ class SPAPIController extends Controller {
             $crawlResult[$seInfoId]['status'] = true;
         }
 
+        // AI Overview is returned per search engine (response's
+        // ai_overview_by_engine) - not Google-only, DataForSEO also returns
+        // it for Bing's Copilot-backed SERP - independent of that SE's own
+        // crawl state
+        if ($includeAio) {
+            include_once(SP_CTRLPATH."/aioverview.ctrl.php");
+            foreach ($seIds as $seInfoId) {
+                $crawlResult[$seInfoId]['aio'] = AIOverviewController::mapSpApi($apiResult['data'], date('Y-m-d'), intval($seInfoId));
+            }
+        }
+
         // Map results back to local SE IDs
         $seResults = !empty($apiResult['data']['searchengine_mappings']) ? $apiResult['data']['searchengine_mappings'] : [];
         foreach ($seResults as $seResult) {
@@ -227,6 +247,10 @@ class SPAPIController extends Controller {
                 continue;
             }
             if (empty($seResult['crawled_result']) || !is_array($seResult['crawled_result'])) {
+                // no data yet - the archive has registered the keyword but hasn't
+                // crawled it, as opposed to a completed crawl with a genuine zero-match result
+                $lastCrawlStatus = !empty($seResult['last_crawl_status']) ? $seResult['last_crawl_status'] : 'pending';
+                $crawlResult[$seInfoId]['pending'] = ($lastCrawlStatus !== 'success');
                 continue;
             }
             foreach ($seResult['crawled_result'] as $itemInfo) {
@@ -262,6 +286,21 @@ class SPAPIController extends Controller {
             'data' => [],
         ];
 
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness) - reports
+        // no matches for every requested search engine, which the caller
+        // already handles gracefully as a normal "rank 0, not found" result.
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $result['data'] = array(
+                'searchengine_mappings' => array_map(function($seId) {
+                    return array('searchengine_id' => intval($seId), 'crawled_result' => array());
+                }, $seIds),
+            );
+            return $result;
+        }
+
         $postData = json_encode([
             'keyword' => mb_convert_encoding($keywordInfo['name'], "UTF-8"),
             'searchengine_ids' => array_map('intval', $seIds),
@@ -277,7 +316,8 @@ class SPAPIController extends Controller {
             'Authorization: Bearer ' . $this->apiKey,
         ];
         $spider->_CURLOPT_TIMEOUT = 120;
-        $response = $spider->getContent($this->apiUrl . '/SERP', false, false);
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/SERP', false, false, true);
         ob_end_clean();
 
         if (empty($response['page'])) {
@@ -300,6 +340,191 @@ class SPAPIController extends Controller {
         }
 
         return $result;
+    }
+
+    /**
+     * Post a search volume keyword request to the SP API
+     *
+     * @param array $keywordInfo Keyword info with name, lang_code, country_code
+     * @param string $source Data source: google or bing
+     * @return array Response with status and data
+     */
+    function postSearchVolumeKeyword($keywordInfo, $source = 'google') {
+        $result = [
+            'status'  => false,
+            'message' => 'Internal error occurred',
+            'data'    => [],
+        ];
+
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            $result['data'] = array(
+                'mapping' => array(
+                    'source' => $source,
+                    'mapping_id' => null,
+                    'last_crawl_status' => 'success',
+                    'crawled_time' => date('Y-m-d H:i:s'),
+                    'crawled_result' => array(
+                        'search_volume'      => rand(10, 100000),
+                        'cpc'                => round(rand(10, 500) / 100, 2),
+                        'competition'        => (rand(0, 100) / 100),
+                        'keyword_difficulty' => rand(0, 100),
+                        'monthly_searches'   => [],
+                    ),
+                ),
+            );
+            return $result;
+        }
+
+        $postData = json_encode([
+            'keyword'      => mb_convert_encoding($keywordInfo['name'], 'UTF-8'),
+            'source'       => $source,
+            'lang_code'    => !empty($keywordInfo['lang_code']) ? $keywordInfo['lang_code'] : '',
+            'country_code' => !empty($keywordInfo['country_code']) ? $keywordInfo['country_code'] : '',
+        ]);
+
+        ob_start();
+        $spider = new Spider();
+        $spider->_CURLOPT_POSTFIELDS = $postData;
+        $spider->_CURL_HTTPHEADER = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $this->apiKey,
+        ];
+        $spider->_CURLOPT_TIMEOUT = 60;
+        // $allowPrivateTarget=true - see __getSpApiUsageData() above for why.
+        $response = $spider->getContent($this->apiUrl . '/search-volume', false, false, true);
+        ob_end_clean();
+
+        if (empty($response['page'])) {
+            $result['message'] = 'Could not connect to SP API server';
+            return $result;
+        }
+
+        $responseData = json_decode($response['page'], true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $result['message'] = 'Invalid response from SP API server';
+            return $result;
+        }
+
+        if (!empty($responseData['status']) && $responseData['status'] == 'success') {
+            $result['status']  = true;
+            $result['message'] = 'Success';
+            $result['data']    = $responseData['data'] ?? [];
+        } else {
+            $result['message'] = !empty($responseData['message']) ? $responseData['message'] : 'SP API request failed';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Save search volume result from SP API response into keyword_search_volume table
+     *
+     * @param int $keywordId Local keyword ID
+     * @param array $apiData Data from SP API response (keyword_id, keyword, mapping)
+     */
+    function saveSearchVolumeResult($keywordId, $apiData) {
+        $mapping         = !empty($apiData['mapping']) ? $apiData['mapping'] : [];
+        $source          = !empty($mapping['source']) ? $mapping['source'] : 'google';
+        $svMappingId     = !empty($mapping['mapping_id']) ? intval($mapping['mapping_id']) : null;
+        $lastCrawlStatus = !empty($mapping['last_crawl_status']) ? $mapping['last_crawl_status'] : 'pending';
+        $crawledTime     = !empty($mapping['crawled_time']) ? $mapping['crawled_time'] : null;
+        $crawledResult   = !empty($mapping['crawled_result']) ? $mapping['crawled_result'] : null;
+
+        $this->saveKeywordSearchVolumeData($keywordId, $source, $crawledResult, $lastCrawlStatus, $svMappingId, $crawledTime);
+    }
+
+    /**
+     * Upsert a row in keyword_search_volume from normalized data.
+     * Used by both the spAPI and DataForSEO code paths.
+     *
+     * @param int         $keywordId       Local keyword ID
+     * @param string      $source          'google' or 'bing'
+     * @param array|null  $svData          Normalized array: search_volume, cpc, competition, keyword_difficulty, monthly_searches
+     * @param string      $crawlStatus     'pending', 'success', 'fail'
+     * @param int|null    $svMappingId     spAPI mapping ID (null for DFS path)
+     * @param string|null $crawledTime     Timestamp string or null
+     */
+    function saveKeywordSearchVolumeData($keywordId, $source, $svData, $crawlStatus = 'pending', $svMappingId = null, $crawledTime = null) {
+        $keywordId = intval($keywordId);
+        $source    = addslashes($source);
+
+        $searchVolume      = null;
+        $cpc               = null;
+        $competition       = null;
+        $keywordDifficulty = null;
+        $monthlySearches   = null;
+
+        if (!empty($svData) && is_array($svData)) {
+            $searchVolume      = isset($svData['search_volume']) ? intval($svData['search_volume']) : null;
+            $cpc               = isset($svData['cpc']) ? (float)$svData['cpc'] : null;
+            $competition       = isset($svData['competition']) ? self::__normalizeCompetition($svData['competition']) : null;
+            $keywordDifficulty = isset($svData['keyword_difficulty']) ? (float)$svData['keyword_difficulty'] : null;
+            $monthlySearches   = !empty($svData['monthly_searches']) ? json_encode($svData['monthly_searches']) : null;
+        }
+
+        $existing = $this->dbHelper->getRow('keyword_search_volume', "keyword_id=$keywordId AND source='$source'");
+
+        $dataList = [
+            'last_crawl_status' => $crawlStatus,
+            'updated_at'        => 'NOW()',
+        ];
+
+        if (!is_null($svMappingId)) {
+            $dataList['sv_mapping_id|int'] = $svMappingId;
+        }
+        if (!is_null($searchVolume)) {
+            // Only stamp crawled_time when a crawl actually produced data.
+            // searchVolumeCheckerCron() re-selects keywords whose crawled_time
+            // is NULL or older than 30 days - if we stamped it on every
+            // response (including an async 'pending' job that hasn't
+            // resolved yet, or a transient 'fail'), that keyword would be
+            // skipped for the next 30 days without ever getting real data.
+            $dataList['crawled_time']             = !empty($crawledTime) ? $crawledTime : 'NOW()';
+            $dataList['search_volume|int']        = $searchVolume;
+            $dataList['cpc|float']                = $cpc;
+            $dataList['competition|float']        = $competition;
+            $dataList['keyword_difficulty|float'] = $keywordDifficulty;
+            $dataList['monthly_searches']         = $monthlySearches;
+            $dataList['crawled_result']           = json_encode($svData);
+            $dataList['result_date']              = date('Y-m-d');
+        }
+
+        if (!empty($existing)) {
+            $this->dbHelper->updateRow('keyword_search_volume', $dataList, "id={$existing['id']}");
+        } else {
+            $dataList['keyword_id|int'] = $keywordId;
+            $dataList['source']         = $source;
+            $dataList['created_at']     = 'NOW()';
+            $this->dbHelper->insertRow('keyword_search_volume', $dataList);
+        }
+    }
+
+    /**
+     * keyword_search_volume.competition is a float column, but DataForSEO's
+     * search volume endpoint returns competition as a string label
+     * ("LOW"/"MEDIUM"/"HIGH") for both google and bing sources - confirmed
+     * against a real live DataForSEO response, not just the sandbox/sample
+     * data. A plain (float) cast on that string silently collapses every
+     * label to 0.0, indistinguishable from a genuine zero-competition
+     * keyword. Maps the known labels to the same 0/0.5/1 thresholds
+     * __parseSearchVolumeResults()'s own bing branch already uses in
+     * reverse (>=0.9 HIGH, >=0.5 MEDIUM), and still accepts a raw numeric
+     * value directly in case a future/other source ever sends one.
+     */
+    static function __normalizeCompetition($competition) {
+        if (is_numeric($competition)) {
+            return (float)$competition;
+        }
+        switch (strtoupper((string)$competition)) {
+            case 'HIGH':   return 1.0;
+            case 'MEDIUM': return 0.5;
+            case 'LOW':    return 0.0;
+            default:       return null;
+        }
     }
 
     /**
@@ -347,7 +572,19 @@ class SPAPIController extends Controller {
                         $matchInfo['se_id'] = $seId;
                         $matchInfo['keyword_id'] = $keywordInfo['id'];
 
-                        $reportCtrler->saveMatchedKeywordInfo($matchInfo, $firstMatch, $reportDate);
+                        // The 4th param persists the full organic result set to
+                        // searchresults.serp_results - without it, "SERP Results
+                        // Archive" (report/serp_results_archive.ctp.php, which
+                        // requires serp_results IS NOT NULL) never has anything
+                        // to show for an SP-API-tracked keyword, even though
+                        // every result needed for it (url/rank per item) is
+                        // already sitting right here in $seResult['crawled_result'].
+                        // Only needs passing once per keyword+SE+day, same as the
+                        // DataForSEO/crawl tiers' own $matchList['all'] pattern -
+                        // saveMatchedKeywordInfo() only writes it on the row it
+                        // actually receives it on, same as those other tiers.
+                        $serpResults = $firstMatch ? $seResult['crawled_result'] : null;
+                        $reportCtrler->saveMatchedKeywordInfo($matchInfo, $firstMatch, $reportDate, $serpResults);
                         $firstMatch = false;
                         $matchCount++;
                     }

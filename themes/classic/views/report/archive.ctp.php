@@ -19,11 +19,42 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 			<th><?php echo $spText['common']['Period']?>:</th>
     		<td>
     			<?php echo $fromTime?> - <?php echo $toTime?>
+    			<?php if (!empty($showDateRangeLagNote)) { ?>
+    				<br><small>Website/Keyword Search and Sitemap data reflects up to 2 days ago; Website Analytics up to 1 day ago (reporting lag at the data source) - other sections reflect the period above exactly.</small>
+    			<?php } ?>
 			</td>
 		</tr>
 	</table>
 <?php } else {?>
-	<?php echo showSectionHead($sectionHead); ?>
+	<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+	<div class="aiv-page-head">
+		<?php echo showSectionHead($sectionHead); ?>
+		<a href="javascript:void(0);" data-toggle="modal" data-target="#archiveHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+	</div>
+
+	<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+	<div class="modal fade aiv-help-modal" id="archiveHelpModal" tabindex="-1" role="dialog" aria-labelledby="archiveHelpModalLabel" aria-hidden="true">
+		<div class="modal-dialog" role="document">
+			<div class="modal-content">
+				<div class="aiv-help-modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<div class="aiv-help-modal-icon"><i class="fas fa-archive"></i></div>
+					<h5 class="modal-title" id="archiveHelpModalLabel">About <?php echo htmlspecialchars($sectionHead)?></h5>
+				</div>
+				<div class="modal-body aiv-help-modal-body">
+					<p>A combined summary across every tool for a website and date range in one report - rank/authority, backlinks, directory submissions, PageSpeed, Search Console, social media and reviews - viewable here, or exported as CSV/PDF.</p>
+					<div class="aiv-note">
+						<i class="fas fa-info-circle"></i>
+						<span>This reads already-saved data from each tool - it doesn't run any new checks itself.</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
 	<form id='search_form'>
 	<table class="search" style="width: 80%">
 		<tr>
@@ -40,6 +71,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 				    $( "#from_time_summary, #to_time_summary").datepicker({dateFormat: "yy-mm-dd"});
 				  } );
 			  	</script>
+    			<?php if (!empty($showDateRangeLagNote)) { ?>
+    				<br><small class="text-muted">Website/Keyword Search and Sitemap data reflects up to 2 days ago; Website Analytics up to 1 day ago (reporting lag at the data source) - other sections reflect the period above exactly.</small>
+    			<?php } ?>
     		</td>
     	<tr>
     	<tr>
@@ -92,9 +126,18 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 
 <div id='subcontent' class="dashboard">
 <?php
+if (!empty($aiVisibilityReport)) {
+    ?>
+    <div class="table-responsive"><?php echo $aiVisibilityReport;?></div>
+    <br>
+    <?php
+}
+?>
+<?php
 $seCount = count($seList);
 if (!empty($keywordPos) && !empty($seCount)) {
-	$colCount = empty($websiteId) ? ($seCount * 3) + 2 : ($seCount * 3) + 1;
+	$svExtra = !empty($showSearchVolume) ? 1 : 0;
+	$colCount = empty($websiteId) ? ($seCount * 3) + 2 + $svExtra : ($seCount * 3) + 1 + $svExtra;
 	?>
 	<br>
 	<div class="table-responsive">
@@ -138,8 +181,10 @@ if (!empty($keywordPos) && !empty($seCount)) {
 				<th id="head" colspan="3"><?php echo $linkName; ?></th>
 				<?php
 			}
-			?>
-		</tr>	
+			if (!empty($showSearchVolume)): ?>
+			<th id="head" rowspan="2" class="text-center"><?php echo $spText['keyword']['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
+			<?php endif; ?>
+		</tr>
 		<tr>
 			<?php
 			$pTxt = str_replace("-", "/", substr($fromTime, -5));
@@ -204,20 +249,31 @@ if (!empty($keywordPos) && !empty($seCount)) {
 						<td><?php echo $prevRankLink; ?></td>
 						<td><?php echo $currRankLink; ?></td>
 						<td><?php echo $diffOut; ?></td>
-						<?php					
+						<?php
 					}
-					?>				
+					?>
+					<?php if (!empty($showSearchVolume)): ?>
+					<td class="text-center">
+						<?php if (!is_null($listInfo['search_volume'])): ?>
+							<strong><?php echo number_format($listInfo['search_volume'])?></strong>
+						<?php elseif (!empty($listInfo['sv_status'])): ?>
+							<span class="badge badge-secondary"><?php echo htmlspecialchars($listInfo['sv_status'])?></span>
+						<?php else: ?>
+							&mdash;
+						<?php endif; ?>
+					</td>
+					<?php endif; ?>
 				</tr>
 				<?php
 			}
-		} else {	 
-			echo showNoRecordsList($colCount - 2, '', true);		
+		} else {
+			echo showNoRecordsList($colCount - 2, '', true);
 		}
 		?>
 	</table>
 	</div>
 	<?php
-}	 
+}
 ?>
 
 <br>

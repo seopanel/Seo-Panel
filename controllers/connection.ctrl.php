@@ -70,13 +70,23 @@ class ConnectionController extends Controller {
 	 * process connection return action
 	 */
 	function processConnectionReturn($info) {
-		
+
 		$userId = isLoggedIn();
 		$className = $this->sourceList[$info['category']];
-		
+
 		// if class existing for process
 		if (!empty($className)) {
 			$sourceCtrler = new $className();
+
+			// CSRF: reject unless this callback's state matches the one
+			// THIS session's own getAPIAuthUrl() call generated - see
+			// GoogleAPIController::verifyOAuthState() for the full threat
+			if (!$sourceCtrler->verifyOAuthState($info['state'] ?? '')) {
+				$this->set('errorMsg', "Invalid or expired connection request. Please try connecting again.");
+				$this->listConnections();
+				return;
+			}
+
 			$ret = $sourceCtrler->createUserAuthToken($userId, $info['code']);
 			
 			// if token created successfull

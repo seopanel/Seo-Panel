@@ -48,8 +48,36 @@
 }
 </style>
 
+<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<div class="aiv-page-head">
+	<?php echo showSectionHead($spTextTools['Auditor Projects']); ?>
+	<a href="javascript:void(0);" data-toggle="modal" data-target="#saProjectsHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
+</div>
+
+<!-- static help modal, not routed through #ajaxModalSP since there's no AJAX fetch involved -->
+<div class="modal fade aiv-help-modal" id="saProjectsHelpModal" tabindex="-1" role="dialog" aria-labelledby="saProjectsHelpModalLabel" aria-hidden="true">
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="aiv-help-modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<div class="aiv-help-modal-icon"><i class="fas fa-clipboard-list"></i></div>
+				<h5 class="modal-title" id="saProjectsHelpModalLabel">About Auditor Projects</h5>
+			</div>
+			<div class="modal-body aiv-help-modal-body">
+				<p>The main landing page for Site Auditor: a list of your crawl projects (one per website), each showing total discovered pages, how many are crawled/scored, and when it last ran. Create, edit, activate/deactivate or trigger a crawl from here.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>A new project's crawl settings (max pages, excluded links, which checks to run) are set once here and apply to every crawl of that project.</span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
+			</div>
+		</div>
+	</div>
+</div>
+
 <form name="listform" id="listform">
-<?php echo showSectionHead($spTextTools['Auditor Projects']); ?>
 <?php if(!empty($isAdmin)){ ?>
 	<table class="search">
 		<tr>
@@ -59,9 +87,9 @@
 					<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $userId){?>
-							<option value="<?php echo $userInfo['id']?>" selected><?php echo $userInfo['username']?></option>
+							<option value="<?php echo $userInfo['id']?>" selected><?php echo htmlspecialchars($userInfo['username'])?></option>
 						<?php }else{?>
-							<option value="<?php echo $userInfo['id']?>"><?php echo $userInfo['username']?></option>
+							<option value="<?php echo $userInfo['id']?>"><?php echo htmlspecialchars($userInfo['username'])?></option>
 						<?php }?>
 					<?php }?>
 				</select>
@@ -90,13 +118,13 @@
 	$colCount = empty($isAdmin) ? 10 : 11; 
 	if(count($list) > 0) {
 		foreach($list as $listInfo) {
-            $websiteLink = scriptAJAXLinkHref('siteauditor.php', 'content', "sec=edit&project_id={$listInfo['id']}", "{$listInfo['name']}")
+            $websiteLink = scriptAJAXLinkHref('siteauditor.php', 'content', "sec=edit&project_id={$listInfo['id']}", htmlspecialchars($listInfo['name']))
 			?>
 			<tr>
 				<td><input type="checkbox" name="ids[]" value="<?php echo $listInfo['id']?>"></td>
 				<td class="text-left"><?php echo $websiteLink?></td>
 				<?php if(!empty($isAdmin)){ ?>
-					<td><?php echo $listInfo['username']?></td>
+					<td><?php echo htmlspecialchars($listInfo['username'])?></td>
 				<?php } ?>
 				<td><?php echo $listInfo['max_links']?></td>
 				<td><?php echo $listInfo['total_links']?></td>
@@ -106,7 +134,7 @@
 				    <?php
 			        $score = $listInfo['score'];
 			        $isPositive = $score >= 0;
-			        $maxScore = 38; // Maximum possible score from AuditorComponent
+			        $maxScore = 45; // AuditorComponent::$maxScore - was stale at 38 (bumped to 45 when AI-readiness checks were added), inflating every displayed percentage
 			        $scorePercentage = $maxScore > 0 ? min(max(0, $score) / $maxScore * 100, 100) : 0;
 			        $circumference = 2 * 3.14159 * 22;
 			        $dashOffset = $circumference - ($scorePercentage / 100) * $circumference;

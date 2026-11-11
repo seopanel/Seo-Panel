@@ -20,7 +20,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 include_once 'install.class.php';
-include_once 'db.class.php';
 include_once 'dbi.class.php';
 
 @ini_set("display_errors", "Off");
@@ -28,6 +27,7 @@ include_once 'dbi.class.php';
 error_reporting(0);
 
 $install = New Install();
+$install->disableOutputCompression();
 
 # installation configiration
 define("SP_INSTALL_DIR", getcwd());
@@ -45,20 +45,20 @@ $install->showDefaultHeader();
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 	
-	switch($_POST['sec']){
-		
+	switch($_POST['sec'] ?? ''){
+
 		case "startinstall":
 			$install->startInstallation($_POST);
 			break;
-		
+
 		case "proceedinstall":
 			$install->proceedInstallation($_POST);
-			break;			
+			break;
 	}
-	
+
 }else{
-	
-	switch($_GET['sec']){
+
+	switch($_GET['sec'] ?? ''){
 
 		default:
 			$install->checkRequirements();

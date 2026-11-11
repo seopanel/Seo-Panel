@@ -21,11 +21,23 @@
  ***************************************************************************/
 
 include_once("includes/sp-load.php");
-if(empty($_SERVER['REQUEST_METHOD'])){	
+if(empty($_SERVER['REQUEST_METHOD'])){
     include_once(SP_CTRLPATH."/siteauditor.ctrl.php");
     $controller = New SiteAuditorController();
     $controller->cron = true;
-    $controller->executeCron();    
+
+    // Non-blocking, same pattern as cron.php's own scheduler lock (see
+    // acquireCronLock()'s own comment for why this is a separate named
+    // lock, not the same one) - if another invocation is still running
+    // (recommended schedule is every 15 minutes; a slow first-run sitemap
+    // discovery on a large site could overrun that), skip this run
+    // silently rather than risk double-crawling the same queued URL.
+    if ($controller->acquireCronLock()) {
+        register_shutdown_function(function() use ($controller) {
+            $controller->releaseCronLock();
+        });
+        $controller->executeCron();
+    }
 } else {
     showErrorMsg("<p style='color:red'>You don't have permission to access this page!</p>");
 }

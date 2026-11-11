@@ -10,12 +10,13 @@
 						<?php echo ucwords($spText['common']['signin'])?>
 					</h2>
 					<p class="login-subtitle"><?php echo $spText['login']['Welcome message']?></p>
+					<p class="login-tools-hint"><?php echo $spText['login']['Tools hint'] ?? 'Your SEO, AEO &amp; GEO control room: rank tracking, site audits, backlinks, AI Visibility, and more - all in one place.'?></p>
 				</div>
 
 				<div class="login-body">
 					<form name="loginForm" method="post" action="<?php echo SP_WEBPATH?>/login.php">
 						<input type="hidden" name="sec" value="login">
-						<input type="hidden" name="red_referer" value="<?php echo $post['red_referer']?>">
+						<input type="hidden" name="red_referer" value="<?php echo htmlspecialchars($post['red_referer'], ENT_QUOTES)?>">
 
 						<div class="form-group">
 							<label for="userName" class="login-label">
@@ -23,7 +24,7 @@
 								<?php echo $spText['login']['Username']?>
 							</label>
 							<input type="text" class="form-control login-input" id="userName" name="userName" required="required" placeholder="<?php echo $spText['login']['Username placeholder']?>" autocomplete="username">
-							<?php echo $errMsg['userName']?>
+							<?php echo $errMsg['userName'] ?? ''?>
 						</div>
 
 						<div class="form-group">
@@ -32,7 +33,7 @@
 								<?php echo $spText['login']['Password']?>
 							</label>
 							<input type="password" class="form-control login-input" id="password" name="password" required="required" placeholder="<?php echo $spText['login']['Password placeholder']?>" autocomplete="current-password">
-							<?php echo $errMsg['password'] ? $errMsg['password']."<br>" : ""?>
+							<?php echo ($errMsg['password'] ?? '') ? $errMsg['password']."<br>" : ""?>
 						</div>
 
 						<div class="form-group text-right">

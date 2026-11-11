@@ -1,3 +1,29 @@
+function openSerpModalSP(url) {
+	$('#serpModalSPBody').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+	$('#serpModalSP').modal('show');
+	$.get(url, function(response) {
+		$('#serpModalSPBody').html(response);
+	}).fail(function() {
+		$('#serpModalSPBody').html('<div class="alert alert-danger">Failed to load SERP results.</div>');
+	});
+}
+
+// Generic Bootstrap-modal content loader - unlike scriptDoLoadDialog()'s
+// jQuery UI #dialogContent (which stacks incorrectly when triggered from
+// inside an already-open Bootstrap modal, e.g. SERP Results), this uses
+// Bootstrap's own modal() so it nests cleanly on top of another Bootstrap
+// modal instead of rendering as unstyled content behind/inside it.
+function openAjaxModalSP(url, title) {
+	$('#ajaxModalSPLabel').html(title || '');
+	$('#ajaxModalSPBody').html('<div class="text-center p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>');
+	$('#ajaxModalSP').modal('show');
+	$.get(url, function(response) {
+		$('#ajaxModalSPBody').html(response);
+	}).fail(function() {
+		$('#ajaxModalSPBody').html('<div class="alert alert-danger">Failed to load.</div>');
+	});
+}
+
 function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVal) {
 	var screenWidth, screenHeight;
     screenWidth = $(window).width();
@@ -30,6 +56,8 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	                "dataType" : "html",
 	                "url" : scriptUrl,
 	                "data" : scriptArgs + "&fromPopUp=1",
+	                // see the matching comment on scriptDoLoadPost() in common.js
+	                "timeout" : 45000,
 	                beforeSend: function(){
 	                	$("#dialogContent").html('<div id="loading_content"></div>');
 	                },
@@ -41,6 +69,7 @@ function scriptDoLoadDialog(scriptUrl, scriptPos, scriptArgs, widthVal, heightVa
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -65,7 +94,8 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
     	heightVal = heightVal ? heightVal : 600;
     }
     
-    formData = $('#'+scriptForm).serialize() + scriptArgs + "&fromPopUp=1";
+    // same missing-separator issue fixed in common.js's scriptDoLoadPost()
+    formData = $('#'+scriptForm).serialize() + '&' + scriptArgs + "&fromPopUp=1";
 	
 	$('#dialogContent').dialog({
 	    autoOpen : false,
@@ -86,6 +116,8 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
 	                "dataType" : "html",
 	                "url" : scriptUrl,
 	                "data" : formData,
+	                // see the matching comment on scriptDoLoadPost() in common.js
+	                "timeout" : 45000,
 	                beforeSend: function(){
 	                	$("#dialogContent").html('<div id="loading_content"></div>');
 	                },
@@ -97,6 +129,7 @@ function popupScriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArg
 	                	$("#dialogContent").show();
 	                },
 	                error : function(xhr, status, error) {
+	                	showAjaxLoadError('dialogContent');
 	                },
 	                complete : function() {
 	                   $("#dialogContent").append('<div id="popup_tmp"></div>');
@@ -122,7 +155,10 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             "method" : "post",
             "dataType" : "html",
             "url" : scriptUrl,
-            "data" : $('#dialogContent #'+scriptForm).serialize() + scriptArgs + "&fromPopUp=1",
+            // same missing-separator issue fixed in common.js's scriptDoLoadPost()
+            "data" : $('#dialogContent #'+scriptForm).serialize() + '&' + scriptArgs + "&fromPopUp=1",
+            // see the matching comment on scriptDoLoadPost() in common.js
+            "timeout" : 45000,
             beforeSend: function(){
             	$(scriptPos).html(loadingContent);
             },
@@ -132,6 +168,7 @@ function scriptDoLoadPostDialog(scriptUrl, scriptForm, scriptPos, scriptArgs, no
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }
@@ -148,6 +185,8 @@ function scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading) {
             "dataType" : "html",
             "url" : scriptUrl,
             "data" : scriptArgs + "&fromPopUp=1",
+            // see the matching comment on scriptDoLoadPost() in common.js
+            "timeout" : 45000,
             beforeSend: function(){
             	$(scriptPos).html(loadingContent);
             },
@@ -157,6 +196,7 @@ function scriptDoLoadGetDialog(scriptUrl, scriptPos, scriptArgs, noLoading) {
             	$(scriptPos).show();
             },
             error : function(xhr, status, error) {
+            	$(scriptPos).html('<div class="text-danger" style="padding:20px;text-align:center;">Something went wrong loading this. Please try again.</div>');
             },
             complete : function() {
             }

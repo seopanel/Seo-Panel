@@ -43,6 +43,10 @@ if (!empty($custSiteInfo['site_keywords'])) $controller->set('spKeywords', $cust
 
 if(!empty($_SERVER['REQUEST_METHOD'])) {
 	switch($_REQUEST['sec']) {
+		case "summarizetrafficsearch":
+			$controller->summarizeTrafficSearchTrend($_REQUEST);
+			break;
+
 		default:
 			$controller->showSearchConsoleDashboard($_REQUEST);
 			break;

@@ -93,28 +93,43 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "listSitemap":
 			$controller->listSitemap($_POST);
 			break;
-			
+
+		case "deleteSitemap":
+		    if (SP_DEMO) return false;
+			$controller->deleteWebmasterToolSitemap($_POST['id']);
+			break;
+
+		// state-changing single-item actions - moved off GET (see
+		// js/common.js's doAction(), which now posts these instead of
+		// requesting them) since a GET-triggered destructive action is
+		// forgeable by a bare <img src="..."> or link on any page a
+		// logged-in victim has open, no JS required
+		case "Activate":
+			$controller->__changeStatus($_POST['websiteId'], 1);
+			$controller->listWebsites($_POST);
+			break;
+
+		case "Inactivate":
+			$controller->__changeStatus($_POST['websiteId'], 0);
+			$controller->listWebsites($_POST);
+			break;
+
+		case "delete":
+			$controller->__deleteWebsite($_POST['websiteId']);
+			$controller->listWebsites($_POST);
+			break;
+
+		case "addToWebmasterTools":
+			$controller->addToWebmasterTools($_POST['websiteId']);
+			$controller->listWebsites($_POST);
+			break;
+
 		default:
 			$controller->listWebsites($_POST);
 			break;
 	}
 } else {
-	switch($_GET['sec']) {		
-		case "Activate":
-			$controller->__changeStatus($_GET['websiteId'], 1);			
-			$controller->listWebsites($_GET);
-			break;
-		
-		case "Inactivate":
-			$controller->__changeStatus($_GET['websiteId'], 0);
-			$controller->listWebsites($_GET);
-			break;
-		
-		case "delete":
-			$controller->__deleteWebsite($_GET['websiteId']);
-			$controller->listWebsites($_GET);
-			break;
-		
+	switch($_GET['sec']) {
 		case "edit":
 			$controller->editWebsite($_GET['websiteId']);
 			break;		
@@ -143,11 +158,6 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    print '<input type="hidden" name="weburl" id="weburl" value="'.$websiteInfo['url'].'">';
 		    break;
 		
-		case "addToWebmasterTools":
-			$controller->addToWebmasterTools($_GET['websiteId']);
-			$controller->listWebsites($_GET);
-			break;
-		
 		case "listSitemap":
 			$controller->listSitemap($_GET);
 			break;
@@ -162,12 +172,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->importWebmasterToolsSitemaps($websiteId);
 			$controller->listSitemap($_GET);
 			break;
-		
-		case "deleteSitemap":
-		    if (SP_DEMO) return false;
-			$controller->deleteWebmasterToolSitemap($_GET['id']);
-			break;
-			
+
 		case "fetchgoogleanalytics":
 		    $response = $controller->fetchGoogleAnalyticProperties();
 		    print json_encode($response);

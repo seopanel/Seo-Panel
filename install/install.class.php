@@ -21,14 +21,93 @@
  ***************************************************************************/
 
 class Install {
-	
+
+	// set by getUpgradeDBFiles() when the current version couldn't be
+	// determined/recognized cleanly, surfaced on the Upgrade Complete page
+	var $upgradeVersionNote = null;
+
+	// holds the open file handle for acquireInstallLock()'s flock() -
+	// must stay referenced for the lock to remain held for the rest of
+	// the request (PHP releases a flock() automatically when its handle
+	// is closed or garbage collected, which an unused local variable
+	// could be at any point)
+	var $installLockHandle = null;
+
+	/**
+	 * Acquires an exclusive, non-blocking file lock for the rest of this
+	 * request, to prevent two concurrent install/upgrade submissions
+	 * racing against the same database. Without this, clicking "Install"
+	 * twice - easy to do with no live progress feedback while the import
+	 * runs, which can take up to 30 seconds - fires two requests that
+	 * both try to import the same SQL into the same tables at the same
+	 * time. Confirmed by deliberately firing two overlapping requests:
+	 * one completes normally, the other hits a near-instant duplicate-key
+	 * error and renders as a confusing partial failure, even though the
+	 * other request is quietly succeeding in the background at the same
+	 * moment - exactly what real users were hitting.
+	 *
+	 * Returns true if the lock was acquired (held until the script ends,
+	 * no explicit release needed), false if another install/upgrade is
+	 * already running. Fails OPEN (returns true) if the lock file simply
+	 * can't be created - e.g. a read-only data/ directory on some host -
+	 * rather than blocking every install anywhere this path isn't
+	 * writable; the race this guards against is far rarer than that.
+	 */
+	function acquireInstallLock() {
+		// tmp/ (not install/data/) deliberately - this project's own
+		// documented install step ("Set tmp/ directory to 777") exists
+		// precisely because the web server's user often can't write into
+		// whatever directory the uploaded files themselves are owned by
+		// on real hosting. Confirmed hitting exactly that here: fopen()
+		// on a path under install/data/ silently failed (the directory
+		// is owned by the deploying user, not world-writable) -
+		// triggering the fail-open fallback below on EVERY request, so
+		// the lock never actually locked anything. tmp/ is the one path
+		// this codebase already requires to be writable by whatever user
+		// the web server runs as.
+		$lockFile = SP_INSTALL_DIR . '/../tmp/.install.lock';
+		$this->installLockHandle = @fopen($lockFile, 'c');
+		if (!$this->installLockHandle) {
+			return true;
+		}
+		return flock($this->installLockHandle, LOCK_EX | LOCK_NB);
+	}
+
+	/**
+	 * Must run before ANY output - disables response compression for the
+	 * whole install/upgrade request. mod_deflate (Apache) and PHP's own
+	 * zlib.output_compression both buffer output internally to compress
+	 * it efficiently, which defeats importWithProgress()'s flush()-based
+	 * live progress bar: real browsers always send "Accept-Encoding:
+	 * gzip", so on any host with compression enabled (confirmed present
+	 * here, invisible to a plain curl test since curl doesn't request
+	 * compression by default) the progress updates get buffered and
+	 * delivered in uneven, stalled-looking bursts instead of flowing
+	 * live - easily read as the install being frozen even though the
+	 * server is working the whole time and the response does eventually
+	 * arrive complete.
+	 */
+	function disableOutputCompression() {
+		@ini_set('zlib.output_compression', '0');
+		if (function_exists('apache_setenv')) {
+			@apache_setenv('no-gzip', '1');
+		}
+	}
+
 	# func to check requirements
 	function checkRequirements($error=false) {		
 		
 		$phpClass = "red";
 		$phpSupport = "No";
 		$phpVersion = phpversion();
-		if (intval($phpVersion) >= 5) {			
+		// was `intval($phpVersion) >= 5`, stale since at least PHP 5.4
+		// (the label here still said "5.4.0" while the actual check
+		// would pass any PHP 5.x at all, 5.0-5.3 included) - 8.1 is the
+		// real floor this codebase works to: it's the exact version
+		// where mysqli's default error-reporting behavior changed, and
+		// DBI::connectDatabase()/MysqliHelper both explicitly code
+		// around that cutover rather than either side of it
+		if (version_compare($phpVersion, '8.1.0', '>=')) {
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -36,7 +115,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query') || function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -63,15 +142,40 @@ class Install {
 			$gdSupport = "Yes ( GD  {$version['GD Version']} )";
 			$gdClass = "green";
 		}
-		
+
+		// not a hard requirement (no hidden input / blocking check below,
+		// same as GD above) - only Website Analytics' GA4 reporting needs
+		// it, via the bundled Google Analytics Data API client's protobuf
+		// library, which calls bcmath's bccomp() directly to compare
+		// int64 metric values with no fallback. Without it, every GA4
+		// report/quick-check request fatals with "Call to undefined
+		// function Google\Protobuf\Internal\bccomp()" - and since
+		// display_errors is off outside SP_DEBUG, that's a silent HTTP
+		// 500 with no clue why. Surfaced here so it's caught before an
+		// admin ever hits that feature, rather than discovered by them
+		// hitting a dead button with no explanation.
+		$bcmathClass = "red";
+		$bcmathSupport = "No (required for Google Analytics reporting)";
+		if(function_exists('bccomp')){
+			$bcmathSupport = "Yes";
+			$bcmathClass = "green";
+		}
+
 		$configClass = "red";
 		$configSupport = "Not found";
 		$configFile = SP_INSTALL_CONFIG_FILE;
 		if(file_exists($configFile)){
-			
+
 			include_once(SP_INSTALL_CONFIG_FILE);
 			if(defined('SP_INSTALLED')){
-				die("<p style='color:red'>Seo Panel version ".SP_INSTALLED." is already installed in your system!</p>");
+				// previously die()'d a bare fragment here, skipping
+				// showDefaultFooter() entirely - left the page as
+				// unclosed HTML (no </div>/</body>/</html>) with no way
+				// forward for a user who just lands on /install/ or
+				// resubmits the install form after already installing
+				$this->showAlreadyInstalledPage(SP_INSTALLED);
+				$this->showDefaultFooter();
+				exit;
 			}
 			
 			$configSupport = "Found, Unwritable<br><p class='note'><b>Command:</b> chmod 666 config/sp-config.php</p>";
@@ -117,7 +221,7 @@ class Install {
 			<table width="100%" class="formtab">
 				<tr><th colspan="2" class="header">Server Compatibility</th></tr>
 				<tr>
-					<th>PHP Version >= 5.4.0</th>
+					<th>PHP Version >= 8.1.0</th>
 					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 				</tr>
 				<tr>
@@ -131,6 +235,10 @@ class Install {
 				<tr>
 					<th>GD Graphics Support</th>
 					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>BCMath Support</th>
+					<td class="<?php echo $bcmathClass;?>"><?php echo $bcmathSupport; ?></td>
 				</tr>
 				<tr>
 					<th>Config File</th>
@@ -221,7 +329,17 @@ class Install {
 		</div>
 		</form>
 		<script>
+		var installSubmitted = false;
 		function validateInstallForm() {
+			// guards against a slow-looking submit (the install can take a
+			// real handful of seconds) being clicked/resubmitted twice,
+			// which fires a second install against the now-partially-
+			// populated database and surfaces as a confusing
+			// "Duplicate entry" error
+			if (installSubmitted) {
+				return false;
+			}
+
 			var errors = [];
 			var errDiv = document.getElementById('validationErrors');
 
@@ -247,6 +365,12 @@ class Install {
 			}
 
 			errDiv.style.display = 'none';
+			installSubmitted = true;
+			var submitBtn = document.querySelector('#installForm input[type="submit"]');
+			if (submitBtn) {
+				submitBtn.disabled = true;
+				submitBtn.value = 'Installing…';
+			}
 			return true;
 		}
 
@@ -260,19 +384,55 @@ class Install {
 	
 	# func to write to config file
 	function writeConfigFile($info) {
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_SAMPLE, "r");
 		$cfgData = fread($handle, filesize(SP_INSTALL_CONFIG_SAMPLE));
 		fclose($handle);
-		
-		
+
+
 		$search = array('[SP_WEBPATH]', '[DB_NAME]', '[DB_USER]', '[DB_PASSWORD]', '[DB_HOST]', '[DB_ENGINE]');
-		$replace = array($info['web_path'], $info['db_name'], $info['db_user'], $info['db_pass'], $info['db_host'], $info['db_engine'] );
+		// every placeholder sits inside a single-quoted define('X', '...')
+		// string in sp-config-sample.php - addslashes() here is NOT
+		// optional: without it, a single quote in any of these values
+		// (all client-supplied POST data) breaks out of the PHP string
+		// literal and injects arbitrary code into config/sp-config.php,
+		// which is include()'d on every single request.
+		$replace = array(
+			addslashes($info['web_path']),
+			addslashes($info['db_name']),
+			addslashes($info['db_user']),
+			addslashes($info['db_pass']),
+			addslashes($info['db_host']),
+			addslashes($info['db_engine']),
+		);
 		$cfgData = str_replace($search, $replace, $cfgData);
-		
+
 		$handle = fopen(SP_INSTALL_CONFIG_FILE, "w");
 		fwrite($handle, $cfgData);
 		fclose($handle);
+
+		// Force OPcache to drop whatever it has cached for this exact
+		// file path. proceedInstallation() already include_once()'d this
+		// same file earlier (the "already installed" guard), back when
+		// it was still empty - with opcache.revalidate_freq at its
+		// common default of 2s, a later include() of the freshly-
+		// rewritten file can still be served that stale, empty-file
+		// compiled result if the whole import finished in under that
+		// window, which happens often enough to be a real, intermittent
+		// bug: SP_WEBPATH (and everything else this file defines) comes
+		// back undefined, and config/sp-config-extra.php - included
+		// right after on the assumption those constants already exist -
+		// fatals immediately. That fatal error is silent in production
+		// (display_errors is off for the installer) and simply looks
+		// like the install hanging: a PHP fatal error still halts
+		// execution outright even with error display disabled, so the
+		// response just stops dead at that exact point with nothing
+		// further ever sent. Confirmed via a live repro with error
+		// display temporarily turned on, which caught it as "Uncaught
+		// Error: Undefined constant SP_WEBPATH in sp-config-extra.php".
+		if (function_exists('opcache_invalidate')) {
+			@opcache_invalidate(SP_INSTALL_CONFIG_FILE, true);
+		}
 	}
 	
 	function getWebPath(){
@@ -313,12 +473,115 @@ class Install {
 		return $webPath;
 	}
 	
+	/**
+	 * Register + activate any of the shipped plugins whose directory is
+	 * present under plugins/ (mirrors
+	 * SeoPluginsController::__updateAllSeoPlugins()'s register-new-plugin
+	 * logic, but works directly against the raw DBI $db connection - the
+	 * full Controller/SeoPluginsController stack isn't safely
+	 * instantiable yet at this point in the installer, and several
+	 * plugin-related constants (SP_PLUGINPATH, SP_PLUGININFOFILE,
+	 * SP_PLUGINDBFILE) only get defined conditionally via
+	 * SP_INSTALL_CONFIG_FILE_EXTRA a few lines up, inside a
+	 * gethostbynamel() network-reachability check - not something this
+	 * should depend on).
+	 */
+	function activateShippedPlugins($db) {
+		$shippedPlugins = array('ArticleSubmitter', 'QuickWebProxy', 'SeoDiary', 'MetaTagGenerator');
+		$pluginBasePath = SP_INSTALL_DIR . '/../plugins';
+
+		foreach ($shippedPlugins as $pluginName) {
+			$pluginDir = $pluginBasePath . '/' . $pluginName;
+			$infoFile = $pluginDir . '/plugin.xml';
+			if (!is_dir($pluginDir) || !file_exists($infoFile)) {
+				continue;
+			}
+
+			$existing = $db->select("select id from seoplugins where name='" . addslashes($pluginName) . "'", true);
+			if (empty($existing['id'])) {
+				include_once(SP_INSTALL_DIR . '/../libs/xmlparser.class.php');
+				$pluginInfo = array();
+				$xml = new XML_Parser;
+				$parsed = $xml->parse($infoFile);
+				if (!empty($parsed[0]['child'])) {
+					foreach ($parsed[0]['child'] as $child) {
+						$pluginInfo[strtolower($child['name'])] = $child['content'];
+					}
+				}
+				$label = !empty($pluginInfo['label']) ? $pluginInfo['label'] : $pluginName;
+				$version = !empty($pluginInfo['version']) ? $pluginInfo['version'] : '1.0.0';
+				$author = !empty($pluginInfo['author']) ? $pluginInfo['author'] : 'Seo Panel';
+				$website = !empty($pluginInfo['website']) ? $pluginInfo['website'] : '';
+				$description = !empty($pluginInfo['description']) ? $pluginInfo['description'] : '';
+
+				$db->query("insert into seoplugins(label,name,author,description,version,website,status,installed)
+						values('" . addslashes($label) . "','" . addslashes($pluginName) . "','" . addslashes($author) . "','" . addslashes($description) . "','" . addslashes($version) . "','" . addslashes($website) . "',1,1)");
+
+				$pluginDbFile = $pluginDir . '/database.sql';
+				if (file_exists($pluginDbFile)) {
+					$db->importDatabaseFile($pluginDbFile, false);
+				}
+			} else {
+				$db->query("update seoplugins set status=1, installed=1 where id=" . intval($existing['id']));
+			}
+		}
+	}
+
 	# func to proceed installation
 	function proceedInstallation($info) {
-		
+
+		// a real install test once truncated mid-script here (DB left
+		// with the core schema but no plugin-activation rows, and no
+		// "Installation Complete" page) with nothing logged anywhere -
+		// consistent with, but not conclusively proven to be, PHP's
+		// default 30s max_execution_time (a deliberate retest under a
+		// tightened limit did NOT reproduce it, so the exact trigger is
+		// still unconfirmed). Either way, this is a one-time admin
+		// operation chaining a SQL/language import, plugin activation,
+		// and an external telemetry call in one request - there's no
+		// good reason to leave it bound by the default request timeout
+		// regardless of what actually caused that one truncation.
+		set_time_limit(0);
+
+		// checkRequirements() only performs this exact check on the GET
+		// landing page, never on this POST path - meaning if an admin
+		// ever skips the documented post-install "chmod config to 644"
+		// step (config/sp-config.php stays writable), anyone who can
+		// still reach sec=proceedinstall could re-run the entire fresh
+		// install against a live site: re-import the schema AND rewrite
+		// the DB connection itself with attacker-supplied credentials.
+		// This checks the file's CONTENTS (not its permissions), so it
+		// closes the hole regardless of whether the chmod step was done.
+		if (file_exists(SP_INSTALL_CONFIG_FILE)) {
+			include_once(SP_INSTALL_CONFIG_FILE);
+			if (defined('SP_INSTALLED')) {
+				// previously die()'d a bare fragment here, skipping
+				// showDefaultFooter() entirely - left the page as
+				// unclosed HTML (no </div>/</body>/</html>) with no way
+				// forward for a user who just lands on /install/ or
+				// resubmits the install form after already installing
+				$this->showAlreadyInstalledPage(SP_INSTALLED);
+				$this->showDefaultFooter();
+				exit;
+			}
+		}
+
+		if (!$this->acquireInstallLock()) {
+			?>
+			<h1 class="BlockHeader">Installation In Progress</h1>
+			<div class="content-section">
+				<div class="alert alert-warning">
+					<strong>Another installation request is already running.</strong>
+					<p>This page was likely submitted more than once. Please wait a minute, then reload this page - the install will either show "Already Installed" (it finished) or let you try again.</p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
 		// if mysqli function exists
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
-		
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
+
 		# checking db settings
 		$errMsg = $db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		if($db->error ){
@@ -340,45 +603,75 @@ class Install {
 			return;
 		}
 
-		# importing data to db
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_FILE);
+		# importing data to db - streams a live progress bar to the
+		# browser rather than leaving the request looking hung, since
+		# these files (particularly the language/text data) can take a
+		# noticeable while on a large/slow database
+		$errMsg = $this->importWithProgress($db, array(
+			array('path' => SP_INSTALL_DB_FILE, 'label' => 'Importing core database structure'),
+			array('path' => SP_INSTALL_DB_LANG_FILE, 'label' => 'Importing language & text data'),
+		));
 		if($db->error ){
 			$errMsg = "Error occured while importing data: ". $errMsg;
 			$this->startInstallation($info, $errMsg);
 			return;
 		}
-		
-		# importing text file
-		$errMsg = $db->importDatabaseFile(SP_INSTALL_DB_LANG_FILE);
-		if($db->error ){
-			$errMsg = "Error occured while importing data: ". $errMsg;
-			$this->startInstallation($info, $errMsg);
-			return;
-		}
-		
+
+		$this->updateInstallProgress('Finalizing installation…');
+
 		# write to config file
 		$this->writeConfigFile($info);
-		
+
 		# create API Key if not exists
-		$this->createSeoPanelAPIKey($db);		
-		
-		if(gethostbynamel('seopanel.org')){
-		    include_once(SP_INSTALL_DIR.'/../libs/spider.class.php');
-		    include_once(SP_INSTALL_CONFIG_FILE);
-		    include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
-			$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
-			$installUpdateUrl .= "&version=".SP_INSTALLED;
-			$spider = New Spider();
-			$spider->getContent($installUpdateUrl, false, false);
+		$this->createSeoPanelAPIKey($db);
+
+		// Best-effort telemetry ping - must never be able to hold up the
+		// install response, not even briefly. This started out gated on
+		// gethostbynamel('seopanel.org'), a raw DNS lookup with NO
+		// timeout parameter in PHP, then became a direct curl_exec()
+		// with short (3s connect / 5s total) timeouts - safer than an
+		// unbounded hang, but still a real window where this request
+		// sends ZERO bytes to the browser while curl blocks. That silent
+		// gap, sitting right where real users keep reporting the install
+		// "freezing" even after every earlier fix in this chain, is
+		// exactly the kind of dead air a browser/corporate proxy/local
+		// security software can treat as a stalled connection and give
+		// up on - especially on a real network with different DNS/
+		// connectivity characteristics than this project's own dev/CI
+		// environment, where the blocking call never reproduced the
+		// problem. A non-critical analytics ping must never be able to
+		// introduce ANY blocking gap here, so it's dispatched as a fully
+		// detached background process instead: PHP does not wait on it
+		// at all, and if shell_exec is unavailable (common on locked-
+		// down shared hosting) the ping is simply skipped rather than
+		// falling back to anything that blocks.
+		include(SP_INSTALL_CONFIG_FILE);
+		include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
+		$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
+		$installUpdateUrl .= "&version=".SP_INSTALLED;
+		if (function_exists('shell_exec')) {
+			@shell_exec('curl -s -m 5 ' . escapeshellarg($installUpdateUrl) . ' > /dev/null 2>&1 &');
 		}
 		
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 		$db->connectDatabase($info['db_host'], $info['db_user'], $info['db_pass'], $info['db_name']);
 		
 		// update email for admin
 		$sql = "update users set email='".addslashes($info['email'])."' where id=1";
 		$db->query($sql);
-		
+
+		$this->updateInstallProgress('Setting up plugins…');
+
+		// auto-install + activate the plugins shipped with this release
+		// (ArticleSubmitter, QuickWebProxy, SeoDiary, MetaTagGenerator -
+		// see CLAUDE.md's "Active Plugins" list) so a fresh install has
+		// them ready to use immediately, matching how
+		// build/build-release.sh bundles SeoDiary/QuickWebProxy into
+		// plugins/ for every release zip. A plugin whose directory isn't
+		// present (e.g. installing straight from a raw git checkout
+		// without the release build step) is silently skipped.
+		$this->activateShippedPlugins($db);
+
 		// select languages list
 		$sql = "select * from languages where translated=1";
 		$langList = $db->select($sql);
@@ -386,6 +679,8 @@ class Install {
 		// select timezones
 		$sql = "select * from timezone order by id";
 		$timezoneList = $db->select($sql);
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Requirements</div>
@@ -450,7 +745,7 @@ class Install {
 							<?php
 							foreach ($timezoneList as $timezoneInfo) {
 								?>
-								<option value="<?php echo $timezoneInfo['timezone_name']?>"><?php echo $timezoneInfo['timezone_label']?></option>
+								<option value="<?php echo $timezoneInfo['timezone_name']?>" data-offset="<?php echo $timezoneInfo['gmt_diff']?>"><?php echo $timezoneInfo['timezone_label']?></option>
 								<?php
 							}
 							?>
@@ -469,14 +764,31 @@ class Install {
 		</form>
 		<script type="text/javascript">
 		(function() {
-			// Auto-select timezone based on browser
+			// Auto-select timezone based on browser. This list is a curated ~90-zone
+			// set (one representative city per UTC offset), not the full IANA tz
+			// database, so an exact name match (eg. "Europe/Paris") often doesn't
+			// exist even though the browser reports it correctly - fall back to
+			// matching on the browser's current UTC offset (data-offset, from the
+			// same gmt_diff this list is already grouped by) when that happens.
 			try {
 				var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-				if (tz) {
-					var tzSel = document.getElementById('install_time_zone');
-					if (tzSel) {
+				var tzSel = document.getElementById('install_time_zone');
+				if (tz && tzSel) {
+					var matchedTz = false;
+					for (var i = 0; i < tzSel.options.length; i++) {
+						if (tzSel.options[i].value === tz) {
+							tzSel.selectedIndex = i;
+							matchedTz = true;
+							break;
+						}
+					}
+					if (!matchedTz) {
+						var offsetMin = -new Date().getTimezoneOffset();
+						var sign = offsetMin < 0 ? '-' : '+';
+						var absMin = Math.abs(offsetMin);
+						var offsetStr = sign + ('0' + Math.floor(absMin / 60)).slice(-2) + ':' + ('0' + (absMin % 60)).slice(-2);
 						for (var i = 0; i < tzSel.options.length; i++) {
-							if (tzSel.options[i].value === tz) {
+							if (tzSel.options[i].getAttribute('data-offset') === offsetStr) {
 								tzSel.selectedIndex = i;
 								break;
 							}
@@ -511,15 +823,193 @@ class Install {
 		</script>
 		<?php
 	}
-	
-	
+
+	/**
+	 * Imports one or more SQL files while streaming a live progress bar
+	 * to the browser, instead of leaving the request looking hung for
+	 * however long a large database file takes. Used by both
+	 * proceedInstallation() (fresh install) and proceedUpgrade()
+	 * (existing installs can replay many version-increment files).
+	 *
+	 * Deliberately NOT a separate AJAX/polling endpoint: this installer
+	 * is one synchronous request per step already, has to run unmodified
+	 * on the widest range of shared hosting, and flush()-ing progress
+	 * into the same response is the simplest thing that works within
+	 * that existing architecture - no new endpoint, no server-side state
+	 * to track between requests, nothing that can be blocked by
+	 * disable_functions on a locked-down host the way exec()/proc_open()
+	 * based approaches could be.
+	 *
+	 * $files is an array of ['path' => ..., 'label' => ...]. Returns ''
+	 * on success, or an error message on the same convention
+	 * importDatabaseFile() itself uses ($db->error will also be set).
+	 */
+	function importWithProgress($db, $files, $block = true, $stepsHtml = null, $heading = 'Installing Seo Panel') {
+		if ($stepsHtml === null) {
+			$stepsHtml = '<div class="step completed"><span class="step-number"></span> Requirements</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step active"><span class="step-number">2</span> Database</div>'
+				. '<div class="step-divider"></div>'
+				. '<div class="step"><span class="step-number">3</span> Complete</div>';
+		}
+
+		// ask any upstream proxy (nginx) not to buffer this response, and
+		// flush out any output buffering layer PHP itself may have
+		// started (the output_buffering ini setting) - otherwise our
+		// flush() calls below queue up and all arrive at once at the end
+		if (!headers_sent()) {
+			@header('X-Accel-Buffering: no');
+		}
+		while (ob_get_level() > 0) {
+			@ob_end_flush();
+		}
+
+		$fileLineCounts = array();
+		$totalLines = 0;
+		foreach ($files as $key => $file) {
+			// count(false) is a TypeError on PHP8 (not just a suppressible
+			// warning), so a missing/unreadable migration file must not
+			// reach count() at all - it previously fataled the whole
+			// upgrade/install chain here, before the real import loop
+			// below even got a chance to error_log() and move on
+			$lines = @file($file['path']);
+			$fileLineCounts[$key] = is_array($lines) ? count($lines) : 0;
+			$totalLines += $fileLineCounts[$key];
+		}
+		?>
+		<div id="installProgressWrap">
+			<div class="steps"><?php echo $stepsHtml; ?></div>
+			<h1 class="BlockHeader"><?php echo htmlspecialchars($heading); ?></h1>
+			<div class="content-section">
+				<div class="install-progress-track">
+					<div id="installProgressFill" class="install-progress-fill" style="width:0%;"></div>
+				</div>
+				<p id="installProgressText" class="install-progress-text">Preparing&hellip;</p>
+			</div>
+		</div>
+		<!-- padding to push this past small output buffers some hosts/proxies use before they start forwarding chunks
+		<?php echo str_repeat(' ', 4096); ?>
+		-->
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+
+		$linesDoneBefore = 0;
+		foreach ($files as $key => $file) {
+			$label = $file['label'];
+			$baseline = $linesDoneBefore;
+
+			$onProgress = function($linesDone, $fileTotalLines) use ($label, $totalLines, $baseline) {
+				$overallDone = $baseline + $linesDone;
+				$percent = $totalLines > 0 ? min(100, (int) round(($overallDone / $totalLines) * 100)) : 100;
+				?>
+				<script>
+				(function(){
+					var fill = document.getElementById('installProgressFill');
+					var text = document.getElementById('installProgressText');
+					if (fill) { fill.style.width = '<?php echo $percent; ?>%'; }
+					if (text) { text.textContent = '<?php echo addslashes($label); ?>… (<?php echo $percent; ?>%)'; }
+				})();
+				</script>
+				<?php
+				flush();
+				if (ob_get_level() > 0) { @ob_flush(); }
+			};
+
+			$errMsg = $db->importDatabaseFile($file['path'], $block, $onProgress);
+			if ($block && $db->error) {
+				$this->hideInstallProgress();
+				return $errMsg;
+			}
+
+			$linesDoneBefore += $fileLineCounts[$key];
+		}
+
+		// deliberately NOT hiding the progress wrap here on success - the
+		// caller (proceedInstallation()/proceedUpgrade()) still has real
+		// work left (config write, plugin activation, telemetry, etc.)
+		// and must keep updating/eventually hide it itself via
+		// updateInstallProgress()/hideInstallProgress(), so the page never
+		// goes blank between "import done" and the final success page.
+		return '';
+	}
+
+	/**
+	 * Requires an already-authenticated admin session before allowing any
+	 * interaction with the upgrade wizard on a live site. upgrade.php
+	 * previously had no real auth check at all - its only "guards" were
+	 * $info['php_support']/etc, which are read straight from
+	 * client-supplied POST fields, not verified server-side - so anyone
+	 * who could reach the URL could trigger a real database migration.
+	 *
+	 * Deliberately does NOT bootstrap the full app (includes/sp-load.php)
+	 * to check this, since that assumes a schema already matching the
+	 * CURRENT version - exactly what an upgrade cannot assume. Instead
+	 * reads $_SESSION['userInfo'] directly, the same session key/shape
+	 * isAdmin()/checkAdminLoggedIn() check (see libs/session.class.php,
+	 * includes/sp-common.php) - a real login via the main app's
+	 * login.php, in the same browser, is the only way to populate it.
+	 * Caller must have already called session_start() and
+	 * showDefaultHeader().
+	 */
+	function requireAdminSession() {
+		$userInfo = isset($_SESSION['userInfo']) ? $_SESSION['userInfo'] : array();
+		$isAdmin = !empty($userInfo['userId']) && !empty($userInfo['userType']) && $userInfo['userType'] === 'admin';
+		if ($isAdmin) {
+			return;
+		}
+
+		if (!headers_sent()) {
+			http_response_code(403);
+		}
+		?>
+		<div class="content-section">
+			<div class="alert alert-warning">
+				<strong>Admin login required.</strong>
+				<p>Please <a href="../login.php">log in to SEO Panel as an admin</a> first, then reload this page to continue.</p>
+			</div>
+		</div>
+		<?php
+		$this->showDefaultFooter();
+		exit;
+	}
+
+
+	/**
+	 * The version this build actually upgrades TO - read from
+	 * sp-config-sample.php's own SP_INSTALLED line (the same source
+	 * writeConfigFile() copies from on a fresh install), not from the
+	 * SP_INSTALLED constant, which at this point in the upgrade flow is
+	 * still whatever the user's live config/sp-config.php says - their
+	 * CURRENT (pre-upgrade) version, not the target. proceedUpgrade()
+	 * already does this exact lookup to patch the user's config file
+	 * once the upgrade finishes; this is the same logic, reusable
+	 * wherever the page needs to tell the admin what they're upgrading
+	 * TO before that point (e.g. the "Upgrade to vX" button label,
+	 * previously showing their current version instead).
+	 */
+	function getUpgradeTargetVersion() {
+		$sampleConfig = @file_get_contents(SP_INSTALL_CONFIG_SAMPLE);
+		if ($sampleConfig !== false && preg_match("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'([^']+)'\\s*\\)/", $sampleConfig, $m)) {
+			return $m[1];
+		}
+		return defined('SP_INSTALLED') ? SP_INSTALLED : '';
+	}
+
 	# func to check upgrade requirements
 	function checkUpgradeRequirements($error=false, $errorMsg='') {
 
 		$phpClass = "red";
 		$phpSupport = "No";
 		$phpVersion = phpversion();
-		if (intval($phpVersion) >= 5) {			
+		// was `intval($phpVersion) >= 5`, stale since at least PHP 5.4
+		// (the label here still said "5.4.0" while the actual check
+		// would pass any PHP 5.x at all, 5.0-5.3 included) - 8.1 is the
+		// real floor this codebase works to: it's the exact version
+		// where mysqli's default error-reporting behavior changed, and
+		// DBI::connectDatabase()/MysqliHelper both explicitly code
+		// around that cutover rather than either side of it
+		if (version_compare($phpVersion, '8.1.0', '>=')) {
 			$phpClass = "green";
 			$phpSupport = "Yes";
 		}
@@ -527,7 +1017,7 @@ class Install {
 		
 		$mysqlClass = "red";
 		$mysqlSupport = "No";
-		if(function_exists('mysql_query')|| function_exists('mysqli_query')){
+		if(function_exists('mysqli_query')){
 			$mysqlSupport = "Yes";
 			$mysqlClass = "green";
 		}
@@ -554,24 +1044,36 @@ class Install {
 			$version = gd_info();
 			$gdSupport = "Yes ( GD  {$version['GD Version']} )";
 			$gdClass = "green";
-		}		
-			
+		}
+
+		// not a hard requirement (no hidden input / blocking check below,
+		// same as GD above) - see the matching note in checkRequirements()
+		// for why this matters: without it, GA4 reporting fatals with
+		// "Call to undefined function Google\Protobuf\Internal\bccomp()",
+		// silently (display_errors is off outside SP_DEBUG).
+		$bcmathClass = "red";
+		$bcmathSupport = "No (required for Google Analytics reporting)";
+		if(function_exists('bccomp')){
+			$bcmathSupport = "Yes";
+			$bcmathClass = "green";
+		}
+
 		$tmpClass = "red";
 		$tmpSupport = "Not found";
 		$tmpFile = SP_INSTALL_DIR.'/../tmp';
 		if(file_exists($tmpFile)){
 			$tmpSupport = "Found, Unwritable<br><p class='note'><b>Command:</b> chmod -R 777 tmp/</p>";
-			if(is_writable($tmpFile)){				
-				$tmpSupport = "Found, Writable";				
+			if(is_writable($tmpFile)){
+				$tmpSupport = "Found, Writable";
 				$tmpClass = "green";
-			}			
+			}
 		}
-		
+
 		$configClass = "red";
 		$configSupport = "Not found";
 		$configFile = SP_INSTALL_CONFIG_FILE;
 		if(file_exists($configFile)){
-			$configSupport = "Found";				
+			$configSupport = "Found";
 			$configClass = "green";
 		}
 
@@ -579,7 +1081,7 @@ class Install {
 		$dbSupport = "Database config variables not defined";
 		include_once(SP_INSTALL_CONFIG_FILE);
 		if(defined('DB_HOST') && defined('DB_NAME') && defined('DB_USER') && defined('DB_PASSWORD') && defined('DB_ENGINE')){
-			$db = function_exists('mysqli_query') ? New DBI() : New DB();
+			$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
 			
 			$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 			if($db->error ){
@@ -588,8 +1090,44 @@ class Install {
 				$dbSupport = "Connected to database successfully";				
 				$dbClass = "green";
 			}
-		}		
-		
+		}
+
+		// bug fix: this page always offered "Upgrade to vX" regardless of
+		// whether the database was already on that version - so an admin
+		// who'd already completed the upgrade (via this same wizard, or
+		// the Settings > Version online-upgrade flow) and revisited this
+		// URL saw the exact same upgrade prompt as someone who genuinely
+		// needed it, with nothing distinguishing the two. Query the same
+		// settings.SP_VERSION_NUMBER getUpgradeDBFiles() itself treats as
+		// authoritative (not the config file's SP_INSTALLED, which is a
+		// separate value patched at the end of a successful upgrade and
+		// could in principle drift from the DB) and skip straight to a
+		// confirmation if there's nothing left to apply.
+		$alreadyUpToDateVersion = null;
+		if ($dbClass == 'green' && !$error) {
+			$versionInfo = $db->select("Select set_val from settings where set_name='SP_VERSION_NUMBER'", true);
+			$currentDbVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '';
+			$upgradeTargetVersion = $this->getUpgradeTargetVersion();
+			if ($currentDbVersion && $upgradeTargetVersion && version_compare($currentDbVersion, $upgradeTargetVersion, '>=')) {
+				$alreadyUpToDateVersion = $currentDbVersion;
+			}
+		}
+
+		if ($alreadyUpToDateVersion !== null) {
+			?>
+			<h1 class="BlockHeader">Already Up To Date</h1>
+			<div class="content-section">
+				<div class="alert alert-success">
+					Your Seo Panel installation is already running v<?php echo htmlspecialchars($alreadyUpToDateVersion); ?> - there's nothing to upgrade.
+				</div>
+			</div>
+			<div class="button-section">
+				<a href="<?php echo SP_WEBPATH; ?>/login.php" class="button" style="text-decoration:none; display:inline-block;">Go to Login &rarr;</a>
+			</div>
+			<?php
+			return;
+		}
+
 		$errMsg = "";
 		if($error){
 			if(empty($errorMsg)){
@@ -617,7 +1155,7 @@ class Install {
 			<table width="100%" class="formtab">
 				<tr><th colspan="2" class="header">System Compatibility</th></tr>
 				<tr>
-					<th>PHP Version >= 5.4.0</th>
+					<th>PHP Version >= 8.1.0</th>
 					<td class="<?php echo $phpClass;?>"><?php echo $phpSupport;?></td>
 				</tr>
 				<tr>
@@ -631,6 +1169,10 @@ class Install {
 				<tr>
 					<th>GD Graphics Support</th>
 					<td class="<?php echo $gdClass;?>"><?php echo $gdSupport; ?></td>
+				</tr>
+				<tr>
+					<th>BCMath Support</th>
+					<td class="<?php echo $bcmathClass;?>"><?php echo $bcmathSupport; ?></td>
 				</tr>
 				<tr>
 					<th>Config File</th>
@@ -652,7 +1194,8 @@ class Install {
 		<input type="hidden" value="<?php echo $configClass;?>" name="config">
 		<input type="hidden" value="<?php echo $dbClass;?>" name="db_support">
 		<input type="hidden" value="proceedupgrade" name="sec">
-		<?php $submitLabel = defined('SP_INSTALLED') ? "Upgrade to v".SP_INSTALLED : "Upgrade Seo Panel"; ?>
+		<?php $upgradeTargetVersion = $this->getUpgradeTargetVersion(); ?>
+		<?php $submitLabel = $upgradeTargetVersion ? "Upgrade to v".$upgradeTargetVersion : "Upgrade Seo Panel"; ?>
 		<div class="button-section">
 			<input type="submit" value="<?php echo $submitLabel?> &rarr;" name="submit" class="button">
 		</div>
@@ -688,29 +1231,53 @@ class Install {
 		    '4.11.0',
 		    '5.0.0',
 		    '5.1.0',
+		    '6.0.0',
+		    '7.0.0',
 		);
 		
 		// get current version number
 		$sql = "Select set_val from settings where set_name='SP_VERSION_NUMBER'";
 		$versionInfo = $db->select($sql, true);
 		$currentVersion = !empty($versionInfo['set_val']) ? $versionInfo['set_val'] : '3.8.0';
-		
+
+		// surfaced on the Upgrade Complete page below - a missing/garbled
+		// version previously took one of two very different silent paths
+		// (full historical replay from 3.8.0, or skip the whole
+		// version-chain and only run the generic catch-all) with no
+		// indication to the admin of which one happened or why
+		$this->upgradeVersionNote = null;
+		if (empty($versionInfo['set_val'])) {
+			$this->upgradeVersionNote = 'No existing version number was found, so every historical database update (from v3.8.0 onward) was replayed to be safe.';
+		}
+
+		// 4.12.0 shipped its schema changes via the generic upgrade.sql catch-all and
+		// never got its own entry in $spVersionList. Its schema is identical to 5.0.0's
+		// (upgrade_v4.11.0_v5.0.0.sql duplicates the 4.12.0 db changes verbatim), so
+		// treat it as 5.0.0 when locating the current position in the upgrade chain.
+		if ($currentVersion === '4.12.0') {
+			$currentVersion = '5.0.0';
+		}
+
 		// if current version is set
 		if ($currentVersion) {
-			
+
 			$index = array_search($currentVersion, $spVersionList);
 			$lastIndex = count($spVersionList) - 1;
-		
-			// if it is not last index value
-			if ($index != $lastIndex) {
+
+			// if it is not last index value, and the version is recognized (an
+			// unrecognized version must not silently fall back to index 0, which
+			// would replay every historical upgrade file from 3.8.0 onward)
+			if ($index !== false && $index != $lastIndex) {
 				$prevIndex = $index;
-			
+
 				// loop through the versions
 				for ($i = $index + 1; $i <= $lastIndex; $i++) {
 					$upgradeFileList[] = SP_INSTALL_DIR . "/data/upgrade_v$spVersionList[$prevIndex]_v$spVersionList[$i].sql";
 					$prevIndex = $i;
 				}
-				
+
+			} elseif ($index === false) {
+				$this->upgradeVersionNote = "Current version number ($currentVersion) was not recognized, so only the latest general database update was applied (no historical version-by-version updates).";
 			}
 			
 		}
@@ -720,36 +1287,110 @@ class Install {
 		
 	}
 	
-	function proceedUpgrade($info=[]){ 
+	function proceedUpgrade($info=[]){
+		// same reasoning as proceedInstallation() - an upgrade can chain
+		// through many migration files in one request; not something
+		// the default request timeout should ever cut short
+		set_time_limit(0);
+
 		if( ($info['php_support'] == 'red') || ($info['mysql_support'] == 'red') || ($info['curl_support'] == 'red')
 		|| ($info['config'] == 'red') || ($info['db_support'] == 'red')){
 			$this->checkUpgradeRequirements(true);
 			return;
-		}		
-		
+		}
+
+		if (!$this->acquireInstallLock()) {
+			?>
+			<h1 class="BlockHeader">Upgrade In Progress</h1>
+			<div class="content-section">
+				<div class="alert alert-warning">
+					<strong>Another upgrade request is already running.</strong>
+					<p>This page was likely submitted more than once. Please wait a minute, then reload this page.</p>
+				</div>
+			</div>
+			<?php
+			return;
+		}
+
 		include_once(SP_INSTALL_CONFIG_FILE);
-		$db = function_exists('mysqli_query') ? New DBI() : New DB();
-		
+		$db = New DBI(); // mysql_* was removed in PHP 7.0; DBI (mysqli_*) is the only reachable backend on any supported PHP version
+
 		// check database connection
 		$errMsg = $db->connectDatabase(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 		if($db->error){
 			$this->checkUpgradeRequirements(true, $errMsg);
 			return;
 		}
-		
-		// loop through upgrade files and import data to db
-		$upgradeFileList = $this->getUpgradeDBFiles($db);
-		foreach ($upgradeFileList as $dbFile) {
-			$errMsg = $db->importDatabaseFile($dbFile, false);
-		}
 
-		// importing text file
-		$errMsg = $db->importDatabaseFile(SP_UPGRADE_DB_LANG_FILE, false);
+		// loop through upgrade files and import data to db - someone
+		// upgrading from a much older version can end up replaying many
+		// version-increment files here
+		$upgradeFileList = $this->getUpgradeDBFiles($db);
+		$upgradeFiles = array();
+		foreach ($upgradeFileList as $index => $dbFile) {
+			$upgradeFiles[] = array('path' => $dbFile, 'label' => 'Applying database migration ' . ($index + 1) . ' of ' . count($upgradeFileList));
+		}
+		$upgradeFiles[] = array('path' => SP_UPGRADE_DB_LANG_FILE, 'label' => 'Updating language & text data');
+
+		// $block=false: matches this path's existing behavior exactly -
+		// a replayed migration can legitimately fail (e.g. a column that
+		// already exists from a prior partial run) and must not abort
+		// the rest of the chain
+		$upgradeStepsHtml = '<div class="step completed"><span class="step-number"></span> Check</div>'
+			. '<div class="step-divider"></div>'
+			. '<div class="step active"><span class="step-number">2</span> Complete</div>';
+		$this->importWithProgress($db, $upgradeFiles, false, $upgradeStepsHtml, 'Upgrading Seo Panel');
 		$_SESSION['text'] = "";
-		
+
+		$this->updateInstallProgress('Finalizing upgrade…');
+
 		# create API Key if not exists
 		$this->createSeoPanelAPIKey($db);
-		
+
+		// bug fix: nothing in this whole upgrade path ever rewrote the
+		// user's actual config/sp-config.php - only the DB's own
+		// settings.SP_VERSION_NUMBER got bumped by the migration SQL
+		// itself. SP_INSTALLED here was include_once()'d from that same
+		// file near the top of this function, back when it still held
+		// whatever version the user originally installed - so this page
+		// was always telling every single successful upgrade "Upgraded
+		// to Seo Panel v<the OLD version>", which reads as the upgrade
+		// having silently failed. The version this codebase is actually
+		// shipping is the SP_INSTALLED already baked into
+		// sp-config-sample.php (the exact same source a fresh install's
+		// writeConfigFile() copies its own value from) - read that and
+		// patch just the one line in the user's real config file,
+		// leaving everything else in it untouched.
+		$newVersion = defined('SP_INSTALLED') ? SP_INSTALLED : '';
+		$sampleConfig = @file_get_contents(SP_INSTALL_CONFIG_SAMPLE);
+		if ($sampleConfig !== false && preg_match("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'([^']+)'\\s*\\)/", $sampleConfig, $m)) {
+			$newVersion = $m[1];
+			$liveConfig = @file_get_contents(SP_INSTALL_CONFIG_FILE);
+			if ($liveConfig !== false) {
+				$patchedConfig = preg_replace("/define\\(\\s*'SP_INSTALLED'\\s*,\\s*'[^']+'\\s*\\)/", "define('SP_INSTALLED', '" . addslashes($newVersion) . "')", $liveConfig, 1);
+				if ($patchedConfig !== null) {
+					@file_put_contents(SP_INSTALL_CONFIG_FILE, $patchedConfig);
+				}
+			}
+		}
+
+		// bug fix: the dashboard's daily "New Seo Panel Version Available"
+		// popup (version_upgrade_popup.ctp.php) caches its outdated/
+		// uptodate verdict once per calendar day (information_list,
+		// info_type='version_check_popup' - see
+		// SettingsController::showVersionUpgradePopup()). If that cache
+		// was already populated as "outdated" earlier TODAY - trivially
+		// true for anyone who checked the dashboard before running this
+		// exact upgrade - it stayed "outdated" for the rest of the day
+		// even immediately after a successful upgrade, since nothing
+		// cleared it: the popup would tell an admin who just upgraded to
+		// the latest version that they still need to upgrade. The
+		// installed version just changed, so any same-day cached verdict
+		// is stale by definition; clear it so the next dashboard load
+		// re-checks for real instead of trusting pre-upgrade data.
+		$db->query("DELETE FROM information_list WHERE info_type='version_check_popup'");
+
+		$this->hideInstallProgress();
 		?>
 		<div class="steps">
 			<div class="step completed"><span class="step-number"></span> Check</div>
@@ -760,9 +1401,38 @@ class Install {
 		<form method="post" action="<?php echo SP_WEBPATH."/login.php"; ?>">
 		<div class="content-section">
 			<div class="success-box">
-				<h3>Upgraded to Seo Panel v<?php echo SP_INSTALLED;?></h3>
+				<h3>Upgraded to Seo Panel v<?php echo htmlspecialchars($newVersion);?></h3>
 				<p>Your SEO Panel has been upgraded successfully.</p>
 			</div>
+
+			<?php if (!empty($this->upgradeVersionNote)) { ?>
+				<div class="alert alert-info">
+					<strong>Note:</strong> <?php echo htmlspecialchars($this->upgradeVersionNote); ?>
+				</div>
+			<?php } ?>
+
+			<?php if (!empty($db->nonBlockingFailedCount)) { ?>
+				<div class="alert alert-info">
+					<!-- bug fix: this page previously always said "upgraded
+					successfully" with no way to know a migration statement
+					actually failed - $db->nonBlockingFailedCount/
+					nonBlockingFailedSamples are populated by
+					DBI::importDatabaseFile() now (see its own comments).
+					Not styled as a hard error - a replayed migration
+					legitimately re-hitting an "already exists" style error
+					is the common, harmless case (e.g. re-running this
+					upgrade, or an intermediate version's change already
+					applied by hand) - but surfaced honestly either way,
+					with the real detail in the PHP/web server error log
+					rather than only there. -->
+					<strong>Note:</strong> <?php echo intval($db->nonBlockingFailedCount); ?> database migration statement<?php echo $db->nonBlockingFailedCount == 1 ? '' : 's'; ?> did not apply during this upgrade. This is often expected (e.g. re-running an upgrade, or a change already applied). If something looks missing after upgrading, check your PHP/web server error log for lines starting "SEO Panel installer:", or ask for help with the details below.
+					<ul style="margin-top:8px;">
+						<?php foreach ($db->nonBlockingFailedSamples as $sample) { ?>
+							<li><?php echo htmlspecialchars($sample); ?></li>
+						<?php } ?>
+					</ul>
+				</div>
+			<?php } ?>
 
 			<div class="alert alert-warning">
 				<strong>Important Security Step:</strong>
@@ -778,8 +1448,66 @@ class Install {
 		</form>
 		<?php
 	}
-	
-	
+
+	/**
+	 * Shared "already installed" interstitial - shown when checkRequirements()
+	 * or proceedInstallation() find SP_INSTALLED already defined. Styled to
+	 * match the rest of the wizard (steps header, content-section, button)
+	 * rather than the plain unstyled paragraph+link this used to be.
+	 */
+	function showAlreadyInstalledPage($version) {
+		?>
+		<h1 class="BlockHeader">Already Installed</h1>
+		<div class="content-section">
+			<div class="info-box">
+				<h3>Seo Panel is already installed</h3>
+				<p>Version <?php echo htmlspecialchars($version); ?> is currently running on this system.</p>
+			</div>
+			<div class="alert alert-info">
+				<strong>Starting over?</strong> Remove or empty the existing database and clear <b>config/sp-config.php</b> first, then reload this page.
+			</div>
+		</div>
+		<div class="button-section">
+			<a href="<?php echo SP_WEBPATH; ?>/login.php" class="button" style="text-decoration:none; display:inline-block;">Go to Login &rarr;</a>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Updates the live progress bar left on screen by importWithProgress()
+	 * without hiding it - used to bridge the steps AFTER the SQL import
+	 * finishes (config write, plugin activation, telemetry ping, etc.) so
+	 * the page never goes visually blank/frozen between "import done" and
+	 * the final success page. Before this, importWithProgress() hid the
+	 * progress bar the moment the SQL import itself finished, leaving
+	 * several seconds of no visible feedback while proceedInstallation()
+	 * kept working - easily mistaken for a hang, and the natural reaction
+	 * (resubmitting the form) fires a second, overlapping install against
+	 * the same now-partially-populated database ("Duplicate entry" errors).
+	 */
+	function updateInstallProgress($text, $percent = 100) {
+		?>
+		<script>
+		(function(){
+			var fill = document.getElementById('installProgressFill');
+			var text = document.getElementById('installProgressText');
+			if (fill) { fill.style.width = '<?php echo (int) $percent; ?>%'; }
+			if (text) { text.textContent = '<?php echo addslashes($text); ?>'; }
+		})();
+		</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+	}
+
+	function hideInstallProgress() {
+		?>
+		<script>(function(){ var w = document.getElementById('installProgressWrap'); if (w) { w.style.display = 'none'; } })();</script>
+		<?php
+		flush();
+		if (ob_get_level() > 0) { @ob_flush(); }
+	}
+
 	# func to show default install header
 	function showDefaultHeader() {
 		?>
@@ -818,24 +1546,40 @@ class Install {
 		<?php
 	}
 	
-	# function to create seo panel API Key
+	/*
+	 * function to create the seo panel API key AND secret if either is
+	 * missing - previously only ever generated SP_API_KEY, and even then
+	 * only via PHP's non-cryptographic rand(); API_SECRET had no
+	 * generator at all and defaulted to an empty string, and the fresh-
+	 * install seed shipped the SAME hardcoded SP_API_KEY value on every
+	 * install (publicly visible in this project's own source), so an
+	 * install that never manually edited these in the database directly
+	 * was authenticatable by anyone who'd read that file - the empty
+	 * secret alone was enough, since verifyAPICredentials() compared
+	 * both with a plain ==. Now uses random_bytes(), matching every
+	 * other credential generator in this codebase (MCP tokens, the
+	 * scheduler ping secret, AI Visibility site tokens).
+	 */
 	function createSeoPanelAPIKey($db) {
-	    $sql = "Select id, set_val from settings where set_name='SP_API_KEY'";
-	    $apiInfo = $db->select($sql, true);
-
-	    if (empty($apiInfo['set_val'])) {
-	        $apiKey = rand(10000000, 100000000);
-	        $apiKey .= rand(10000000, 100000000);
-	        $apiKey .= rand(10000000, 100000000);
-	        $apiKey = md5($apiKey);
-	        
-	        if (empty($apiInfo['id'])) {
-	            $sql = "Insert into settings(set_label,set_name,set_val,set_type) values('Seo Panel API Key', 'SP_API_KEY', '$apiKey', 'large')";
+	    $keyInfo = $db->select("Select id, set_val from settings where set_name='SP_API_KEY'", true);
+	    if (empty($keyInfo['set_val'])) {
+	        $apiKey = bin2hex(random_bytes(24));
+	        if (empty($keyInfo['id'])) {
+	            $db->query("Insert into settings(set_label,set_name,set_val,set_type) values('Seo Panel API Key', 'SP_API_KEY', '$apiKey', 'large')");
 	        } else {
-	            $sql = "update settings set set_val='$apiKey' where set_name='SP_API_KEY'";
+	            $db->query("update settings set set_val='$apiKey' where set_name='SP_API_KEY'");
 	        }
-	        $apiInfo = $db->query($sql);
 	    }
-	}	    
+
+	    $secretInfo = $db->select("Select id, set_val from settings where set_name='API_SECRET'", true);
+	    if (empty($secretInfo['set_val'])) {
+	        $apiSecret = bin2hex(random_bytes(24));
+	        if (empty($secretInfo['id'])) {
+	            $db->query("Insert into settings(set_label,set_name,set_val,set_type) values('API Secret', 'API_SECRET', '$apiSecret', 'medium')");
+	        } else {
+	            $db->query("update settings set set_val='$apiSecret' where set_name='API_SECRET'");
+	        }
+	    }
+	}
 }
 ?>

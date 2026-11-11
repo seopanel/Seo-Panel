@@ -58,8 +58,44 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "resetSpApiToken":
 			$controller->resetSpApiToken();
 			break;
+
+		case "onlineupgradeproceed":
+			if (!SP_DEMO) {
+				$controller->proceedOnlineUpgrade();
+			}
+			break;
+
+		// moved off GET - unlike checkMozCon/checkGoogleAPI/
+		// checkDataForSEOAPI/checkSpApiCon above (and below), which all
+		// call a FIXED, hardcoded third-party host using caller-supplied
+		// credentials, this one lets the caller choose the TARGET HOST
+		// itself (base_url) and deliberately allows private/internal
+		// targets (see LocalAIController::__checkOllamaConnection()'s
+		// own $allowPrivateTarget=true) - a bare
+		// <img src="...settings.php?sec=checkOllamaAPI&base_url=...">
+		// could force an already-logged-in admin's browser to make the
+		// server issue a request to an attacker-chosen target (SSRF via
+		// confused deputy). POST alone closes the "simple cross-site
+		// GET" vector, same mitigation tier already applied to every
+		// other GET-based state/action-triggering bug this session.
+		case "checkOllamaAPI":
+		    if (empty($_POST['base_url'])) {
+		        print "<span class='error'>{$_SESSION['text']['label']['Fail']}</span>";
+		    } else {
+		        include_once(SP_CTRLPATH."/localai.ctrl.php");
+		        $localAiCtrler = new LocalAIController();
+		        $connResult = $localAiCtrler->__checkOllamaConnection($_POST['base_url']);
+
+		        if ($connResult['status']) {
+		            print "<span class='success'>{$_SESSION['text']['label']['Success']}</span>";
+		        } else {
+		            print "<span class='error'>{$connResult['message']}</span>";
+		        }
+		    }
+
+		    break;
 	}
-	
+
 }else{
 	switch($_GET['sec']){
 		
@@ -74,6 +110,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "proxysettings":
 			$controller->showSystemSettings('proxy');
 			break;
+
+		case "auditlog":
+			$controller->showAuditLog($_GET);
+			break;
 		
 		case "aboutus":
 			$controller->showAboutUs($_GET);
@@ -86,7 +126,15 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "checkversion":
 			$controller->checkVersion();
 			break;
-		
+
+		case "onlineupgradecheck":
+			$controller->checkOnlineUpgrade();
+			break;
+
+		case "check_daily_notices":
+			$controller->checkDailyNotices();
+			break;
+
 		case "test_email":
 			$controller->showTestEmailSettings();
 			break;
@@ -157,6 +205,23 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			    include_once(SP_CTRLPATH."/spapi.ctrl.php");
 			    $spapiCtrler = new SPAPIController();
 			    list($usageData, $logInfo) = $spapiCtrler->__getSpApiUsageData($_GET['api_key']);
+
+			    // This is a live, real-time check - unlike the daily cache
+			    // AlertController::updateSpApiAlerts() maintains (which the
+			    // Setup Tour's badge and the upgrade popup both read), this
+			    // can run many times a day and always hits the real spAPI
+			    // endpoint. When it's testing the key that's ACTUALLY saved
+			    // right now (not some unsaved edit still sitting in the
+			    // field), sync its fresh result into that same cache so a
+			    // manual Verify click immediately corrects a stale badge
+			    // (e.g. a key that worked this morning and was revoked
+			    // since) instead of leaving it wrong until the cache
+			    // naturally expires at midnight.
+			    if (defined('SP_SPAPI_KEY') && $_GET['api_key'] === SP_SPAPI_KEY) {
+			        include_once(SP_CTRLPATH."/information.ctrl.php");
+			        (new InformationController())->updateTodayInformation(SettingsController::mapSpApiLogStatus($logInfo), 'spapi_check');
+			    }
+
 			    $upgradeReason = $logInfo['upgrade_reason'] ?? '';
 			    $upgradeBtn = in_array($upgradeReason, ['expired', 'monthly_limit']) ? ' <a href="javascript:void(0);" onclick="window.spapiShowUpgradePopup()" class="btn btn-sm btn-warning mt-1"><i class="fas fa-arrow-circle-up"></i> Upgrade Plan</a>' : '';
 
@@ -167,6 +232,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			        $monthlyUsed  = $usageData['monthly_used'] ?? 0;
 			        $serpLimit    = $usageData['serp_limit'] ?? 0;
 			        $serpUsed     = $usageData['serp_used'] ?? 0;
+			        // api.account.ctrl.php (spAPI server) returns this
+			        // alongside serp_limit/serp_used, same per-type usage
+			        // shape - just never read on this side, so the Search
+			        // Volume quota was invisible here even though it's
+			        // tracked and shown right next to it on the spAPI
+			        // admin's own usage dashboard.
+			        $searchVolumeLimit = $usageData['search_volume_limit'] ?? 0;
+			        $searchVolumeUsed  = $usageData['search_volume_used'] ?? 0;
 			        $planName     = $usageData['plan_name'] ?? '';
 			        $msg = "{$_SESSION['text']['label']['Success']}";
 			        if ($planName) {
@@ -175,6 +248,9 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			        $msg .= "<br>Monthly Usage: <b>$monthlyUsed/$monthlyLimit</b>";
 			        if ($serpLimit > 0) {
 			            $msg .= "<br>SERP Usage: <b>$serpUsed/$serpLimit</b>";
+			        }
+			        if ($searchVolumeLimit > 0) {
+			            $msg .= "<br>Search Volume Usage: <b>$searchVolumeUsed/$searchVolumeLimit</b>";
 			        }
 			        if ($upgradeBtn) {
 			            $msg .= "<br>Monthly limit reached." . $upgradeBtn;
@@ -194,6 +270,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 		case "spapi_upgrade_skip":
 			$controller->skipSpApiUpgrade();
+			break;
+
+		case "version_upgrade_skip":
+			$controller->skipVersionUpgradePopup();
 			break;
 
 		default:

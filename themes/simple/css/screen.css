@@ -867,6 +867,28 @@ div.tab button.active {	background-color: #ccc;}
     text-decoration: underline;
 }
 
+/* === Crawl Log Manager (log/crawlloglist.ctp.php) ===
+   Reference/Subject/Details routinely hold a full crawled URL or a raw
+   log message - unconstrained, .list's default center-align turned those
+   into walls of wrapped text spanning 5+ lines per row, with the ID/
+   Report Type header labels squeezed into column-width-starved vertical
+   wrapping to compensate. Fixed column widths (set inline on this page's
+   own header cells) now need table-layout:fixed to actually hold, and
+   this single-line + ellipsis + title-attribute-on-hover treatment turns
+   each long value into a scannable one-line row - nothing is lost, the
+   full text is still there on hover/selection. */
+.crawl-log-table {
+    table-layout: fixed;
+}
+.crawl-log-table .crawl-log-truncate {
+    max-width: 0; /* required for text-overflow:ellipsis to respect a
+                     table-layout:fixed column's actual width */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
 #cust_tab th a {
     color: #282222;
     text-decoration: none;
@@ -970,6 +992,30 @@ div.tab button.active {	background-color: #ccc;}
 #navbarSupportedContent .form-inline select {width: 100px; height: 28px; margin-left: 5px;}
 #navbarSupportedContent .form-inline span {color: white;}
 #newsalert{font-size: 15px;}
+
+/* Sticky footer: on a page shorter than the viewport, plain document
+   flow left the footer sitting right after the short content, with a
+   large, visually dead gap of plain body background between it and the
+   actual bottom of the viewport. flex-column + min-height:100vh here,
+   paired with .sp-main-content's flex:1 0 auto below, pushes the footer
+   (and anything after it in the DOM) down to the true bottom of the
+   viewport when content is short, while changing nothing for a page
+   taller than the viewport. */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Sticky footer, part 2: the content wrapper grows to absorb any extra
+   space in the flex column above, so .footer-sp lands at the true bottom
+   of a short page instead of right after the content with dead space
+   below it. flex-shrink:0 matters here - without it, a page TALLER than
+   the viewport could have this shrink below its own content height
+   instead of just scrolling normally like before. */
+.sp-main-content {
+    flex: 1 0 auto;
+}
 
 /* === FOOTER STYLES === */
 .footer-sp {
@@ -3931,7 +3977,8 @@ a:hover .far {
     margin-bottom: 4px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+    text-align: left;
     gap: 5px;
 }
 
@@ -3948,7 +3995,10 @@ a:hover .far {
 }
 
 .spapi-plan-cta-btn {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
     width: 100%;
     font-size: 11px;
     font-weight: 700;
@@ -3959,7 +4009,6 @@ a:hover .far {
     border: 1px solid #bee3f8;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
-    text-align: center;
     box-sizing: border-box;
 }
 
@@ -4040,6 +4089,24 @@ a:hover .far {
     margin-top: 4px;
 }
 
+.spapi-free-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 5px 12px;
+    background: #d4edda;
+    color: #1e7e34;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.spapi-free-badge-sep {
+    opacity: 0.55;
+    margin: 0 2px;
+}
+
 .spapi-upgrade-contact {
     margin-top: 12px;
     font-size: 13px;
@@ -4049,4 +4116,272 @@ a:hover .far {
 .spapi-upgrade-contact i {
     color: #0a66d1;
     margin-right: 3px;
+}
+
+/* ===== Setup Wizard ===== */
+.sp-wizard-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.55);
+    z-index: 9999;
+    animation: fadeIn 0.2s ease;
+}
+.sp-wizard-box {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+    width: 600px;
+    max-width: 96vw;
+    z-index: 10000;
+    animation: slideDown 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    max-height: 92vh;
+}
+.sp-wizard-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d5db5 100%);
+    color: #fff;
+    padding: 18px 24px 14px;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+}
+.sp-wizard-header h4 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    font-weight: 700;
+}
+.sp-wizard-steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+.sp-wizard-step-item {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+.sp-wizard-step-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.25);
+    border: 2px solid rgba(255,255,255,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7);
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+.sp-wizard-step-dot.active {
+    background: #fff;
+    border-color: #fff;
+    color: #1a73e8;
+}
+.sp-wizard-step-dot.done {
+    background: rgba(255,255,255,0.6);
+    border-color: rgba(255,255,255,0.8);
+    color: #0d5db5;
+}
+.sp-wizard-step-line {
+    flex: 1;
+    height: 2px;
+    background: rgba(255,255,255,0.25);
+    margin: 0 3px;
+}
+.sp-wizard-step-line.done {
+    background: rgba(255,255,255,0.7);
+}
+.sp-wizard-body {
+    padding: 24px 24px 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+.sp-wizard-panel { display: none; }
+.sp-wizard-panel.active { display: block; }
+.sp-wizard-panel h5 {
+    font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #1a73e8;
+}
+.sp-wizard-panel p { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+.sp-wizard-info-box {
+    background: #f0f7ff;
+    border-left: 4px solid #1a73e8;
+    padding: 12px 14px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #333;
+}
+.sp-wizard-footer {
+    padding: 14px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
+}
+.sp-wizard-footer-left { display: flex; gap: 8px; }
+.sp-wizard-footer-right { display: flex; gap: 8px; }
+/* === PWA install prompt banner (see layout/default.ctp.php) ===
+   Chrome/Edge/Android only - the beforeinstallprompt event this relies
+   on has no Safari/iOS equivalent, so the banner simply never appears
+   there (no separate iOS instructional variant is built here). Sits
+   below the top navbar, not the bottom PWA tab bar, so it never
+   competes for space with sp-pwa-bottomnav on a phone. */
+#sp-pwa-install-banner {
+    display: none;
+    background: linear-gradient(135deg, #9a0000 0%, #5c0000 100%);
+    color: #ffffff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    padding: 12px 20px;
+}
+.sp-pwa-install-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.sp-pwa-install-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+.sp-pwa-install-text {
+    flex: 1;
+    min-width: 0;
+}
+.sp-pwa-install-text strong {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+.sp-pwa-install-text p {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.78);
+}
+.sp-pwa-install-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+#sp-pwa-install-btn {
+    background: #ffffff;
+    color: #6b0000;
+    border: none;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    padding: 6px 18px;
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+#sp-pwa-install-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    color: #6b0000;
+}
+.sp-pwa-install-dismiss {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    opacity: 0.75;
+    font-size: 18px;
+    line-height: 1;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, opacity 0.15s ease;
+}
+.sp-pwa-install-dismiss:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.15);
+}
+@media screen and (max-width: 576px) {
+    .sp-pwa-install-text p {
+        display: none;
+    }
+}
+
+.sp-wizard-success-icon {
+    text-align: center;
+    font-size: 52px;
+    color: #34a853;
+    margin-bottom: 10px;
+}
+
+/* Setup Tour refresh-result line (feature_tour_popup.ctp.php) - label
+   neutral, detail colored by connected/failed, matching classic. */
+.sp-tour-refresh-result-row {
+    font-size: 12.5px;
+    font-weight: 600;
+    text-align: right;
+    padding: 6px 0 0 0;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.25s ease;
+}
+.sp-tour-refresh-result-row.sp-tour-refresh-result-show {
+    opacity: 1;
+    max-height: 42px;
+}
+.sp-tour-refresh-result-label {
+    color: #4b5165;
+}
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-ok {
+    color: #1f9d55;
+}
+.sp-tour-refresh-result-detail.sp-tour-refresh-result-fail {
+    color: #c0392b;
+}
+
+/* Step 2's "+N more websites" hint and the Cron step's Test-now box -
+   see feature_tour_popup.ctp.php / classic's screen.css for context. */
+.sp-tour-more-websites-hint {
+    font-size: 13px;
+    padding: 8px 2px 0 2px;
+    margin-top: 0;
+}
+.sp-tour-cron-test-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 0;
+}
+.sp-tour-cron-test-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+}
+.sp-tour-cron-test-result {
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.sp-tour-cron-test-result:not(:empty) {
+    margin-top: 6px;
+}
+.sp-tour-cron-test-result.sp-tour-cron-test-busy {
+    color: #c98a13;
+}
+.sp-tour-cron-ping-hint {
+    font-size: 13px;
+    color: #64748b;
+    padding: 0 2px;
 }
