@@ -29,7 +29,13 @@ services:
     container_name: seopanel_phpmyadmin
     environment:
       - PMA_HOST=db
-      - PMA_ABSOLUTE_URI=http://localhost/phpmyadmin/
+      # must match how this container is actually reached - it's mapped
+      # straight to the host port below with no path prefix, not proxied
+      # under /phpmyadmin/. A mismatch here makes phpMyAdmin generate the
+      # session cookie with the wrong path, which the browser then silently
+      # refuses to send back - surfaces as "Failed to set session cookie"
+      # on login, misleadingly blamed on HTTP vs HTTPS.
+      - PMA_ABSOLUTE_URI=http://localhost:8081/
     ports:
       - "8081:80"
     depends_on:
