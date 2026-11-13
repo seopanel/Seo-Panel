@@ -19,8 +19,19 @@ if (!$userId) {
 
 $service  = isset($_GET['service']) ? $_GET['service'] : '';
 $code     = isset($_GET['code'])    ? $_GET['code']    : '';
-$state    = isset($_GET['state'])   ? $_GET['state']   : '';  // plugin_id stored here
-$pluginId = intval($state);
+$state    = isset($_GET['state'])   ? $_GET['state']   : '';  // "pluginId:nonce"
+
+// state is "pluginId:nonce". The nonce must match the one this same session
+// stored before it was sent off to the provider - without this check, an
+// attacker could start their own OAuth flow, capture the resulting code,
+// and have a logged-in victim's session exchange it here, linking the
+// attacker's WordPress.com/Tumblr account to the victim (OAuth login CSRF).
+$stateParts    = explode(':', $state, 2);
+$pluginId      = intval($stateParts[0] ?? 0);
+$stateNonce    = $stateParts[1] ?? '';
+$expectedNonce = $_SESSION['as_oauth_state'][$service] ?? '';
+unset($_SESSION['as_oauth_state'][$service]);
+$stateIsValid  = !empty($stateNonce) && !empty($expectedNonce) && hash_equals($expectedNonce, $stateNonce);
 
 // Load ArticleSubmitter plugin settings manually
 include_once(SP_CTRLPATH . "/user-token.ctrl.php");
@@ -49,6 +60,10 @@ switch ($service) {
     case 'wordpress':
         if (empty($code)) {
             header('Location: ' . $redirectBase . '&connect_error=missing_code');
+            exit;
+        }
+        if (!$stateIsValid) {
+            header('Location: ' . $redirectBase . '&connect_error=invalid_state');
             exit;
         }
 
@@ -86,6 +101,10 @@ switch ($service) {
     case 'tumblr':
         if (empty($code)) {
             header('Location: ' . $redirectBase . '&connect_error=missing_code');
+            exit;
+        }
+        if (!$stateIsValid) {
+            header('Location: ' . $redirectBase . '&connect_error=invalid_state');
             exit;
         }
 
