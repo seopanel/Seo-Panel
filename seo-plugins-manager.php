@@ -45,6 +45,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->reInstallSeoPlugin($_POST['pid']);
 			break;
 
+		case "upload":
+			$controller->uploadPlugin($_POST);
+			break;
+
 		default:
 		    $controller->listSeoPlugins('', false, $_POST);
 		    break;
@@ -65,6 +69,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 		case "listinfo":
 			$controller->listPluginInfo($_GET['pid']);
+			break;
+
+		case "showupload":
+			$controller->showUploadPlugin($_GET);
 			break;
 
 		default:

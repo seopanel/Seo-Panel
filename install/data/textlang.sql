@@ -33359,3 +33359,22 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'common', 'Current Value', 'Current Value'),
 ('en', 'common', 'Previous Value', 'Previous Value'),
 ('en', 'common', 'Change', 'Change');
+
+-- 7.1.0: Seo Plugins Manager's new "Upload Plugin" (zip upload install/
+-- upgrade) feature. views/seoplugins/uploadplugin.ctp.php and
+-- listseoplugins.ctp.php both fall back to these same English literals
+-- directly if this hasn't reached an install yet (e.g. an existing 7.0.0
+-- install upgrading its code without re-running this seed file), so
+-- functionality never depends on this row actually being present.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'plugin', 'Upload Plugin', 'Upload Plugin'),
+('en', 'plugin', 'Plugin Zip File', 'Plugin Zip File'),
+('en', 'plugin', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.');
+
+-- 7.1.0: Themes Manager's own "Upload Theme" counterpart to the above.
+-- Same fallback-if-not-seeded-yet reasoning applies -
+-- views/theme/uploadtheme.ctp.php and listthemes.ctp.php.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'theme', 'Upload Theme', 'Upload Theme'),
+('en', 'theme', 'Theme Zip File', 'Theme Zip File'),
+('en', 'theme', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.');

@@ -459,6 +459,61 @@ class SeoPluginsController extends Controller{
 		}		
 	}
 
+	# func to show the upload-plugin-zip form
+	function showUploadPlugin($data=[]){
+		checkAdminLoggedIn();
+		$this->render('seoplugins/uploadplugin');
+	}
+
+	# func to handle an uploaded plugin zip - installs it fresh if this is
+	# a new plugin, or upgrades the existing one in place if a plugin of
+	# the same name is already registered. Reuses the existing upgrade/
+	# detect logic below rather than duplicating it - this only handles
+	# getting the uploaded zip's files safely onto disk.
+	function uploadPlugin($data=[]){
+		checkAdminLoggedIn();
+
+		if (empty($_FILES['plugin_zip']) || $_FILES['plugin_zip']['error'] !== UPLOAD_ERR_OK) {
+			echo json_encode(['status' => 'error', 'message' => 'Please select a plugin zip file to upload.']);
+			return;
+		}
+
+		include_once(SP_LIBPATH.'/pluginupload.class.php');
+		$installer = new PluginUploadInstaller();
+		list($status, $message, $pluginDirName) = $installer->run($_FILES['plugin_zip']['tmp_name'], $_FILES['plugin_zip']['name']);
+
+		if (!$status) {
+			echo json_encode(['status' => 'error', 'message' => $message]);
+			return;
+		}
+
+		// already registered under this name? treat it as an upgrade
+		// (re-parses plugin.xml, runs upgrade.sql, updates the existing
+		// row) - otherwise let the normal new-plugin detection pick it up
+		// and run its database.sql
+		$existingInfo = $this->__getSeoPluginInfo($pluginDirName, 'name');
+		if (!empty($existingInfo['id'])) {
+			$pluginInfo = $this->parsePluginInfoFile($pluginDirName);
+			$pluginDBFile = SP_PLUGINPATH."/".$pluginDirName."/".SP_PLUGINUPGRADEFILE;
+			if (file_exists($pluginDBFile)) {
+				$this->db->debugMode = false;
+				$this->db->importDatabaseFile($pluginDBFile, false);
+			}
+			$this->updatePluginInfo($existingInfo['id'], $pluginInfo);
+			$this->__changeInstallStatus($existingInfo['id'], 1);
+			// label comes from the uploaded zip's own plugin.xml - escaped
+			// before going into a message that's rendered as raw HTML
+			// client-side (innerHTML), same reasoning as every other
+			// admin-controlled-but-still-escaped value elsewhere in this
+			// codebase
+			echo json_encode(['status' => 'success', 'message' => "Plugin <b>".htmlspecialchars($pluginInfo['label'], ENT_QUOTES)."</b> uploaded and upgraded successfully!"]);
+		} else {
+			$this->__updateAllSeoPlugins();
+			$freshInfo = $this->__getSeoPluginInfo($pluginDirName, 'name');
+			echo json_encode(['status' => 'success', 'message' => "Plugin <b>".htmlspecialchars($freshInfo['label'], ENT_QUOTES)."</b> uploaded and installed successfully! Activate it below to start using it."]);
+		}
+	}
+
 	# to check whether the directory is plugin
 	function isPluginDirectory($file){
 		if ( ($file != ".") && ($file != "..") && ($file != ".svn") &&  is_dir(SP_PLUGINPATH."/".$file) ) {

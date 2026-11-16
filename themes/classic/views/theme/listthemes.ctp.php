@@ -86,6 +86,7 @@ if(!empty($msg)){
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
+    		<a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php?sec=showupload', 'content')" class="btn btn-primary"><i class="fa fa-upload"></i> <?php echo !empty($spTextTheme['Upload Theme']) ? $spTextTheme['Upload Theme'] : 'Upload Theme'?></a>&nbsp;
     		<a href="<?php echo SP_THEMESITE?>" class="btn btn-info" target="_blank"><?php echo $spTextTheme['Download Seo Panel Themes']?> &gt;&gt;</a>
     	</td>
 	</tr>

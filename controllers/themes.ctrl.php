@@ -165,7 +165,19 @@ class ThemesController extends Controller{
 			while (false !== ($file = readdir($handle))) {
 				if ( $this->isThemeDirectory($file) ) {
 					$themeName = $file;
-					$themeInfo = $this->__getThemeInfo($themeName, 'name');
+					// $themeName here is the FOLDER name (from opendir()),
+					// but this looked it up against the `name` column
+					// (the parsed, human-readable theme.xml <name>, e.g.
+					// "Test Upload Theme") instead of `folder` - only
+					// "worked" for classic/simple/business because their
+					// folder happens to case-insensitively equal their
+					// display name (MySQL's default collation). Any
+					// other theme whose folder name doesn't match its
+					// display name got re-inserted as a brand new row on
+					// every single call (including the plain page load
+					// that triggers __updateAllThemes() with no action),
+					// accumulating duplicates.
+					$themeInfo = $this->__getThemeInfo($themeName, 'folder');
 					if(empty($themeInfo['id'])){
 						
 						// parse theme info and save details
@@ -183,6 +195,53 @@ class ThemesController extends Controller{
 		}
 	}
 	
+	# func to show the upload-theme-zip form
+	function showUploadTheme($data=[]){
+		checkAdminLoggedIn();
+		$this->render('theme/uploadtheme');
+	}
+
+	# func to handle an uploaded theme zip - installs it fresh if this is
+	# a new theme, or upgrades the existing one in place if a theme of
+	# the same folder name is already registered. Reuses the existing
+	# upgrade/detect logic below rather than duplicating it - this only
+	# handles getting the uploaded zip's files safely onto disk.
+	function uploadTheme($data=[]){
+		checkAdminLoggedIn();
+
+		if (empty($_FILES['theme_zip']) || $_FILES['theme_zip']['error'] !== UPLOAD_ERR_OK) {
+			echo json_encode(['status' => 'error', 'message' => 'Please select a theme zip file to upload.']);
+			return;
+		}
+
+		include_once(SP_LIBPATH.'/themeupload.class.php');
+		$installer = new ThemeUploadInstaller();
+		list($status, $message, $themeDirName) = $installer->run($_FILES['theme_zip']['tmp_name'], $_FILES['theme_zip']['name']);
+
+		if (!$status) {
+			echo json_encode(['status' => 'error', 'message' => $message]);
+			return;
+		}
+
+		// already registered under this folder name? treat it as an
+		// upgrade (re-parses theme.xml, updates the existing row) -
+		// otherwise let the normal new-theme detection pick it up
+		$existingInfo = $this->__getThemeInfo($themeDirName, 'folder');
+		if (!empty($existingInfo['id'])) {
+			$themeInfo = $this->parseThemeInfoFile($themeDirName);
+			$this->updateThemeInfo($existingInfo['id'], $themeInfo);
+			$this->__changeInstallStatus($existingInfo['id'], 1);
+			// name/version come from the uploaded zip's own theme.xml -
+			// escaped before going into a message rendered as raw HTML
+			// client-side (innerHTML)
+			echo json_encode(['status' => 'success', 'message' => "Theme <b>".htmlspecialchars($themeInfo['name'], ENT_QUOTES)." ".htmlspecialchars($themeInfo['version'], ENT_QUOTES)."</b> uploaded and upgraded successfully!"]);
+		} else {
+			$this->__updateAllThemes();
+			$freshInfo = $this->__getThemeInfo($themeDirName, 'folder');
+			echo json_encode(['status' => 'success', 'message' => "Theme <b>".htmlspecialchars($freshInfo['name'], ENT_QUOTES)." ".htmlspecialchars($freshInfo['version'], ENT_QUOTES)."</b> uploaded and installed successfully! Activate it below to start using it."]);
+		}
+	}
+
 	# func to parse theme info file
 	function parseThemeInfoFile($file) {
 		$themeInfo = array();
