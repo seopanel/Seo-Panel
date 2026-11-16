@@ -43,6 +43,10 @@ class PluginUploadInstaller extends ZipUploadInstaller {
         return 'QuickWebProxy';
     }
 
+    function __getInfoFileName() {
+        return SP_PLUGININFOFILE;
+    }
+
     # sanity-check this actually looks like a Seo Panel plugin, not an
     # arbitrary zip - same two files manageSeoPlugins() itself requires to
     # load a plugin (parsePluginInfoFile() for plugin.xml, then

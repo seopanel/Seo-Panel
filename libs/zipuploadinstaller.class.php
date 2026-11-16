@@ -43,6 +43,15 @@ abstract class ZipUploadInstaller {
 
     var $backupPath;
 
+    # the uploaded artifact's own version/name, parsed from its info file
+    # as soon as __resolveSourceRoot() confirms it exists - i.e. BEFORE
+    # the install step that might still fail (e.g. a permissions error).
+    # Lets the calling controller report "attempted to upgrade from X to
+    # Y, but..." accurately even when run() ultimately returns failure,
+    # not just on success.
+    var $uploadedVersion;
+    var $uploadedLabel;
+
     # entry point - runs the full validate -> extract -> install flow.
     # Returns [success, message, dirName]
     function run($uploadedTmpPath, $originalFileName) {
@@ -83,14 +92,25 @@ abstract class ZipUploadInstaller {
 
     # remove staging/backup directories left behind by a previous run, so
     # only the most recent attempt's backup is ever kept around (same
-    # retention policy as OnlineUpgrade's own cleanup)
+    # retention policy as OnlineUpgrade's own cleanup). Only removes ones
+    # older than 5 minutes - two admins (or two tabs) uploading within
+    # the same short window would otherwise race: the second upload's own
+    # cleanup pass could delete the FIRST upload's still-in-progress
+    # staging directory out from under it, since both share the same glob
+    # pattern. A real previous run's leftovers are always much older than
+    # this by the time the next upload happens.
     function __cleanupOldArtifacts() {
         $prefix = $this->__getStagingPrefix();
+        $cutoff = time() - 300;
         foreach (glob(SP_TMPPATH."/{$prefix}_staging_*", GLOB_ONLYDIR) ?: [] as $old) {
-            $this->__rrmdir($old);
+            if ((@filemtime($old) ?: 0) < $cutoff) {
+                $this->__rrmdir($old);
+            }
         }
         foreach (glob(SP_TMPPATH."/{$prefix}_backup_*", GLOB_ONLYDIR) ?: [] as $old) {
-            $this->__rrmdir($old);
+            if ((@filemtime($old) ?: 0) < $cutoff) {
+                $this->__rrmdir($old);
+            }
         }
     }
 
@@ -126,6 +146,21 @@ abstract class ZipUploadInstaller {
         $stagingDir = SP_TMPPATH."/".$this->__getStagingPrefix()."_staging_".time()."_".mt_rand(1000, 9999);
         $realStagingParent = realpath(SP_TMPPATH);
 
+        // the upload size check in __validateUploadedFile() only looks at
+        // the COMPRESSED file on disk - a small zip can still expand to
+        // an enormous amount of data (a "zip bomb") via a highly
+        // compressible payload, exhausting disk space on extraction. Sum
+        // each entry's own uncompressed size up front, before extracting
+        // any of it, and cap the entry count too (a zip with a huge
+        // number of tiny/empty entries is its own, cheaper way to burn
+        // resources via sheer filesystem-entry creation, independent of
+        // total byte size).
+        if ($zip->numFiles > 5000) {
+            $zip->close();
+            throw new Exception('The uploaded zip has too many files (max 5000).');
+        }
+
+        $totalUncompressedSize = 0;
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entryName = $zip->statIndex($i)['name'];
             if (strpos($entryName, '..') !== false || strpos($entryName, "\0") !== false) {
@@ -138,6 +173,12 @@ abstract class ZipUploadInstaller {
             if (strpos($normalized, $realStagingParent.'/'.basename($stagingDir).'/') !== 0) {
                 $zip->close();
                 throw new Exception('The uploaded zip contains an unsafe file path.');
+            }
+
+            $totalUncompressedSize += $zip->statIndex($i)['size'];
+            if ($totalUncompressedSize > 262144000) {
+                $zip->close();
+                throw new Exception('The uploaded zip is too large once uncompressed (250MB max).');
             }
         }
 
@@ -177,7 +218,44 @@ abstract class ZipUploadInstaller {
         // subclass hook - throws its own Exception on failure
         $this->__validateStructure($sourceRoot, $dirName);
 
+        // capture what we're ABOUT to install, before the (possibly
+        // failing) __install() step - see $uploadedVersion's own comment
+        $parsedInfo = $this->__parseInfoFile($sourceRoot.'/'.$this->__getInfoFileName());
+        $this->uploadedVersion = !empty($parsedInfo['version']) ? $parsedInfo['version'] : '1.0.0';
+        $this->uploadedLabel = !empty($parsedInfo['label']) ? $parsedInfo['label'] : (!empty($parsedInfo['name']) ? $parsedInfo['name'] : $dirName);
+
         return [$sourceRoot, $dirName];
+    }
+
+    # mirrors SeoPluginsController::parsePluginInfoFile()/
+    # ThemesController::parseThemeInfoFile() - both parse the exact same
+    # flat XML shape (<plugin>/<theme> with <version>/<label-or-name>/...
+    # child tags), just from the live install path instead of a staging
+    # one. Deliberately read-only/best-effort here: __validateStructure()
+    # already confirmed the file exists, so a parse failure at this point
+    # (malformed XML) just means $uploadedVersion/$uploadedLabel stay
+    # empty - not a reason to fail the whole upload, since the real
+    # parsePluginInfoFile()/parseThemeInfoFile() call that runs after a
+    # successful install is what the DB row actually ends up trusting.
+    function __parseInfoFile($infoFilePath) {
+        $info = [];
+        if (!file_exists($infoFilePath)) {
+            return $info;
+        }
+
+        try {
+            $xml = new XML_Parser;
+            $parsed = $xml->parse($infoFilePath);
+            if (!empty($parsed[0]['child'])) {
+                foreach ($parsed[0]['child'] as $child) {
+                    $info[strtolower($child['name'])] = $child['content'];
+                }
+            }
+        } catch (Exception $e) {
+            // best-effort, see function comment
+        }
+
+        return $info;
     }
 
     # back up any existing plugin/theme directory of the same name (so a
@@ -258,6 +336,7 @@ abstract class ZipUploadInstaller {
     abstract function __getArtifactLabel();
     abstract function __getStagingPrefix();
     abstract function __getExampleName();
+    abstract function __getInfoFileName();
     abstract function __validateStructure($sourceRoot, $dirName);
 }
 ?>

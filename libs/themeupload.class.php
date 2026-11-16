@@ -43,6 +43,10 @@ class ThemeUploadInstaller extends ZipUploadInstaller {
         return 'classic';
     }
 
+    function __getInfoFileName() {
+        return SP_THEMEINFOFILE;
+    }
+
     # sanity-check this actually looks like a Seo Panel theme, not an
     # arbitrary zip - theme.xml is what ThemesController::
     # parseThemeInfoFile() requires, and every real theme's views live

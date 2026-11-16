@@ -216,10 +216,27 @@ class ThemesController extends Controller{
 
 		include_once(SP_LIBPATH.'/themeupload.class.php');
 		$installer = new ThemeUploadInstaller();
+
+		// $installer->uploadedVersion/uploadedLabel are set as soon as
+		// the zip's own theme.xml is confirmed to exist, before the
+		// possibly-failing install step - lets a FAILURE message still
+		// say what version was being attempted, not just success ones.
 		list($status, $message, $themeDirName) = $installer->run($_FILES['theme_zip']['tmp_name'], $_FILES['theme_zip']['name']);
 
 		if (!$status) {
-			echo json_encode(['status' => 'error', 'message' => $message]);
+			$failMsg = $message;
+			if (!empty($themeDirName) && !empty($installer->uploadedVersion)) {
+				$existingInfo = $this->__getThemeInfo($themeDirName, 'folder');
+				$attemptedLabel = htmlspecialchars($installer->uploadedLabel, ENT_QUOTES);
+				$attemptedVersion = htmlspecialchars($installer->uploadedVersion, ENT_QUOTES);
+				if (!empty($existingInfo['id']) && $existingInfo['version'] != $installer->uploadedVersion) {
+					$fromVersion = htmlspecialchars($existingInfo['version'], ENT_QUOTES);
+					$failMsg = "Failed to upgrade theme <b>{$attemptedLabel}</b> from version {$fromVersion} to {$attemptedVersion}: {$message}";
+				} else {
+					$failMsg = "Failed to install theme <b>{$attemptedLabel}</b> (version {$attemptedVersion}): {$message}";
+				}
+			}
+			echo json_encode(['status' => 'error', 'message' => $failMsg]);
 			return;
 		}
 
@@ -228,17 +245,25 @@ class ThemesController extends Controller{
 		// otherwise let the normal new-theme detection pick it up
 		$existingInfo = $this->__getThemeInfo($themeDirName, 'folder');
 		if (!empty($existingInfo['id'])) {
+			$fromVersion = $existingInfo['version'];
 			$themeInfo = $this->parseThemeInfoFile($themeDirName);
 			$this->updateThemeInfo($existingInfo['id'], $themeInfo);
 			$this->__changeInstallStatus($existingInfo['id'], 1);
 			// name/version come from the uploaded zip's own theme.xml -
 			// escaped before going into a message rendered as raw HTML
 			// client-side (innerHTML)
-			echo json_encode(['status' => 'success', 'message' => "Theme <b>".htmlspecialchars($themeInfo['name'], ENT_QUOTES)." ".htmlspecialchars($themeInfo['version'], ENT_QUOTES)."</b> uploaded and upgraded successfully!"]);
+			$name = htmlspecialchars($themeInfo['name'], ENT_QUOTES);
+			$toVersion = htmlspecialchars($themeInfo['version'], ENT_QUOTES);
+			$versionText = ($fromVersion != $themeInfo['version'])
+				? "from version ".htmlspecialchars($fromVersion, ENT_QUOTES)." to {$toVersion}"
+				: "(already at version {$toVersion})";
+			echo json_encode(['status' => 'success', 'message' => "Theme <b>{$name}</b> upgraded successfully {$versionText}."]);
 		} else {
 			$this->__updateAllThemes();
 			$freshInfo = $this->__getThemeInfo($themeDirName, 'folder');
-			echo json_encode(['status' => 'success', 'message' => "Theme <b>".htmlspecialchars($freshInfo['name'], ENT_QUOTES)." ".htmlspecialchars($freshInfo['version'], ENT_QUOTES)."</b> uploaded and installed successfully! Activate it below to start using it."]);
+			$name = htmlspecialchars($freshInfo['name'], ENT_QUOTES);
+			$version = htmlspecialchars($freshInfo['version'], ENT_QUOTES);
+			echo json_encode(['status' => 'success', 'message' => "Theme <b>{$name}</b> (version {$version}) installed successfully! Activate it below to start using it."]);
 		}
 	}
 
