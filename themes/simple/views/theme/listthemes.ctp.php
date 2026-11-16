@@ -42,11 +42,18 @@ if(!empty($msg)){
 	if(count($list) > 0){
 		foreach($list as $i => $listInfo){
 
-            $activateLink = SP_WEBPATH."/admin-panel.php?menu_selected=themes-manager&start_script=themes-manager&sec=activate&theme_id={$listInfo['id']}&pageno=$pageNo";
+            // Plain href to admin-panel.php?...&sec=activate used to work, but
+            // adminpanel.ctrl.php strips 'sec' before forwarding to the inner
+            // AJAX script (added for an unrelated sec-collision fix), so that
+            // param never reached themes-manager.php and activateTheme() was
+            // never called - Activate silently just reloaded the list. Routed
+            // through scriptDoLoad straight to themes-manager.php instead,
+            // same as this row's own theme-name/listinfo link below.
+            $activateOnclick = "scriptDoLoad('themes-manager.php?sec=activate&theme_id={$listInfo['id']}&pageno=$pageNo', 'content')";
 			if($listInfo['status']){
 				$statLabel = "<span class='badge badge-success py-2 px-3 text-light'>Current</span>";
 			}else{
-				$statLabel = '<a href="'.$activateLink.'" class="btn btn-success">'.$spText['common']["Activate"].'</a>';
+				$statLabel = '<a href="javascript:void(0);" onclick="'.$activateOnclick.'" class="btn btn-success">'.$spText['common']["Activate"].'</a>';
 			}
 
 			?>
@@ -79,6 +86,7 @@ if(!empty($msg)){
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
+    		<a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php?sec=showupload', 'content')" class="btn btn-primary"><i class="fa fa-upload"></i> <?php echo !empty($spTextTheme['Upload Theme']) ? $spTextTheme['Upload Theme'] : 'Upload Theme'?></a>&nbsp;
     		<a href="<?php echo SP_THEMESITE?>" class="btn btn-info" target="_blank"><?php echo $spTextTheme['Download Seo Panel Themes']?> &gt;&gt;</a>
     	</td>
 	</tr>

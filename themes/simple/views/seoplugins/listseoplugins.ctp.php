@@ -116,6 +116,7 @@ if(!empty($msg)){
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
+    		<a href="javascript:void(0);" onclick="scriptDoLoad('seo-plugins-manager.php?sec=showupload', 'content')" class="btn btn-primary"><i class="fa fa-upload"></i> <?php echo !empty($spTextPlugin['Upload Plugin']) ? $spTextPlugin['Upload Plugin'] : 'Upload Plugin'?></a>&nbsp;
     		<a href="<?php echo SP_PLUGINSITE?>" class="btn btn-info" target="_blank"><?php echo $spTextPlugin['Download Seo Panel Plugins']?> &gt;&gt;</a>
     	</td>
 	</tr>

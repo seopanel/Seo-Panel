@@ -1,0 +1,17 @@
+--
+-- Seo Panel 7.1.0 changes
+--
+-- This version's actual schema changes were shipped entirely through the
+-- generic install/data/upgrade.sql catch-all instead of a dedicated
+-- per-version file - that file is unconditionally appended to every
+-- upgrade run regardless of starting version (see
+-- Install::getUpgradeDBFiles()), so this file was never actually needed
+-- for its own changes.
+--
+-- It exists only so Install::getUpgradeDBFiles() has a real file to find
+-- when upgrading from exactly 7.0.0 (the one version immediately before
+-- 7.1.0 in its $spVersionList) - without it, that lookup pointed at a
+-- nonexistent path, and file() returning false there fataled with
+-- "count(): Argument #1 ($value) must be of type Countable|array, bool
+-- given" partway through the upgrade, before the real upgrade.sql catch-
+-- all ever ran. Same reasoning as upgrade_v6.0.0_v7.0.0.sql.
