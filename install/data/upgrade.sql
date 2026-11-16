@@ -1,7 +1,7 @@
 --
 -- Seo Panel 6.1.0 changes
 --
-update `settings` set set_val='7.0.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
+update `settings` set set_val='7.1.0' WHERE `set_name` LIKE 'SP_VERSION_NUMBER';
 
 -- Store full SERP snapshot in searchresults
 ALTER TABLE `searchresults` ADD COLUMN `serp_results` MEDIUMTEXT DEFAULT NULL;
@@ -1229,15 +1229,19 @@ ALTER TABLE `webmaster_keywords` ENGINE=InnoDB;
 ALTER TABLE `webmaster_sitemaps` ENGINE=InnoDB;
 ALTER TABLE `website_search_analytics` ENGINE=InnoDB;
 
--- these four live in textlang.sql/plugin database.sql rather than
--- seopanel.sql, so a first pass over just seopanel.sql's table list
--- missed them - `texts` in particular is read on effectively every page
--- load (all UI copy comes from it) and written on every language-pack
--- update or Customizer text edit.
+-- these three live in textlang.sql rather than seopanel.sql, so a first
+-- pass over just seopanel.sql's table list missed them - `texts` in
+-- particular is read on effectively every page load (all UI copy comes
+-- from it) and written on every language-pack update or Customizer text
+-- edit. (`sd_settings` was removed from here - it's the SeoDiary
+-- PLUGIN's own table, created by plugins/SeoDiary/database.sql only on
+-- sites that actually have that optional plugin installed, and already
+-- created as InnoDB there - converting it doesn't belong in the CORE
+-- upgrade at all. Including it here broke every upgrade on a site
+-- without SeoDiary installed: "Table 'sd_settings' doesn't exist".)
 ALTER TABLE `languages` ENGINE=InnoDB;
 ALTER TABLE `texts` ENGINE=InnoDB;
 ALTER TABLE `translators` ENGINE=InnoDB;
-ALTER TABLE `sd_settings` ENGINE=InnoDB;
 
 -- Feature tour: a short, skippable educational walkthrough shown once to
 -- brand-new users, pointing out the dashboard, SEO tools, settings tabs,
