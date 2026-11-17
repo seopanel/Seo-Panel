@@ -153,6 +153,17 @@ class SaturationCheckerController extends Controller{
 				}
 				$saturationCount = !empty($r[1]) ? str_replace(',', '', $r[1]) : 0;
 				break;
+
+			// bug fix: $crawlInfo defaulted to crawl_status=1 BEFORE this
+			// switch runs, and nothing reset it for an unrecognized engine -
+			// printSearchEngineSaturation() passes $engine straight from
+			// GET/POST with no validation, so an unexpected value silently
+			// reported "0 indexed pages" as a genuine successful result
+			// instead of an error
+			default:
+				$crawlInfo['crawl_status'] = 0;
+				$crawlInfo['log_message'] = 'Unknown search engine';
+				break;
 		}
 
 		// update crawl log
@@ -220,6 +231,20 @@ class SaturationCheckerController extends Controller{
 		$this->db->query($sql);
 	}
 	
+	// func to fetch the most recent previously-saved value for one engine
+	// column - used by the cron paths to carry a FAILED engine's value
+	// forward instead of overwriting it with a false 0, when a SIBLING
+	// engine for the same website/day did succeed (see saveRankResults()'s
+	// own all-columns-every-row shape: one row always has both google AND
+	// msn, so a failed engine can't simply be left out of the insert).
+	// Falls back to 0 only when this website has no prior history at all.
+	function __getLastSaturationValue($websiteId, $col) {
+		$websiteId = intval($websiteId);
+		$col = in_array($col, array('google', 'msn'), true) ? $col : 'google';
+		$row = $this->db->select("select $col from saturationresults where website_id=$websiteId order by result_date desc limit 1", true);
+		return !empty($row[$col]) ? $row[$col] : 0;
+	}
+
 	# function check whether reports already saved
 	function isReportsExists($websiteId, $time) {
 		$resultDate = date('Y-m-d', $time);
@@ -232,20 +257,23 @@ class SaturationCheckerController extends Controller{
 	function showReports($searchInfo = '') {
 		
 		$userId = isLoggedIn();
-		if (!empty ($searchInfo['from_time'])) {
+		// bug fix: from_time/to_time are only ever meant to be plain dates,
+		// but were accepted as-is from GET/POST and (further down) echoed
+		// raw into an HTML attribute in saturationreport.ctp.php - reflected
+		// XSS. Whitelisting the format here closes that, same fix as
+		// showGraphicalReports() below.
+		if (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) {
 			$fromTime = $searchInfo['from_time'];
 		} else {
 			$fromTime = date('Y-m-d', strtotime('-30 days'));
 		}
-		
-		if (!empty ($searchInfo['to_time'])) {
+
+		if (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) {
 			$toTime = $searchInfo['to_time'];
 		} else {
 			$toTime = date('Y-m-d');
 		}
-		
-		$fromTime = addslashes($fromTime);
-		$toTime = addslashes($toTime);
+
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 
@@ -384,8 +412,13 @@ class SaturationCheckerController extends Controller{
 	function showGraphicalReports($searchInfo = '') {
 	
 		$userId = isLoggedIn();
-		$fromTime = !empty($searchInfo['from_time']) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
-		$toTime = !empty ($searchInfo['to_time']) ? $searchInfo['to_time'] : date("Y-m-d");
+		// bug fix: SQL injection - from_time/to_time went straight from
+		// GET/POST into the SQL string below with ZERO escaping (not even
+		// addslashes), and were also echoed raw into an HTML attribute in
+		// graphicalreport.ctp.php (reflected XSS). Whitelisting the format
+		// closes both at once, same fix as showReports() above.
+		$fromTime = (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-30 days'));
+		$toTime = (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) ? $searchInfo['to_time'] : date("Y-m-d");
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
 	

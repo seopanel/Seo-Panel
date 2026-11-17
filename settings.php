@@ -148,7 +148,13 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			    
 			    // if error occured
 			    if (isset($logInfo['crawl_status']) && ($logInfo['crawl_status'] == 0)) {
-			        showErrorMsg($logInfo['log_message']);
+			        // bug fix: log_message is Moz's own third-party API
+			        // error text (or forgeable via a network MITM, since
+			        // Spider disables SSL peer/host verification) - escape
+			        // before it reaches showErrorMsg(), which echoes it
+			        // unescaped (same bug class already fixed in
+			        // SaturationCheckerController::printSearchEngineSaturation())
+			        showErrorMsg(htmlspecialchars($logInfo['log_message'] ?? '', ENT_QUOTES));
 			    } else {
 			        $rowsAllotted = $usageData['quota']['allotted'] ?? 0;
 			        $rowsConsumed = $usageData['quota']['used'] ?? 0;

@@ -700,11 +700,19 @@ class CronController extends Controller {
 		// captcha/regex-mismatch on every engine silently wrote 0s
 		$saturationOk = false;
 		foreach ($saturationCtrler->colList as $col => $dbCol) {
-			list($websiteInfo[$col], $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
+			list($rank, $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
 			if (!empty($crawlInfo['crawl_status'])) {
+				$websiteInfo[$col] = $rank;
 				$saturationOk = true;
 			} else {
 				error_log("SaturationCheckerCron: $col check failed for website {$websiteInfo['id']} ($websiteUrl) - " . ($crawlInfo['log_message'] ?? 'unknown error'));
+				// bug fix: the $saturationOk gate below only ever protected
+				// against EVERY engine failing - when a sibling engine DID
+				// succeed, this failed engine's own column still got
+				// overwritten with a false 0 (saveRankResults() always
+				// writes both columns in one row). Carry its last known
+				// value forward instead.
+				$websiteInfo[$col] = $saturationCtrler->__getLastSaturationValue($websiteInfo['id'], $col);
 			}
 		}
 
@@ -1513,11 +1521,14 @@ class CronController extends Controller {
 			$saturationCtrler->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);
 			$saturationOk = false;
 			foreach ($saturationCtrler->colList as $col => $dbCol) {
-				list($websiteInfo[$col], $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
+				list($rank, $crawlInfo) = $saturationCtrler->__getSaturationRank($col, true, true);
 				if (!empty($crawlInfo['crawl_status'])) {
+					$websiteInfo[$col] = $rank;
 					$saturationOk = true;
 				} else {
 					error_log("saturationCheckerCronQueued: $col check failed for website {$websiteInfo['id']} ($websiteUrl) - " . ($crawlInfo['log_message'] ?? 'unknown error'));
+					// bug fix: same false-0 fix as saturationCheckerCron() above
+					$websiteInfo[$col] = $saturationCtrler->__getLastSaturationValue($websiteInfo['id'], $col);
 				}
 			}
 			if ($saturationOk) {

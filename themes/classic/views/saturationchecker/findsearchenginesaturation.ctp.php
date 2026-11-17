@@ -21,7 +21,13 @@
             }
             $tdWidth = "25%";               
             $debugVar = !empty($_POST['debug']) ? "&debug=1" : "";
-            $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . $_POST['debug_format'] : "" ;          
+            // bug fix: reflected XSS - debug_format was concatenated raw
+            // into a single-quoted JS string literal inside the inline
+            // <script> below; a value containing a quote broke out of
+            // that string and ran. urlencode() is both the correct way to
+            // build a query-string fragment AND closes the hole (its
+            // output never contains an unescaped quote/angle-bracket).
+            $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . urlencode($_POST['debug_format']) : "" ;
 			?>
 			<tr class="<?php echo $class?>">
 				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo $url?></td>
