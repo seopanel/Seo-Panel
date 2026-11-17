@@ -42,6 +42,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->reInstallTheme(intval($_POST['pid']));
 			break;
 
+		case "upload":
+			$controller->uploadTheme($_POST);
+			break;
+
 		default:
 			$controller->listThemes();
 			break;
@@ -61,6 +65,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 		case "listinfo":
 			$controller->listThemeInfo($_GET['pid']);
+			break;
+
+		case "showupload":
+			$controller->showUploadTheme($_GET);
 			break;
 
 		default:

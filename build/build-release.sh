@@ -111,7 +111,12 @@ if grep -q "'$VERSION'," install/install.class.php; then
 else
     # Insert right before the $spVersionList array's closing ");" - matches
     # the existing entries' exact indentation/quote style so the diff stays clean.
-    perl -0pi -e "s/(\\\$spVersionList\\s*=\\s*array\\s*\\([^)]*'6\\.0\\.0',\\n)(\\s*\\);)/\${1}\t\t    '$VERSION',\n\${2}/s" install/install.class.php
+    # Anchored on the LAST version entry already in the array (whatever it
+    # is), not a hardcoded one - a hardcoded anchor (this used to be
+    # '6.0.0') goes stale and silently stops matching the moment the NEXT
+    # release's build appends past it, exactly what happened building 7.1.0
+    # on top of 7.0.0.
+    perl -0pi -e "s/(\\\$spVersionList\\s*=\\s*array\\s*\\([^)]*'[0-9.]+',\\n)(\\s*\\);)/\${1}\t\t    '$VERSION',\n\${2}/s" install/install.class.php
     if ! grep -q "'$VERSION'," install/install.class.php; then
         echo "ERROR: could not find the expected \$spVersionList pattern to insert after - check install/install.class.php manually." >&2
         exit 1

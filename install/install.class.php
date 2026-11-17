@@ -1233,6 +1233,7 @@ class Install {
 		    '5.1.0',
 		    '6.0.0',
 		    '7.0.0',
+		    '7.1.0',
 		);
 		
 		// get current version number
