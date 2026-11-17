@@ -23,7 +23,7 @@
 	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
 </div>
 
@@ -37,7 +37,7 @@
 				<h5 class="modal-title" id="aipHelpModalLabel"><?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'?></p>
+				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'?></p>
 				<p><?php echo $spTextAIV['Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'] ?? 'Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'?></p>
 				<div class="aiv-discover-item">
 					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-comment-dots"></i></div>
@@ -114,6 +114,35 @@
 				</div>
 				<div style="background:#eef0f5; border-radius:6px; height:10px; overflow:hidden;">
 					<div style="height:100%; width:<?php echo intval($row['share'] ?? 0); ?>%; background:<?php echo $row['you'] ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#c3c6d4'; ?>;"></div>
+				</div>
+			</div>
+		<?php } ?>
+	</div>
+<?php } ?>
+
+<?php if (!empty($shareOfVoiceByProvider)) { ?>
+	<?php $trackingProviderColors = ['openai' => '#10a37f', 'anthropic' => '#cc785c', 'google' => '#4285f4', 'perplexity' => '#20808d']; ?>
+	<?php $trackingProviderLabelsForSov = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)', 'perplexity' => 'Perplexity']; ?>
+	<!-- the blended Share of Voice card above answers "overall, am I
+	     mentioned" - this one answers "which AI engine actually mentions
+	     me", since that can vary a lot provider to provider and the
+	     blended number alone hides it -->
+	<div class="aiv-card" style="max-width:480px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-chart-bar"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextAIV['Share of Voice by AI Engine'] ?? 'Share of Voice by AI Engine'?></div>
+		</div>
+		<?php foreach ($shareOfVoiceByProvider as $row) {
+			$rowColor = $trackingProviderColors[$row['provider']] ?? '#667eea';
+			$rowLabel = $trackingProviderLabelsForSov[$row['provider']] ?? $row['provider'];
+		?>
+			<div style="margin-bottom:10px;">
+				<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+					<span style="font-weight:500;"><?php echo htmlspecialchars($rowLabel); ?></span>
+					<span style="color:#8a8ea3;"><?php echo intval($row['share']); ?>%</span>
+				</div>
+				<div style="background:#eef0f5; border-radius:6px; height:10px; overflow:hidden;">
+					<div style="height:100%; width:<?php echo intval($row['share']); ?>%; background:<?php echo htmlspecialchars($rowColor); ?>;"></div>
 				</div>
 			</div>
 		<?php } ?>
@@ -280,7 +309,7 @@
 			<div style="margin-top:12px;">
 				<span style="font-size:12px; color:#8a8ea3;"><?php echo $spTextAIV["Not sure what to track? Let AI suggest prompts:"] ?? "Not sure what to track? Let AI suggest prompts:"?></span><br>
 				<?php
-				$trackingProviderLabels = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)'];
+				$trackingProviderLabels = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)', 'perplexity' => 'Perplexity'];
 				foreach ($trackingConfiguredProviders as $tp) {
 				?>
 					<button type="button" class="btn btn-secondary btn-sm" style="margin-top:6px;margin-right:6px;" onclick="aipSuggestPrompts('<?php echo $tp?>')">

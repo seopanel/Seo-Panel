@@ -2,7 +2,7 @@
 
 /**
  * AI Perception Check - a customer-initiated, one-off diagnostic that asks
- * a real hosted AI model (ChatGPT, Claude, or Gemini) what it knows about
+ * a real hosted AI model (ChatGPT, Claude, Gemini, or Perplexity) what it knows about
  * the customer's own website, using the customer's OWN API key.
  *
  * Unlike every other AI Visibility feature (which is self-hosted / never
@@ -24,7 +24,12 @@ class AiPerceptionController extends Controller {
 	const OPENAI_SEARCH_MODEL = 'gpt-4o-mini-search-preview';
 	const ANTHROPIC_MODEL = 'claude-3-5-haiku-20241022';
 	const GOOGLE_MODEL = 'gemini-1.5-flash';
-	const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google'];
+	// Perplexity's whole product is a web-search-grounded answer engine -
+	// every model is inherently "live search", there is no plain
+	// training-data-only mode to fall back to (unlike the other three
+	// providers' $grounded toggle - see __callPerplexity()).
+	const PERPLEXITY_MODEL = 'sonar';
+	const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google', 'perplexity'];
 
 	// Scheduled tracking: unlike the one-off "Ask" above, this runs
 	// UNATTENDED on a cron schedule - it is the customer's own money being
@@ -178,6 +183,7 @@ class AiPerceptionController extends Controller {
 		// scheduled) so a user who already set up tracking sees where
 		// they stand without leaving the page they land on by default
 		$this->set('shareOfVoice', !empty($websiteId) ? $this->__getShareOfVoice($websiteId) : null);
+		$this->set('shareOfVoiceByProvider', !empty($websiteId) ? $this->__getShareOfVoiceByProvider($websiteId) : []);
 		$this->set('competitorShareOfVoice', !empty($websiteId) ? $this->__getCompetitorShareOfVoice($websiteId) : []);
 
 		$this->set('providers', $this->__getUserProviders($userId));
@@ -210,6 +216,7 @@ class AiPerceptionController extends Controller {
 		$prompts = !empty($websiteId) ? $this->__getPromptsWithLatestResults($websiteId) : [];
 		$this->set('prompts', $prompts);
 		$this->set('shareOfVoice', $this->__getShareOfVoice($websiteId));
+		$this->set('shareOfVoiceByProvider', !empty($websiteId) ? $this->__getShareOfVoiceByProvider($websiteId) : []);
 		$this->set('promptCap', self::MAX_PROMPTS_PER_WEBSITE);
 		$this->set('trackingIntervalDays', self::TRACKING_INTERVAL_DAYS);
 		$this->set('competitors', !empty($websiteId) ? $this->__getCompetitors($websiteId) : []);
@@ -452,6 +459,42 @@ class AiPerceptionController extends Controller {
 		$this->render('aiperception/result_detail', '');
 	}
 
+	// func to break the same overall number __getShareOfVoice() computes
+	// down BY provider - which AI engine actually mentions this site most
+	// is the one thing the blended number above can't show, and with four
+	// providers now configurable (openai/anthropic/google/perplexity) a
+	// site can easily be strong on one and invisible on another. Only
+	// returns providers this website actually has at least one latest
+	// result for - a provider with a configured key but nothing checked
+	// yet simply doesn't appear, same "don't fabricate a number" spirit
+	// as __getShareOfVoice() itself returning null.
+	function __getShareOfVoiceByProvider($websiteId) {
+		$websiteId = intval($websiteId);
+		if (empty($websiteId)) return [];
+		$sql = "SELECT r.provider, r.mentioned FROM llm_perception_results r
+				JOIN llm_perception_prompts p ON p.id = r.prompt_id
+				WHERE p.website_id=$websiteId AND p.status=1
+				AND r.checked_date = (
+					SELECT MAX(r2.checked_date) FROM llm_perception_results r2
+					WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
+				)
+				ORDER BY r.provider";
+		$rows = $this->db->select($sql);
+		if (empty($rows)) return [];
+
+		$byProvider = [];
+		foreach ($rows as $row) {
+			$byProvider[$row['provider']][] = !empty($row['mentioned']);
+		}
+
+		$result = [];
+		foreach ($byProvider as $provider => $mentions) {
+			$mentionedCount = count(array_filter($mentions));
+			$result[] = ['provider' => $provider, 'share' => round(($mentionedCount / count($mentions)) * 100)];
+		}
+		return $result;
+	}
+
 	// func to compute overall share of voice: of every (prompt, provider)
 	// combination's latest check for this website, what fraction mentioned it
 	function __getShareOfVoice($websiteId) {
@@ -611,6 +654,9 @@ class AiPerceptionController extends Controller {
 						break;
 					case 'google':
 						$result = $this->__callGoogleGemini($apiKey, $prompt['prompt_text'], $grounded);
+						break;
+					case 'perplexity':
+						$result = $this->__callPerplexity($apiKey, $prompt['prompt_text'], $grounded);
 						break;
 					default:
 						continue 2;
@@ -845,6 +891,9 @@ class AiPerceptionController extends Controller {
 			case 'google':
 				$result = $this->__callGoogleGemini($apiKey, $prompt, $grounded);
 				break;
+			case 'perplexity':
+				$result = $this->__callPerplexity($apiKey, $prompt, $grounded);
+				break;
 		}
 
 		$result['provider'] = $provider;
@@ -901,6 +950,9 @@ class AiPerceptionController extends Controller {
 				break;
 			case 'google':
 				$result = $this->__callGoogleGemini($apiKey, $prompt);
+				break;
+			case 'perplexity':
+				$result = $this->__callPerplexity($apiKey, $prompt);
 				break;
 		}
 
@@ -1107,5 +1159,60 @@ class AiPerceptionController extends Controller {
 		}
 
 		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => $grounded, 'citations' => $citations];
+	}
+
+	// func to call Perplexity's Chat Completions API (OpenAI-compatible
+	// request shape). $grounded is accepted only for signature parity with
+	// the other three __call*() methods - Perplexity has no non-search
+	// mode to toggle, every "sonar" model always searches the live web, so
+	// the response is always reported as grounded regardless of the
+	// caller's own live-search preference for this provider.
+	function __callPerplexity($apiKey, $prompt, $grounded = false) {
+		$payload = [
+			'model' => self::PERPLEXITY_MODEL,
+			'messages' => [['role' => 'user', 'content' => $prompt]],
+			'max_tokens' => 300,
+		];
+
+		ob_start();
+		$spider = new Spider();
+		$spider->_CURL_HTTPHEADER = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+		$spider->_CURLOPT_TIMEOUT = 25;
+		$spider->_CURLOPT_POSTFIELDS = json_encode($payload);
+		$response = $spider->getContent('https://api.perplexity.ai/chat/completions', false, false);
+		ob_end_clean();
+
+		if (empty($response['page'])) {
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Perplexity', 'grounded' => false, 'citations' => []];
+		}
+		$data = json_decode($response['page'], true);
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Perplexity', 'grounded' => false, 'citations' => []];
+		}
+		if (!empty($data['error'])) {
+			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'Perplexity request failed', 'grounded' => false, 'citations' => []];
+		}
+		$text = $data['choices'][0]['message']['content'] ?? '';
+		if (empty($text)) {
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Perplexity', 'grounded' => false, 'citations' => []];
+		}
+
+		// newer API responses carry 'search_results' (title+url+date);
+		// older/plainer ones only have 'citations' (bare URL strings) -
+		// prefer the richer shape, fall back to the plain one
+		$citations = [];
+		if (!empty($data['search_results']) && is_array($data['search_results'])) {
+			foreach ($data['search_results'] as $sr) {
+				if (empty($sr['url'])) continue;
+				$citations[] = ['url' => $sr['url'], 'title' => $sr['title'] ?? ''];
+			}
+		} elseif (!empty($data['citations']) && is_array($data['citations'])) {
+			foreach ($data['citations'] as $url) {
+				if (empty($url) || !is_string($url)) continue;
+				$citations[] = ['url' => $url, 'title' => ''];
+			}
+		}
+
+		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => true, 'citations' => $citations];
 	}
 }

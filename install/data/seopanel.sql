@@ -1147,7 +1147,7 @@ CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
 CREATE TABLE IF NOT EXISTS `llm_api_keys` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
   `api_key` varchar(255) NOT NULL,
   `live_search` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'when 1, checks against this provider use its live web-search-grounded model/tool instead of the plain chat model - see AiPerceptionController::__callOpenAI()/__callAnthropic()/__callGoogleGemini()',
   `created_at` datetime NOT NULL,
@@ -1174,7 +1174,7 @@ CREATE TABLE IF NOT EXISTS `llm_perception_prompts` (
 CREATE TABLE IF NOT EXISTS `llm_perception_results` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `prompt_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
   `checked_date` date NOT NULL,
   `response_text` text,
   `mentioned` tinyint(1) NOT NULL DEFAULT 0,
@@ -1211,7 +1211,7 @@ CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `competitor_id` int unsigned NOT NULL,
   `prompt_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
   `checked_date` date NOT NULL,
   `mentioned` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,

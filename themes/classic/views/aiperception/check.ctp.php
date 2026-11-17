@@ -23,7 +23,7 @@
 	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
 </div>
 
@@ -37,7 +37,7 @@
 				<h5 class="modal-title" id="aipHelpModalLabel"><?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude and Gemini - what they actually know about your website, right now.'?></p>
+				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'?></p>
 				<p><?php echo $spTextAIV['Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'] ?? 'Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'?></p>
 				<div class="aiv-discover-item">
 					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-comment-dots"></i></div>
@@ -68,8 +68,8 @@
 <?php } else { ?>
 
 <?php $configuredProviders = array_column($providers, 'provider'); ?>
-<?php $providerColors = ['openai' => '#10a37f', 'anthropic' => '#cc785c', 'google' => '#4285f4']; ?>
-<?php $providerLabels = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)']; ?>
+<?php $providerColors = ['openai' => '#10a37f', 'anthropic' => '#cc785c', 'google' => '#4285f4', 'perplexity' => '#20808d']; ?>
+<?php $providerLabels = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)', 'perplexity' => 'Perplexity']; ?>
 
 <div class="aiv-card">
 	<div class="aiv-card-header">
@@ -96,7 +96,7 @@
 				<i class="fas fa-key" style="color:#a9700f;font-size:18px;"></i>
 			</div>
 			<div style="font-size:15px;font-weight:700;color:#2a2a3d;"><?php echo $spTextAIV['No AI providers configured yet.'] ?? 'No AI providers configured yet.'?></div>
-			<div style="font-size:13px;color:#8a8ea3;margin-top:4px;max-width:360px;margin-left:auto;margin-right:auto;"><?php echo $spTextAIV['Add an API key to start asking ChatGPT, Claude, or Gemini what they know about your site.'] ?? 'Add an API key to start asking ChatGPT, Claude, or Gemini what they know about your site.'?></div>
+			<div style="font-size:13px;color:#8a8ea3;margin-top:4px;max-width:360px;margin-left:auto;margin-right:auto;"><?php echo $spTextAIV['Add an API key to start asking ChatGPT, Claude, Gemini, or Perplexity what they know about your site.'] ?? 'Add an API key to start asking ChatGPT, Claude, Gemini, or Perplexity what they know about your site.'?></div>
 			<a href="javascript:void(0);" onclick="scriptDoLoad('ai-perception.php', 'content')" class="aiv-discover-cta" style="margin-top:16px;"><?php echo $spTextAIV['Add an API key'] ?? 'Add an API key'?> <i class="fas fa-arrow-right"></i></a>
 		</div>
 	<?php } else { ?>
@@ -147,6 +147,33 @@
 	</div>
 <?php } ?>
 
+<?php if (!empty($shareOfVoiceByProvider)) { ?>
+	<!-- the blended Share of Voice card above answers "overall, am I
+	     mentioned" - this one answers "which AI engine actually mentions
+	     me", since that can vary a lot provider to provider and the
+	     blended number alone hides it -->
+	<div class="aiv-card" style="max-width:480px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-chart-bar"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextAIV['Share of Voice by AI Engine'] ?? 'Share of Voice by AI Engine'?></div>
+		</div>
+		<?php foreach ($shareOfVoiceByProvider as $row) {
+			$rowColor = $providerColors[$row['provider']] ?? '#667eea';
+			$rowLabel = $providerLabels[$row['provider']] ?? $row['provider'];
+		?>
+			<div style="margin-bottom:10px;">
+				<div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:3px;">
+					<span style="font-weight:500;"><?php echo htmlspecialchars($rowLabel); ?></span>
+					<span style="color:#8a8ea3;"><?php echo intval($row['share']); ?>%</span>
+				</div>
+				<div style="background:#eef0f5; border-radius:6px; height:10px; overflow:hidden;">
+					<div style="height:100%; width:<?php echo intval($row['share']); ?>%; background:<?php echo htmlspecialchars($rowColor); ?>;"></div>
+				</div>
+			</div>
+		<?php } ?>
+	</div>
+<?php } ?>
+
 <div class="aiv-card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
 	<div class="aiv-card-icon" style="flex-shrink:0;background:linear-gradient(135deg, #764ba2 0%, #a78bda 100%);"><i class="fas fa-calendar-check"></i></div>
 	<div style="flex:1;min-width:220px;">
@@ -170,7 +197,7 @@
 window.aipAsk = function(provider) {
 	var websiteId = document.getElementById('aip_website_id').value;
 	var resultsEl = document.getElementById('aip_results');
-	var providerLabels = {openai: 'OpenAI (ChatGPT)', anthropic: 'Anthropic (Claude)', google: 'Google (Gemini)'};
+	var providerLabels = {openai: 'OpenAI (ChatGPT)', anthropic: 'Anthropic (Claude)', google: 'Google (Gemini)', perplexity: 'Perplexity'};
 	var label = providerLabels[provider] || provider;
 
 	var box = document.createElement('div');
