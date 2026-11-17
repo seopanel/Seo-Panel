@@ -443,7 +443,11 @@ class WebMasterController extends GoogleAPIController {
 
 	# func to show webmasterkeyword report summary
 	function viewKeywordSearchSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
-	
+		// bug fix: from_time/to_time whitelisted to plain-date format -
+		// same fix as viewWebsiteSearchReports() above
+		$searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+		$searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
 		$source = $this->sourceList[0];
 		$this->set('summaryPage', $summaryPage);
@@ -625,7 +629,11 @@ class WebMasterController extends GoogleAPIController {
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 	
-				$valueList = array($websiteList[$listInfo['website_id']]['url'], $listInfo['name']);
+				// name is a raw Search Console search-query string - one
+				// crafted impression on the target site can reflect
+				// attacker-chosen text into this export (CSV formula/DDE
+				// injection), so neutralize before it reaches the spreadsheet
+				$valueList = array($websiteList[$listInfo['website_id']]['url'], neutralizeCsvFormula($listInfo['name']));
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'name') continue;
 					
@@ -673,7 +681,11 @@ class WebMasterController extends GoogleAPIController {
 	
 	# func to show website search report summary
 	function viewWebsiteSearchSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
-	
+		// bug fix: from_time/to_time whitelisted to plain-date format -
+		// same fix as viewWebsiteSearchReports() above
+		$searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+		$searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
 		$websiteController = New WebsiteController();
 		$exportVersion = false;
@@ -858,9 +870,17 @@ class WebMasterController extends GoogleAPIController {
 	
 	# func to show website search reports
 	function viewWebsiteSearchReports($searchInfo = '') {
-	    $searchInfo['from_time'] = htmlentities($searchInfo['from_time'], ENT_QUOTES);
-	    $searchInfo['to_time'] = htmlentities($searchInfo['to_time'], ENT_QUOTES);
-	
+	    // bug fix: htmlentities() alone only protects the HTML-attribute
+	    // context (e.g. value="..."). Several sibling views also embed
+	    // this value raw inside a single-quoted JS string in an onclick
+	    // attribute (e.g. report_summary.ctp.php's $mainLink) - once the
+	    // browser HTML-decodes the attribute, a decoded quote can still
+	    // break out of THAT context. from_time/to_time are only ever
+	    // meant to be plain dates, so whitelist the format instead of
+	    // trying to escape for every embedding context individually.
+	    $searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+	    $searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = isLoggedIn();
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTime = addslashes($searchInfo['from_time']);
@@ -935,7 +955,11 @@ class WebMasterController extends GoogleAPIController {
 	
 	# func to show keyword search reports
 	function viewKeywordSearchReports($searchInfo = '') {
-	
+		// bug fix: from_time/to_time whitelisted to plain-date format -
+		// same fix as viewWebsiteSearchReports() above
+		$searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+		$searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = isLoggedIn();
 
 		if (!empty ($searchInfo['from_time'])) {
@@ -1028,7 +1052,11 @@ class WebMasterController extends GoogleAPIController {
 	
 	# func to show keyword search reports in graph
 	function viewKeywordSearchGraphReports($searchInfo = '') {
-	
+		// bug fix: from_time/to_time whitelisted to plain-date format -
+		// same fix as viewWebsiteSearchReports() above
+		$searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+		$searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = isLoggedIn();
 
 		if (!empty ($searchInfo['from_time'])) {
@@ -1123,9 +1151,13 @@ class WebMasterController extends GoogleAPIController {
 
 	# func to show website search reports in graph
 	function viewWebsiteSearchGraphReports($searchInfo = '') {
-	
+		// bug fix: from_time/to_time whitelisted to plain-date format -
+		// same fix as viewWebsiteSearchReports() above
+		$searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+		$searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 		$userId = isLoggedIn();
-	
+
 		if (!empty ($searchInfo['from_time'])) {
 			$fromTimeDate = addslashes($searchInfo['from_time']);
 		} else {
@@ -1305,7 +1337,19 @@ class WebMasterController extends GoogleAPIController {
 
 	# func to show keyword select box
 	function showKeywordSelectBox($websiteId, $keywordId = ""){
+		$userId = isLoggedIn();
 		$websiteId = intval($websiteId);
+
+		// bug fix: this AJAX endpoint had no ownership check at all - any
+		// logged-in non-admin could pass another user's website_id and
+		// read their real Search Console keyword list, unlike every other
+		// method in this file (see the same isAdmin()/array_column() guard
+		// a few lines up in viewWebsiteSearchReports() etc.)
+		$websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = 0;
+		}
+
 		$this->set('keywordList', $this->__getWebmasterKeywords("website_id=$websiteId and status=1 order by name"));
 		$this->set('keywordId', $keywordId);
 		$this->render('keyword/keywordselectbox');

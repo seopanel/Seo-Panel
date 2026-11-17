@@ -401,7 +401,14 @@ class AnalyticsController extends Controller {
 
 	# func to show analytics report summary
 	function viewAnalyticsSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
-	    
+	    // bug fix: from_time/to_time are echoed raw into HTML attributes
+	    // AND into onclick="scriptDoLoad('...')" JS-string contexts by this
+	    // summary's own view (analytics_summary.ctp.php) with no escaping -
+	    // reflected XSS. These are only ever meant to be plain dates, so
+	    // whitelist the format instead of escaping per embedding context.
+	    $searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+	    $searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 	    $userId = !empty($cronUserId) ? $cronUserId : isLoggedIn();
 	    $this->set('summaryPage', $summaryPage);
 	    $this->set('searchInfo', $searchInfo);
@@ -578,7 +585,11 @@ class AnalyticsController extends Controller {
 	        $exportContent .= createExportContent($headList);
 	        foreach($baseReportList as $listInfo){
 	            
-	            $valueList = array($websiteList[$listInfo['website_id']]['url'], $listInfo['source_name']);
+	            // source_name comes from GA4's sourceMedium dimension, which is
+	            // steerable via utm_source/utm_medium on any link driving
+	            // traffic to the tracked site - neutralize before it reaches a
+	            // spreadsheet export (CSV formula/DDE injection)
+	            $valueList = array($websiteList[$listInfo['website_id']]['url'], neutralizeCsvFormula($listInfo['source_name']));
 	            foreach ($this->metrics as $colName => $colVal) {
 	                if ($colName == 'name') continue;
 	                
@@ -635,9 +646,13 @@ class AnalyticsController extends Controller {
 	
 	// func to show analytics reports
 	function viewAnalyticsReports($searchInfo = '') {
-	    
+	    // bug fix: from_time/to_time whitelisted to plain-date format -
+	    // same fix as viewAnalyticsSummary() above
+	    $searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+	    $searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 	    $userId = isLoggedIn();
-	    
+
 	    if (!empty ($searchInfo['from_time'])) {
 	        $fromTimeDate = addslashes($searchInfo['from_time']);
 	    } else {
@@ -726,8 +741,13 @@ class AnalyticsController extends Controller {
 	
 	// func to show analytics reports in graph
 	function viewAnalyticsGraphReports($searchInfo = '') {
+	    // bug fix: from_time/to_time whitelisted to plain-date format -
+	    // same fix as viewAnalyticsSummary() above
+	    $searchInfo['from_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'] ?? '') ? $searchInfo['from_time'] : '';
+	    $searchInfo['to_time'] = preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'] ?? '') ? $searchInfo['to_time'] : '';
+
 	    $userId = isLoggedIn();
-	    
+
 	    if (!empty ($searchInfo['from_time'])) {
 	        $fromTimeDate = addslashes($searchInfo['from_time']);
 	    } else {
@@ -813,7 +833,18 @@ class AnalyticsController extends Controller {
 	
 	// func to show keyword select box
 	function showSourceSelectBox($websiteId){
+	    $userId = isLoggedIn();
 	    $websiteId = intval($websiteId);
+
+	    // bug fix: no ownership check at all - any logged-in non-admin
+	    // could pass another user's website_id and read their traffic
+	    // source labels, same bug class as WebMasterController::
+	    // showKeywordSelectBox()
+	    $websiteList = (new WebsiteController())->__getAllWebsites($userId, true);
+	    if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+	        $websiteId = 0;
+	    }
+
 	    $this->set('sourceList', $this->__getWebsiteSourceList($websiteId));
 	    $this->render('analytics/source_select_box', 'ajax');
 	}
