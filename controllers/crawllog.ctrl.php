@@ -33,6 +33,17 @@ class CrawlLogController extends Controller {
 	 * @param $crawlInfo   array contains all detaisl of crawl
 	 */
 	function createCrawlLog($crawlInfo) {
+		// bug fix: SQL injection - every value here used to be concatenated
+		// into the INSERT raw with zero escaping (log_message was the only
+		// field callers happened to addslashes() themselves). Several
+		// callers pass attacker-influenced strings (e.g. a saved review/
+		// social link's own URL as ref_id/crawl_link), reachable via Quick
+		// Checker immediately and persistently via the nightly cron. Same
+		// escape-every-value pattern createMailLog() below already uses.
+		foreach ($crawlInfo as $key => $value) {
+			$crawlInfo[$key] = addslashes($value);
+		}
+
 		$dateTime = date('Y-m-d H:i:s');
 		$sql = "INSERT INTO ". $this->tablName ."(".implode(",", array_keys($crawlInfo)).", crawl_time)";
 		$sql .= " values ('".implode("','", array_values($crawlInfo))."', '$dateTime')";

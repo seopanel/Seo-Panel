@@ -108,7 +108,39 @@ class ReviewManagerController extends ReviewBase{
         return empty($listInfo['id']) ? false :  $listInfo['id'];
     }
     
-    function validateReviewLink($listInfo) {        
+    // bug fix: SSRF - this used to only check that the platform name
+    // appeared SOMEWHERE in the url string (stristr($url, $type)),
+    // never the actual host - a url like "http://10.0.0.5/x?y=yelp"
+    // passed fine and was fetched server-side by getReviewDetails()
+    // for every platform when DFS is disabled (and always for yelp,
+    // which is hard-excluded from DFS). Checks the real host against
+    // each platform's known domain(s) instead.
+    function __isUrlForPlatform($url, $type) {
+        $allowedDomains = [
+            'google'      => ['google.com'],
+            'yelp'        => ['yelp.com'],
+            'trustpilot'  => ['trustpilot.com'],
+            // tripadvisor runs several country-specific TLDs beyond the
+            // common ones listed here - this list can grow if a real user
+            // hits one that's missing, but it must never fall back to a
+            // loose substring/regex match (see the fix's own commit
+            // message for why that's unsafe)
+            'tripadvisor' => ['tripadvisor.com', 'tripadvisor.co.uk', 'tripadvisor.ca', 'tripadvisor.com.au', 'tripadvisor.in'],
+        ];
+        if (empty($allowedDomains[$type])) return false;
+
+        $host = strtolower((string) parse_url(addHttpToUrl($url), PHP_URL_HOST));
+        if (empty($host)) return false;
+
+        foreach ($allowedDomains[$type] as $domain) {
+            if ($host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function validateReviewLink($listInfo) {
         $errMsg = [];
         $errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
         $errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
@@ -130,12 +162,12 @@ class ReviewManagerController extends ReviewBase{
         }
         
         if(!$this->validate->flagErr){
-            if (!stristr($listInfo['url'], $listInfo['type'])) {
+            if (!$this->__isUrlForPlatform($listInfo['url'], $listInfo['type'])) {
                 $errMsg['url'] = formatErrorMsg($_SESSION['text']['common']["Invalid value"]);
                 $this->validate->flagErr = true;
             }
         }
-        
+
         // Validate link count
         if(!$this->validate->flagErr){
             $websiteCtrl = new WebsiteController();
@@ -326,7 +358,11 @@ class ReviewManagerController extends ReviewBase{
 
 	function doQuickChecker($listInfo = '') {
 
-		if (!stristr($listInfo['url'], $listInfo['type'])) {
+		// bug fix: SSRF - same host-allowlist fix as validateReviewLink()
+		// above, applied here too since this is its own independent check
+		// (Quick Checker never calls validateReviewLink() - this is the
+		// most directly reachable path, no saved link required at all)
+		if (!$this->__isUrlForPlatform($listInfo['url'], $listInfo['type'])) {
 			$errorMsg = formatErrorMsg($_SESSION['text']['common']["Invalid value"]);
 			$this->validate->flagErr = true;
 		}
@@ -714,8 +750,12 @@ class ReviewManagerController extends ReviewBase{
 			$fromTime = date('Y-m-d', $fromTimeStamp);
 			$toTime = date('Y-m-d', $toTimeStamp);
 		} else {
-			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));
-			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+			// bug fix: from_time/to_time were only ever addslashes()'d
+			// (SQL-safe) before being echoed raw into HTML attributes in
+			// review_report_summary.ctp.php - reflected XSS. Only ever
+			// meant to be plain dates, so whitelist the format instead.
+			$fromTime = (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-1 days'));
+			$toTime = (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) ? $searchInfo['to_time'] : date('Y-m-d');
 		}
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
@@ -741,7 +781,9 @@ class ReviewManagerController extends ReviewBase{
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : $this->pageScriptPath;
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=reportSummary&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'] . "&type=" . $searchInfo['type'];
+		// bug fix: reflected XSS - same fix as SocialMediaController's
+		// equivalent reportSummary() method
+		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name'] ?? '') . "&type=" . urlencode($searchInfo['type'] ?? '');
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=social-media-reports";
 	
 		$subSql = "select [cols] from $this->linkTable sml, $this->linkReportTable r where sml.id=r.review_link_id
@@ -814,7 +856,12 @@ class ReviewManagerController extends ReviewBase{
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
 	
-			    $valueList = empty($websiteId) ? array($websiteList[$listInfo['website_id']]['url'] ?? '', $listInfo['url'], $this->serviceList[$listInfo['type']]['label']) : array($listInfo['url'], $this->serviceList[$listInfo['type']]['label']);
+			    // the link's own url is user-supplied (even though it must
+			    // now resolve to a real platform host - see
+			    // __isUrlForPlatform() - its path/query can still start
+			    // with =/+/-/@) - neutralize before it reaches a
+			    // spreadsheet export (CSV formula/DDE injection)
+			    $valueList = empty($websiteId) ? array($websiteList[$listInfo['website_id']]['url'] ?? '', neutralizeCsvFormula($listInfo['url']), $this->serviceList[$listInfo['type']]['label']) : array(neutralizeCsvFormula($listInfo['url']), $this->serviceList[$listInfo['type']]['label']);
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'name') continue;
 						
@@ -866,17 +913,21 @@ class ReviewManagerController extends ReviewBase{
 	
 	// func to show detailed reports
 	function viewDetailedReports($searchInfo = '') {
-	
+
 		$userId = isLoggedIn();
 
-		if (!empty ($searchInfo['from_time'])) {
-			$fromTimeDate = addslashes($searchInfo['from_time']);
+		// bug fix: from_time/to_time were only ever addslashes()'d
+		// (SQL-safe) before being echoed raw into an HTML attribute in
+		// review_reports.ctp.php - reflected XSS. Only ever meant to be
+		// plain dates, so whitelist the format instead.
+		if (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) {
+			$fromTimeDate = $searchInfo['from_time'];
 		} else {
 			$fromTimeDate = date('Y-m-d', strtotime('-15 days'));
 		}
-		
-		if (!empty ($searchInfo['to_time'])) {
-			$toTimeDate = addslashes($searchInfo['to_time']);
+
+		if (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) {
+			$toTimeDate = $searchInfo['to_time'];
 		} else {
 			$toTimeDate = date('Y-m-d');
 		}
@@ -997,17 +1048,18 @@ class ReviewManagerController extends ReviewBase{
 	
 	// func to show link search reports in graph
 	function viewGraphReports($searchInfo = '') {
-	    
+
 	    $userId = isLoggedIn();
-	    
-	    if (!empty ($searchInfo['from_time'])) {
-	        $fromTimeDate = addslashes($searchInfo['from_time']);
+
+	    // bug fix: same from_time/to_time XSS fix as viewDetailedReports() above
+	    if (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) {
+	        $fromTimeDate = $searchInfo['from_time'];
 	    } else {
 	        $fromTimeDate = date('Y-m-d', strtotime('-15 days'));
 	    }
-	    
-	    if (!empty ($searchInfo['to_time'])) {
-	        $toTimeDate = addslashes($searchInfo['to_time']);
+
+	    if (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) {
+	        $toTimeDate = $searchInfo['to_time'];
 	    } else {
 	        $toTimeDate = date('Y-m-d');
 	    }

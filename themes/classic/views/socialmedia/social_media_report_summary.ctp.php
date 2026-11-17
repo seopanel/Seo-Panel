@@ -125,8 +125,14 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     }
 
 	// url parameters
-	$mainLink = SP_WEBPATH."/$scriptName?sec=reportSummary&website_id=$websiteId&from_time=$fromTime&to_time=$toTime&type={$searchInfo['type']}";
-	$mainLink .= "&search_name={$searchInfo['search_name']}&report_type=social-media-reports";
+	// bug fix: reflected XSS - type/search_name were concatenated raw
+	// here, independently of the controller's own scriptPath (which this
+	// view does NOT reuse) - this $mainLink is embedded straight into an
+	// onclick="scriptDoLoad('...')" attribute below and into
+	// showExportDiv()'s href="..." links, so a quote in either value
+	// broke out and ran on page load, no click needed.
+	$mainLink = SP_WEBPATH."/$scriptName?sec=reportSummary&website_id=$websiteId&from_time=$fromTime&to_time=$toTime&type=".urlencode($searchInfo['type'] ?? '');
+	$mainLink .= "&search_name=".urlencode($searchInfo['search_name'] ?? '')."&report_type=social-media-reports";
 	
 	// if not summary page show the filters
 	if(!$summaryPage) {

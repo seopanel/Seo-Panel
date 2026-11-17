@@ -371,7 +371,7 @@ class DataForSEOController extends Controller {
             $crawlInfo['ref_id'] = empty($keywordInfo['id']) ? $keywordInfo['name'] : $keywordInfo['id'];
             $crawlInfo['subject'] = $seInfoId;
             $crawlInfo['crawl_referer'] = $this->apiUrl;
-            $crawlInfo['log_message'] = addslashes($result['message']);
+            $crawlInfo['log_message'] = $result['message']; // escaped once, inside createCrawlLog()
             $crawlInfo['crawl_link'] = !empty($result['data']['check_url']) ? $result['data']['check_url'] : "";
             $crawlLogCtrl->createCrawlLog($crawlInfo);
         }
@@ -412,7 +412,7 @@ class DataForSEOController extends Controller {
         $crawlInfo['ref_id'] = $keywordInfo['name'];
         $crawlInfo['subject'] = $keywordInfo['engine'];
         $crawlInfo['crawl_referer'] = $this->apiUrl;
-        $crawlInfo['log_message'] = addslashes($result['message']);
+        $crawlInfo['log_message'] = $result['message']; // escaped once, inside createCrawlLog()
         $crawlInfo['crawl_link'] = !empty($result['data']['check_url']) ? $result['data']['check_url'] : "";
         $crawlLogCtrl->createCrawlLog($crawlInfo);
 
@@ -498,7 +498,7 @@ class DataForSEOController extends Controller {
         $crawlInfo['ref_id'] = $target;
         $crawlInfo['subject'] = 'dataforseo';
         $crawlInfo['crawl_referer'] = $this->apiUrl;
-        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['log_message'] = $message; // escaped once, inside createCrawlLog()
         $crawlInfo['crawl_link'] = "";
         $crawlLogCtrl->createCrawlLog($crawlInfo);
     }
@@ -878,7 +878,7 @@ class DataForSEOController extends Controller {
         $crawlInfo['ref_id'] = $url;
         $crawlInfo['subject'] = $platform;
         $crawlInfo['crawl_referer'] = $this->apiUrl;
-        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['log_message'] = $message; // escaped once, inside createCrawlLog()
         $crawlInfo['crawl_link'] = $url;
         $crawlLogCtrl->createCrawlLog($crawlInfo);
     }
@@ -1525,7 +1525,7 @@ class DataForSEOController extends Controller {
         $crawlInfo['ref_id'] = $keyword;
         $crawlInfo['subject'] = $platform;
         $crawlInfo['crawl_referer'] = $this->apiUrl;
-        $crawlInfo['log_message'] = addslashes($message);
+        $crawlInfo['log_message'] = $message; // escaped once, inside createCrawlLog()
         $crawlInfo['crawl_link'] = '';
         $crawlLogCtrl->createCrawlLog($crawlInfo);
     }

@@ -161,7 +161,38 @@ class SocialMediaController extends Controller{
         return empty($listInfo['id']) ? false :  $listInfo['id'];
     }
     
-    function validateSocialMediaLink($listInfo) {        
+    // bug fix: SSRF - this used to only check that the platform name
+    // appeared SOMEWHERE in the url string (stristr($url, $type)),
+    // never the actual host - a url like "http://10.0.0.5/x?y=facebook"
+    // passed fine and is fetched server-side (formatMediaLink() only
+    // rebuilds a template URL for linkedin/twitter; facebook/instagram/
+    // pinterest/youtube/reddit use the raw submitted url as-is). Checks
+    // the real host against each platform's known domain(s) instead.
+    // (linkedin is excluded - its own field is a bare numeric company
+    // id, validated separately above, never a URL at all.)
+    function __isUrlForPlatform($url, $type) {
+        $allowedDomains = [
+            'facebook'  => ['facebook.com', 'fb.com'],
+            'twitter'   => ['twitter.com', 'x.com'],
+            'instagram' => ['instagram.com'],
+            'pinterest' => ['pinterest.com'],
+            'youtube'   => ['youtube.com', 'youtu.be'],
+            'reddit'    => ['reddit.com'],
+        ];
+        if (empty($allowedDomains[$type])) return false;
+
+        $host = strtolower((string) parse_url(addHttpToUrl($url), PHP_URL_HOST));
+        if (empty($host)) return false;
+
+        foreach ($allowedDomains[$type] as $domain) {
+            if ($host === $domain || substr($host, -strlen('.' . $domain)) === '.' . $domain) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function validateSocialMediaLink($listInfo) {
         $errMsg = [];
         $errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
         $errMsg['url'] = formatErrorMsg($this->validate->checkBlank($listInfo['url']));
@@ -182,10 +213,10 @@ class SocialMediaController extends Controller{
             }
         }
         
-        if(!$this->validate->flagErr) {            
+        if(!$this->validate->flagErr) {
             if ($listInfo['type'] == "linkedin") {
                 $errMsg['url'] = formatErrorMsg($this->validate->checkNumber($listInfo['url']));
-            } else if (!stristr($listInfo['url'], $listInfo['type'])) {
+            } else if (!$this->__isUrlForPlatform($listInfo['url'], $listInfo['type'])) {
                 $errMsg['url'] = formatErrorMsg($_SESSION['text']['common']["Invalid value"]);
                 $this->validate->flagErr = true;
             }
@@ -621,8 +652,12 @@ class SocialMediaController extends Controller{
 			$fromTime = date('Y-m-d', $fromTimeStamp);
 			$toTime = date('Y-m-d', $toTimeStamp);
 		} else {
-			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-1 days'));
-			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d');
+			// bug fix: from_time/to_time were only ever addslashes()'d
+			// (SQL-safe) before being echoed raw into HTML attributes in
+			// social_media_report_summary.ctp.php - reflected XSS. Only
+			// ever meant to be plain dates, so whitelist the format instead.
+			$fromTime = (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) ? $searchInfo['from_time'] : date('Y-m-d', strtotime('-1 days'));
+			$toTime = (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) ? $searchInfo['to_time'] : date('Y-m-d');
 		}
 		$this->set('fromTime', $fromTime);
 		$this->set('toTime', $toTime);
@@ -648,7 +683,13 @@ class SocialMediaController extends Controller{
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : $this->pageScriptPath;
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=reportSummary&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'] . "&type=" . $searchInfo['type'];
+		// bug fix: reflected XSS - search_name/type were concatenated raw
+		// into this query string, which the view embeds inside an
+		// onclick="scriptDoLoad('...')" attribute (report_summary.ctp.php) -
+		// a quote in either value broke out and ran on page load, no click
+		// needed. urlencode() is both the correct way to build a query
+		// string and closes the hole.
+		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name'] ?? '') . "&type=" . urlencode($searchInfo['type'] ?? '');
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=social-media-reports";
 	
 		$subSql = "select [cols] from $this->linkTable sml, $this->linkReportTable r where sml.id=r.sm_link_id
@@ -720,7 +761,10 @@ class SocialMediaController extends Controller{
 	
 			$exportContent .= createExportContent($headList);
 			foreach($baseReportList as $listInfo){
-			    $listUrl = ($listInfo['type'] == 'linkedin') ? $listInfo['name'] : $listInfo['url'];
+			    // listUrl is user-supplied (link url, or linkedin's company
+			    // id stored in name) - neutralize before it reaches a
+			    // spreadsheet export (CSV formula/DDE injection)
+			    $listUrl = neutralizeCsvFormula(($listInfo['type'] == 'linkedin') ? $listInfo['name'] : $listInfo['url']);
 				$valueList = empty($websiteId) ? array($websiteList[$listInfo['website_id']]['url'] ?? '', $listUrl) : array($listUrl);
 				foreach ($this->colList as $colName => $colVal) {
 					if ($colName == 'name') continue;
@@ -772,17 +816,21 @@ class SocialMediaController extends Controller{
 	}
 	
 	// func to show detailed reports
-	function viewDetailedReports($searchInfo=[]) {	
+	function viewDetailedReports($searchInfo=[]) {
 		$userId = isLoggedIn();
 
-		if (!empty ($searchInfo['from_time'])) {
-			$fromTimeDate = addslashes($searchInfo['from_time']);
+		// bug fix: from_time/to_time were only ever addslashes()'d
+		// (SQL-safe) before being echoed raw into an HTML attribute in
+		// social_media_reports.ctp.php - reflected XSS. Only ever meant to
+		// be plain dates, so whitelist the format instead.
+		if (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) {
+			$fromTimeDate = $searchInfo['from_time'];
 		} else {
 			$fromTimeDate = date('Y-m-d', strtotime('-15 days'));
 		}
-		
-		if (!empty ($searchInfo['to_time'])) {
-			$toTimeDate = addslashes($searchInfo['to_time']);
+
+		if (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) {
+			$toTimeDate = $searchInfo['to_time'];
 		} else {
 			$toTimeDate = date('Y-m-d');
 		}
@@ -902,17 +950,18 @@ class SocialMediaController extends Controller{
 	}
 	
 	// func to show link search reports in graph
-	function viewGraphReports($searchInfo=[]) {	    
+	function viewGraphReports($searchInfo=[]) {
 	    $userId = isLoggedIn();
-	    
-	    if (!empty ($searchInfo['from_time'])) {
-	        $fromTimeDate = addslashes($searchInfo['from_time']);
+
+	    // bug fix: same from_time/to_time XSS fix as viewDetailedReports() above
+	    if (!empty($searchInfo['from_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['from_time'])) {
+	        $fromTimeDate = $searchInfo['from_time'];
 	    } else {
 	        $fromTimeDate = date('Y-m-d', strtotime('-15 days'));
 	    }
-	    
-	    if (!empty ($searchInfo['to_time'])) {
-	        $toTimeDate = addslashes($searchInfo['to_time']);
+
+	    if (!empty($searchInfo['to_time']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $searchInfo['to_time'])) {
+	        $toTimeDate = $searchInfo['to_time'];
 	    } else {
 	        $toTimeDate = date('Y-m-d');
 	    }
