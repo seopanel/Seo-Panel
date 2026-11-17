@@ -184,7 +184,55 @@ window.aipAsk = function(provider) {
 		.then(function(res) { return res.json(); })
 		.then(function(data) {
 			if (data.ok) {
-				bodyEl.textContent = data.text;
+				bodyEl.textContent = '';
+				if (data.grounded) {
+					var liveBadge = document.createElement('span');
+					liveBadge.className = 'badge badge-info py-1 px-2 text-light';
+					liveBadge.style.marginBottom = '8px';
+					liveBadge.style.display = 'inline-block';
+					liveBadge.innerHTML = '<i class="fas fa-globe"></i> ';
+					liveBadge.appendChild(document.createTextNode('<?php echo $spTextAIV['Live search'] ?? 'Live search'?>'));
+					bodyEl.appendChild(liveBadge);
+					bodyEl.appendChild(document.createElement('br'));
+				}
+				bodyEl.appendChild(document.createTextNode(data.text));
+				// built via DOM methods (textContent/createElement), never
+				// innerHTML concatenation, since citation url/title come
+				// straight from the third-party provider's own response
+				if (data.citations && data.citations.length) {
+					var sourcesTitle = document.createElement('div');
+					sourcesTitle.style.marginTop = '10px';
+					sourcesTitle.style.fontSize = '11px';
+					sourcesTitle.style.fontWeight = '700';
+					sourcesTitle.style.textTransform = 'uppercase';
+					sourcesTitle.style.color = '#8a8ea3';
+					sourcesTitle.textContent = '<?php echo $spTextAIV['Sources cited'] ?? 'Sources cited'?>';
+					bodyEl.appendChild(sourcesTitle);
+
+					var sourcesList = document.createElement('ul');
+					sourcesList.style.margin = '4px 0 0';
+					sourcesList.style.paddingLeft = '18px';
+					sourcesList.style.fontSize = '13px';
+					data.citations.forEach(function(citation) {
+						if (!citation.url) return;
+						var li = document.createElement('li');
+						// only ever an http(s) link - a compromised/malicious
+						// response could otherwise hand back a javascript:
+						// URI that runs on click
+						if (/^https?:\/\//i.test(citation.url)) {
+							var a = document.createElement('a');
+							a.href = citation.url;
+							a.target = '_blank';
+							a.rel = 'noopener noreferrer';
+							a.textContent = citation.title || citation.url;
+							li.appendChild(a);
+						} else {
+							li.textContent = citation.title || citation.url;
+						}
+						sourcesList.appendChild(li);
+					});
+					bodyEl.appendChild(sourcesList);
+				}
 			} else {
 				bodyEl.innerHTML = '<span class="text-danger">' + (data.error || 'Request failed') + '</span>';
 			}

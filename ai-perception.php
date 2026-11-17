@@ -48,6 +48,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->removeApiKey($_POST);
 			break;
 
+		case "toggle-live-search":
+			$controller->toggleLiveSearch($_POST);
+			break;
+
 		case "add-prompt":
 			$controller->addPrompt($_POST);
 			break;

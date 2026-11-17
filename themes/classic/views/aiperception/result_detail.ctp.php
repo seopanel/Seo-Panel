@@ -29,6 +29,9 @@ function aipFormatResponse($text) {
 	<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px;font-size:12.5px;color:#5a6372;">
 		<div><strong><?php echo $spTextAIV['Provider'] ?? 'Provider'?>:</strong> <?php echo htmlspecialchars($result['provider'])?></div>
 		<div><strong><?php echo $spText['common']['Date'] ?? 'Checked'?>:</strong> <?php echo htmlspecialchars($result['checked_date'])?></div>
+		<?php if (!empty($result['grounded'])) { ?>
+			<div><span class="badge badge-info py-1 px-2 text-light" title="<?php echo htmlspecialchars($spTextAIV['This check used the provider live web search, not just its training-data recall.'] ?? 'This check used the provider live web search, not just its training-data recall.')?>"><i class="fas fa-globe"></i> <?php echo $spTextAIV['Live search'] ?? 'Live search'?></span></div>
+		<?php } ?>
 		<?php if (!$isError) { ?>
 			<div>
 				<strong><?php echo $spTextAIV['Mentioned'] ?? 'Mentioned'?>:</strong>
@@ -60,5 +63,32 @@ function aipFormatResponse($text) {
 		</div>
 	<?php } else { ?>
 		<pre style="white-space:pre-wrap;word-break:break-word;background:#fafbfd;border:1px solid #e8edf5;border-radius:8px;padding:14px 16px;font-family:inherit;font-size:13px;color:#2a2a3d;max-height:50vh;overflow-y:auto;margin:0;"><?php echo aipFormatResponse($result['response_text'])?></pre>
+
+		<?php if (!empty($citations)) { ?>
+			<div style="font-size:11px;color:#8a8ea3;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin:16px 0 4px;">
+				<?php echo $spTextAIV['Sources cited'] ?? 'Sources cited'?>
+			</div>
+			<ul style="margin:0;padding-left:18px;font-size:13px;">
+				<?php foreach ($citations as $citation) {
+					if (empty($citation['url'])) continue;
+					// only ever an http(s) link - htmlspecialchars() alone
+					// doesn't stop a javascript: URI in href, and this is
+					// third-party provider data, not something SEO Panel
+					// generated itself
+					$citationIsHttp = preg_match('#^https?://#i', $citation['url']);
+					$citationLabel = !empty($citation['title']) ? $citation['title'] : $citation['url'];
+				?>
+					<li style="margin-bottom:4px;">
+						<?php if ($citationIsHttp) { ?>
+							<a href="<?php echo htmlspecialchars($citation['url'], ENT_QUOTES)?>" target="_blank" rel="noopener noreferrer">
+								<?php echo htmlspecialchars($citationLabel)?>
+							</a>
+						<?php } else { ?>
+							<?php echo htmlspecialchars($citationLabel)?>
+						<?php } ?>
+					</li>
+				<?php } ?>
+			</ul>
+		<?php } ?>
 	<?php } ?>
 </div>

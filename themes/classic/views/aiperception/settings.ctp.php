@@ -108,6 +108,15 @@ foreach ($providers as $p) { $configuredByProvider[$p['provider']] = $p; }
 			</td>
 			<td class="text-center">
 				<?php if (!empty($configured)) { ?>
+					<label style="display:inline-flex;align-items:center;gap:5px;margin-right:10px;font-size:12.5px;color:#5a6372;cursor:pointer;" title="<?php echo htmlspecialchars($spTextAIV['When on, checks use this provider\'s live web search instead of just its training-data recall.'] ?? 'When on, checks use this provider\'s live web search instead of just its training-data recall.')?>">
+						<input type="checkbox" onchange="scriptDoLoadPost('ai-perception.php', 'aip_live_search_form_<?php echo $providerKey?>', 'content')" <?php echo !empty($configured['live_search']) ? 'checked' : ''?>>
+						<?php echo $spTextAIV['Live search'] ?? 'Live search'?>
+					</label>
+					<form id="aip_live_search_form_<?php echo $providerKey?>" onsubmit="return false;">
+						<input type="hidden" name="sec" value="toggle-live-search">
+						<input type="hidden" name="provider" value="<?php echo $providerKey?>">
+						<input type="hidden" name="live_search" value="<?php echo !empty($configured['live_search']) ? '0' : '1'?>">
+					</form>
 					<form id="aip_remove_form_<?php echo $providerKey?>" onsubmit="return false;">
 						<input type="hidden" name="sec" value="remove-key">
 						<input type="hidden" name="provider" value="<?php echo $providerKey?>">

@@ -1086,8 +1086,10 @@ class SiteAuditorController extends Controller{
 	        $this->__verifyReportOwnership($reportId);
 	        $auditorComp = $this->createComponent('AuditorComponent');
 	        $reportInfo = $auditorComp->getReportInfo(" and id=$reportId");
-	        $reportInfo['score'] = array_sum($auditorComp->countReportPageScore($reportInfo));
+	        $scoreInfo = $auditorComp->countReportPageScore($reportInfo);
+	        $reportInfo['score'] = array_sum($scoreInfo);
 	        $reportInfo['comments'] = $comments = implode("<br>", $auditorComp->commentInfo);
+	        $this->set('aiReadiness', $auditorComp->getAiReadinessBreakdown($scoreInfo));
 	        $this->set('spTextHome', $this->getLanguageTexts('home', $_SESSION['lang_code']));
 	        $this->set('reportInfo', $reportInfo);
 	        $this->set('linkList', $auditorComp->getAllLinksPage($reportId));

@@ -208,7 +208,12 @@
 							<?php if ($i === 0) { ?>
 								<td rowspan="<?php echo $rowspan?>"><?php echo htmlspecialchars($prompt['prompt_text'])?></td>
 							<?php } ?>
-							<td><?php echo htmlspecialchars($result['provider'])?></td>
+							<td>
+								<?php echo htmlspecialchars($result['provider'])?>
+								<?php if (!empty($result['grounded'])) { ?>
+									<i class="fas fa-globe" style="color:#4a8fc7;margin-left:4px;" title="<?php echo htmlspecialchars($spTextAIV['Live search'] ?? 'Live search')?>"></i>
+								<?php } ?>
+							</td>
 							<td>
 								<?php if (!empty($result['mentioned'])) { ?>
 									<span class="badge badge-success py-1 px-2 text-light"><?php echo $spTextAIV['Mentioned'] ?? 'Mentioned'?></span>

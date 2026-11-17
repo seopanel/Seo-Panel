@@ -279,6 +279,41 @@ class AuditorComponent extends Controller{
         return $exclude;
     }
     
+    // AI Readiness sub-score: the subset of countReportPageScore()'s checks
+    // that specifically determine whether an AI answer engine (vs. a
+    // classic search engine) can parse and cite this page - structured
+    // data, AI-robot crawl access, heading/chunking structure, FAQ-style
+    // content, and content depth. These already feed into the page's one
+    // general SEO score blended with classic-SEO-only signals (backlinks,
+    // page authority, HTTPS...), so a user couldn't previously tell "is
+    // this page AI-ready" as its own number. Points/range below mirror
+    // countReportPageScore()'s own values for exactly these keys - keep
+    // both in sync if those checks' scoring ever changes.
+    var $aiReadinessKeys = array('has_structured_data', 'ai_robot_allowed', 'heading_structure_ok', 'has_faq_content', 'word_count');
+    var $aiReadinessMinPoints = -6; // worst case: -1 + -2 + -1 + 0 + -2
+    var $aiReadinessMaxPoints = 10; // best case: 2 + 3 + 2 + 1 + 2
+
+    // func to isolate the AI-readiness subset of an already-computed
+    // countReportPageScore() breakdown into its own 0-100 score - reuses
+    // the SAME $scoreInfo/commentInfo that call just produced, never
+    // re-runs the underlying detection a second time.
+    function getAiReadinessBreakdown($scoreInfo) {
+        $breakdown = array();
+        $points = 0;
+        foreach ($this->aiReadinessKeys as $key) {
+            if (!array_key_exists($key, $scoreInfo)) continue;
+            $points += $scoreInfo[$key];
+            $breakdown[$key] = array(
+                'points'  => $scoreInfo[$key],
+                'comment' => $this->commentInfo[$key] ?? '',
+            );
+        }
+        $range = $this->aiReadinessMaxPoints - $this->aiReadinessMinPoints;
+        $pct = $range > 0 ? round((($points - $this->aiReadinessMinPoints) / $range) * 100) : 0;
+        $pct = max(0, min(100, $pct));
+        return array('score' => $pct, 'breakdown' => $breakdown);
+    }
+
     // function to find the score of a report page
     function updateReportPageScore($reportId) {
         $reportInfo = $this->getReportInfo(" and id=$reportId");

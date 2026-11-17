@@ -592,7 +592,54 @@ $dofollowCount = $totalLinks - $nofollowCount;
 						</div>
 					</div>
 				</div>
-				<div class="detail-card">
+								<div class="detail-card">
+					<div class="detail-label"><i class="fas fa-robot"></i> <?php echo $spTextSA['AI Readiness'] ?? 'AI Readiness'?></div>
+					<div class="detail-value">
+						<?php
+						$aiPct = intval($aiReadiness['score'] ?? 0);
+						// hardcoded English, matching the general Score circle's own
+						// $statusText above - that one isn't routed through $spTextSA
+						// either, so this stays consistent rather than half-localizing
+						if ($aiPct >= 80) { $aiStatusClass = 'excellent'; $aiStatusText = 'Excellent'; }
+						else if ($aiPct >= 60) { $aiStatusClass = 'good'; $aiStatusText = 'Good'; }
+						else if ($aiPct >= 40) { $aiStatusClass = 'average'; $aiStatusText = 'Average'; }
+						else if ($aiPct >= 20) { $aiStatusClass = 'poor'; $aiStatusText = 'Needs Work'; }
+						else { $aiStatusClass = 'bad'; $aiStatusText = 'Critical'; }
+						$aiCircumference = 2 * M_PI * $radius;
+						$aiDashoffset = $aiCircumference - ($aiPct / 100) * $aiCircumference;
+						?>
+						<div class="score-circle-container">
+							<div class="score-circle">
+								<svg viewBox="0 0 80 80">
+									<defs>
+										<linearGradient id="aiReadinessGradientPositive" x1="0%" y1="0%" x2="100%" y2="100%">
+											<stop offset="0%" style="stop-color:#28a745"/>
+											<stop offset="100%" style="stop-color:#20c997"/>
+										</linearGradient>
+										<linearGradient id="aiReadinessGradientNegative" x1="0%" y1="0%" x2="100%" y2="100%">
+											<stop offset="0%" style="stop-color:#dc3545"/>
+											<stop offset="100%" style="stop-color:#fd7e14"/>
+										</linearGradient>
+									</defs>
+									<circle class="score-circle-bg" cx="40" cy="40" r="<?php echo $radius?>"/>
+									<circle class="score-circle-progress <?php echo $aiPct >= 50 ? 'positive' : 'negative'?>"
+										cx="40" cy="40" r="<?php echo $radius?>"
+										stroke-dasharray="<?php echo $aiCircumference?>"
+										stroke-dashoffset="<?php echo $aiDashoffset?>"
+										style="stroke:url(#<?php echo $aiPct >= 50 ? 'aiReadinessGradientPositive' : 'aiReadinessGradientNegative'?>)"/>
+								</svg>
+								<div class="score-circle-value <?php echo $aiPct >= 50 ? 'positive' : 'negative'?>">
+									<?php echo $aiPct?>%
+								</div>
+							</div>
+							<div class="score-info">
+								<span class="score-status <?php echo $aiStatusClass?>"><?php echo $aiStatusText?></span>
+								<span class="score-description"><?php echo $spTextSA['AI Readiness Rating'] ?? 'AI Readiness Rating'?></span>
+							</div>
+						</div>
+					</div>
+				</div>
+<div class="detail-card">
 					<div class="detail-label"><i class="fas fa-certificate"></i> <?php echo $_SESSION['text']['common']['Page Authority'] ?? 'Page Authority'; ?></div>
 					<div class="detail-value">
 						<span class="metric-value"><?php echo $reportInfo['page_authority'] ?: '0'?></span>

@@ -17,6 +17,11 @@ class AiPerceptionController extends Controller {
 
 	const RATE_LIMIT_PER_MINUTE = 5;
 	const OPENAI_MODEL = 'gpt-4o-mini';
+	// OpenAI's web-search-enabled chat model - swapped in for OPENAI_MODEL
+	// only when live-search grounding is on for this provider (see
+	// __callOpenAI()); it answers from a live web search instead of
+	// training-data recall, and returns citations as response annotations.
+	const OPENAI_SEARCH_MODEL = 'gpt-4o-mini-search-preview';
 	const ANTHROPIC_MODEL = 'claude-3-5-haiku-20241022';
 	const GOOGLE_MODEL = 'gemini-1.5-flash';
 	const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google'];
@@ -64,7 +69,7 @@ class AiPerceptionController extends Controller {
 	// func to list this user's configured providers (never returns the raw key)
 	function __getUserProviders($userId) {
 		$userId = intval($userId);
-		return $this->db->select("SELECT provider, created_at, RIGHT(api_key, 4) AS key_tail FROM llm_api_keys WHERE user_id=$userId ORDER BY provider");
+		return $this->db->select("SELECT provider, created_at, live_search, RIGHT(api_key, 4) AS key_tail FROM llm_api_keys WHERE user_id=$userId ORDER BY provider");
 	}
 
 	// func to fetch a raw key for internal use only - never set()/echoed to a view
@@ -73,6 +78,20 @@ class AiPerceptionController extends Controller {
 		$provider = addslashes($provider);
 		$row = $this->db->select("SELECT api_key FROM llm_api_keys WHERE user_id=$userId AND provider='$provider'", true);
 		return !empty($row['api_key']) ? $row['api_key'] : '';
+	}
+
+	// func to fetch both the raw key AND this user's live-search-grounding
+	// preference for one provider in a single call - the shape every
+	// caller that actually RUNS a check needs (vs. __getApiKey() alone,
+	// still used by callers that only need to confirm a key exists)
+	private function __getProviderConfig($userId, $provider) {
+		$userId = intval($userId);
+		$providerSql = addslashes($provider);
+		$row = $this->db->select("SELECT api_key, live_search FROM llm_api_keys WHERE user_id=$userId AND provider='$providerSql'", true);
+		return [
+			'api_key'     => !empty($row['api_key']) ? $row['api_key'] : '',
+			'live_search' => !empty($row) ? !empty($row['live_search']) : true, // default on for a row that doesn't exist yet - matches the column's own DEFAULT 1
+		];
 	}
 
 	function showSettings() {
@@ -86,6 +105,10 @@ class AiPerceptionController extends Controller {
 		$userId = isLoggedIn();
 		$provider = trim($info['provider'] ?? '');
 		$apiKey = trim($info['api_key'] ?? '');
+		// defaults on, matching the column's own DEFAULT 1 - an unchecked
+		// checkbox simply isn't present in $info at all, same idiom as
+		// htaccess_ai_headers_enabled in AIVisibilityController::saveHtaccessConfig()
+		$liveSearch = !empty($info['live_search']) ? 1 : 0;
 
 		if (!in_array($provider, self::ALLOWED_PROVIDERS, true) || empty($apiKey)) {
 			showErrorMsg($_SESSION['text']['label']['Access denied']);
@@ -95,10 +118,29 @@ class AiPerceptionController extends Controller {
 		$providerSql = addslashes($provider);
 		$apiKeySql = addslashes($apiKey);
 		$this->db->query(
-			"INSERT INTO llm_api_keys (user_id, provider, api_key, created_at)
-			 VALUES ($userId, '$providerSql', '$apiKeySql', NOW())
-			 ON DUPLICATE KEY UPDATE api_key='$apiKeySql', created_at=NOW()"
+			"INSERT INTO llm_api_keys (user_id, provider, api_key, live_search, created_at)
+			 VALUES ($userId, '$providerSql', '$apiKeySql', $liveSearch, NOW())
+			 ON DUPLICATE KEY UPDATE api_key='$apiKeySql', live_search=$liveSearch, created_at=NOW()"
 		);
+
+		$this->showSettings();
+	}
+
+	// func to flip a configured provider's live-search-grounding preference
+	// without re-entering its API key - a separate action from saveApiKey()
+	// since the settings view offers this as its own toggle next to an
+	// already-configured row, not part of the add-key form.
+	function toggleLiveSearch($info) {
+		$userId = isLoggedIn();
+		$provider = trim($info['provider'] ?? '');
+		if (!in_array($provider, self::ALLOWED_PROVIDERS, true)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$providerSql = addslashes($provider);
+		$liveSearch = !empty($info['live_search']) ? 1 : 0;
+		$this->db->query("UPDATE llm_api_keys SET live_search=$liveSearch WHERE user_id=$userId AND provider='$providerSql'");
 
 		$this->showSettings();
 	}
@@ -361,7 +403,7 @@ class AiPerceptionController extends Controller {
 			// selected here (this list can be long; no reason to pull every
 			// full response just to render a mentioned/not-mentioned badge)
 			$prompt['results'] = $this->db->select(
-				"SELECT r.id, r.provider, r.checked_date, r.mentioned, r.sentiment FROM llm_perception_results r
+				"SELECT r.id, r.provider, r.checked_date, r.mentioned, r.sentiment, r.grounded FROM llm_perception_results r
 				 WHERE r.prompt_id={$prompt['id']} AND r.checked_date = (
 					 SELECT MAX(r2.checked_date) FROM llm_perception_results r2
 					 WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
@@ -398,7 +440,14 @@ class AiPerceptionController extends Controller {
 			return;
 		}
 
+		$citations = [];
+		if (!empty($result['citations'])) {
+			$decoded = json_decode($result['citations'], true);
+			if (is_array($decoded)) $citations = $decoded;
+		}
+
 		$this->set('result', $result);
+		$this->set('citations', $citations);
 		$this->set('spTextAIV', $this->getLanguageTexts('aivisibility', $_SESSION['lang_code']));
 		$this->render('aiperception/result_detail', '');
 	}
@@ -548,18 +597,20 @@ class AiPerceptionController extends Controller {
 				$due = empty($lastChecked['d']) || $lastChecked['d'] < $cutoff;
 				if (!$due) continue;
 
-				$apiKey = $this->__getApiKey($prompt['user_id'], $provider);
+				$providerConfig = $this->__getProviderConfig($prompt['user_id'], $provider);
+				$apiKey = $providerConfig['api_key'];
 				if (empty($apiKey)) continue; // key removed since the prompt was added - skip silently, don't error
+				$grounded = $providerConfig['live_search'];
 
 				switch ($provider) {
 					case 'openai':
-						$result = $this->__callOpenAI($apiKey, $prompt['prompt_text']);
+						$result = $this->__callOpenAI($apiKey, $prompt['prompt_text'], $grounded);
 						break;
 					case 'anthropic':
-						$result = $this->__callAnthropic($apiKey, $prompt['prompt_text']);
+						$result = $this->__callAnthropic($apiKey, $prompt['prompt_text'], $grounded);
 						break;
 					case 'google':
-						$result = $this->__callGoogleGemini($apiKey, $prompt['prompt_text']);
+						$result = $this->__callGoogleGemini($apiKey, $prompt['prompt_text'], $grounded);
 						break;
 					default:
 						continue 2;
@@ -575,6 +626,8 @@ class AiPerceptionController extends Controller {
 					'response_text'   => !empty($result['ok']) ? $result['text'] : ('ERROR: ' . ($result['error'] ?? 'unknown')),
 					'mentioned|int'   => $mentioned ? 1 : 0,
 					'sentiment'       => $sentiment,
+					'grounded|int'    => (!empty($result['ok']) && !empty($result['grounded'])) ? 1 : 0,
+					'citations'       => (!empty($result['ok']) && !empty($result['citations'])) ? json_encode($result['citations']) : null,
 					'created_at'      => 'NOW()',
 				]);
 
@@ -766,11 +819,13 @@ class AiPerceptionController extends Controller {
 			return;
 		}
 
-		$apiKey = $this->__getApiKey($userId, $provider);
+		$providerConfig = $this->__getProviderConfig($userId, $provider);
+		$apiKey = $providerConfig['api_key'];
 		if (empty($apiKey)) {
 			echo json_encode(['ok' => false, 'error' => 'No API key configured for this provider']);
 			return;
 		}
+		$grounded = $providerConfig['live_search'];
 
 		$website = $this->dbHelper->getRow('websites', "id=$websiteId");
 		$domain = !empty($website['url']) ? preg_replace('#^https?://(www\.)?#i', '', rtrim($website['url'], '/')) : '';
@@ -782,13 +837,13 @@ class AiPerceptionController extends Controller {
 
 		switch ($provider) {
 			case 'openai':
-				$result = $this->__callOpenAI($apiKey, $prompt);
+				$result = $this->__callOpenAI($apiKey, $prompt, $grounded);
 				break;
 			case 'anthropic':
-				$result = $this->__callAnthropic($apiKey, $prompt);
+				$result = $this->__callAnthropic($apiKey, $prompt, $grounded);
 				break;
 			case 'google':
-				$result = $this->__callGoogleGemini($apiKey, $prompt);
+				$result = $this->__callGoogleGemini($apiKey, $prompt, $grounded);
 				break;
 		}
 
@@ -898,10 +953,16 @@ class AiPerceptionController extends Controller {
 	}
 
 	// func to call OpenAI's Chat Completions API - never throws, every
-	// failure path returns ['ok'=>false,...] so the caller degrades cleanly
-	function __callOpenAI($apiKey, $prompt) {
+	// failure path returns ['ok'=>false,...] so the caller degrades cleanly.
+	// When $grounded, switches to OpenAI's web-search-enabled chat model
+	// instead of adding a tool to the plain one - this measures what the
+	// model actually finds live on the web right now, not just what it
+	// recalls from training data, and the model itself returns citations
+	// as response 'annotations' rather than requiring a separate tool-call
+	// round trip.
+	function __callOpenAI($apiKey, $prompt, $grounded = false) {
 		$payload = [
-			'model' => self::OPENAI_MODEL,
+			'model' => $grounded ? self::OPENAI_SEARCH_MODEL : self::OPENAI_MODEL,
 			'messages' => [['role' => 'user', 'content' => $prompt]],
 			'max_tokens' => 300,
 		];
@@ -915,29 +976,46 @@ class AiPerceptionController extends Controller {
 		ob_end_clean();
 
 		if (empty($response['page'])) {
-			return ['ok' => false, 'text' => '', 'error' => 'Could not reach OpenAI'];
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach OpenAI', 'grounded' => false, 'citations' => []];
 		}
 		$data = json_decode($response['page'], true);
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from OpenAI'];
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from OpenAI', 'grounded' => false, 'citations' => []];
 		}
 		if (!empty($data['error'])) {
-			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'OpenAI request failed'];
+			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'OpenAI request failed', 'grounded' => false, 'citations' => []];
 		}
-		$text = $data['choices'][0]['message']['content'] ?? '';
+		$message = $data['choices'][0]['message'] ?? [];
+		$text = $message['content'] ?? '';
 		if (empty($text)) {
-			return ['ok' => false, 'text' => '', 'error' => 'Empty response from OpenAI'];
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from OpenAI', 'grounded' => false, 'citations' => []];
 		}
-		return ['ok' => true, 'text' => trim($text), 'error' => null];
+
+		// url_citation annotations only appear on a search-model response -
+		// see https://platform.openai.com/docs/guides/web-search
+		$citations = [];
+		foreach ($message['annotations'] ?? [] as $annotation) {
+			if (($annotation['type'] ?? '') !== 'url_citation' || empty($annotation['url_citation']['url'])) continue;
+			$citations[] = ['url' => $annotation['url_citation']['url'], 'title' => $annotation['url_citation']['title'] ?? ''];
+		}
+
+		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => $grounded, 'citations' => $citations];
 	}
 
-	// func to call Anthropic's Messages API
-	function __callAnthropic($apiKey, $prompt) {
+	// func to call Anthropic's Messages API. When $grounded, adds Claude's
+	// server-side web_search tool - Claude decides on its own whether a
+	// given prompt actually needs a search, so this stays a single request
+	// (the API runs the search itself and returns the final answer),
+	// not a client-side tool-use loop.
+	function __callAnthropic($apiKey, $prompt, $grounded = false) {
 		$payload = [
 			'model' => self::ANTHROPIC_MODEL,
 			'max_tokens' => 300,
 			'messages' => [['role' => 'user', 'content' => $prompt]],
 		];
+		if ($grounded) {
+			$payload['tools'] = [['type' => 'web_search_20250305', 'name' => 'web_search', 'max_uses' => 3]];
+		}
 
 		ob_start();
 		$spider = new Spider();
@@ -948,28 +1026,51 @@ class AiPerceptionController extends Controller {
 		ob_end_clean();
 
 		if (empty($response['page'])) {
-			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Anthropic'];
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Anthropic', 'grounded' => false, 'citations' => []];
 		}
 		$data = json_decode($response['page'], true);
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Anthropic'];
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Anthropic', 'grounded' => false, 'citations' => []];
 		}
 		if (!empty($data['error'])) {
-			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'Anthropic request failed'];
+			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'Anthropic request failed', 'grounded' => false, 'citations' => []];
 		}
-		$text = $data['content'][0]['text'] ?? '';
+
+		// a grounded response's content array can mix 'text' blocks with
+		// 'server_tool_use'/'web_search_tool_result' blocks - concatenate
+		// only the text, and pull citations off of EACH text block's own
+		// 'citations' array (where Claude attaches the specific sources
+		// that back that particular sentence)
+		$textParts = [];
+		$citations = [];
+		foreach ($data['content'] ?? [] as $block) {
+			if (($block['type'] ?? '') !== 'text') continue;
+			$textParts[] = $block['text'] ?? '';
+			foreach ($block['citations'] ?? [] as $citation) {
+				if (empty($citation['url'])) continue;
+				$citations[] = ['url' => $citation['url'], 'title' => $citation['title'] ?? ''];
+			}
+		}
+		$text = trim(implode('', $textParts));
 		if (empty($text)) {
-			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Anthropic'];
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Anthropic', 'grounded' => false, 'citations' => []];
 		}
-		return ['ok' => true, 'text' => trim($text), 'error' => null];
+
+		return ['ok' => true, 'text' => $text, 'error' => null, 'grounded' => $grounded, 'citations' => $citations];
 	}
 
 	// func to call Google's Gemini generateContent API (API key passed as
-	// a query param, per Google's own API shape - not a header)
-	function __callGoogleGemini($apiKey, $prompt) {
+	// a query param, per Google's own API shape - not a header). When
+	// $grounded, adds the googleSearch grounding tool - Gemini decides
+	// whether to actually search, same "may or may not fire" behavior as
+	// Claude's web_search tool above.
+	function __callGoogleGemini($apiKey, $prompt, $grounded = false) {
 		$payload = [
 			'contents' => [['parts' => [['text' => $prompt]]]],
 		];
+		if ($grounded) {
+			$payload['tools'] = [['google_search' => new stdClass()]];
+		}
 
 		ob_start();
 		$spider = new Spider();
@@ -981,19 +1082,30 @@ class AiPerceptionController extends Controller {
 		ob_end_clean();
 
 		if (empty($response['page'])) {
-			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Google'];
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Google', 'grounded' => false, 'citations' => []];
 		}
 		$data = json_decode($response['page'], true);
 		if (json_last_error() !== JSON_ERROR_NONE) {
-			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Google'];
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Google', 'grounded' => false, 'citations' => []];
 		}
 		if (!empty($data['error'])) {
-			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'Google request failed'];
+			return ['ok' => false, 'text' => '', 'error' => !empty($data['error']['message']) ? $data['error']['message'] : 'Google request failed', 'grounded' => false, 'citations' => []];
 		}
-		$text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
+		$candidate = $data['candidates'][0] ?? [];
+		$text = $candidate['content']['parts'][0]['text'] ?? '';
 		if (empty($text)) {
-			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Google'];
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Google', 'grounded' => false, 'citations' => []];
 		}
-		return ['ok' => true, 'text' => trim($text), 'error' => null];
+
+		// groundingChunks only appear when the googleSearch tool actually
+		// fired for this response - see
+		// https://ai.google.dev/gemini-api/docs/grounding
+		$citations = [];
+		foreach ($candidate['groundingMetadata']['groundingChunks'] ?? [] as $chunk) {
+			if (empty($chunk['web']['uri'])) continue;
+			$citations[] = ['url' => $chunk['web']['uri'], 'title' => $chunk['web']['title'] ?? ''];
+		}
+
+		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => $grounded, 'citations' => $citations];
 	}
 }
