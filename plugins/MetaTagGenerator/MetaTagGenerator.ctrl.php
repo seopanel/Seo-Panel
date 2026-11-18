@@ -107,6 +107,14 @@ class MetaTagGenerator extends SeoPluginsController{
 		$errMsg['description'] = formatErrorMsg($this->validate->checkBlank($info['description']));
 		$errMsg['keywords'] = formatErrorMsg($this->validate->checkBlank($info['keywords']));
 
+		// bug fix: canonical_url/og_image/og_url accepted any string with
+		// zero URL-format validation, persisting malformed values that
+		// get served as broken metadata to search engines/social crawlers.
+		// Only validated when non-empty - all three are optional fields.
+		if (!empty($info['canonical_url'])) $errMsg['canonical_url'] = formatErrorMsg($this->validate->checkUrl($info['canonical_url']));
+		if (!empty($info['og_image'])) $errMsg['og_image'] = formatErrorMsg($this->validate->checkUrl($info['og_image']));
+		if (!empty($info['og_url'])) $errMsg['og_url'] = formatErrorMsg($this->validate->checkUrl($info['og_url']));
+
 		# error occurs
 		if($this->validate->flagErr){
 			$this->set('errMsg', $errMsg);
@@ -228,11 +236,16 @@ class MetaTagGenerator extends SeoPluginsController{
 	 * after validation passes and ownership is confirmed.
 	 */
 	function saveWebsiteMetaInfo($info) {
+		// bug fix: no server-side length cap despite fixed-width DB
+		// columns - a value longer than its column risked either silent
+		// truncation (non-strict SQL mode) or a strict-mode insert
+		// failure. Capped to each column's own real width (see
+		// install/data/seopanel.sql's websites table).
 		$data = [
-			'title' => $info['title'],
-			'description' => $info['description'],
-			'keywords' => $info['keywords'],
-			'canonical_url' => $info['canonical_url'] ?? '',
+			'title' => mb_substr($info['title'], 0, 100),
+			'description' => mb_substr($info['description'], 0, 500),
+			'keywords' => mb_substr($info['keywords'], 0, 500),
+			'canonical_url' => mb_substr($info['canonical_url'] ?? '', 0, 255),
 			'viewport|int' => !empty($info['viewport']) ? 1 : 0,
 			'copyright' => $info['copyright'] ?? '',
 			'owner_name' => $info['owner_name'] ?? '',
@@ -242,10 +255,10 @@ class MetaTagGenerator extends SeoPluginsController{
 			'distribution' => $info['distribution'] ?? '',
 			'robots' => $info['robots'] ?? '',
 			'revisit_after' => $info['revisit-after'] ?? '',
-			'og_title' => $info['og_title'] ?? '',
-			'og_description' => $info['og_description'] ?? '',
-			'og_image' => $info['og_image'] ?? '',
-			'og_url' => $info['og_url'] ?? '',
+			'og_title' => mb_substr($info['og_title'] ?? '', 0, 100),
+			'og_description' => mb_substr($info['og_description'] ?? '', 0, 300),
+			'og_image' => mb_substr($info['og_image'] ?? '', 0, 255),
+			'og_url' => mb_substr($info['og_url'] ?? '', 0, 255),
 			'twitter_card' => $info['twitter_card'] ?? '',
 			'meta_charset' => $info['charset'] ?? '',
 			'lang_code' => $info['lang_code'] ?? '',
