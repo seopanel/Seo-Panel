@@ -382,6 +382,19 @@ class ReviewManagerController extends ReviewBase{
 				$taskResult = $dfsCtrler->postReviewTask($smType, 0, $smLink);
 
 				if ($taskResult['status']) {
+					// bug fix: missing authorization - quick-checker tasks
+					// are saved with ref_id=0 (no owning user at all), and
+					// checkQuickCheckerStatus() below looked a task up by
+					// task_id alone, so anyone who obtained another user's
+					// task_id could read their pending/completed result.
+					// Scope to the caller's own session instead of a schema
+					// change, same approach used for QuickWebProxy's
+					// recent-URLs fix.
+					$_SESSION['rm_quick_checker_tasks'] = array_slice(
+						array_merge($_SESSION['rm_quick_checker_tasks'] ?? [], [$taskResult['task_id']]),
+						-20
+					);
+
 					// Task posted successfully, show pending view
 					$this->set('smType', $smType);
 					$this->set('smLink', $smLink);
@@ -427,6 +440,14 @@ class ReviewManagerController extends ReviewBase{
 
 		if (empty($taskId) || empty($smType)) {
 			showErrorMsg($_SESSION['text']['common']['Internal error occured']);
+			return;
+		}
+
+		// bug fix: missing authorization - see doQuickChecker()'s own
+		// comment above for why this is session-scoped rather than a
+		// schema change
+		if (!in_array($taskId, $_SESSION['rm_quick_checker_tasks'] ?? [], true)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
 			return;
 		}
 
