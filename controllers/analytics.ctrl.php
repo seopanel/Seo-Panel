@@ -97,17 +97,36 @@ class AnalyticsController extends Controller {
 	        return $errorText;
 	    }
 	    
+	    // bug fix: this used SP_GOOGLE_API_CLIENT_ID/SECRET directly with no
+	    // defined()/non-empty check (unlike GoogleAPIController::
+	    // createAuthAPIClient(), the GSC path's equivalent) - on a fresh
+	    // install or before Google credentials are configured, referencing
+	    // an undefined constant is a PHP Error, not an Exception, so the
+	    // catch block below never even caught it; this fataled instead of
+	    // showing the same friendly "Google Auth Credentials not set" alert.
+	    if (!defined('SP_GOOGLE_API_CLIENT_ID') || !defined('SP_GOOGLE_API_CLIENT_SECRET') || SP_GOOGLE_API_CLIENT_ID == '' || SP_GOOGLE_API_CLIENT_SECRET == '') {
+	        $alertCtler = new AlertController();
+	        $alertCtler->createAlert([
+	            'alert_subject' => "Click here to enter Google Auth Credentials",
+	            'alert_message' => "Error: Google Auth Credentials not set",
+	            'alert_url' => SP_WEBPATH . "/admin-panel.php?sec=google-settings",
+	            'alert_type' => "danger",
+	            'alert_category' => "reports",
+	        ], false, true);
+	        return "Error: Google Auth Credentials not set.";
+	    }
+
 	    try {
 	        $credentials = new UserRefreshCredentials(['https://www.googleapis.com/auth/analytics.readonly'], [
 	            'client_id' => SP_GOOGLE_API_CLIENT_ID,
 	            'client_secret' => SP_GOOGLE_API_CLIENT_SECRET,
 	            'refresh_token' => $tokenInfo['refresh_token'],
 	        ]);
-	        
+
 	        // Initialize the client
 	        $ga4Client = new BetaAnalyticsDataClient(['credentials' => $credentials]);
 	        return $ga4Client;
-	    } catch (Exception $e) {
+	    } catch (Throwable $e) {
 	        $err = $e->getMessage();
 	        return "Error: Google analytics GA4 client creation - $err";
 	    }

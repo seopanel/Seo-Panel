@@ -51,7 +51,11 @@ class MozController extends Controller {
         // call api using spider
         $spider = new Spider();
         $requestUrl = $this->v3Endpoint;
-        array_push($spider->_CURL_HTTPHEADER, 'x-moz-token: '. $apiToken);
+        // defensive: $apiToken traces back to a raw GET param on the
+        // Settings "Verify" flow - header values aren't a string Spider/
+        // curl otherwise validates, so strip any CR/LF before it reaches
+        // a header line
+        array_push($spider->_CURL_HTTPHEADER, 'x-moz-token: '. str_replace(["\r", "\n"], '', $apiToken));
         array_push($spider->_CURL_HTTPHEADER, 'Content-Type: application/json');
         $spider->_CURLOPT_POSTFIELDS = json_encode($requestData);
         $ret = $spider->getContent($requestUrl, FALSE);
@@ -141,7 +145,8 @@ class MozController extends Controller {
         // call api using spider
         $spider = new Spider();
         $requestUrl = $this->v3Endpoint;
-        array_push($spider->_CURL_HTTPHEADER, 'x-moz-token: '. $apiToken);
+        // defensive: same CRLF-stripping guard as __getMozUsageData() above
+        array_push($spider->_CURL_HTTPHEADER, 'x-moz-token: '. str_replace(["\r", "\n"], '', $apiToken));
         array_push($spider->_CURL_HTTPHEADER, 'Content-Type: application/json');
         $spider->_CURLOPT_POSTFIELDS = json_encode($requestData);
         $ret = $spider->getContent($requestUrl, FALSE);

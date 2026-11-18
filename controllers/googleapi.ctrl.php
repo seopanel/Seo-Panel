@@ -120,9 +120,13 @@ class GoogleAPIController extends Controller{
 					$newTokenInfo['token_type'] = $newToken['token_type'];
 					$newTokenInfo['expires_in'] = $newToken['expires_in'];
 					
-					// comment refresh token update to test the perfomnace
-					/*$newTokenInfo['refresh_token'] = $newToken['refresh_token'];*/
-					
+					// deliberately NOT re-saving refresh_token here: Google
+					// only issues a new refresh_token on the user's first
+					// consent, never on a plain token refresh, so
+					// $newToken['refresh_token'] is normally absent/unchanged
+					// on this path - overwriting the stored one with that
+					// would risk clobbering it with null
+
 					$this->tokenCtrler->updateUserToken($tokenInfo['id'], $newTokenInfo);
 				} catch (Exception $e) {
 					$err = $e->getMessage();
@@ -320,16 +324,6 @@ class GoogleAPIController extends Controller{
 
 	    $debug[] = "-- getanalyticWebsitesPropertyIds END, total websites: " . count($websites) . " --";
 	    return [TRUE, $websites, "success", $debug];
-	}
-	
-	// Function to get GA4 properties
-	function getGA4Properties($client, $accountId) {
-	    $accessToken = $this->__getAccessToken($client);
-	    $apiUrl = "https://analyticsadmin.googleapis.com/v1alpha/properties?filter=parent%3Daccounts%2F$accountId";
-	    $ret = $this->plainAPICall($apiUrl, $accessToken);
-	    if (!empty($ret['error'])) {
-	        return [false, $ret['errmsg'], []];
-	    }
 	}
 	
 	function __getAccessToken($client) {
