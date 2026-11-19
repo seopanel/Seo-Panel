@@ -1276,6 +1276,26 @@ class ReportController extends Controller {
 		$userId = empty($cronUserId) ? isLoggedIn() : $cronUserId;
 		$isAdmin = isAdmin();
 
+		// The periodic EMAILED report (sentEmailNotificationForReportGen(),
+		// the only caller that ever passes $cronUserId - see archive.php's
+		// own two call sites, which never do) used to bundle every single
+		// section below with no way to trim it. Narrowed to a curated
+		// "Core SEO" set with AI Visibility given top billing (it already
+		// renders first in report/archive.ctp.php - see the AI Visibility
+		// block further down) - Website Statistics, Website Search,
+		// Sitemap Reports and Social Media are dropped from the EMAIL
+		// specifically. The interactive in-app Overall Report page
+		// (archive.php, $cronUserId always false there) keeps its full
+		// report_type selector untouched - a user can still view/export
+		// any individual section on demand.
+		$emailReportMode = !empty($cronUserId);
+		$emailReportSections = ['keyword-position', 'analytics-reports', 'review-reports'];
+		$shouldShowSection = function($type) use (&$searchInfo, $emailReportMode, $emailReportSections) {
+			if (!empty($searchInfo['report_type'])) return $searchInfo['report_type'] == $type;
+			if ($emailReportMode) return in_array($type, $emailReportSections, true);
+			return true; // interactive page, no filter selected = show every section, unchanged
+		};
+
 		$keywordController = New KeywordController();
 		$websiteCtrler = New WebsiteController();
 		$websiteList = $websiteCtrler->__getAllWebsites($userId, true);
@@ -1356,7 +1376,7 @@ class ReportController extends Controller {
 		$scriptPath .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];
 		
 		# keyword position report section
-		if (empty($searchInfo['report_type']) ||  ($searchInfo['report_type'] == 'keyword-position')) {
+		if ($shouldShowSection('keyword-position')) {
 		    
 		    // to find order col
             if (!empty($searchInfo['order_col'])) {
@@ -1493,7 +1513,7 @@ class ReportController extends Controller {
 		}
 		
 		# website report section
-		if (empty($searchInfo['report_type']) ||  ($searchInfo['report_type'] == 'website-stats')) {
+		if ($shouldShowSection('website-stats')) {
 						
 			// pagination setup
 			if (!in_array($searchInfo['doc_type'], array('export', 'pdf')) && !$cronUserId) {
@@ -1625,7 +1645,7 @@ class ReportController extends Controller {
 		}
 		
 		# website search report section
-		if (empty($searchInfo['report_type']) || in_array($searchInfo['report_type'], array('review-reports', 'social-media-reports', 'website-search-reports', 'keyword-search-reports', 'sitemap-reports', 'analytics-reports')) ) {
+		if ($shouldShowSection('review-reports') || $shouldShowSection('social-media-reports') || $shouldShowSection('website-search-reports') || $shouldShowSection('keyword-search-reports') || $shouldShowSection('sitemap-reports') || $shouldShowSection('analytics-reports')) {
 		    include_once(SP_CTRLPATH."/analytics.ctrl.php");
 			$webMasterCtrler = new WebMasterController();
 			$socialMediaCtrler = New SocialMediaController();
@@ -1640,25 +1660,36 @@ class ReportController extends Controller {
 			$filterList['from_time'] = date('Y-m-d', $filterList['from_time']);
 			$filterList['to_time'] = date('Y-m-d', $filterList['to_time']);
 			$filterList['website_id'] = $websiteId;
-			
+
+			// bug fix: entering this block used to always mean "render
+			// all 6 sub-sections" (the outer condition itself was already
+			// read as "show everything"), so every one of these was
+			// always assigned before being read below. $shouldShowSection()
+			// can now enter this block while skipping SOME of them (the
+			// curated email-report mode) - initialize so an undefined-
+			// variable warning (and worse, that warning printing straight
+			// into the HTML/PDF output if display_errors is on) can't
+			// happen for whichever ones this pass doesn't populate.
+			$websiteSearchReport = $keywordSearchReport = $sitemapReport = $socialMediaReport = $analyticsReport = $reviewReport = '';
+
 			// if website search reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'website-search-reports')) {
+			if ($shouldShowSection('website-search-reports')) {
 				$websiteSearchReport = $webMasterCtrler->viewWebsiteSearchSummary($filterList, true, $cronUserId);
 			}
 			
 			// if keyword search reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'keyword-search-reports')) {
+			if ($shouldShowSection('keyword-search-reports')) {
 				$keywordSearchReport = $webMasterCtrler->viewKeywordSearchSummary($filterList, true, $cronUserId);
 			}
 			
 			// if sitemap reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'sitemap-reports')) {
+			if ($shouldShowSection('sitemap-reports')) {
 				$websiteCtrler->set('spTextPanel', $this->spTextPanel);
 				$sitemapReport = $websiteCtrler->listSitemap($filterList, true, $cronUserId);
 			}
 			
 			// if website analytics reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'analytics-reports')) {
+			if ($shouldShowSection('analytics-reports')) {
 			    $analyticsCtrler = new AnalyticsController();
 			    $analyticsCtrler->set('spTextTools', $this->spTextTools);
 			    $analyticsCtrler->spTextTools = $this->spTextTools;
@@ -1672,7 +1703,7 @@ class ReportController extends Controller {
 			}
 			
 			// if social media reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'social-media-reports')) {
+			if ($shouldShowSection('social-media-reports')) {
 				$filterList['from_time'] = $fromTimeShort;
 				$filterList['to_time'] = $toTimeShort;
 				$socialMediaCtrler->set('spTextTools', $this->spTextTools);
@@ -1682,7 +1713,7 @@ class ReportController extends Controller {
 			}
 
 			// if social media reports
-			if (empty($searchInfo['report_type']) || ($searchInfo['report_type'] == 'review-reports')) {
+			if ($shouldShowSection('review-reports')) {
 				$filterList['from_time'] = $fromTimeShort;
 				$filterList['to_time'] = $toTimeShort;
 				$reviewCtrler->set('spTextTools', $this->spTextTools);
