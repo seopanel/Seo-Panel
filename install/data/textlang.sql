@@ -32392,6 +32392,15 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'settings', 'SP_AI_PERCEPTION_EMAIL_NOTIFICATION', 'Enable AI Perception email notification'),
 ('en', 'aivisibility', 'ai_perception_email_body_intro', 'Here''s your AI Perception summary for the past week - how often real AI assistants mentioned your site when asked:'),
 ('en', 'aivisibility', 'ai_perception_email_body_outro', 'View the full tracking dashboard: [LOGIN_LINK]'),
+('en', 'aivisibility', 'ai_perception_email_subject', 'Your AI Perception summary this week'),
+('en', 'aivisibility', 'vs. last cycle', 'vs. last cycle'),
+('en', 'aivisibility', 'Competitors', 'Competitors'),
+('en', 'aivisibility', 'Sentiment', 'Sentiment'),
+('en', 'aivisibility', 'positive', 'positive'),
+('en', 'aivisibility', 'neutral', 'neutral'),
+('en', 'aivisibility', 'negative', 'negative'),
+('en', 'aivisibility', 'no change', 'no change'),
+('en', 'aivisibility', 'first tracked week', 'first tracked week'),
 ('en', 'login', 'Too many login attempts', 'Too many login attempts. Please wait a minute and try again.');
 
 -- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
