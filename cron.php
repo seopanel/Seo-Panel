@@ -262,6 +262,12 @@ if(!empty($_SERVER['REQUEST_METHOD'])){
 	$aipCtrler->checkPerceptionAnomalies();
 	echo "Checked AI Perception tracking for share-of-voice/competitor/sentiment anomalies (once per day)\n";
 
+	// weekly AI Perception digest email (opt-out, at most once per 7 days
+	// per user) - the proactive summary counterpart to the anomaly-only
+	// alert sweep above
+	$aipCtrler->sendWeeklyPerceptionDigests();
+	echo "Sent AI Perception weekly digest emails (at most once per 7 days per user)\n";
+
 	$controller->finishRunLog('completed');
 	$controller->releaseSchedulerLock();
 }

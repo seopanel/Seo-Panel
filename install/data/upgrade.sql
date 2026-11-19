@@ -14,3 +14,25 @@ ALTER TABLE `llm_perception_results` ADD COLUMN `citations` text DEFAULT NULL CO
 ALTER TABLE `llm_api_keys` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity') NOT NULL;
 ALTER TABLE `llm_perception_results` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity') NOT NULL;
 ALTER TABLE `llm_perception_competitor_results` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity') NOT NULL;
+
+-- AI Perception: add Grok (xAI) as a fifth provider (see
+-- AiPerceptionController::__callGrok())
+ALTER TABLE `llm_api_keys` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL;
+ALTER TABLE `llm_perception_results` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL;
+ALTER TABLE `llm_perception_competitor_results` MODIFY COLUMN `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL;
+
+-- AI Perception: mention prominence scoring (see
+-- AiPerceptionController::__getMentionProminence())
+ALTER TABLE `llm_perception_results` ADD COLUMN `prominence` varchar(10) DEFAULT NULL COMMENT 'early/mid/late - how far into the response a confirmed mention first appears; NULL when not mentioned or the check errored' AFTER `citations`;
+
+-- AI Perception: weekly digest email (see
+-- AiPerceptionController::sendWeeklyPerceptionDigests())
+ALTER TABLE `reports_settings` ADD COLUMN `ai_perception_email_notification` tinyint(1) NOT NULL DEFAULT '1' AFTER `ai_visibility_last_digest_sent`;
+ALTER TABLE `reports_settings` ADD COLUMN `ai_perception_last_digest_sent` date DEFAULT NULL AFTER `ai_perception_email_notification`;
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Perception email notification','SP_AI_PERCEPTION_EMAIL_NOTIFICATION','1','report','bool',1);
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'report', 'AI Perception email notification', 'AI Perception email notification'),
+('en', 'settings', 'SP_AI_PERCEPTION_EMAIL_NOTIFICATION', 'Enable AI Perception email notification'),
+('en', 'aivisibility', 'ai_perception_email_body_intro', 'Here''s your AI Perception summary for the past week - how often real AI assistants mentioned your site when asked:'),
+('en', 'aivisibility', 'ai_perception_email_body_outro', 'View the full tracking dashboard: [LOGIN_LINK]');

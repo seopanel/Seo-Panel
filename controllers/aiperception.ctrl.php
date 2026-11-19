@@ -2,7 +2,7 @@
 
 /**
  * AI Perception Check - a customer-initiated, one-off diagnostic that asks
- * a real hosted AI model (ChatGPT, Claude, Gemini, or Perplexity) what it knows about
+ * a real hosted AI model (ChatGPT, Claude, Gemini, Perplexity, or Grok) what it knows about
  * the customer's own website, using the customer's OWN API key.
  *
  * Unlike every other AI Visibility feature (which is self-hosted / never
@@ -29,7 +29,14 @@ class AiPerceptionController extends Controller {
 	// training-data-only mode to fall back to (unlike the other three
 	// providers' $grounded toggle - see __callPerplexity()).
 	const PERPLEXITY_MODEL = 'sonar';
-	const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google', 'perplexity'];
+	// xAI's current cheapest text model (no "fast"/"mini" tier exists as
+	// of writing - check docs.x.ai if this ever 400s, xAI renames models
+	// often). Plain calls use this via the OpenAI-compatible /v1/chat/
+	// completions endpoint, same shape as __callOpenAI()'s ungrounded
+	// path - see __callGrok()'s own comment for the grounded path, which
+	// is a genuinely different endpoint with an unconfirmed response shape.
+	const GROK_MODEL = 'grok-4.3';
+	const ALLOWED_PROVIDERS = ['openai', 'anthropic', 'google', 'perplexity', 'grok'];
 
 	// Scheduled tracking: unlike the one-off "Ask" above, this runs
 	// UNATTENDED on a cron schedule - it is the customer's own money being
@@ -217,6 +224,7 @@ class AiPerceptionController extends Controller {
 		$this->set('prompts', $prompts);
 		$this->set('shareOfVoice', $this->__getShareOfVoice($websiteId));
 		$this->set('shareOfVoiceByProvider', !empty($websiteId) ? $this->__getShareOfVoiceByProvider($websiteId) : []);
+		$this->set('shareOfVoiceHistory', !empty($websiteId) ? $this->__getShareOfVoiceHistory($websiteId) : []);
 		$this->set('promptCap', self::MAX_PROMPTS_PER_WEBSITE);
 		$this->set('trackingIntervalDays', self::TRACKING_INTERVAL_DAYS);
 		$this->set('competitors', !empty($websiteId) ? $this->__getCompetitors($websiteId) : []);
@@ -410,7 +418,7 @@ class AiPerceptionController extends Controller {
 			// selected here (this list can be long; no reason to pull every
 			// full response just to render a mentioned/not-mentioned badge)
 			$prompt['results'] = $this->db->select(
-				"SELECT r.id, r.provider, r.checked_date, r.mentioned, r.sentiment, r.grounded FROM llm_perception_results r
+				"SELECT r.id, r.provider, r.checked_date, r.mentioned, r.sentiment, r.grounded, r.prominence FROM llm_perception_results r
 				 WHERE r.prompt_id={$prompt['id']} AND r.checked_date = (
 					 SELECT MAX(r2.checked_date) FROM llm_perception_results r2
 					 WHERE r2.prompt_id = r.prompt_id AND r2.provider = r.provider
@@ -541,6 +549,45 @@ class AiPerceptionController extends Controller {
 		return round(($mentioned / count($rows)) * 100);
 	}
 
+	// func to compute the blended share of voice for each of the most
+	// recent $cycles distinct tracking cycles (checked_date values), not
+	// just the current/previous pair __getShareOfVoice()/
+	// __getPreviousShareOfVoice() already cover - for a trend chart, not
+	// an alert comparison. refreshTrackingForWebsite() only ever inserts
+	// one row per (prompt, provider) per run, so each distinct
+	// checked_date across this website's results IS one tracking cycle.
+	// Oldest first, ready to plot directly. Returns [] (not an error) for
+	// a website with fewer than 2 cycles - same "don't show a fabricated/
+	// meaningless chart" spirit as every other null-returning helper
+	// here; a single point isn't a trend.
+	function __getShareOfVoiceHistory($websiteId, $cycles = 12) {
+		$websiteId = intval($websiteId);
+		$cycles = intval($cycles);
+		if (empty($websiteId)) return [];
+
+		$dates = array_column($this->db->select(
+			"SELECT DISTINCT r.checked_date FROM llm_perception_results r
+			 JOIN llm_perception_prompts p ON p.id = r.prompt_id
+			 WHERE p.website_id=$websiteId AND p.status=1
+			 ORDER BY r.checked_date DESC LIMIT $cycles"
+		), 'checked_date');
+		if (count($dates) < 2) return [];
+
+		$result = [];
+		foreach (array_reverse($dates) as $date) {
+			$dateSql = addslashes($date);
+			$rows = $this->db->select(
+				"SELECT r.mentioned FROM llm_perception_results r
+				 JOIN llm_perception_prompts p ON p.id = r.prompt_id
+				 WHERE p.website_id=$websiteId AND p.status=1 AND r.checked_date='$dateSql'"
+			);
+			if (empty($rows)) continue;
+			$mentioned = count(array_filter($rows, function($r) { return !empty($r['mentioned']); }));
+			$result[] = ['date' => $date, 'share' => round(($mentioned / count($rows)) * 100)];
+		}
+		return (count($result) >= 2) ? $result : [];
+	}
+
 	// func to decide whether an LLM's free-text response counts as
 	// "mentioning" the tracked website - a simple, explainable heuristic
 	// (case-insensitive substring match on the bare domain or the site
@@ -572,12 +619,16 @@ class AiPerceptionController extends Controller {
 	// when the website isn't actually mentioned or the response is
 	// empty/an error - sentiment is deliberately UNSET in that case so it's
 	// never confused with a genuinely neutral mention.
-	function __classifySentiment($responseText, $website) {
-		if (empty($responseText)) return null;
-		if (!$this->__isMentioned($responseText, $website)) return null;
-
-		$haystack = mb_strtolower($responseText);
-
+	// func to find where a confirmed mention actually sits in the
+	// response text (byte/char offset into the lower-cased haystack) -
+	// shared by __classifySentiment() (reads a window AROUND the match)
+	// and __getMentionProminence() (reads WHERE the match falls as a
+	// fraction of the whole response), so both derive $pos the same way
+	// instead of each re-deriving the domain/name-stripping logic.
+	// Returns false if re-locating the match fails even though
+	// __isMentioned() confirmed one exists (should not normally happen -
+	// both use the same domain/name derivation).
+	function __findMentionPosition($haystack, $website) {
 		$domain = !empty($website['url']) ? preg_replace('#^https?://(www\.)?#i', '', rtrim($website['url'], '/')) : '';
 		$domain = mb_strtolower(preg_replace('#/.*$#', '', $domain));
 		$name = mb_strtolower(trim($website['name'] ?? ''));
@@ -585,6 +636,15 @@ class AiPerceptionController extends Controller {
 		$pos = false;
 		if (!empty($domain)) $pos = mb_strpos($haystack, $domain);
 		if ($pos === false && !empty($name) && mb_strlen($name) >= 3) $pos = mb_strpos($haystack, $name);
+		return $pos;
+	}
+
+	function __classifySentiment($responseText, $website) {
+		if (empty($responseText)) return null;
+		if (!$this->__isMentioned($responseText, $website)) return null;
+
+		$haystack = mb_strtolower($responseText);
+		$pos = $this->__findMentionPosition($haystack, $website);
 		if ($pos === false) return 'neutral'; // __isMentioned() confirmed a match but re-locating it here failed - degrade to neutral rather than guessing
 
 		$window = mb_substr($haystack, max(0, $pos - 150), 300);
@@ -601,6 +661,30 @@ class AiPerceptionController extends Controller {
 		if ($positiveHits > $negativeHits) return 'positive';
 		if ($negativeHits > $positiveHits) return 'negative';
 		return 'neutral';
+	}
+
+	// func to classify HOW EARLY a confirmed mention appears in the
+	// response - a simple, explainable positional signal (not NLP),
+	// deliberately kept separate from share-of-voice (still a pure
+	// mentioned/not-mentioned fraction, unchanged) and from sentiment
+	// (a separate judgment about tone, not position). Returns null when
+	// not mentioned or the response is empty/an error, same honesty
+	// pattern as __classifySentiment().
+	function __getMentionProminence($responseText, $website) {
+		if (empty($responseText)) return null;
+		if (!$this->__isMentioned($responseText, $website)) return null;
+
+		$haystack = mb_strtolower($responseText);
+		$pos = $this->__findMentionPosition($haystack, $website);
+		if ($pos === false) return null; // __isMentioned() confirmed a match but re-locating it here failed
+
+		$length = mb_strlen($haystack);
+		if ($length <= 0) return null;
+
+		$fraction = $pos / $length;
+		if ($fraction <= (1 / 3)) return 'early';
+		if ($fraction <= (2 / 3)) return 'mid';
+		return 'late';
 	}
 
 	/*
@@ -658,6 +742,9 @@ class AiPerceptionController extends Controller {
 					case 'perplexity':
 						$result = $this->__callPerplexity($apiKey, $prompt['prompt_text'], $grounded);
 						break;
+					case 'grok':
+						$result = $this->__callGrok($apiKey, $prompt['prompt_text'], $grounded);
+						break;
 					default:
 						continue 2;
 				}
@@ -665,6 +752,7 @@ class AiPerceptionController extends Controller {
 
 				$mentioned = !empty($result['ok']) ? $this->__isMentioned($result['text'], $website) : false;
 				$sentiment = $mentioned ? $this->__classifySentiment($result['text'], $website) : null;
+				$prominence = $mentioned ? $this->__getMentionProminence($result['text'], $website) : null;
 				$this->dbHelper->insertRow('llm_perception_results', [
 					'prompt_id|int'   => intval($prompt['id']),
 					'provider'        => $provider,
@@ -674,6 +762,7 @@ class AiPerceptionController extends Controller {
 					'sentiment'       => $sentiment,
 					'grounded|int'    => (!empty($result['ok']) && !empty($result['grounded'])) ? 1 : 0,
 					'citations'       => (!empty($result['ok']) && !empty($result['citations'])) ? json_encode($result['citations']) : null,
+					'prominence'      => $prominence,
 					'created_at'      => 'NOW()',
 				]);
 
@@ -894,6 +983,9 @@ class AiPerceptionController extends Controller {
 			case 'perplexity':
 				$result = $this->__callPerplexity($apiKey, $prompt, $grounded);
 				break;
+			case 'grok':
+				$result = $this->__callGrok($apiKey, $prompt, $grounded);
+				break;
 		}
 
 		$result['provider'] = $provider;
@@ -953,6 +1045,9 @@ class AiPerceptionController extends Controller {
 				break;
 			case 'perplexity':
 				$result = $this->__callPerplexity($apiKey, $prompt);
+				break;
+			case 'grok':
+				$result = $this->__callGrok($apiKey, $prompt);
 				break;
 		}
 
@@ -1214,5 +1309,277 @@ class AiPerceptionController extends Controller {
 		}
 
 		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => true, 'citations' => $citations];
+	}
+
+	// func to call xAI's Grok via its OpenAI-compatible Chat Completions
+	// API. Unlike the other three providers' $grounded toggle, this is
+	// NOT a same-endpoint tool/model switch - xAI's docs show live web
+	// search is only available on a separate /v1/responses endpoint with
+	// a different request shape ({"input": [...], "tools": [{"type":
+	// "web_search"}]} instead of {"messages": [...]}), and chat
+	// completions has no search_parameters support despite some stale
+	// third-party docs claiming otherwise. The /v1/responses RESPONSE
+	// shape below (an "output" array of blocks) is modeled on OpenAI's
+	// own Responses API, which xAI's docs say they're compatible with,
+	// but this has not been confirmed against a real Grok API response -
+	// verify this the first time anyone actually configures a Grok key
+	// with live search on, and adjust if the real shape differs. Any
+	// mismatch degrades to ok=>false (same as a malformed-JSON response
+	// from any other provider here), never a fatal.
+	function __callGrok($apiKey, $prompt, $grounded = false) {
+		if ($grounded) {
+			return $this->__callGrokResponses($apiKey, $prompt);
+		}
+
+		$payload = [
+			'model' => self::GROK_MODEL,
+			'messages' => [['role' => 'user', 'content' => $prompt]],
+			'max_tokens' => 300,
+		];
+
+		ob_start();
+		$spider = new Spider();
+		$spider->_CURL_HTTPHEADER = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+		$spider->_CURLOPT_TIMEOUT = 25;
+		$spider->_CURLOPT_POSTFIELDS = json_encode($payload);
+		$response = $spider->getContent('https://api.x.ai/v1/chat/completions', false, false);
+		ob_end_clean();
+
+		if (empty($response['page'])) {
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Grok', 'grounded' => false, 'citations' => []];
+		}
+		$data = json_decode($response['page'], true);
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Grok', 'grounded' => false, 'citations' => []];
+		}
+		if (!empty($data['error'])) {
+			$errMsg = is_array($data['error']) ? ($data['error']['message'] ?? 'Grok request failed') : $data['error'];
+			return ['ok' => false, 'text' => '', 'error' => $errMsg, 'grounded' => false, 'citations' => []];
+		}
+		$text = $data['choices'][0]['message']['content'] ?? '';
+		if (empty($text)) {
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Grok', 'grounded' => false, 'citations' => []];
+		}
+
+		return ['ok' => true, 'text' => trim($text), 'error' => null, 'grounded' => false, 'citations' => []];
+	}
+
+	// func to call Grok's live-search-grounded /v1/responses endpoint -
+	// see __callGrok()'s own comment above for why this is a separate
+	// endpoint/request shape rather than a same-endpoint tool switch, and
+	// the caveat that the response-parsing below is unconfirmed against
+	// live traffic.
+	function __callGrokResponses($apiKey, $prompt) {
+		$payload = [
+			'model' => self::GROK_MODEL,
+			'input' => [['role' => 'user', 'content' => $prompt]],
+			'tools' => [['type' => 'web_search']],
+		];
+
+		ob_start();
+		$spider = new Spider();
+		$spider->_CURL_HTTPHEADER = ['Content-Type: application/json', 'Authorization: Bearer ' . $apiKey];
+		$spider->_CURLOPT_TIMEOUT = 25;
+		$spider->_CURLOPT_POSTFIELDS = json_encode($payload);
+		$response = $spider->getContent('https://api.x.ai/v1/responses', false, false);
+		ob_end_clean();
+
+		if (empty($response['page'])) {
+			return ['ok' => false, 'text' => '', 'error' => 'Could not reach Grok', 'grounded' => false, 'citations' => []];
+		}
+		$data = json_decode($response['page'], true);
+		if (json_last_error() !== JSON_ERROR_NONE) {
+			return ['ok' => false, 'text' => '', 'error' => 'Invalid response from Grok', 'grounded' => false, 'citations' => []];
+		}
+		if (!empty($data['error'])) {
+			$errMsg = is_array($data['error']) ? ($data['error']['message'] ?? 'Grok request failed') : $data['error'];
+			return ['ok' => false, 'text' => '', 'error' => $errMsg, 'grounded' => false, 'citations' => []];
+		}
+
+		// Unconfirmed shape (see this method's doc comment): OpenAI's own
+		// Responses API returns an "output" array of blocks, each with a
+		// "type" (e.g. "message") whose own "content" array holds blocks
+		// with type "output_text" and a "text" field, plus optional
+		// "annotations" for citations. Walk defensively - any missing key
+		// just means no text/citations found, never a fatal.
+		$textParts = [];
+		$citations = [];
+		foreach ($data['output'] ?? [] as $outputBlock) {
+			foreach ($outputBlock['content'] ?? [] as $contentBlock) {
+				if (($contentBlock['type'] ?? '') !== 'output_text') continue;
+				$textParts[] = $contentBlock['text'] ?? '';
+				foreach ($contentBlock['annotations'] ?? [] as $annotation) {
+					$url = $annotation['url'] ?? ($annotation['url_citation']['url'] ?? null);
+					if (empty($url)) continue;
+					$citations[] = ['url' => $url, 'title' => $annotation['title'] ?? ($annotation['url_citation']['title'] ?? '')];
+				}
+			}
+		}
+		// Fallback for a flatter/older shape some gateways document
+		// ({"output_text": "..."}) in case the nested walk above finds
+		// nothing - still degrades to empty rather than guessing further.
+		if (empty($textParts) && !empty($data['output_text'])) {
+			$textParts[] = $data['output_text'];
+		}
+		$text = trim(implode('', $textParts));
+		if (empty($text)) {
+			return ['ok' => false, 'text' => '', 'error' => 'Empty response from Grok', 'grounded' => false, 'citations' => []];
+		}
+
+		return ['ok' => true, 'text' => $text, 'error' => null, 'grounded' => true, 'citations' => $citations];
+	}
+
+	/*
+	 * Weekly AI Perception digest email - mirrors
+	 * AIVisibilityController::sendWeeklyDigests()'s exact shape (opt-out
+	 * setting, 7-day dedupe column, mark-sent-only-on-real-success so an
+	 * SMTP failure gets retried next cron run rather than silently
+	 * skipped for a week). That digest covers AI bot-crawler traffic;
+	 * this one is the proactive-summary counterpart to
+	 * checkPerceptionAnomalies() above, which only ever alerts on a
+	 * negative change - a quiet week with nothing anomalous currently
+	 * gets no email at all. Called unconditionally from cron.php's tail,
+	 * same as sendWeeklyDigests().
+	 */
+	function sendWeeklyPerceptionDigests() {
+		if (!defined('SP_AI_PERCEPTION_EMAIL_NOTIFICATION') || !SP_AI_PERCEPTION_EMAIL_NOTIFICATION) {
+			return;
+		}
+
+		include_once(SP_CTRLPATH . "/report.ctrl.php");
+		include_once(SP_CTRLPATH . "/user.ctrl.php");
+		$reportCtrler = new ReportController();
+		$userCtrler = new UserController();
+
+		// Only users with at least one active tracked prompt can possibly
+		// have anything to report - same short-circuit spirit as
+		// sendWeeklyDigests() checking $hasAnyTraffic, just earlier.
+		$userIds = array_column($this->db->select(
+			"SELECT DISTINCT p.user_id FROM llm_perception_prompts p
+			 JOIN websites w ON w.id = p.website_id
+			 WHERE p.status=1 AND w.status=1"
+		), 'user_id');
+
+		foreach ($userIds as $userId) {
+			$userId = intval($userId);
+			$repSetInfo = $reportCtrler->getUserReportSettings($userId);
+			if (empty($repSetInfo['ai_perception_email_notification'])) {
+				continue;
+			}
+
+			$lastSent = $repSetInfo['ai_perception_last_digest_sent'] ?? null;
+			if (!empty($lastSent) && strtotime($lastSent) > strtotime('-7 days')) {
+				continue; // already sent (or attempted) within the last 7 days
+			}
+
+			$websiteIds = array_column($this->db->select(
+				"SELECT DISTINCT p.website_id FROM llm_perception_prompts p
+				 JOIN websites w ON w.id = p.website_id
+				 WHERE p.user_id=$userId AND p.status=1 AND w.status=1"
+			), 'website_id');
+
+			$summaryByWebsite = [];
+			$hasAnyData = false;
+			foreach ($websiteIds as $websiteId) {
+				$websiteId = intval($websiteId);
+				$summary = $this->__getPerceptionDigestSummaryForWebsite($websiteId);
+				if ($summary === null) continue; // no results checked yet for this website at all
+				$hasAnyData = true;
+				$website = $this->dbHelper->getRow('websites', "id=$websiteId");
+				$summaryByWebsite[$websiteId] = array_merge(['name' => $website['name'] ?? ''], $summary);
+			}
+
+			// Same "genuinely nothing to send" skip as sendWeeklyDigests() -
+			// record the attempt either way so a quiet week doesn't get
+			// recomputed on every subsequent cron run.
+			if (!$hasAnyData) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_perception_last_digest_sent', date('Y-m-d'));
+				continue;
+			}
+
+			$userInfo = $userCtrler->__getUserInfo($userId);
+			if (empty($userInfo['email'])) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_perception_last_digest_sent', date('Y-m-d'));
+				continue;
+			}
+
+			// Only mark as sent once the send genuinely succeeded - same
+			// fix sendWeeklyDigests() already carries (an ordinary SMTP
+			// failure returns false rather than throwing, so leaving
+			// last_digest_sent untouched on failure lets the next cron
+			// run simply retry instead of losing a week's digest silently).
+			try {
+				$sent = $this->sendWeeklyPerceptionDigestEmail($userInfo, $summaryByWebsite);
+			} catch (Throwable $e) {
+				$sent = false;
+			}
+
+			if ($sent) {
+				$reportCtrler->updateUserReportSetting($userId, 'ai_perception_last_digest_sent', date('Y-m-d'));
+			}
+		}
+	}
+
+	// func to build one website's weekly AI Perception digest summary -
+	// current share of voice, the trend vs the previous tracking cycle,
+	// competitor standings, and a sentiment breakdown of the latest
+	// result per (prompt, provider). Returns null when this website has
+	// no results checked yet at all (vs. a real 0% share, which is a
+	// meaningful result, not an absence of data) - same distinction
+	// __getShareOfVoice() itself already draws by returning null.
+	function __getPerceptionDigestSummaryForWebsite($websiteId) {
+		$websiteId = intval($websiteId);
+		$share = $this->__getShareOfVoice($websiteId);
+		if ($share === null) return null;
+
+		$previousShare = $this->__getPreviousShareOfVoice($websiteId);
+		$trendDirection = null; // null = no prior cycle to compare against yet
+		$trendPoints = null;
+		if ($previousShare !== null) {
+			$trendPoints = $share - $previousShare;
+			$trendDirection = $trendPoints > 0 ? 'up' : ($trendPoints < 0 ? 'down' : 'flat');
+		}
+
+		$sentimentCounts = ['positive' => 0, 'neutral' => 0, 'negative' => 0, 'unset' => 0];
+		$prompts = $this->__getPromptsWithLatestResults($websiteId);
+		foreach ($prompts as $prompt) {
+			foreach ($prompt['results'] as $result) {
+				if (empty($result['mentioned'])) continue; // sentiment is only ever set on a confirmed mention
+				$key = !empty($result['sentiment']) && isset($sentimentCounts[$result['sentiment']]) ? $result['sentiment'] : 'unset';
+				$sentimentCounts[$key]++;
+			}
+		}
+
+		return [
+			'share' => $share,
+			'previous_share' => $previousShare,
+			'trend_direction' => $trendDirection,
+			'trend_points' => $trendPoints,
+			'competitors' => $this->__getCompetitorShareOfVoice($websiteId),
+			'sentiment' => $sentimentCounts,
+		];
+	}
+
+	function sendWeeklyPerceptionDigestEmail($userInfo, $summaryByWebsite) {
+		include_once(SP_CTRLPATH . "/user.ctrl.php");
+
+		$aivTexts = $this->getLanguageTexts('aivisibility', $userInfo['lang_code']);
+		$this->set('aivTexts', $aivTexts);
+		$this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
+		$this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
+
+		$name = trim($userInfo['first_name'] . ' ' . $userInfo['last_name']);
+		$this->set('name', $name);
+		$this->set('summaryByWebsite', $summaryByWebsite);
+
+		$subject = !empty($aivTexts['ai_perception_email_subject']) ? $aivTexts['ai_perception_email_subject'] : 'Your AI Perception summary this week';
+		$content = $this->getViewContent('email/aiperceptiondigest');
+
+		$userController = new UserController();
+		$adminInfo = $userController->__getAdminInfo();
+		$adminName = $adminInfo['first_name'] . "-" . $adminInfo['last_name'];
+		$this->set('adminName', $adminName);
+
+		return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
 	}
 }

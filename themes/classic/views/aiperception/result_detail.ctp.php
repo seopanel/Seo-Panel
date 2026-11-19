@@ -47,6 +47,16 @@ function aipFormatResponse($text) {
 					<?php if (!empty($result['sentiment']) && !empty($sentimentLabels[$result['sentiment']])) { ?>
 						<span style="margin-left:4px;color:#8a8ea3;">(<?php echo htmlspecialchars($sentimentLabels[$result['sentiment']])?>)</span>
 					<?php } ?>
+					<?php
+					$prominenceLabels = [
+						'early' => $spTextAIV['early'] ?? 'early',
+						'mid'   => $spTextAIV['mid'] ?? 'mid',
+						'late'  => $spTextAIV['late'] ?? 'late',
+					];
+					?>
+					<?php if (!empty($result['prominence']) && !empty($prominenceLabels[$result['prominence']])) { ?>
+						<span style="margin-left:4px;color:#adb5bd;" title="<?php echo htmlspecialchars($spTextAIV['How far into the response this mention first appears.'] ?? 'How far into the response this mention first appears.')?>">(<?php echo htmlspecialchars($prominenceLabels[$result['prominence']])?> <?php echo $spTextAIV['mention'] ?? 'mention'?>)</span>
+					<?php } ?>
 				<?php } else { ?>
 					<span class="badge badge-secondary py-1 px-2 text-light"><?php echo $spTextAIV['Not mentioned'] ?? 'Not mentioned'?></span>
 				<?php } ?>

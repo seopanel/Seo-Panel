@@ -23,7 +23,7 @@
 	<div class="aiv-intro-icon"><i class="fas fa-comment-dots"></i></div>
 	<div class="aiv-intro-text">
 		<div class="aiv-intro-title"><?php echo $spTextAIV['AI Perception Check'] ?? 'AI Perception Check'?></div>
-		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
+		<div class="aiv-intro-desc"><?php echo $spTextAIV['Asks real AI assistants - ChatGPT, Claude, Gemini, Perplexity, and Grok - what they actually know about your site, right now, using your own API key.'] ?? 'Asks real AI assistants - ChatGPT, Claude, Gemini, Perplexity, and Grok - what they actually know about your site, right now, using your own API key.'?> <a href="javascript:void(0);" data-toggle="modal" data-target="#aipHelpModal" class="aiv-intro-cta"><?php echo $spTextAIV['Learn more'] ?? 'Learn more'?> <i class="fas fa-arrow-right"></i></a></div>
 	</div>
 </div>
 
@@ -37,7 +37,7 @@
 				<h5 class="modal-title" id="aipHelpModalLabel"><?php echo $spTextAIV['About AI Perception Check'] ?? 'About AI Perception Check'?></h5>
 			</div>
 			<div class="modal-body aiv-help-modal-body">
-				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini and Perplexity - what they actually know about your website, right now.'?></p>
+				<p><?php echo $spTextAIV['AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini, Perplexity, and Grok - what they actually know about your website, right now.'] ?? 'AI Perception Check lets you ask real AI assistants - ChatGPT, Claude, Gemini, Perplexity, and Grok - what they actually know about your website, right now.'?></p>
 				<p><?php echo $spTextAIV['Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'] ?? 'Unlike the rest of AI Visibility, which simulates how AI search engines might answer, this sends a live question straight to the provider you pick, using your own API key. Nothing is cached or guessed.'?></p>
 				<div class="aiv-discover-item">
 					<div class="aiv-discover-icon" style="background:linear-gradient(135deg, #4a8fc7 0%, #6faee0 100%);"><i class="fas fa-comment-dots"></i></div>
@@ -121,8 +121,8 @@
 <?php } ?>
 
 <?php if (!empty($shareOfVoiceByProvider)) { ?>
-	<?php $trackingProviderColors = ['openai' => '#10a37f', 'anthropic' => '#cc785c', 'google' => '#4285f4', 'perplexity' => '#20808d']; ?>
-	<?php $trackingProviderLabelsForSov = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)', 'perplexity' => 'Perplexity']; ?>
+	<?php $trackingProviderColors = ['openai' => '#10a37f', 'anthropic' => '#cc785c', 'google' => '#4285f4', 'perplexity' => '#20808d', 'grok' => '#000000']; ?>
+	<?php $trackingProviderLabelsForSov = ['openai' => 'OpenAI (ChatGPT)', 'anthropic' => 'Anthropic (Claude)', 'google' => 'Google (Gemini)', 'perplexity' => 'Perplexity', 'grok' => 'xAI (Grok)']; ?>
 	<!-- the blended Share of Voice card above answers "overall, am I
 	     mentioned" - this one answers "which AI engine actually mentions
 	     me", since that can vary a lot provider to provider and the
@@ -147,6 +147,59 @@
 			</div>
 		<?php } ?>
 	</div>
+<?php } ?>
+
+<?php if (!empty($shareOfVoiceHistory)) { ?>
+	<!-- the two cards above are point-in-time (current cycle, optionally
+	     split by engine) - this is the only place this website's Share of
+	     Voice trend over multiple weeks is visible at all. Only rendered
+	     once there are at least 2 cycles of history (see
+	     __getShareOfVoiceHistory()'s own comment) - a single point isn't
+	     a trend. -->
+	<div class="aiv-card" style="max-width:700px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-chart-line"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextAIV['Share of Voice Over Time'] ?? 'Share of Voice Over Time'?></div>
+		</div>
+		<div id="aip_sov_history_chart" style="width:100%;height:260px;"></div>
+	</div>
+	<script type="text/javascript">
+	(function() {
+		function drawAipSovHistoryChart() {
+			if (typeof google === 'undefined' || !google.visualization) { return; }
+			var data = google.visualization.arrayToDataTable([
+				['<?php echo $spText['common']['Date']?>', '<?php echo $spTextAIV['Share of Voice'] ?? 'Share of Voice'?>'],
+				<?php foreach ($shareOfVoiceHistory as $point) {
+					$pointDate = date('M d', strtotime($point['date']));
+					echo "['" . addslashes($pointDate) . "', " . intval($point['share']) . "],\n";
+				} ?>
+			]);
+			var options = {
+				curveType: 'function',
+				width: spChartWidth('aip_sov_history_chart'),
+				height: 260,
+				colors: ['#667eea'],
+				legend: { position: 'none' },
+				chartArea: { width: '85%', height: '70%' },
+				vAxis: { title: '%', minValue: 0, maxValue: 100 },
+				hAxis: { slantedText: true, slantedTextAngle: 45 }
+			};
+			var chart = new google.visualization.LineChart(document.getElementById('aip_sov_history_chart'));
+			chart.draw(data, options);
+		}
+
+		if (typeof google !== 'undefined' && google.charts) {
+			google.charts.load('current', {'packages': ['corechart']});
+			google.charts.setOnLoadCallback(drawAipSovHistoryChart);
+		}
+
+		var aipSovChartResizeTimer;
+		window.addEventListener('resize', function() {
+			clearTimeout(aipSovChartResizeTimer);
+			aipSovChartResizeTimer = setTimeout(drawAipSovHistoryChart, 200);
+		});
+	})();
+	</script>
 <?php } ?>
 
 <div class="aiv-card">
@@ -256,6 +309,22 @@
 									?>
 									<?php if (!empty($sentimentInfo)) { ?>
 										<i class="fas <?php echo $sentimentInfo['icon']?>" style="color:<?php echo $sentimentInfo['color']?>; margin-left:6px;" title="<?php echo htmlspecialchars($sentimentInfo['label'])?>"></i>
+									<?php } ?>
+									<?php
+									// Prominence: a secondary signal alongside Mentioned/
+									// sentiment - WHERE the mention falls in the response,
+									// not whether it's mentioned (unchanged) or how it reads
+									// (sentiment, unchanged). Kept as a small muted label
+									// rather than its own column - see
+									// __getMentionProminence()'s own comment.
+									$prominenceLabels = [
+										'early' => $spTextAIV['early'] ?? 'early',
+										'mid'   => $spTextAIV['mid'] ?? 'mid',
+										'late'  => $spTextAIV['late'] ?? 'late',
+									];
+									?>
+									<?php if (!empty($result['prominence']) && !empty($prominenceLabels[$result['prominence']])) { ?>
+										<span style="margin-left:6px;font-size:11px;color:#adb5bd;" title="<?php echo htmlspecialchars($spTextAIV['How far into the response this mention first appears.'] ?? 'How far into the response this mention first appears.')?>">(<?php echo htmlspecialchars($prominenceLabels[$result['prominence']])?>)</span>
 									<?php } ?>
 								<?php } else { ?>
 									<span class="badge badge-secondary py-1 px-2 text-light"><?php echo $spTextAIV['Not mentioned'] ?? 'Not mentioned'?></span>

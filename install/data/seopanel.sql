@@ -854,6 +854,8 @@ CREATE TABLE IF NOT EXISTS `reports_settings` (
   `ai_insights_email_notification` tinyint(1) NOT NULL DEFAULT '1',
   `ai_visibility_email_notification` tinyint(1) NOT NULL DEFAULT '1',
   `ai_visibility_last_digest_sent` date DEFAULT NULL,
+  `ai_perception_email_notification` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_perception_last_digest_sent` date DEFAULT NULL,
   `last_generated` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
@@ -1147,7 +1149,7 @@ CREATE TABLE IF NOT EXISTS `user_totp_backup_codes` (
 CREATE TABLE IF NOT EXISTS `llm_api_keys` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL,
   `api_key` varchar(255) NOT NULL,
   `live_search` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'when 1, checks against this provider use its live web-search-grounded model/tool instead of the plain chat model - see AiPerceptionController::__callOpenAI()/__callAnthropic()/__callGoogleGemini()',
   `created_at` datetime NOT NULL,
@@ -1174,13 +1176,14 @@ CREATE TABLE IF NOT EXISTS `llm_perception_prompts` (
 CREATE TABLE IF NOT EXISTS `llm_perception_results` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `prompt_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL,
   `checked_date` date NOT NULL,
   `response_text` text,
   `mentioned` tinyint(1) NOT NULL DEFAULT 0,
   `sentiment` varchar(10) DEFAULT NULL COMMENT 'positive/neutral/negative; NULL when not mentioned or the check errored',
   `grounded` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'whether this check used the provider live web-search grounded model/tool rather than its plain chat model',
   `citations` text DEFAULT NULL COMMENT 'JSON array of {url,title} the grounded response actually cited - NULL when not grounded or the provider returned none',
+  `prominence` varchar(10) DEFAULT NULL COMMENT 'early/mid/late - how far into the response a confirmed mention first appears; NULL when not mentioned or the check errored',
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `prompt_provider_date` (`prompt_id`,`provider`,`checked_date`)
@@ -1211,7 +1214,7 @@ CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `competitor_id` int unsigned NOT NULL,
   `prompt_id` int unsigned NOT NULL,
-  `provider` enum('openai','anthropic','google','perplexity') NOT NULL,
+  `provider` enum('openai','anthropic','google','perplexity','grok') NOT NULL,
   `checked_date` date NOT NULL,
   `mentioned` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL,
@@ -2235,6 +2238,16 @@ INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`
 -- user with zero AI traffic that week (no point emailing all-zeros).
 INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
 ('Enable AI Visibility email notification','SP_AI_VISIBILITY_EMAIL_NOTIFICATION','1','report','bool',1);
+
+-- AI Perception weekly digest: opt-out email summarizing the week's share
+-- of voice, trend vs. the previous tracking cycle, competitor standings,
+-- and sentiment breakdown - the proactive counterpart to
+-- checkPerceptionAnomalies()'s alert-only sweep. Sent at most once per 7
+-- days per user (ai_perception_last_digest_sent), skipped entirely for a
+-- user with no tracked-prompt results yet. Reuses the existing per-user
+-- reports_settings row/UI, same as the AI Visibility/AI Insights digests.
+INSERT IGNORE INTO `settings` (`set_label`,`set_name`,`set_val`,`set_category`,`set_type`,`display`) VALUES
+('Enable AI Perception email notification','SP_AI_PERCEPTION_EMAIL_NOTIFICATION','1','report','bool',1);
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

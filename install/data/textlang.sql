@@ -32388,6 +32388,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'api', 'api_regenerate_warning', 'Regenerating either value immediately invalidates it for every existing integration using it - update them with the new value right after.'),
 ('en', 'report', 'AI Visibility email notification', 'AI Visibility email notification'),
 ('en', 'settings', 'SP_AI_VISIBILITY_EMAIL_NOTIFICATION', 'Enable AI Visibility email notification'),
+('en', 'report', 'AI Perception email notification', 'AI Perception email notification'),
+('en', 'settings', 'SP_AI_PERCEPTION_EMAIL_NOTIFICATION', 'Enable AI Perception email notification'),
+('en', 'aivisibility', 'ai_perception_email_body_intro', 'Here''s your AI Perception summary for the past week - how often real AI assistants mentioned your site when asked:'),
+('en', 'aivisibility', 'ai_perception_email_body_outro', 'View the full tracking dashboard: [LOGIN_LINK]'),
 ('en', 'login', 'Too many login attempts', 'Too many login attempts. Please wait a minute and try again.');
 
 -- Pre-existing gap found while fixing the above: SP_SETUP_WIZARD (System
