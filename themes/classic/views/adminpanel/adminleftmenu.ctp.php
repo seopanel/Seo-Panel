@@ -100,27 +100,29 @@ foreach($menuList as $i => $menuInfo){
 			
 		case "seo-tools-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-tools-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-tools-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('seo-tools-manager.php', 'content')"><?php echo $spTextPanel['Seo Tools Manager']?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "themes-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'themes-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'themes-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php', 'content')"><?php echo $spTextPanel['Themes Manager']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('themes-manager.php?sec=showupload', 'content')"><?php echo !empty($spTextTheme['Upload Theme']) ? $spTextTheme['Upload Theme'] : 'Upload Theme'?></a></li>
 			</ul>
 			<?php
 			break;
-			
+
 		case "seo-plugin-manager":
 			?>
-			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-plugins-manager.php';</script>			
+			<script type="text/javascript">scriptList[<?php echo $i?>] = 'seo-plugins-manager.php';</script>
 			<ul id='subui'>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('seo-plugins-manager.php', 'content')"><?php echo $spTextPanel['Seo Plugins Manager']?></a></li>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('seo-plugins-manager.php?sec=showupload', 'content')"><?php echo !empty($spTextPlugin['Upload Plugin']) ? $spTextPlugin['Upload Plugin'] : 'Upload Plugin'?></a></li>
 			</ul>
 			<?php
 			break;

@@ -33382,7 +33382,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'plugin', 'Upload Plugin', 'Upload Plugin'),
 ('en', 'plugin', 'Plugin Zip File', 'Plugin Zip File'),
-('en', 'plugin', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.');
+('en', 'plugin', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.', 'Upload a plugin zip to install a new plugin, or upgrade an existing one of the same name.'),
+('en', 'plugin', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse');
 
 -- 7.1.0: Themes Manager's own "Upload Theme" counterpart to the above.
 -- Same fallback-if-not-seeded-yet reasoning applies -
@@ -33390,4 +33391,5 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'theme', 'Upload Theme', 'Upload Theme'),
 ('en', 'theme', 'Theme Zip File', 'Theme Zip File'),
-('en', 'theme', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.');
+('en', 'theme', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.'),
+('en', 'theme', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse');

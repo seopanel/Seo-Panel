@@ -4210,3 +4210,63 @@ body {
         font-size: 0.8rem;
     }
 }
+
+/* === ATTRACTIVE UPLOAD DROPZONE (plugin/theme install & upgrade) === */
+.sp-upload-dropzone {
+	border: 2px dashed #a9c6e3;
+	border-radius: 10px;
+	padding: 36px 20px;
+	text-align: center;
+	cursor: pointer;
+	background: #f7fbff;
+	transition: border-color .2s, background-color .2s;
+}
+.sp-upload-dropzone.dragover {
+	border-color: #4a8fc7;
+	background-color: #eaf3fc;
+}
+.sp-upload-icon {
+	font-size: 2.6rem;
+	color: #4a8fc7;
+	display: block;
+	margin-bottom: 10px;
+}
+.sp-upload-title {
+	font-weight: 600;
+	margin: 0 0 4px;
+	color: #333;
+}
+.sp-upload-sub {
+	margin: 0;
+	color: #888;
+	font-size: 0.85rem;
+}
+.sp-upload-selected {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	font-size: 1rem;
+	color: #333;
+}
+.sp-upload-selected i.fa-file-archive {
+	color: #4a8fc7;
+	font-size: 1.6rem;
+}
+.sp-upload-remove {
+	color: #c0392b;
+	margin-left: 4px;
+}
+.sp-upload-progress {
+	height: 8px;
+	background: #e9edf2;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-top: 12px;
+}
+.sp-upload-progress-bar {
+	height: 100%;
+	width: 0%;
+	background: linear-gradient(135deg, #4a8fc7, #6faee0);
+	transition: width .2s;
+}

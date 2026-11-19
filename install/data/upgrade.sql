@@ -44,4 +44,6 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'neutral', 'neutral'),
 ('en', 'aivisibility', 'negative', 'negative'),
 ('en', 'aivisibility', 'no change', 'no change'),
-('en', 'aivisibility', 'first tracked week', 'first tracked week');
+('en', 'aivisibility', 'first tracked week', 'first tracked week'),
+('en', 'plugin', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse'),
+('en', 'theme', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse');

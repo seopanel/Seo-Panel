@@ -35,6 +35,8 @@ $controller->set('spKeywords', "$siteName settings,User control panel,manage $si
 $controller->spTextPanel = $controller->getLanguageTexts('panel', $_SESSION['lang_code']);
 $controller->set('spTextPanel', $controller->spTextPanel);
 $controller->set('spTextTools', $controller->getLanguageTexts('seotools', $_SESSION['lang_code']));
+$controller->set('spTextPlugin', $controller->getLanguageTexts('plugin', $_SESSION['lang_code']));
+$controller->set('spTextTheme', $controller->getLanguageTexts('theme', $_SESSION['lang_code']));
 $info = $_REQUEST;
 
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
