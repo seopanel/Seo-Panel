@@ -1,5 +1,6 @@
 <?php
 include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
 $headLabel = empty($headLabel) ? $spTextPanel['Report Settings'] : $headLabel;
 ?>
 <div class="aiv-page-head">
@@ -38,14 +39,9 @@ if (!empty($saved)) {
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
 <input type="hidden" value="<?php echo $category?>" name="category">
-<table class="list">
-	<tr class="listHead">
-		<td class="left" width='35%'><?php echo $headLabel?></td>
-		<td class="right">&nbsp;</td>
-	</tr>
+<div class="aiv-card">
 	<?php
 	foreach( $list as $i => $listInfo){
-		$class = ($i % 2) ? "blue_row" : "white_row";
 		switch($listInfo['set_type']){
 
 			case "small":
@@ -72,9 +68,9 @@ if (!empty($saved)) {
 				break;
 		}
 		?>
-		<tr class="<?php echo $class?>">
-			<td class="td_left_col"><strong><?php echo $spTextSettings[$listInfo['set_name']]?>:</strong></td>
-			<td class="td_right_col">
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextSettings[$listInfo['set_name']]?></div>
+			<div class="sp-settings-row-control">
 				<?php if($listInfo['set_type'] != 'text'){?>
 					<?php if($listInfo['set_type'] == 'bool'){?>
 						<select name="<?php echo $listInfo['set_name']?>" class="custom-select">
@@ -103,12 +99,12 @@ if (!empty($saved)) {
 				<?php }else{?>
 					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control" style='width:<?php echo $width?>px'><?php echo htmlspecialchars(stripslashes($listInfo['set_val']))?></textarea>
 				<?php }?>
-			</td>
-		</tr>
+			</div>
+		</div>
 		<?php
 	}
 	?>
-</table>
+</div>
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>

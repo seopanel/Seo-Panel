@@ -1,5 +1,6 @@
 <?php
 include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
 $headLabel = empty($headLabel) ? $spTextPanel['System Settings'] : $headLabel;
 
 // One shared view handles System/API/MOZ/Google/DataForSEO/Local AI/
@@ -187,11 +188,7 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 <form id="updateSettings">
 <input type="hidden" value="update" name="sec">
 <input type="hidden" value="<?php echo $category?>" name="category">
-<table class="list">
-	<tr class="listHead">
-		<td width='30%'><?php echo $headLabel?></td>
-		<td>&nbsp;</td>
-	</tr>
+<div class="aiv-card">
 	<?php
 	foreach( $list as $listInfo){
 		switch($listInfo['set_type']){
@@ -229,9 +226,8 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 			$listInfo['set_val'] = "********";
 		}
 		?>
-		<tr>
-			<td class="td_left_col">
-				<strong>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label">
 				<?php
 				if ($listInfo['set_name'] == 'SP_PAYMENT_CURRENCY') {
 				    echo $spTextSubscription["Currency"] . ":";
@@ -243,12 +239,11 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 					echo $spTextSettings[$listInfo['set_name']] . ":";
 				}
 				?>
-				</strong>
 				<?php if ($listInfo['set_name'] == 'SP_SENDGRID_API') { ?>
-					<br><small class="text-muted">Also set SMTP Host to <code>smtp.sendgrid.net</code> and SMTP Password to your Sendgrid API key below - this toggle alone does not send mail via Sendgrid.</small>
+					<small>Also set SMTP Host to <code>smtp.sendgrid.net</code> and SMTP Password to your Sendgrid API key below - this toggle alone does not send mail via Sendgrid.</small>
 				<?php } ?>
-			</td>
-			<td class="td_right_col">
+			</div>
+			<div class="sp-settings-row-control">
 				<?php if($listInfo['set_type'] != 'text'){?>
 					<?php if($listInfo['set_type'] == 'bool'){?>
 						<select name="<?php echo $listInfo['set_name']?>" class="custom-select">
@@ -375,21 +370,21 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 				<?php }else{?>
 					<textarea name="<?php echo $listInfo['set_name']?>" class="form-control"><?php echo stripslashes($listInfo['set_val'])?></textarea>
 				<?php }?>
-			</td>
-		</tr>
+			</div>
+		</div>
 		<?php
 	}
 
 	if ($category == "google") {
 		?>
-		<tr class="white_row">
-			<td class="td_left_col"><strong><?php echo $spTextSettings["Authorised redirect URI"]?></strong></td>
-			<td class="td_right_col"><?php echo SP_WEBPATH . "/admin-panel.php?sec=connections&action=connect_return&category=google"?></td>
-		</tr>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextSettings["Authorised redirect URI"]?></div>
+			<div class="sp-settings-row-control"><?php echo SP_WEBPATH . "/admin-panel.php?sec=connections&action=connect_return&category=google"?></div>
+		</div>
 		<?php
 	}
 	?>
-</table>
+</div>
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
