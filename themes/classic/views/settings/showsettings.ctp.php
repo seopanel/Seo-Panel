@@ -320,7 +320,19 @@ $inlineMsg        = $spapiCheckResult === 'expired'
 							// true - exposed via browser autofill history,
 							// shoulder-surfing, or a shared screenshot of
 							// this page on every real install
-							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET', 'SP_MOZ_API_SECRET', 'SP_GOOGLE_API_CLIENT_SECRET', 'SP_DFS_API_PASSWORD', 'SP_SPAPI_KEY', 'SP_RECAPTCHA_SECRET_KEY');
+							//
+							// bug fix: SP_GOOGLE_API_KEY was missed from this
+							// list despite being exactly the kind of field it
+							// targets - a real server-side credential (used
+							// by PageSpeedController for Google's PageSpeed
+							// API, see controllers/pagespeed.ctrl.php) with
+							// its own "Verify connection" button right below
+							// it, same as SP_MOZ_API_SECRET/SP_DFS_API_PASSWORD/
+							// SP_SPAPI_KEY. Unlike SP_RECAPTCHA_SITE_KEY or
+							// SP_GOOGLE_API_CLIENT_ID, it's never embedded in
+							// public page HTML, so it has no reason to be
+							// shown in cleartext.
+							$passTypeList = array('SP_SMTP_PASSWORD', 'API_SECRET', 'SP_MOZ_API_SECRET', 'SP_GOOGLE_API_KEY', 'SP_GOOGLE_API_CLIENT_SECRET', 'SP_DFS_API_PASSWORD', 'SP_SPAPI_KEY', 'SP_RECAPTCHA_SECRET_KEY');
 						    $isSecretField = in_array($listInfo['set_name'], $passTypeList);
 						    $type = $isSecretField ? "password" : "text";
 						    $styleOpt = ($width == 'large') ? "class='form-control'" : "class='form-control' style='width: $width"."px'";
