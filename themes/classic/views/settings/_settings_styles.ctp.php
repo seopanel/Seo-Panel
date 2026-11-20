@@ -48,6 +48,19 @@
 }
 .sp-settings-row-control #show_conn_res { margin-top: 10px; }
 
+/* Sub-heading between several stacked .aiv-card blocks on one page
+   (About Us: Developers/Sponsors/Translators; each needs its own small
+   label since they share one page head). */
+.sp-settings-subhead {
+	font-size: 13px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: .04em;
+	color: #6a6f87;
+	margin: 28px 0 10px;
+}
+.sp-settings-subhead:first-child { margin-top: 0; }
+
 @media screen and (max-width: 700px) {
 	.sp-settings-row { flex-direction: column; gap: 6px; padding: 14px 0; }
 	.sp-settings-row-label { flex: none; padding-top: 0; }

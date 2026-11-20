@@ -1,5 +1,6 @@
 <?php
 include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
 $isSponsorsPage = ($subSec == "sponsors");
 ?>
 <div class="aiv-page-head">
@@ -37,57 +38,50 @@ if (!empty($blogContent['blog_content'])) {
     ?>
 
     <?php if ($subSec != "sponsors") {?>
-	    <table class="list">
-	    	<tr class="listHead">
-	    		<td colspan="2"><?php echo $spText['label']['Developers']?></td>
-	    	</tr>
-	    	<tr class="white_row">
-	    		<td class="td_left_col" style="width: 30%"><strong>PHP, MYSQL, AJAX, HTML</strong></td>
-	    		<td class="td_right_col">Geo Varghese</td>
-	    	</tr>
-	    	<tr class="blue_row">
-	    		<td class="td_left_col" style="width: 30%"><strong>PHP, MYSQL, JQUERY</strong></td>
-	    		<td class="td_right_col">Deepthy Rao</td>
-	    	</tr>
-	    	<tr class="white_row">
-	    		<td class="td_left_col" style="width: 30%"><strong>Visual Architect</strong></td>
-	    		<td class="td_right_col">Chris Sievert</td>
-	    	</tr>
-	    </table>
-	    <div class="mt-4"></div>
+	    <div class="sp-settings-subhead"><?php echo $spText['label']['Developers']?></div>
+	    <div class="aiv-card">
+	    	<div class="sp-settings-row">
+	    		<div class="sp-settings-row-label">PHP, MYSQL, AJAX, HTML</div>
+	    		<div class="sp-settings-row-control">Geo Varghese</div>
+	    	</div>
+	    	<div class="sp-settings-row">
+	    		<div class="sp-settings-row-label">PHP, MYSQL, JQUERY</div>
+	    		<div class="sp-settings-row-control">Deepthy Rao</div>
+	    	</div>
+	    	<div class="sp-settings-row">
+	    		<div class="sp-settings-row-label">Visual Architect</div>
+	    		<div class="sp-settings-row-control">Chris Sievert</div>
+	    	</div>
+	    </div>
     <?php }?>
-    <table class="list">
-    	<tr class="listHead">
-    		<td colspan="2"><?php echo $spText['label']['Sponsors']?></td>
-    	</tr>
-    	<tr class="white_row">
-    		<td class="td_right_col" colspan="2" style="font-size: 18px;">
+    <div class="sp-settings-subhead"><?php echo $spText['label']['Sponsors']?></div>
+    <div class="aiv-card">
+    	<div class="sp-settings-row" style="border-bottom:none; padding-bottom:4px;">
+    		<div class="sp-settings-row-control" style="font-size: 18px;">
     			<a target="_blank" href="<?php echo SP_MAIN_SITE?>/aboutus/sponsors/" class="btn btn-primary">
     			    <?php echo str_replace('$100', '$500', $spTextSettings['Click here to become a sponsor for Seo Panel']); ?>
     			    <?php echo $spTextSettings['getallpluginfree']; ?>
     		   </a>
-    		</td>
-    	</tr>
-    	<?php echo $sponsors?>
-    </table>
+    		</div>
+    	</div>
+    </div>
+    <!-- $sponsors is a whole external page fetched from SP_SPONSOR_PAGE
+         (see InformationController::getSponsors()), not a <tr> fragment -
+         it carries its own markup/container (checked for class="contentmid"
+         before being trusted), so it's left in its own plain wrapper
+         rather than forced into the .aiv-card row layout above. -->
+    <div class="mt-3"><?php echo $sponsors?></div>
 
     <?php if ($subSec != "sponsors") {?>
-	    <div class="mt-4"></div>
-	    <table class="list">
-	    	<tr class="listHead">
-	    		<td colspan="2"><?php echo $spText['label']['Translators']?></td>
-	    	</tr>
-	    	<?php
-	    	$rowClass = "white_row";
-	    	foreach($transList as $transInfo) {
-	    		$rowClass = ($rowClass == "white_row") ? "blue_row" : "white_row";
-	    		?>
-	    		<tr class="<?php echo $rowClass?>">
-	    			<td class="td_left_col" style="width: 30%"><strong><?php echo $transInfo['lang_name']?></strong></td>
-	    			<td class="td_right_col"><?php echo $transInfo['trans_name']?>, <a href="<?php echo $transInfo['trans_website']?>" target="_blank"><?php echo $transInfo['trans_company']?></a></td>
-	    		</tr>
+	    <div class="sp-settings-subhead"><?php echo $spText['label']['Translators']?></div>
+	    <div class="aiv-card">
+	    	<?php foreach($transList as $transInfo) {?>
+	    		<div class="sp-settings-row">
+	    			<div class="sp-settings-row-label"><?php echo $transInfo['lang_name']?></div>
+	    			<div class="sp-settings-row-control"><?php echo $transInfo['trans_name']?>, <a href="<?php echo $transInfo['trans_website']?>" target="_blank"><?php echo $transInfo['trans_company']?></a></div>
+	    		</div>
 	    	<?php }?>
-	    </table>
+	    </div>
     <?php }?>
 
 <?php }?>

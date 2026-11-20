@@ -1,4 +1,7 @@
-<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
+?>
 <div class="aiv-page-head">
 	<?php echo showSectionHead($spText['label']['Version']); ?>
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#versionHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
@@ -22,23 +25,25 @@
 		</div>
 	</div>
 </div>
-<table class="list">
-	<tr class="listHead">
-		<td colspan="2"><?php echo $spText['label']['Version']?></td>
-	</tr>
-	<tr class="white_row">
-		<td class="td_left_col" style="width: 30%"><strong>Installed Version</strong></td>
-		<td class="td_right_col"><?php echo SP_VERSION_NUMBER?></td>
-	</tr>
-	<tr class="blue_row">
-		<td colspan="2" id="checkversion" class="text-center" style="padding: 20px;">
+<div class="aiv-card">
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">Installed Version</div>
+		<div class="sp-settings-row-control"><?php echo SP_VERSION_NUMBER?></div>
+	</div>
+	<div class="sp-settings-row" id="checkversion" style="align-items:center;">
+		<div class="sp-settings-row-label">Check for the latest release</div>
+		<div class="sp-settings-row-control">
 			<a class="btn btn-primary" href="javascript:void(0);" onclick="scriptDoLoad('settings.php', 'checkversion', 'sec=checkversion')">
 			    <?php echo $spTextSettings['Check for Updates']?>
 			</a>
-		</td>
-	</tr>
-	<tr class="white_row">
-		<td colspan="2" class="text-center" style="padding: 15px;">
+		</div>
+	</div>
+	<div class="sp-settings-row" style="align-items:center;">
+		<div class="sp-settings-row-label">
+			Already uploaded newer files?
+			<small>Use this to finish migrating the database without downloading anything.</small>
+		</div>
+		<div class="sp-settings-row-control">
 			<!-- Direct link to the manual upgrade wizard (install/upgrade.php)
 				 - previously the only way an admin could reach it was typing
 				 the URL themselves; this "Upgrade Now" / "View Update" page
@@ -50,8 +55,7 @@
 			<a class="btn btn-outline-primary" href="<?php echo SP_WEBPATH; ?>/install/upgrade.php" target="_blank">
 				<i class="fas fa-database"></i> Run Database Migration
 			</a>
-			<div style="font-size:12px; color:#6c757d; margin-top:8px;">Already uploaded newer files yourself? Use this to finish migrating the database.</div>
-		</td>
-	</tr>
-</table>
+		</div>
+	</div>
+</div>
 <?php include(SP_VIEWPATH."/settings/online_upgrade_popup.ctp.php"); ?>

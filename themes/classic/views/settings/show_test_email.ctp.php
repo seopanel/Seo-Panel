@@ -1,4 +1,7 @@
-<?php include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php'); ?>
+<?php
+include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
+?>
 <div class="aiv-page-head">
 	<?php echo showSectionHead($spTextPanel['Test Email Settings']); ?>
 	<a href="javascript:void(0);" data-toggle="modal" data-target="#testEmailHelpModal" class="aiv-help-btn"><i class="fas fa-question-circle"></i> What does this do?</a>
@@ -29,25 +32,21 @@
 
 <form id="emailForm">
 <input type="hidden" value="send_test_email" name="sec">
-<table class="list">
-	<tr class="listHead">
-		<td width='30%'><?php echo $spTextPanel['Test Email Settings']?></td>
-		<td>&nbsp;</td>
-	</tr>
-	<tr class="white_row">
-		<td class="td_left_col"><strong><?php echo $spText['login']['Email']?>:</strong></td>
-		<td class="td_right_col"><input type="email" name="test_email" value="" class="form-control"><?php echo $errMsg['name']?></td>
-	</tr>
-	<tr class="white_row">
-		<td class="td_left_col"><strong>Debug:</strong></td>
-		<td class="td_right_col">
+<div class="aiv-card">
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label"><?php echo $spText['login']['Email']?>:</div>
+		<div class="sp-settings-row-control"><input type="email" name="test_email" value="" class="form-control"><?php echo $errMsg['name']?></div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">Debug:</div>
+		<div class="sp-settings-row-control">
 			<select name="debug_mail" class="custom-select" style="width:150px;">
 				<option value="0"><?php echo $spText['common']['No']?></option>
 				<option value="1"><?php echo $spText['common']['Yes']?></option>
 			</select>
-		</td>
-	</tr>
-</table>
+		</div>
+	</div>
+</div>
 <table class="actionSec mt-2 float-right">
 	<tr>
     	<td>
