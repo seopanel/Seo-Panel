@@ -136,6 +136,27 @@ $post['url'] = empty($post['url']) ? "https://" : $post['url'];
         	<pre id="connection_refresh_debug" style="display:none;background:#1e1e1e;color:#d4d4d4;font-family:Consolas,Monaco,'Courier New',monospace;font-size:12px;line-height:1.5;padding:12px 14px;margin:6px;border-radius:6px;max-height:280px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;"></pre>
 		</td>
 	</tr>
+	<?php if (!empty($post['id'])) {?>
+	<tr class="blue_row">
+		<td class="td_left_col"><label><?php echo $spTextWeb['Client Report Link']?>:</label></td>
+		<td class="td_right_col">
+			<div id="report_share_link_display" style="<?php echo empty($reportShareLink) ? 'display:none;' : ''?>">
+				<div class="input-group">
+					<input type="text" id="report_share_link_url" class="form-control" readonly value="<?php echo htmlspecialchars($reportShareLink)?>">
+					<div class="input-group-append">
+						<a href="javascript:void(0);" id="report_share_link_copy" class="btn btn-info"><?php echo $spTextWeb['Copy']?></a>
+						<a href="javascript:void(0);" id="report_share_link_revoke" class="btn btn-warning"><?php echo $spTextWeb['Revoke']?></a>
+					</div>
+				</div>
+			</div>
+			<a href="javascript:void(0);" id="report_share_link_generate" class="btn btn-info" style="<?php echo empty($reportShareLink) ? '' : 'display:none;'?>">
+				<?php echo $spTextWeb['Generate link']?>
+			</a>
+			<div id="report_share_link_msg" class="mt-2"></div>
+			<small class="text-muted d-block mt-1"><?php echo $spTextWeb['Client Report Link note']?></small>
+		</td>
+	</tr>
+	<?php }?>
 </table>
 <table class="actionSec float-right mt-2">
 	<tr>
@@ -236,5 +257,62 @@ $(function() {
 			}
         });
     });
+
+	<?php if (!empty($post['id'])) {?>
+	var reportShareWebsiteId = <?php echo intval($post['id'])?>;
+
+	function spShowReportShareMsg(text, isError) {
+		$("#report_share_link_msg").html(
+			'<span class="' + (isError ? 'text-danger' : 'text-success') + '">' + text + '</span>'
+		);
+	}
+
+	$("#report_share_link_generate").click(function() {
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/websites.php',
+			type: "POST",
+			dataType: "json",
+			data: {sec: 'generatereportsharelink', websiteId: reportShareWebsiteId},
+			success: function(response) {
+				if (response.status) {
+					$("#report_share_link_url").val(response.link);
+					$("#report_share_link_display").show();
+					$("#report_share_link_generate").hide();
+				} else {
+					spShowReportShareMsg(response.msg, true);
+				}
+			}
+		});
+	});
+
+	$("#report_share_link_revoke").click(function() {
+		if (!confirm('<?php echo $spTextWeb['Revoke this link? Anyone using it will lose access immediately.']?>')) {
+			return;
+		}
+		$.ajax({
+			url: '<?php echo SP_WEBPATH?>/websites.php',
+			type: "POST",
+			dataType: "json",
+			data: {sec: 'revokereportsharelink', websiteId: reportShareWebsiteId},
+			success: function(response) {
+				if (response.status) {
+					$("#report_share_link_display").hide();
+					$("#report_share_link_generate").show();
+				} else {
+					spShowReportShareMsg(response.msg, true);
+				}
+			}
+		});
+	});
+
+	$("#report_share_link_copy").click(function() {
+		var $input = $("#report_share_link_url");
+		$input.get(0).select();
+		try {
+			document.execCommand('copy');
+			spShowReportShareMsg('<?php echo $spTextWeb['Link copied']?>', false);
+		} catch (e) {}
+	});
+	<?php }?>
 });
 </script>

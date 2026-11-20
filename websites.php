@@ -124,6 +124,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->listWebsites($_POST);
 			break;
 
+		case "generatereportsharelink":
+			print json_encode($controller->generateReportShareLink($_POST['websiteId']));
+			break;
+
+		case "revokereportsharelink":
+			print json_encode($controller->revokeReportShareLink($_POST['websiteId']));
+			break;
+
 		default:
 			$controller->listWebsites($_POST);
 			break;

@@ -1113,6 +1113,24 @@ CREATE TABLE IF NOT EXISTS `mcp_tokens` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- White-label client report links - a no-login, read-only URL an agency
+-- hands to its own end client, showing that one website's report with the
+-- agency's branding instead of SEO Panel's. At most one active (non-revoked)
+-- token per website - see WebsiteController::generateReportShareLink().
+-- Resolved by client-report.php; rendering is the same live report engine
+-- (ReportController::showOverallReportSummary()) used everywhere else.
+CREATE TABLE IF NOT EXISTS `report_share_tokens` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  `last_viewed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Opt-in TOTP two-factor authentication, per user. secret is encrypted at
 -- rest via UserController's __encryptTotpSecret()/__decryptTotpSecret()
 -- (sodium_crypto_secretbox, same "sbx:"-prefixed pattern already used for

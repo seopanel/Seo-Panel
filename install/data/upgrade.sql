@@ -92,3 +92,30 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'Alert on new critical issues note', 'Sends an immediate webhook alert when Site Auditor finds a page newly broken, deindexed, not mobile-friendly, not secure, or blocked by robots.'),
 ('en', 'report', 'Keyword rank alert', 'Keyword rank alert'),
 ('en', 'report', 'Site Auditor critical issue alert', 'Site Auditor critical issue alert');
+
+-- White-label client report links - a no-login, read-only URL an agency
+-- hands to its own end client, showing that one website's report with the
+-- agency's branding instead of SEO Panel's. At most one active (non-revoked)
+-- token per website - see WebsiteController::generateReportShareLink().
+-- Resolved by client-report.php; rendering is the same live report engine
+-- (ReportController::showOverallReportSummary()) used everywhere else.
+CREATE TABLE IF NOT EXISTS `report_share_tokens` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `token` varchar(64) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `revoked` tinyint(1) NOT NULL DEFAULT 0,
+  `last_viewed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `token` (`token`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'website', 'Client Report Link', 'Client Report Link'),
+('en', 'website', 'Client Report Link note', 'A no-login link you can hand to your client - it shows this website''s report only, branded with your own logo/name instead of SEO Panel''s.'),
+('en', 'website', 'Generate link', 'Generate link'),
+('en', 'website', 'Revoke', 'Revoke'),
+('en', 'website', 'Copy', 'Copy'),
+('en', 'website', 'Link copied', 'Link copied'),
+('en', 'website', 'Revoke this link? Anyone using it will lose access immediately.', 'Revoke this link? Anyone using it will lose access immediately.'),
+('en', 'label', 'This link is no longer available', 'This link is no longer available');

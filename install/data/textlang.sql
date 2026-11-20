@@ -33437,3 +33437,17 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'Alert on new critical issues note', 'Sends an immediate webhook alert when Site Auditor finds a page newly broken, deindexed, not mobile-friendly, not secure, or blocked by robots.'),
 ('en', 'report', 'Keyword rank alert', 'Keyword rank alert'),
 ('en', 'report', 'Site Auditor critical issue alert', 'Site Auditor critical issue alert');
+
+-- 7.2.0: white-label client report links - a no-login, read-only URL an
+-- agency hands to its own end client, showing that one website's report
+-- with the agency's own branding instead of SEO Panel's. See
+-- WebsiteController::generateReportShareLink() and client-report.php.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'website', 'Client Report Link', 'Client Report Link'),
+('en', 'website', 'Client Report Link note', 'A no-login link you can hand to your client - it shows this website''s report only, branded with your own logo/name instead of SEO Panel''s.'),
+('en', 'website', 'Generate link', 'Generate link'),
+('en', 'website', 'Revoke', 'Revoke'),
+('en', 'website', 'Copy', 'Copy'),
+('en', 'website', 'Link copied', 'Link copied'),
+('en', 'website', 'Revoke this link? Anyone using it will lose access immediately.', 'Revoke this link? Anyone using it will lose access immediately.'),
+('en', 'label', 'This link is no longer available', 'This link is no longer available');

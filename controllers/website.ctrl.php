@@ -192,6 +192,41 @@ class WebsiteController extends Controller{
 		return !empty($websiteInfo) && intval($websiteInfo['user_id']) === intval($userId);
 	}
 
+	// func to fetch the current active (non-revoked) client report link for
+	// a website, or null if none exists yet - used by editWebsite() to show
+	// the link on the edit form, and resolved back by client-report.php
+	function getReportShareLink($websiteId) {
+		$row = $this->dbHelper->getRow('report_share_tokens', "website_id=" . intval($websiteId) . " and revoked=0");
+		return empty($row) ? null : SP_WEBPATH . "/client-report.php?token=" . $row['token'];
+	}
+
+	// func to generate a new client report link, revoking any prior one for
+	// this website first - at most one active link per website at a time
+	function generateReportShareLink($websiteId) {
+		$websiteId = intval($websiteId);
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return array('status' => false, 'msg' => $_SESSION['text']['label']['Access denied']);
+		}
+		$this->dbHelper->updateRow('report_share_tokens', array('revoked|int' => 1), "website_id=$websiteId and revoked=0");
+		$token = bin2hex(random_bytes(32));
+		$this->dbHelper->insertRow('report_share_tokens', array(
+			'website_id|int' => $websiteId,
+			'token' => $token,
+			'created_at' => 'NOW()',
+		));
+		return array('status' => true, 'link' => SP_WEBPATH . "/client-report.php?token=" . $token);
+	}
+
+	// func to revoke a website's active client report link, if any
+	function revokeReportShareLink($websiteId) {
+		$websiteId = intval($websiteId);
+		if (!$this->__verifyWebsiteOwnership($websiteId)) {
+			return array('status' => false, 'msg' => $_SESSION['text']['label']['Access denied']);
+		}
+		$this->dbHelper->updateRow('report_share_tokens', array('revoked|int' => 1), "website_id=$websiteId and revoked=0");
+		return array('status' => true);
+	}
+
 	# func to change status
 	function __changeStatus($websiteId, $status){
 		if (!$this->__verifyWebsiteOwnership($websiteId)) {
@@ -478,7 +513,8 @@ class WebsiteController extends Controller{
 			
 			$propertyList = $this->__getAllAnalyticProperties(TRUE);
 			$this->set('propertyList', $propertyList);
-			
+			$this->set('reportShareLink', $this->getReportShareLink($websiteId));
+
 			$this->set('editAction', 'update');
 			$this->render('website/edit_website');
 			exit;

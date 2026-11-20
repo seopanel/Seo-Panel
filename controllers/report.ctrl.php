@@ -1299,7 +1299,14 @@ class ReportController extends Controller {
 	}
 	
     # function to show system reports
-	function showOverallReportSummary($searchInfo=[], $cronUserId=false) {
+	// $restrictWebsiteId - set only by the public, no-login client-report.php
+	// entry point. Forces $websiteId to this one value and trims $websiteList
+	// down to just that entry, ignoring whatever $searchInfo['website_id']
+	// says - the actual security boundary that keeps a client link pinned to
+	// the one website it was generated for, regardless of what the view's
+	// (unrendered, in this mode - see $cronUserId below) website selector
+	// would otherwise allow or what a visitor tries to pass in the URL.
+	function showOverallReportSummary($searchInfo=[], $cronUserId=false, $restrictWebsiteId=false) {
 	    $searchInfo['type'] = htmlentities($searchInfo['type'], ENT_QUOTES);
 	    $searchInfo['search_name'] = htmlentities($searchInfo['search_name'], ENT_QUOTES);
 	    $searchInfo['order_col'] = str_replace([' ', '*'], '', $searchInfo['order_col']);
@@ -1354,6 +1361,12 @@ class ReportController extends Controller {
 		$websiteCtrler = New WebsiteController();
 		$websiteList = $websiteCtrler->__getAllWebsites($userId, true);
 
+		if (!empty($restrictWebsiteId)) {
+			$websiteList = array_values(array_filter($websiteList, function($w) use ($restrictWebsiteId) {
+				return intval($w['id']) === intval($restrictWebsiteId);
+			}));
+		}
+
 		if (empty($websiteList)) {
 			$this->set('spTextWebsite', $this->getLanguageTexts('website', $_SESSION['lang_code']));
 			$this->render('dashboard/no_websites');
@@ -1361,7 +1374,7 @@ class ReportController extends Controller {
 		}
 
 		$this->set('siteList', $websiteList);
-		$websiteId = isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id'];
+		$websiteId = !empty($restrictWebsiteId) ? $restrictWebsiteId : (isset($searchInfo['website_id']) ? $searchInfo['website_id'] : $websiteList[0]['id']);
 		$websiteId = intval($websiteId);
 		$this->set('websiteId', $websiteId);
 		$urlarg = "website_id=$websiteId";
