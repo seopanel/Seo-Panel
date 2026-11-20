@@ -1,5 +1,12 @@
 <?php
-$borderCollapseVal = $pdfVersion ? "border-collapse: collapse;" : "";
+// bug fix: same issue as analytics_summary.ctp.php - this view is also
+// used, with $summaryPage=true, as the "Review Reports" section of the
+// periodic emailed report (ReviewManagerController::viewReportSummary
+// ($filterList, true, $cronUserId)), which fell into the same "else"
+// branch as the interactive page and embedded a dead help button/modal
+// and un-stripped "javascript:void(0)" rank/graph links.
+$isStaticMode = $pdfVersion || !empty($cronUserId);
+$borderCollapseVal = $isStaticMode ? "border-collapse: collapse;" : "";
 
 if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
     $pdfVersion ? showPdfHeader($spTextTools['Review Report Summary']) : showPrintHeader($spTextTools['Review Report Summary']);
@@ -21,6 +28,15 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 		</tr>
 	</table>
     <?php
+} else if (!empty($cronUserId)) {
+    $scriptName = "archive.php";
+    ?>
+    <div style="font-family:Tahoma, verdana, arial, sans-serif; margin-bottom:12px;">
+        <div style="font-size:14px; font-weight:bold; color:#2d3748;"><?php echo htmlspecialchars($spTextTools['Review Report Summary'])?></div>
+    </div>
+    <?php
+    $mainLink = SP_WEBPATH."/$scriptName?sec=reportSummary&website_id=$websiteId&from_time=$fromTime&to_time=$toTime&type=".urlencode($searchInfo['type'] ?? '');
+    $mainLink .= "&search_name=".urlencode($searchInfo['search_name'] ?? '')."&report_type=review-reports";
 } else {
     include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
     ?>
@@ -150,7 +166,7 @@ $colCount = ($baseColCount * 3) - (empty($websiteId) ? 0 : 1);
 <table id="cust_tab">
 	<tr>
 		<?php
-		$hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
+		$hrefAttr = $isStaticMode ? "" : "href='javascript:void(0)'";
 		foreach (array_keys($colList) as $i => $colName){
 		    
 		    $linkClass = "";
@@ -247,18 +263,25 @@ $colCount = ($baseColCount * 3) - (empty($websiteId) ? 0 : 1);
 							$currRankLink = scriptAJAXLinkHrefDialog($pageScriptPath, 'content', $scriptLink . "&sec=viewDetailedReports", round($currRank, 2));
 							$graphLink = scriptAJAXLinkHrefDialog($pageScriptPath, 'content', $scriptLink . "&sec=viewGraphReports&attr_type=$colName", '&nbsp;', 'graphicon');
 							
-							// if pdf report remove links
-							if ($pdfVersion) {
+							// if pdf export or cron-emailed report, remove
+							// dead "javascript:void(0)" links - neither has
+							// a JS runtime
+							if ($isStaticMode) {
 								$prevRankLink = str_replace("href='javascript:void(0);'", "", $prevRankLink);
 								$currRankLink = str_replace("href='javascript:void(0);'", "", $currRankLink);
 								$graphLink = str_replace("href='javascript:void(0);'", "", $graphLink);
 							}
 						}
+						// the graph-icon link opens an in-app modal chart -
+						// meaningless in an email, so drop it there
+						// entirely rather than leave a dead icon (same as
+						// archive.ctp.php/analytics_summary.ctp.php)
+						$diffOut = empty($cronUserId) ? $graphLink . " " . $rankDiffTxt : $rankDiffTxt;
 					    ?>
 						<td><?php echo $prevRankLink; ?></td>
 						<td><?php echo $currRankLink; ?></td>
-						<td><?php echo $graphLink . " " . $rankDiffTxt; ?></td>
-						<?php					
+						<td><?php echo $diffOut; ?></td>
+						<?php
 					}
 					?>				
 				</tr>

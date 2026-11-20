@@ -53,3 +53,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- "System Settings" regardless of category - see settings.ctrl.php.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'Site Auditor Settings', 'Site Auditor Settings');
+
+-- subtitle line in the shared branded email banner (email/
+-- _email_banner.ctp.php) each periodic/digest email now opens with.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'reports', 'Your scheduled report', 'Your scheduled report'),
+('en', 'aiinsights', 'AI Insights digest', 'AI Insights digest'),
+('en', 'aivisibility', 'AI Visibility digest', 'AI Visibility digest'),
+('en', 'aivisibility', 'AI Perception digest', 'AI Perception digest');

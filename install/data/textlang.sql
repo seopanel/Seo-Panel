@@ -33402,3 +33402,14 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- 'panel' where every sibling settings page's title lives.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'panel', 'Site Auditor Settings', 'Site Auditor Settings');
+
+-- 7.2.0: subtitle line shown in the shared branded banner
+-- (email/_email_banner.ctp.php) each periodic/digest email now opens
+-- with. ?? fallbacks in the views mean nothing depends on these rows
+-- actually being seeded - same as every other English-only text row in
+-- this file.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'reports', 'Your scheduled report', 'Your scheduled report'),
+('en', 'aiinsights', 'AI Insights digest', 'AI Insights digest'),
+('en', 'aivisibility', 'AI Visibility digest', 'AI Visibility digest'),
+('en', 'aivisibility', 'AI Perception digest', 'AI Perception digest');

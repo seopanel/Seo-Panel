@@ -45,5 +45,36 @@
         .green {color: #00903B;}
         .red {color: #990000;}
         a:visited {color: #0033CC;}
+
+        /* bug fix: the periodic report email's Keyword Position/Website
+           Analytics/Review Reports sections (report/archive.ctp.php,
+           analytics/analytics_summary.ctp.php, review/
+           review_report_summary.ctp.php) share markup with the
+           interactive admin page and PDF export, all using id="cust_tab"/
+           id="head" - styled in the main app via screen.css, which an
+           email never loads (only this file's own <style> block, or
+           inline attributes, ever apply in an email client). Those
+           tables rendered as bare, unstyled HTML in every report email
+           until now. nth-child striping is skipped by clients that don't
+           support it (older Outlook desktop) - it just falls back to
+           plain white rows there, same as before this fix, rather than
+           breaking anything. */
+        #cust_tab {border-collapse: collapse; width: 100%; margin-top: 8px; font-family: Tahoma, verdana, arial, sans-serif;}
+        #cust_tab th, #cust_tab td {border: 1px solid #B0C2CC; padding: 6px 8px; font-size: 11px;}
+        #cust_tab th, th#head {background-color: #DAE5EE; color: #343333; font-weight: bold; text-align: center;}
+        #cust_tab td {color: #343333; text-align: center;}
+        #cust_tab tr:nth-child(even) td {background-color: #F4F7FA;}
+        .SectionHeader {margin: 14px 0 4px;}
+        .SectionHeader h3 {font-size: 14px; font-weight: bold; color: #2d3748; font-family: Tahoma, verdana, arial, sans-serif; margin: 0;}
+
+        /* bug fix: report/archive.ctp.php and analytics_summary.ctp.php
+           wrap their (often wide, multi-search-engine) #cust_tab tables
+           in <div class="table-responsive"> expecting Bootstrap's own
+           "overflow-x:auto" rule for that class - Bootstrap's CSS is
+           never loaded in an email, so it silently did nothing and a
+           report with 2+ search engines/metrics just overflowed past the
+           email's width with no way to see the cut-off columns. Same
+           rule Bootstrap itself uses. */
+        .table-responsive {overflow-x: auto; width: 100%;}
     </style>
 </head>

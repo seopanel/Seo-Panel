@@ -1,8 +1,30 @@
-<?php 
-$borderCollapseVal = $pdfVersion ? "border-collapse: collapse;" : "";
-$hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
+<?php
+// bug fix: the emailed periodic report (showOverallReportSummary() with
+// $cronUserId set - see report.ctrl.php) used to fall straight into the
+// "else" branch below meant for the interactive admin page: a help
+// button/modal that can't open without JS, a search form with a jQuery UI
+// datepicker <script> tag, website/report-type dropdowns, and a "Search"
+// button whose onclick does nothing in an email client. $isStaticMode
+// also now covers $cronUserId everywhere $pdfVersion alone used to gate
+// stripping dead "javascript:void(0)" links/pagination controls below -
+// same reasoning as the PDF export, which already needed this because a
+// PDF has no JS runtime either.
+$isStaticMode = $pdfVersion || !empty($cronUserId);
+$borderCollapseVal = $isStaticMode ? "border-collapse: collapse;" : "";
+$hrefAttr = $isStaticMode ? "" : "href='javascript:void(0)'";
 
-if(!empty($printVersion) || !empty($pdfVersion)) {
+if (!empty($cronUserId)) {
+	?>
+	<div style="font-family:Tahoma, verdana, arial, sans-serif; margin-bottom:16px;">
+		<div style="font-size:16px; font-weight:bold; color:#2d3748;"><?php echo htmlspecialchars($sectionHead)?></div>
+		<div style="font-size:12px; color:#6c757d; margin-top:4px;">
+			<?php if (!empty($websiteUrl)) {?><?php echo htmlspecialchars($spText['common']['Website'])?>: <?php echo htmlspecialchars($websiteUrl)?> &nbsp;&middot;&nbsp; <?php }?><?php echo htmlspecialchars($spText['common']['Period'])?>: <?php echo htmlspecialchars($fromTime)?> &ndash; <?php echo htmlspecialchars($toTime)?>
+		</div>
+		<?php if (!empty($showDateRangeLagNote)) { ?>
+			<div style="font-size:11px; color:#9296a8; margin-top:4px;">Website/Keyword Search and Sitemap data reflects up to 2 days ago; Website Analytics up to 1 day ago (reporting lag at the data source) - other sections reflect the period above exactly.</div>
+		<?php } ?>
+	</div>
+<?php } else if(!empty($printVersion) || !empty($pdfVersion)) {
     $doPrint = empty($cronUserId) ? true : false;
     $pdfVersion ? showPdfHeader($sectionHead) : showPrintHeader($sectionHead, $doPrint);
     ?>
@@ -143,7 +165,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
 	<div class="table-responsive">
 	<?php
 	echo showSectionHead($spTextTools['Keyword Position Summary']);
-	if (empty($pdfVersion)) echo $keywordPagingDiv;
+	if (empty($isStaticMode)) echo $keywordPagingDiv;
 	?>
 	<table id="cust_tab">
 		<tr>
@@ -156,7 +178,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
 	            $oVal = 'ASC';
 	        }
 	        
-	        $hrefAttr = $pdfVersion ? "" : "href='javascript:void(0)'";
+	        $hrefAttr = $isStaticMode ? "" : "href='javascript:void(0)'";
 	        
 			$linkName = "<a id='sortLink' class='$linkClass' $hrefAttr onclick=\"scriptDoLoad('$mainLink&order_col=keyword&order_val=$oVal', 'content')\">{$spText['common']['Keyword']}</a>"; 
 			?>		
@@ -237,8 +259,12 @@ if (!empty($keywordPos) && !empty($seCount)) {
 						$currRankLink = scriptAJAXLinkHrefDialog('reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], $currRank);
 						$graphLink = scriptAJAXLinkHrefDialog('graphical-reports.php', 'content', $scriptLink."&se_id=".$seInfo['id'], '&nbsp;', 'graphicon');
 						
-						// if pdf report remove links
-						if ($pdfVersion) {
+						// if pdf export or cron-emailed report, remove dead
+						// "javascript:void(0)" links - neither a PDF nor an
+						// email client has a JS runtime to run onclick, so
+						// these rendered as links you could click that did
+						// nothing
+						if ($isStaticMode) {
 							$prevRankLink = str_replace("href='javascript:void(0);'", "", $prevRankLink);
 							$currRankLink = str_replace("href='javascript:void(0);'", "", $currRankLink);
 							$graphLink = str_replace("href='javascript:void(0);'", "", $graphLink);
@@ -282,7 +308,7 @@ if (!empty($keywordPos) && !empty($seCount)) {
 	if (!empty($websiteStats)) {
     	echo showSectionHead($spTextHome['Website Statistics']);
     	$colSpan = 13; 
-    	if (empty($pdfVersion)) echo $websitePagingDiv;
+    	if (empty($isStaticMode)) echo $websitePagingDiv;
     	?>
     	<table id="cust_tab">
     		<tr>
