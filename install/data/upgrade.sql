@@ -47,3 +47,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aivisibility', 'first tracked week', 'first tracked week'),
 ('en', 'plugin', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse'),
 ('en', 'theme', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse');
+
+-- SettingsController::showSystemSettings()'s switch never had a
+-- 'siteauditor' case, so the Auditor Settings page always titled itself
+-- "System Settings" regardless of category - see settings.ctrl.php.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'Site Auditor Settings', 'Site Auditor Settings');

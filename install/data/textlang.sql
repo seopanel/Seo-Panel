@@ -33393,3 +33393,12 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'theme', 'Theme Zip File', 'Theme Zip File'),
 ('en', 'theme', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.', 'Upload a theme zip to install a new theme, or upgrade an existing one of the same name.'),
 ('en', 'theme', 'Drag & drop a .zip file here, or click to browse', 'Drag & drop a .zip file here, or click to browse');
+
+-- 7.2.0: SettingsController::showSystemSettings()'s switch never had a
+-- 'siteauditor' case, so the Auditor Settings page (siteauditor.php?
+-- sec=showsettings) always titled itself "System Settings" regardless of
+-- which category was actually open. 'siteauditor'/'Site Auditor Settings'
+-- already exists as a label, but under category 'siteauditor', not
+-- 'panel' where every sibling settings page's title lives.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'panel', 'Site Auditor Settings', 'Site Auditor Settings');

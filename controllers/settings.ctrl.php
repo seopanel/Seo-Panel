@@ -104,6 +104,17 @@ class SettingsController extends Controller{
 				    $this->set('spapiCheckResult', SettingsController::refreshSpApiCheckStatus());
 				    break;
 
+				// bug fix: missing from this switch entirely - every other
+				// category sets its own headLabel here, but siteauditor.php's
+				// "Auditor Settings" link (sec=showsettings) calls this same
+				// showSystemSettings('siteauditor') and fell through to
+				// default, leaving $headLabel unset. showsettings.ctp.php's
+				// own fallback then showed the page titled "System Settings"
+				// no matter which settings category was actually open.
+				case "siteauditor":
+				    $this->set('headLabel', $spTextPanel['Site Auditor Settings'] ?? 'Site Auditor Settings');
+				    break;
+
 				default:
 					break;
 				

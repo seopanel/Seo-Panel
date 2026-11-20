@@ -45,7 +45,7 @@ if (!empty($saved)) {
 		switch($listInfo['set_type']){
 
 			case "small":
-				$width = 40;
+				$width = 70;
 				break;
 
 			case "bool":
