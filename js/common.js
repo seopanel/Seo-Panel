@@ -735,6 +735,33 @@ function checkOllamaConnection(scriptUrl, scriptPos, scriptArgs) {
 	});
 }
 
+function checkWebhookConnection(scriptUrl, scriptPos, scriptArgs) {
+	if (!scriptArgs) { scriptArgs = ''; }
+	webhookUrl = $('input:text[name=webhook_url]').val();
+	webhookPlatform = $('select[name=webhook_platform]').val();
+	// POST, not GET - see the matching comment on reports.php's own
+	// "test_webhook" case (same SSRF shape as checkOllamaConnection()
+	// above: the caller chooses the TARGET HOST, not just credentials
+	// for a fixed one). 'sec' is repeated in the POST body itself for
+	// the same reason checkOllamaConnection() does - reports.php's
+	// switch($_POST['sec']) never sees the "?sec=test_webhook" that's
+	// only ever in the query string.
+	scriptArgs += "&sec=test_webhook&webhook_url=" + encodeURIComponent(webhookUrl) + "&webhook_platform=" + encodeURIComponent(webhookPlatform);
+	showLoadingIcon(scriptPos);
+	jQuery.ajax({
+		type: "POST",
+		url: scriptUrl,
+		data: scriptArgs,
+		timeout: 15000,
+		success: function(data){
+			document.getElementById(scriptPos).innerHTML = data;
+		},
+		error: function() {
+			showAjaxLoadError(scriptPos);
+		}
+	});
+}
+
 function openTab(tabName, dialog = false) {
 	dialogId = dialog ? "#dialogContent " : "";
 	$(dialogId + '.tabcontent').hide();	

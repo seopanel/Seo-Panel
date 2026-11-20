@@ -1,5 +1,6 @@
 <?php
 include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
+include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
 ?>
 <div class="aiv-page-head">
 	<?php echo showSectionHead($spTextPanel['Schedule Reports']); ?>
@@ -17,6 +18,10 @@ include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 			</div>
 			<div class="modal-body aiv-help-modal-body">
 				<p>Set up a recurring combined report (the same kind Archived Reports shows) to be emailed to you automatically on a schedule, instead of checking in manually.</p>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>A webhook URL below sends the same notifications to a Slack/Discord channel (or any other JSON-accepting endpoint) alongside - or instead of - email: it fires for a report type exactly when its email toggle is on.</span>
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
@@ -30,19 +35,14 @@ include(SP_VIEWPATH.'/aivisibility/_styles.ctp.php');
 if (!empty($success)) {
     showSuccessMsg($spTextReport['sheduledsuccessfully'], false);
 }
-
 ?>
 <form id="schedule_form">
 <input type="hidden" name="sec" value="schedule"/>
-<table width="100%" border="0" cellspacing="0" cellpadding="0" class="list">
-	<tr class="listHead">
-		<td class="left" width='30%'><?php echo $spTextPanel['Schedule Reports']?></td>
-		<td class="right">&nbsp;</td>
-	</tr>
+<div class="aiv-card">
 	<?php if(isAdmin()){ ?>
-		<tr class="blue_row">
-			<td class="td_left_col"><?php echo $spText['common']['User']?>:</td>
-			<td class="td_right_col">
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spText['common']['User']?>:</div>
+			<div class="sp-settings-row-control">
 				<select id="user_id" name="user_id" class="custom-select" style="width:150px;" onchange="doLoad('user_id', 'reports.php?sec=schedule', 'content')">
 					<?php foreach($userList as $userInfo){?>
 						<?php if($userInfo['id'] == $repSetInfo['user_id']){?>
@@ -52,16 +52,16 @@ if (!empty($success)) {
 						<?php }?>
 					<?php }?>
 				</select>
-			</td>
-		</tr>
+			</div>
+		</div>
 	<?php }?>
-	<tr class="white_row">
-		<td  class="td_left_col"><?php echo $spTextReport['Next report generation time']?>:</td>
-		<td class="td_right_col"><?php echo $nextReportTime?></td>
-	</tr>
-	<tr class="blue_row">
-		<td class="td_left_col"><?php echo $spTextReport['Reports generation interval']?>: </td>
-		<td class="td_right_col">
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label"><?php echo $spTextReport['Next report generation time']?>:</div>
+		<div class="sp-settings-row-control"><?php echo $nextReportTime?></div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label"><?php echo $spTextReport['Reports generation interval']?>:</div>
+		<div class="sp-settings-row-control">
 			<select name="report_interval" class="custom-select">
 				<?php foreach ($scheduleList as $key => $val) {
 				    if ($key < SP_SYSTEM_REPORT_INTERVAL) continue;
@@ -71,73 +71,89 @@ if (!empty($success)) {
 					<?php
 				}?>
 			</select>
-		</td>
-	</tr>
+		</div>
+	</div>
 	<?php if (SP_REPORT_EMAIL_NOTIFICATION) {?>
-    	<tr class="white_row">
-    		<td class="td_left_col"><?php echo $spTextReport['Email notification']?>:</td>
-    		<td class="td_right_col">
-    			<?php
-    			$selected = $repSetInfo['email_notification'] ? 'selected' : '';
-    			?>
-    			<select name="email_notification" class="custom-select">
-    				<option value="0"><?php echo $spText['common']['No']?></option>
-    				<option value="1" <?php echo $selected?>><?php echo $spText['common']['Yes']?></option>
-    			</select>
-    		</td>
-    	</tr>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextReport['Email notification']?>:</div>
+			<div class="sp-settings-row-control">
+				<?php
+				$selected = $repSetInfo['email_notification'] ? 'selected' : '';
+				?>
+				<select name="email_notification" class="custom-select">
+					<option value="0"><?php echo $spText['common']['No']?></option>
+					<option value="1" <?php echo $selected?>><?php echo $spText['common']['Yes']?></option>
+				</select>
+			</div>
+		</div>
 	<?php }?>
 	<?php if (defined('SP_AI_INSIGHTS_EMAIL_NOTIFICATION') && SP_AI_INSIGHTS_EMAIL_NOTIFICATION) {?>
-    	<tr class="blue_row">
-    		<td class="td_left_col"><?php echo $spTextReport['AI Insights email notification'] ?? 'AI Insights email notification'?>:</td>
-    		<td class="td_right_col">
-    			<?php
-    			$aiInsightsSelected = $repSetInfo['ai_insights_email_notification'] ? 'selected' : '';
-    			?>
-    			<select name="ai_insights_email_notification" class="custom-select">
-    				<option value="0"><?php echo $spText['common']['No']?></option>
-    				<option value="1" <?php echo $aiInsightsSelected?>><?php echo $spText['common']['Yes']?></option>
-    			</select>
-    		</td>
-    	</tr>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextReport['AI Insights email notification'] ?? 'AI Insights email notification'?>:</div>
+			<div class="sp-settings-row-control">
+				<?php
+				$aiInsightsSelected = $repSetInfo['ai_insights_email_notification'] ? 'selected' : '';
+				?>
+				<select name="ai_insights_email_notification" class="custom-select">
+					<option value="0"><?php echo $spText['common']['No']?></option>
+					<option value="1" <?php echo $aiInsightsSelected?>><?php echo $spText['common']['Yes']?></option>
+				</select>
+			</div>
+		</div>
 	<?php }?>
 	<?php if (defined('SP_AI_VISIBILITY_EMAIL_NOTIFICATION') && SP_AI_VISIBILITY_EMAIL_NOTIFICATION) {?>
-    	<tr class="white_row">
-    		<td class="td_left_col"><?php echo $spTextReport['AI Visibility email notification'] ?? 'AI Visibility email notification'?>:</td>
-    		<td class="td_right_col">
-    			<?php
-    			$aiVisibilitySelected = $repSetInfo['ai_visibility_email_notification'] ? 'selected' : '';
-    			?>
-    			<select name="ai_visibility_email_notification" class="custom-select">
-    				<option value="0"><?php echo $spText['common']['No']?></option>
-    				<option value="1" <?php echo $aiVisibilitySelected?>><?php echo $spText['common']['Yes']?></option>
-    			</select>
-    		</td>
-    	</tr>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextReport['AI Visibility email notification'] ?? 'AI Visibility email notification'?>:</div>
+			<div class="sp-settings-row-control">
+				<?php
+				$aiVisibilitySelected = $repSetInfo['ai_visibility_email_notification'] ? 'selected' : '';
+				?>
+				<select name="ai_visibility_email_notification" class="custom-select">
+					<option value="0"><?php echo $spText['common']['No']?></option>
+					<option value="1" <?php echo $aiVisibilitySelected?>><?php echo $spText['common']['Yes']?></option>
+				</select>
+			</div>
+		</div>
 	<?php }?>
 	<?php if (defined('SP_AI_PERCEPTION_EMAIL_NOTIFICATION') && SP_AI_PERCEPTION_EMAIL_NOTIFICATION) {?>
-    	<tr class="white_row">
-    		<td class="td_left_col"><?php echo $spTextReport['AI Perception email notification'] ?? 'AI Perception email notification'?>:</td>
-    		<td class="td_right_col">
-    			<?php
-    			$aiPerceptionSelected = $repSetInfo['ai_perception_email_notification'] ? 'selected' : '';
-    			?>
-    			<select name="ai_perception_email_notification" class="custom-select">
-    				<option value="0"><?php echo $spText['common']['No']?></option>
-    				<option value="1" <?php echo $aiPerceptionSelected?>><?php echo $spText['common']['Yes']?></option>
-    			</select>
-    		</td>
-    	</tr>
+		<div class="sp-settings-row">
+			<div class="sp-settings-row-label"><?php echo $spTextReport['AI Perception email notification'] ?? 'AI Perception email notification'?>:</div>
+			<div class="sp-settings-row-control">
+				<?php
+				$aiPerceptionSelected = $repSetInfo['ai_perception_email_notification'] ? 'selected' : '';
+				?>
+				<select name="ai_perception_email_notification" class="custom-select">
+					<option value="0"><?php echo $spText['common']['No']?></option>
+					<option value="1" <?php echo $aiPerceptionSelected?>><?php echo $spText['common']['Yes']?></option>
+				</select>
+			</div>
+		</div>
 	<?php }?>
-	<tr class="blue_row">
-		<td class="tab_left_bot_noborder"></td>
-		<td class="tab_right_bot"></td>
-	</tr>
-	<tr class="listBot">
-		<td class="left" colspan="1"></td>
-		<td class="right"></td>
-	</tr>
-</table>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">
+			<?php echo $spTextReport['Webhook URL'] ?? 'Webhook URL'?>:
+			<small><?php echo $spTextReport['Webhook URL note'] ?? 'Sends a short summary (and a link back here) to this URL every time an email notification above would be sent. Leave blank to disable.'?></small>
+		</div>
+		<div class="sp-settings-row-control">
+			<input type="text" name="webhook_url" value="<?php echo htmlspecialchars($repSetInfo['webhook_url'] ?? '', ENT_QUOTES)?>" class="form-control" placeholder="https://hooks.slack.com/services/...">
+		</div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label"><?php echo $spTextReport['Platform'] ?? 'Platform'?>:</div>
+		<div class="sp-settings-row-control">
+			<?php $webhookPlatform = $repSetInfo['webhook_platform'] ?? 'slack'; ?>
+			<select name="webhook_platform" class="custom-select" style="width:200px;">
+				<option value="slack" <?php echo $webhookPlatform == 'slack' ? 'selected' : ''?>>Slack</option>
+				<option value="discord" <?php echo $webhookPlatform == 'discord' ? 'selected' : ''?>>Discord</option>
+				<option value="generic" <?php echo $webhookPlatform == 'generic' ? 'selected' : ''?>>Generic / Custom (JSON)</option>
+			</select>
+			<div class="mt-2">
+				<a href="javascript:void(0);" onclick="checkWebhookConnection('reports.php', 'show_webhook_conn_res')" class="btn btn-info"><?php echo $spTextReport['Send Test Notification'] ?? 'Send Test Notification'?> &gt;&gt;</a>
+			</div>
+			<div id="show_webhook_conn_res" class="mt-2"></div>
+		</div>
+	</div>
+</div>
 <table width="100%" cellspacing="0" cellpadding="0" border="0" class="actionSec">
 	<tr>
     	<td style="padding-top: 6px;text-align:right;">

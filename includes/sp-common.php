@@ -645,7 +645,102 @@ function sendMail($from, $fromName, $to ,$subject,$content, $attachment = '', $d
 	$crawlLogCtrl->createMailLog($mailLogInfo);
 
 	return $sendLog['status'];
-	
+
+}
+
+/**
+ * Pure payload builder for sendWebhookNotification() below - split out
+ * specifically so tests can assert on the exact JSON shape sent to each
+ * platform without making a real network call. (A real call against a
+ * test capture server isn't an option here anyway: sendWebhookNotification()
+ * deliberately blocks private/loopback targets - see its own docblock -
+ * so even a local test listener would be rejected the same as a hostile
+ * one.)
+ */
+function buildWebhookNotificationPayload($platform, $title, $lines, $link = '', $linkLabel = '') {
+	switch ($platform) {
+		case 'discord':
+			$fields = [];
+			foreach ($lines as $label => $value) {
+				$fields[] = ['name' => (string) $label, 'value' => (string) $value, 'inline' => true];
+			}
+			$embed = ['title' => $title, 'fields' => $fields, 'color' => 0x5c4fd6];
+			if (!empty($link)) {
+				$embed['url'] = $link;
+				$embed['description'] = !empty($linkLabel) ? $linkLabel : $link;
+			}
+			return ['embeds' => [$embed]];
+
+		case 'slack':
+			// minimal mrkdwn escaping Slack itself documents (in that
+			// order - & first, so the escaped < and > aren't re-escaped)
+			$esc = function ($s) {
+				return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], (string) $s);
+			};
+			$blocks = [
+				['type' => 'header', 'text' => ['type' => 'plain_text', 'text' => (string) $title]],
+			];
+			$fieldTexts = [];
+			foreach ($lines as $label => $value) {
+				$fieldTexts[] = ['type' => 'mrkdwn', 'text' => "*{$esc($label)}:*\n{$esc($value)}"];
+			}
+			if (!empty($fieldTexts)) {
+				$blocks[] = ['type' => 'section', 'fields' => $fieldTexts];
+			}
+			if (!empty($link)) {
+				$blocks[] = ['type' => 'section', 'text' => ['type' => 'mrkdwn', 'text' => '<' . $link . '|' . $esc(!empty($linkLabel) ? $linkLabel : 'View full report') . '>']];
+			}
+			return ['text' => $title, 'blocks' => $blocks];
+
+		case 'generic':
+		default:
+			return ['title' => $title, 'lines' => $lines, 'link' => $link];
+	}
+}
+
+/**
+ * Posts a short summary of one of the 4 periodic reports (Overall Report
+ * Summary, AI Insights, AI Visibility, AI Perception) to a user-configured
+ * Slack/Discord/generic webhook URL - the chat-notification counterpart
+ * to sendMail() above, fired right alongside it from each of those 4
+ * senders whenever reports_settings.webhook_url is set for that user.
+ *
+ * $lines is a flat ['label' => ..., 'value' => ...] array - a handful of
+ * headline numbers, not the full report (chat UIs render dense tables
+ * badly); $link/$linkLabel add a single "view the full report" CTA back
+ * into the app.
+ *
+ * Security: $webhookUrl is entered by whichever account owns it,
+ * including non-admin users - unlike SP_LOCAL_AI_URL (admin-only,
+ * deliberately allowed to target internal hosts, see
+ * LocalAIController::__checkOllamaConnection()), this must NOT be able
+ * to reach internal/private targets, so $allowPrivateTarget is left at
+ * Spider::getContent()'s own default (false) rather than overridden.
+ *
+ * Never throws and never affects whether the email next to it was
+ * considered sent - a webhook failure is logged and swallowed, same as
+ * sendAIInsightsDigestEmail()'s own existing try/catch around a failed
+ * send (controllers/cron.ctrl.php).
+ */
+function sendWebhookNotification($webhookUrl, $platform, $title, $lines, $link = '', $linkLabel = '') {
+	if (empty($webhookUrl)) {
+		return false;
+	}
+
+	$body = buildWebhookNotificationPayload($platform, $title, $lines, $link, $linkLabel);
+
+	$spider = new Spider();
+	$spider->_CURL_HTTPHEADER = ['Content-Type: application/json'];
+	$spider->_CURLOPT_TIMEOUT = 10;
+	$spider->_CURLOPT_POSTFIELDS = json_encode($body);
+	$response = $spider->getContent($webhookUrl, false, false);
+
+	$httpCode = !empty($response['http_code']) ? intval($response['http_code']) : 0;
+	$ok = ($httpCode >= 200 && $httpCode < 300);
+	if (!$ok) {
+		error_log("SEO Panel: sendWebhookNotification() failed for platform '$platform' - HTTP $httpCode");
+	}
+	return $ok;
 }
 
 function sendMailBySendgridAPI($mail, $subscriberEmail, $subscriberName = '') {

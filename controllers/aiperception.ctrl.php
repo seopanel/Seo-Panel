@@ -1566,7 +1566,8 @@ class AiPerceptionController extends Controller {
 		$aivTexts = $this->getLanguageTexts('aivisibility', $userInfo['lang_code']);
 		$this->set('aivTexts', $aivTexts);
 		$this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
-		$this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
+		$loginTexts = $this->getLanguageTexts('login', $userInfo['lang_code']);
+		$this->set('loginTexts', $loginTexts);
 
 		$name = trim($userInfo['first_name'] . ' ' . $userInfo['last_name']);
 		$this->set('name', $name);
@@ -1579,6 +1580,29 @@ class AiPerceptionController extends Controller {
 		$adminInfo = $userController->__getAdminInfo();
 		$adminName = $adminInfo['first_name'] . "-" . $adminInfo['last_name'];
 		$this->set('adminName', $adminName);
+
+		// chat (Slack/Discord/generic) webhook, same trigger as the email
+		// above - independent of whether the email itself succeeds
+		$repSetInfo = $this->db->select("select webhook_url, webhook_platform from reports_settings where user_id=" . intval($userInfo['id']), true);
+		if (!empty($repSetInfo['webhook_url'])) {
+			$shareTotal = 0;
+			$siteCount = count($summaryByWebsite);
+			foreach ($summaryByWebsite as $s) {
+				$shareTotal += intval($s['share']);
+			}
+			$avgShare = $siteCount ? round($shareTotal / $siteCount) : 0;
+			sendWebhookNotification(
+				$repSetInfo['webhook_url'],
+				$repSetInfo['webhook_platform'],
+				!empty($aivTexts['AI Perception digest']) ? $aivTexts['AI Perception digest'] : 'AI Perception digest',
+				[
+					'Websites' => $siteCount,
+					($aivTexts['Share of Voice'] ?? 'Share of Voice') => $avgShare . '%',
+				],
+				SP_WEBPATH . "/ai-perception.php",
+				$loginTexts['Login'] ?? 'View full report'
+			);
+		}
 
 		return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
 	}

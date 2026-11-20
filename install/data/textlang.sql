@@ -33413,3 +33413,15 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'aiinsights', 'AI Insights digest', 'AI Insights digest'),
 ('en', 'aivisibility', 'AI Visibility digest', 'AI Visibility digest'),
 ('en', 'aivisibility', 'AI Perception digest', 'AI Perception digest');
+
+-- 7.2.0: chat (Slack/Discord/generic webhook) notifications for the 4
+-- periodic reports - see sendWebhookNotification() in sp-common.php and
+-- the Schedule Reports page (report/reportscheduler.ctp.php).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'report', 'Webhook URL', 'Webhook URL'),
+('en', 'report', 'Webhook URL note', 'Sends a short summary (and a link back here) to this URL every time an email notification above would be sent. Leave blank to disable.'),
+('en', 'report', 'Platform', 'Platform'),
+('en', 'report', 'Send Test Notification', 'Send Test Notification'),
+('en', 'report', 'Test notification sent', 'Test notification sent'),
+('en', 'report', 'Test notification failed', 'Test notification failed - check the URL and try again'),
+('en', 'report', 'Enter a webhook URL first', 'Enter a webhook URL first');

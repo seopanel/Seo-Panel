@@ -1882,7 +1882,45 @@ class ReportController extends Controller {
 	    if (isset($info['ai_perception_email_notification'])) {
 	        $this->updateUserReportSetting($userId, 'ai_perception_email_notification', $info['ai_perception_email_notification']);
 	    }
+	    if (isset($info['webhook_url'])) {
+	        $this->updateUserReportSetting($userId, 'webhook_url', trim($info['webhook_url']));
+	    }
+	    if (isset($info['webhook_platform'])) {
+	        $platform = in_array($info['webhook_platform'], ['slack', 'discord', 'generic'], true) ? $info['webhook_platform'] : 'generic';
+	        $this->updateUserReportSetting($userId, 'webhook_platform', $platform);
+	    }
 	    $this->showReportsScheduler(true, $info);
+	}
+
+	/**
+	 * AJAX endpoint behind the "Send Test Notification" button
+	 * (reports.php's POST-only "test_webhook" case - see its own comment
+	 * on why this must stay POST, not GET). Tests whatever is currently
+	 * typed into the form, not the saved value - same UX as every other
+	 * "Verify connection" button in Settings (checkMozConnection() etc,
+	 * js/common.js), so a user can try a URL before saving it.
+	 */
+	function sendTestWebhookNotification($postInfo) {
+		$spTextReport = $this->spTextReport;
+		if (empty($postInfo['webhook_url'])) {
+			print "<span class='error'>" . ($spTextReport['Enter a webhook URL first'] ?? 'Enter a webhook URL first') . "</span>";
+			return;
+		}
+
+		$platform = in_array($postInfo['webhook_platform'] ?? '', ['slack', 'discord', 'generic'], true) ? $postInfo['webhook_platform'] : 'generic';
+		$ok = sendWebhookNotification(
+			$postInfo['webhook_url'],
+			$platform,
+			'SEO Panel test notification',
+			['Status' => 'This is a test - your webhook is configured correctly.'],
+			SP_WEBPATH . "/reports.php?sec=schedule"
+		);
+
+		if ($ok) {
+			print "<span class='success'>" . ($spTextReport['Test notification sent'] ?? 'Test notification sent') . "</span>";
+		} else {
+			print "<span class='error'>" . ($spTextReport['Test notification failed'] ?? 'Test notification failed - check the URL and try again') . "</span>";
+		}
 	}
 	
 	# func to check whether report can be generated for user
@@ -1925,7 +1963,8 @@ class ReportController extends Controller {
         $reportTexts = $this->getLanguageTexts('reports', $userInfo['lang_code']);
         $this->set('reportTexts', $reportTexts);
         $this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
-        $this->set('loginTexts', $this->getLanguageTexts('login', $userInfo['lang_code']));
+        $loginTexts = $this->getLanguageTexts('login', $userInfo['lang_code']);
+        $this->set('loginTexts', $loginTexts);
 	    
 		$name = $userInfo['first_name'].' '.$userInfo['last_name'];
 		$this->set('name', $name);
@@ -1936,7 +1975,23 @@ class ReportController extends Controller {
 		$adminInfo = $userController->__getAdminInfo();
 		$adminName = $adminInfo['first_name']."-".$adminInfo['last_name'];
 		$this->set('adminName', $adminName);
-		
+
+		// chat (Slack/Discord/generic) webhook, same trigger as the email
+		// above - independent of whether the email itself succeeds, so a
+		// bad SMTP config never silently takes the webhook down with it
+		$repSetInfo = $this->getUserReportSettings($userInfo['id']);
+		if (!empty($repSetInfo['webhook_url'])) {
+			$reportLink = SP_WEBPATH."/admin-panel.php?menu_selected=report-manager&start_script=archive&website_id=0";
+			sendWebhookNotification(
+				$repSetInfo['webhook_url'],
+				$repSetInfo['webhook_platform'],
+				!empty($reportTexts['Your scheduled report']) ? $reportTexts['Your scheduled report'] : 'Your scheduled report',
+				['Period' => $searchInfo['from_time'] . ' - ' . $searchInfo['to_time']],
+				$reportLink,
+				$loginTexts['Login'] ?? 'View full report'
+			);
+		}
+
 		if (!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)) {
 			echo 'An internal error occured while sending mail!';
 			return false;

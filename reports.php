@@ -69,6 +69,17 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->saveReportSchedule($_POST);
 			break;
 
+		// POST, not GET - this lets the caller choose the TARGET HOST to
+		// send a request to (the webhook URL itself), same SSRF shape
+		// already fixed for checkOllamaAPI/checkDataForSEOAPI/etc in
+		// settings.ctrl.php - a bare <img src="...reports.php?sec=
+		// test_webhook&..."> could otherwise force an already-logged-in
+		// user's browser to make the server POST to an attacker-chosen
+		// target via a simple cross-site GET
+		case "test_webhook":
+			$controller->sendTestWebhookNotification($_POST);
+			break;
+
 		case "report_gen_logs":
 			checkAdminLoggedIn();
 			$controller->showReportGenerationLogs($_POST);

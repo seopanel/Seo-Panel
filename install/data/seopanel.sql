@@ -856,6 +856,8 @@ CREATE TABLE IF NOT EXISTS `reports_settings` (
   `ai_visibility_last_digest_sent` date DEFAULT NULL,
   `ai_perception_email_notification` tinyint(1) NOT NULL DEFAULT '1',
   `ai_perception_last_digest_sent` date DEFAULT NULL,
+  `webhook_url` varchar(500) DEFAULT NULL,
+  `webhook_platform` varchar(20) NOT NULL DEFAULT 'slack',
   `last_generated` int(11) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `user_id` (`user_id`)
