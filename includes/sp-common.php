@@ -743,6 +743,75 @@ function sendWebhookNotification($webhookUrl, $platform, $title, $lines, $link =
 	return $ok;
 }
 
+/**
+ * Real-time rank alert decision (ReportController::__notifyRankAlert()) -
+ * pulled out as a pure function, same reasoning as
+ * buildWebhookNotificationPayload() above: no DB/network, so it's testable
+ * directly. Fires on a swing of at least $threshold positions, or on
+ * entering/leaving the ranked results entirely (one of the two ranks is 0
+ * - "not ranked" - and the other isn't); never fires when both ranks are
+ * identical or both are 0 (still unranked, not a change).
+ */
+function shouldFireRankAlert($prevRank, $newRank, $threshold) {
+	$prevRank = intval($prevRank);
+	$newRank = intval($newRank);
+	if ($prevRank === $newRank) {
+		return false;
+	}
+
+	$prevRanked = $prevRank > 0;
+	$newRanked = $newRank > 0;
+	if (!$prevRanked && !$newRanked) {
+		return false;
+	}
+	if ($prevRanked !== $newRanked) {
+		return true;
+	}
+
+	return abs($prevRank - $newRank) >= max(1, intval($threshold));
+}
+
+/**
+ * Real-time Site Auditor alert decision (AuditorComponent::
+ * __notifySiteIssueAlert()) - pulled out as a pure function for the same
+ * reason as shouldFireRankAlert() above. Compares the page's PRE-crawl row
+ * ($rInfo) against what was just computed ($reportInfo) for the 5 checks
+ * that are unconditionally 'error'-severity in
+ * AuditorComponent::countReportPageScore(), and returns the human-readable
+ * labels of whichever ones newly flipped from good to bad. Returns []
+ * (nothing to alert on) when the page was never successfully crawled
+ * before - $rInfo's column defaults for a brand-new placeholder row don't
+ * all mean "last known good" (google_indexed/https_secure default to 0,
+ * i.e. "bad"), so comparing against them on a page's first crawl would
+ * misfire as a false "newly broken".
+ */
+function diffSiteAuditorCriticalIssues($rInfo, $reportInfo) {
+	static $criticalChecks = [
+		'brocken'           => ['badWhen' => 1, 'label' => 'Broken link'],
+		'google_indexed'    => ['badWhen' => 0, 'label' => 'No longer indexed by Google'],
+		'mobile_friendly'   => ['badWhen' => 0, 'label' => 'No longer mobile-friendly'],
+		'https_secure'      => ['badWhen' => 0, 'label' => 'No longer secure (HTTPS)'],
+		'blocked_by_robots' => ['badWhen' => 1, 'label' => 'Blocked by robots.txt'],
+	];
+
+	if (empty($rInfo['crawled'])) {
+		return [];
+	}
+
+	$newIssues = [];
+	foreach ($criticalChecks as $col => $cfg) {
+		if (!isset($rInfo[$col]) || !isset($reportInfo[$col])) {
+			continue;
+		}
+		$wasBad = (intval($rInfo[$col]) === $cfg['badWhen']);
+		$isBad = (intval($reportInfo[$col]) === $cfg['badWhen']);
+		if (!$wasBad && $isBad) {
+			$newIssues[] = $cfg['label'];
+		}
+	}
+	return $newIssues;
+}
+
 function sendMailBySendgridAPI($mail, $subscriberEmail, $subscriberName = '') {
 	
 	include_once(SP_LIBPATH . "/sendgrid-php/sendgrid-php.php");

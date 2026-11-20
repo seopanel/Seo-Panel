@@ -22,6 +22,10 @@ include(SP_VIEWPATH.'/settings/_settings_styles.ctp.php');
 					<i class="fas fa-info-circle"></i>
 					<span>A webhook URL below sends the same notifications to a Slack/Discord channel (or any other JSON-accepting endpoint) alongside - or instead of - email: it fires for a report type exactly when its email toggle is on.</span>
 				</div>
+				<div class="aiv-note">
+					<i class="fas fa-info-circle"></i>
+					<span>The two alert options below are separate from the scheduled report above - they fire immediately, the moment a keyword swings or Site Auditor finds a new critical issue, instead of waiting for the next scheduled send.</span>
+				</div>
 			</div>
 			<div class="modal-footer">
 				<button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
@@ -151,6 +155,34 @@ if (!empty($success)) {
 				<a href="javascript:void(0);" onclick="checkWebhookConnection('reports.php', 'show_webhook_conn_res')" class="btn btn-info"><?php echo $spTextReport['Send Test Notification'] ?? 'Send Test Notification'?> &gt;&gt;</a>
 			</div>
 			<div id="show_webhook_conn_res" class="mt-2"></div>
+		</div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">
+			<?php echo $spTextReport['Alert on rank changes'] ?? 'Alert on rank changes'?>:
+			<small><?php echo $spTextReport['Alert on rank changes note'] ?? 'Sends an immediate webhook alert whenever a keyword moves by at least this many positions, or enters/drops out of the ranked results - in addition to, not instead of, the scheduled report above.'?></small>
+		</div>
+		<div class="sp-settings-row-control">
+			<?php $rankAlertSelected = !empty($repSetInfo['rank_alert_notification']) ? 'selected' : ''; ?>
+			<select name="rank_alert_notification" class="custom-select">
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1" <?php echo $rankAlertSelected?>><?php echo $spText['common']['Yes']?></option>
+			</select>
+			<?php echo $spTextReport['Position threshold'] ?? 'Position threshold'?>:
+			<input type="number" min="1" name="rank_alert_threshold" value="<?php echo intval($repSetInfo['rank_alert_threshold'] ?? 5)?>" class="form-control" style="width:80px;display:inline-block;">
+		</div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">
+			<?php echo $spTextReport['Alert on new critical issues'] ?? 'Alert on new critical issues'?>:
+			<small><?php echo $spTextReport['Alert on new critical issues note'] ?? 'Sends an immediate webhook alert when Site Auditor finds a page newly broken, deindexed, not mobile-friendly, not secure, or blocked by robots.'?></small>
+		</div>
+		<div class="sp-settings-row-control">
+			<?php $siteIssueAlertSelected = !empty($repSetInfo['site_issue_alert_notification']) ? 'selected' : ''; ?>
+			<select name="site_issue_alert_notification" class="custom-select">
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1" <?php echo $siteIssueAlertSelected?>><?php echo $spText['common']['Yes']?></option>
+			</select>
 		</div>
 	</div>
 </div>

@@ -160,7 +160,15 @@ class AuditorComponent extends Controller{
             }
             
             $this->saveReportInfo($reportInfo, 'update');
-            
+
+            // Real-time alert: $rInfo (fetched at the top of this function,
+            // before the update above) is the page's PRE-crawl state;
+            // $reportInfo is what was just saved. Diff the 5 checks that are
+            // unconditionally 'error'-severity in countReportPageScore() and
+            // fire a webhook on any that newly turned bad - see
+            // __notifySiteIssueAlert().
+            $this->__notifySiteIssueAlert($projectInfo, $reportUrl, $rInfo, $reportInfo);
+
             // to store sitelinks in page and links reports
             $i = 0;
             if (!empty($pageInfo['site_links']) && count($pageInfo['site_links']) > 0) {
@@ -230,7 +238,45 @@ class AuditorComponent extends Controller{
 
         return $reportUrl;
     }
-    
+
+    // func to send a real-time webhook alert when a page newly fails one of
+    // the 5 critical checks (see diffSiteAuditorCriticalIssues(),
+    // includes/sp-common.php) - opt-in via
+    // reports_settings.site_issue_alert_notification, reusing the same
+    // webhook_url/webhook_platform as the periodic digests. $rInfo is the
+    // page's state from BEFORE this crawl, $reportInfo is what was just
+    // saved - see the call site in runReport(). Never thrown - a failed/
+    // skipped alert must not affect the crawl/save that already completed.
+    function __notifySiteIssueAlert($projectInfo, $reportUrl, $rInfo, $reportInfo) {
+        $newIssues = diffSiteAuditorCriticalIssues($rInfo, $reportInfo);
+        if (empty($newIssues)) {
+            return;
+        }
+
+        $websiteInfo = $this->db->select("select user_id from websites where id=".intval($projectInfo['website_id']), true);
+        if (empty($websiteInfo['user_id'])) {
+            return;
+        }
+
+        $repSetInfo = $this->db->select("select webhook_url, webhook_platform, site_issue_alert_notification
+            from reports_settings where user_id=".intval($websiteInfo['user_id']), true);
+        if (empty($repSetInfo['site_issue_alert_notification']) || empty($repSetInfo['webhook_url'])) {
+            return;
+        }
+
+        $spTextReport = $this->getLanguageTexts('report', $_SESSION['lang_code'] ?? 'en');
+        sendWebhookNotification(
+            $repSetInfo['webhook_url'], $repSetInfo['webhook_platform'],
+            !empty($spTextReport['Site Auditor critical issue alert']) ? $spTextReport['Site Auditor critical issue alert'] : 'Site Auditor critical issue alert',
+            [
+                'Website' => $projectInfo['name'],
+                'Page' => $reportUrl,
+                'Issue(s)' => implode(', ', $newIssues),
+            ],
+            SP_WEBPATH . "/siteauditor.php?sec=showreport&project_id=" . intval($projectInfo['id'])
+        );
+    }
+
     // function to get report info
     function getReportInfo($where) {	    
 	    $sql = "SELECT * FROM auditorreports where 1=1 $where";

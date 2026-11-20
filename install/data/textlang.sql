@@ -33425,3 +33425,15 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'Test notification sent', 'Test notification sent'),
 ('en', 'report', 'Test notification failed', 'Test notification failed - check the URL and try again'),
 ('en', 'report', 'Enter a webhook URL first', 'Enter a webhook URL first');
+
+-- 7.2.0: real-time alerts (rank swings + Site Auditor newly-critical
+-- issues) - fire immediately via the same webhook above, instead of
+-- waiting for the next scheduled digest.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'report', 'Alert on rank changes', 'Alert on rank changes'),
+('en', 'report', 'Alert on rank changes note', 'Sends an immediate webhook alert whenever a keyword moves by at least this many positions, or enters/drops out of the ranked results - in addition to, not instead of, the scheduled report above.'),
+('en', 'report', 'Position threshold', 'Position threshold'),
+('en', 'report', 'Alert on new critical issues', 'Alert on new critical issues'),
+('en', 'report', 'Alert on new critical issues note', 'Sends an immediate webhook alert when Site Auditor finds a page newly broken, deindexed, not mobile-friendly, not secure, or blocked by robots.'),
+('en', 'report', 'Keyword rank alert', 'Keyword rank alert'),
+('en', 'report', 'Site Auditor critical issue alert', 'Site Auditor critical issue alert');

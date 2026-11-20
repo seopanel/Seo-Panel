@@ -1101,6 +1101,16 @@ class ReportController extends Controller {
 		$resultDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
 		$time = strtotime($resultDate);
 		$this->checkDBConn();
+
+		// Real-time rank alert: capture the most recent PRIOR rank (any
+		// result_date strictly before this one, so it's unaffected by the
+		// same-day delete-and-reinsert the $remove branch below does)
+		// before this result overwrites it - this is the only place all
+		// three SERP sources (crawl/SP API/DataForSEO) funnel through, so
+		// hooking here covers every one of them. See __notifyRankAlert().
+		$prevRankInfo = $this->db->select("select rank from searchresults where keyword_id={$matchInfo['keyword_id']}
+		and searchengine_id={$matchInfo['se_id']} and result_date<'$resultDate' order by result_date desc limit 1", true);
+
 		if($remove){
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
 			and searchengine_id={$matchInfo['se_id']} and result_date='$resultDate'";
@@ -1127,6 +1137,50 @@ class ReportController extends Controller {
 		$sql = "insert into searchresultdetails(searchresult_id,url,title,description)
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
 		$this->db->query($sql);
+
+		if (!empty($prevRankInfo)) {
+			$this->__notifyRankAlert($matchInfo, intval($prevRankInfo['rank']), intval($matchInfo['rank']));
+		}
+	}
+
+	// func to send a real-time webhook alert on a significant keyword rank
+	// swing, or on entering/leaving the ranked results entirely - opt-in
+	// via reports_settings.rank_alert_notification, reusing the same
+	// webhook_url/webhook_platform as the periodic digests. Never thrown -
+	// a failed/skipped alert must not affect the rank save that already
+	// completed in saveMatchedKeywordInfo() above it.
+	function __notifyRankAlert($matchInfo, $prevRank, $newRank) {
+		$keywordInfo = $this->db->select("select k.name as keyword_name, k.website_id, w.user_id, w.name as website_name
+			from keywords k, websites w where k.id={$matchInfo['keyword_id']} and k.website_id=w.id", true);
+		if (empty($keywordInfo)) {
+			return;
+		}
+
+		$repSetInfo = $this->getUserReportSettings($keywordInfo['user_id']);
+		if (empty($repSetInfo['rank_alert_notification']) || empty($repSetInfo['webhook_url'])) {
+			return;
+		}
+
+		if (!shouldFireRankAlert($prevRank, $newRank, $repSetInfo['rank_alert_threshold'] ?? 5)) {
+			return;
+		}
+
+		$seInfo = $this->db->select("select domain from searchengines where id={$matchInfo['se_id']}", true);
+		$seName = !empty($seInfo['domain']) ? $seInfo['domain'] : 'search engine';
+
+		$spTextReport = $this->getLanguageTexts('report', $_SESSION['lang_code'] ?? 'en');
+		sendWebhookNotification(
+			$repSetInfo['webhook_url'], $repSetInfo['webhook_platform'],
+			!empty($spTextReport['Keyword rank alert']) ? $spTextReport['Keyword rank alert'] : 'Keyword rank alert',
+			[
+				'Keyword' => $keywordInfo['keyword_name'],
+				'Website' => $keywordInfo['website_name'],
+				'Search Engine' => $seName,
+				'Previous rank' => $prevRank > 0 ? $prevRank : 'Not ranked',
+				'New rank' => $newRank > 0 ? $newRank : 'Not ranked',
+			],
+			SP_WEBPATH . "/rank.php?website_id=" . $keywordInfo['website_id']
+		);
 	}
 
 	# func to copy yesterday's result into today when no results found
@@ -1888,6 +1942,15 @@ class ReportController extends Controller {
 	    if (isset($info['webhook_platform'])) {
 	        $platform = in_array($info['webhook_platform'], ['slack', 'discord', 'generic'], true) ? $info['webhook_platform'] : 'generic';
 	        $this->updateUserReportSetting($userId, 'webhook_platform', $platform);
+	    }
+	    if (isset($info['rank_alert_notification'])) {
+	        $this->updateUserReportSetting($userId, 'rank_alert_notification', $info['rank_alert_notification'] ? 1 : 0);
+	    }
+	    if (isset($info['rank_alert_threshold'])) {
+	        $this->updateUserReportSetting($userId, 'rank_alert_threshold', max(1, intval($info['rank_alert_threshold'])));
+	    }
+	    if (isset($info['site_issue_alert_notification'])) {
+	        $this->updateUserReportSetting($userId, 'site_issue_alert_notification', $info['site_issue_alert_notification'] ? 1 : 0);
 	    }
 	    $this->showReportsScheduler(true, $info);
 	}
