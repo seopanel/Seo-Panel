@@ -548,7 +548,15 @@ class SettingsController extends Controller{
 	    switch ($feature) {
 	        case 'serp':          return defined('SP_ENABLE_SPAPI_SERP') && SP_ENABLE_SPAPI_SERP;
 	        case 'search_volume': return defined('SP_ENABLE_SPAPI_SEARCH_VOLUME') && SP_ENABLE_SPAPI_SEARCH_VOLUME;
-	        default:              return true;
+	        // bug fix: was "default: return true" - every real call site
+	        // (grep-confirmed) only ever passes 'serp' or 'search_volume',
+	        // so this never fired in practice, but it meant an
+	        // unrecognized feature string (a typo, or a future feature
+	        // added here without its own case) silently reported
+	        // "enabled" instead of the safe default of "not enabled yet" -
+	        // fail-open on a gate that controls live, potentially billed
+	        // third-party API calls.
+	        default:              return false;
 	    }
 	}
 
@@ -561,7 +569,8 @@ class SettingsController extends Controller{
 	        case 'backlink':      return defined('SP_ENABLE_DFS_BACKLINK') && SP_ENABLE_DFS_BACKLINK;
 	        case 'review':        return defined('SP_ENABLE_DFS_REVIEW') && SP_ENABLE_DFS_REVIEW;
 	        case 'search_volume': return defined('SP_ENABLE_DFS_SEARCH_VOLUME') && SP_ENABLE_DFS_SEARCH_VOLUME;
-	        default:              return true;
+	        // same fail-open fix as isSpApiEnabled() above, same reasoning
+	        default:              return false;
 	    }
 	}
 

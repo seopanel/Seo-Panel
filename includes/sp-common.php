@@ -225,8 +225,34 @@ function addHttpToUrl($url) {
 	if(!stristr($url, 'http://') && !stristr($url, 'https://')) {
 		$url = 'https://'.trim($url);
 	}
-	
+
 	return trim($url);
+}
+
+/**
+ * Every create*()/update*() controller method (keyword/website/user) uses
+ * the same web-form validation path: on failure it returns
+ * array('error', $errMsg) where $errMsg is an associative array of
+ * per-field, HTML-wrapped (formatErrorMsg()) messages meant for the web
+ * form to render next to each input. Both programmatic callers of these
+ * methods - the REST API (api/*.api.php) and the MCP server's
+ * toolAddKeyword() - previously passed that array through mostly as-is,
+ * leaving raw HTML (`<span class='error'>...`) in a machine-read error
+ * message. This flattens it into one plain-text message, dropping any
+ * field with nothing to say.
+ * @param mixed $errMsg		A plain string (passed through as-is) or a
+ * 							field => message array from a controller's
+ * 							own apiCall-aware validation path
+ * @return string			A single human-readable error message
+ */
+function flattenApiErrorMsg($errMsg) {
+	if (!is_array($errMsg)) {
+		return $errMsg;
+	}
+	$messages = array_map(function($msg) {
+		return trim(strip_tags($msg));
+	}, array_filter($errMsg));
+	return implode(' ', array_filter($messages));
 }
 
 function isDomainUrl($url) {

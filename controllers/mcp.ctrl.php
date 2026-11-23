@@ -158,6 +158,34 @@ class MCPController extends Controller {
 					'search_engine_ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Optional - specific search engine IDs to track this keyword against'],
 				], 'required' => ['website_id', 'keyword']],
 			],
+			[
+				'name' => 'update_keyword',
+				'description' => 'Update an existing tracked keyword (rename it, change its status, or retarget which search engines it tracks).',
+				'inputSchema' => ['type' => 'object', 'properties' => [
+					'keyword_id' => ['type' => 'integer'],
+					'keyword' => ['type' => 'string', 'description' => 'Optional - new name for the keyword'],
+					'status' => ['type' => 'integer', 'description' => 'Optional - 1 to enable, 0 to pause tracking'],
+					'search_engine_ids' => ['type' => 'array', 'items' => ['type' => 'integer'], 'description' => 'Optional - replaces the search engine IDs this keyword tracks against'],
+				], 'required' => ['keyword_id']],
+			],
+			[
+				'name' => 'delete_keyword',
+				'description' => 'Stop tracking a keyword and remove its stored rank history.',
+				'inputSchema' => ['type' => 'object', 'properties' => ['keyword_id' => ['type' => 'integer']], 'required' => ['keyword_id']],
+			],
+			[
+				'name' => 'create_website',
+				'description' => 'Add a new website to track in this account.',
+				'inputSchema' => ['type' => 'object', 'properties' => [
+					'name' => ['type' => 'string', 'description' => 'A label for the website'],
+					'url' => ['type' => 'string', 'description' => 'The website\'s URL'],
+				], 'required' => ['name', 'url']],
+			],
+			[
+				'name' => 'get_site_auditor_summary',
+				'description' => 'Get the Site Auditor crawl summary (overall score, pages crawled, broken links, HTTPS/mobile-friendly/backlink/indexed counts) for one of your websites.',
+				'inputSchema' => ['type' => 'object', 'properties' => ['website_id' => ['type' => 'integer']], 'required' => ['website_id']],
+			],
 		];
 	}
 
@@ -187,6 +215,18 @@ class MCPController extends Controller {
 			case 'add_keyword':
 				$data = $this->toolAddKeyword($userId, intval($args['website_id'] ?? 0), trim($args['keyword'] ?? ''), $args['search_engine_ids'] ?? []);
 				break;
+			case 'update_keyword':
+				$data = $this->toolUpdateKeyword($userId, intval($args['keyword_id'] ?? 0), $args);
+				break;
+			case 'delete_keyword':
+				$data = $this->toolDeleteKeyword($userId, intval($args['keyword_id'] ?? 0));
+				break;
+			case 'create_website':
+				$data = $this->toolCreateWebsite($userId, trim($args['name'] ?? ''), trim($args['url'] ?? ''));
+				break;
+			case 'get_site_auditor_summary':
+				$data = $this->toolGetSiteAuditorSummary($userId, intval($args['website_id'] ?? 0));
+				break;
 			default:
 				return ['error' => ['code' => -32602, 'message' => 'Unknown tool: ' . $name]];
 		}
@@ -205,12 +245,24 @@ class MCPController extends Controller {
 		return array_map(function($w) { return ['id' => intval($w['id']), 'name' => $w['name'], 'url' => $w['url']]; }, $websiteList);
 	}
 
+	// previous_rank/previous_date are the result just before the latest one
+	// for that same (keyword, search engine) pair - rank_change is
+	// previous_rank - rank (positive = moved up/improved, negative =
+	// dropped), left null whenever either side is missing or "not ranked"
+	// (rank 0), same not-ranked convention shouldFireRankAlert() already
+	// uses for the real-time alert feature
 	function toolGetKeywordRankings($userId, $websiteId) {
 		if (!$this->__assertOwnsWebsite($userId, $websiteId)) {
 			return ['__error' => 'Not authorized for this website_id'];
 		}
 
-		$sql = "SELECT k.name AS keyword, se.domain AS search_engine, s.rank, s.result_date
+		$sql = "SELECT k.name AS keyword, se.domain AS search_engine, s.rank, s.result_date,
+					(SELECT s3.rank FROM searchresults s3
+						WHERE s3.keyword_id = s.keyword_id AND s3.searchengine_id = s.searchengine_id AND s3.id <> s.id
+						ORDER BY s3.result_date DESC, s3.id DESC LIMIT 1) AS previous_rank,
+					(SELECT s3.result_date FROM searchresults s3
+						WHERE s3.keyword_id = s.keyword_id AND s3.searchengine_id = s.searchengine_id AND s3.id <> s.id
+						ORDER BY s3.result_date DESC, s3.id DESC LIMIT 1) AS previous_date
 				FROM keywords k
 				JOIN searchresults s ON s.keyword_id = k.id
 				JOIN searchengines se ON se.id = s.searchengine_id
@@ -221,7 +273,13 @@ class MCPController extends Controller {
 					ORDER BY s2.result_date DESC, s2.id DESC LIMIT 1
 				)
 				ORDER BY k.name";
-		return $this->db->select($sql);
+		$rows = $this->db->select($sql);
+		foreach ($rows as &$row) {
+			$rank = intval($row['rank']);
+			$prevRank = isset($row['previous_rank']) ? intval($row['previous_rank']) : null;
+			$row['rank_change'] = ($prevRank !== null && $prevRank > 0 && $rank > 0) ? ($prevRank - $rank) : null;
+		}
+		return $rows;
 	}
 
 	function toolGetBacklinkSummary($userId, $websiteId) {
@@ -356,10 +414,111 @@ class MCPController extends Controller {
 		], true);
 
 		if ($status !== 'success') {
-			return ['__error' => is_array($result) ? implode('; ', array_filter($result)) : (string) $result];
+			return ['__error' => flattenApiErrorMsg($result)];
 		}
 
 		return ['ok' => true, 'website_id' => $websiteId, 'keyword' => $keywordName, 'search_engine_ids' => array_values($searchEngineIds)];
+	}
+
+	// fourth write-capable tool - ownership resolved via the keyword's OWN
+	// website_id (there's no website_id argument to check directly here),
+	// same two-step shape toolDeleteKeyword()/toolUpdateKeyword() below use
+	function toolDeleteKeyword($userId, $keywordId) {
+		if (empty($keywordId)) {
+			return ['__error' => 'keyword_id is required'];
+		}
+
+		include_once(SP_CTRLPATH . "/keyword.ctrl.php");
+		$keywordCtrler = new KeywordController();
+		$keywordInfo = $keywordCtrler->__getKeywordInfo($keywordId);
+		if (empty($keywordInfo)) {
+			return ['__error' => 'Unknown keyword_id'];
+		}
+		if (!$this->__assertOwnsWebsite($userId, $keywordInfo['website_id'])) {
+			return ['__error' => 'Not authorized for this keyword_id'];
+		}
+
+		// $apiCall=true - see KeywordController::__deleteKeyword()'s own
+		// docblock for why this is required (its default ownership check
+		// is session-based and always false here); ownership was already
+		// verified above via __assertOwnsWebsite()
+		$keywordCtrler->__deleteKeyword($keywordId, true);
+		return ['ok' => true, 'keyword_id' => intval($keywordId)];
+	}
+
+	function toolUpdateKeyword($userId, $keywordId, $args) {
+		if (empty($keywordId)) {
+			return ['__error' => 'keyword_id is required'];
+		}
+
+		include_once(SP_CTRLPATH . "/keyword.ctrl.php");
+		$keywordCtrler = new KeywordController();
+		$keywordInfo = $keywordCtrler->__getKeywordInfo($keywordId);
+		if (empty($keywordInfo)) {
+			return ['__error' => 'Unknown keyword_id'];
+		}
+		if (!$this->__assertOwnsWebsite($userId, $keywordInfo['website_id'])) {
+			return ['__error' => 'Not authorized for this keyword_id'];
+		}
+
+		$keywordInfo['oldName'] = $keywordInfo['name'];
+		if (isset($args['keyword']) && trim($args['keyword']) !== '') {
+			$keywordInfo['name'] = trim($args['keyword']);
+		}
+		if (isset($args['status'])) {
+			$keywordInfo['status'] = intval($args['status']);
+		}
+		if (!empty($args['search_engine_ids']) && is_array($args['search_engine_ids'])) {
+			$keywordInfo['searchengines'] = array_values(array_filter(array_map('intval', $args['search_engine_ids'])));
+		} else {
+			$keywordInfo['searchengines'] = array_values(array_filter(array_map('intval', explode(':', $keywordInfo['searchengines']))));
+		}
+
+		$keywordCtrler->spTextKeyword = $keywordCtrler->getLanguageTexts('keyword', SP_API_LANG_CODE);
+		$return = $keywordCtrler->updateKeyword($keywordInfo, true);
+		if ($return[0] !== 'success') {
+			return ['__error' => flattenApiErrorMsg($return[1])];
+		}
+
+		return ['ok' => true, 'keyword_id' => intval($keywordId)];
+	}
+
+	// fifth write-capable tool, and the first that creates a brand new
+	// website rather than editing an existing one - no __assertOwnsWebsite()
+	// check needed (nothing to own yet); 'userid' pins the new row to the
+	// CALLER's own account, since WebsiteController::createWebsite()'s
+	// $apiCall=true path would otherwise fall back to isLoggedIn() (always
+	// false here - no session), which would silently create the website
+	// under user_id=0 instead
+	function toolCreateWebsite($userId, $name, $url) {
+		if ($name === '' || $url === '') {
+			return ['__error' => 'name and url are required'];
+		}
+
+		include_once(SP_CTRLPATH . "/website.ctrl.php");
+		$websiteCtrler = new WebsiteController();
+		$websiteCtrler->spTextWeb = $websiteCtrler->getLanguageTexts('website', SP_API_LANG_CODE);
+		$return = $websiteCtrler->createWebsite([
+			'name' => $name,
+			'url' => $url,
+			'userid' => $userId,
+		], true);
+
+		if ($return[0] !== 'success') {
+			return ['__error' => flattenApiErrorMsg($return[1])];
+		}
+
+		return ['ok' => true, 'website_id' => intval($websiteCtrler->db->getMaxId('websites')), 'name' => $name, 'url' => $url];
+	}
+
+	function toolGetSiteAuditorSummary($userId, $websiteId) {
+		if (!$this->__assertOwnsWebsite($userId, $websiteId)) {
+			return ['__error' => 'Not authorized for this website_id'];
+		}
+
+		include_once(SP_CTRLPATH . "/siteauditor.ctrl.php");
+		$summary = (new SiteAuditorController())->__getProjectSummaryForWebsite($websiteId);
+		return $summary !== null ? $summary : ['message' => 'No Site Auditor project set up yet for this website'];
 	}
 }
 ?>

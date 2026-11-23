@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 SEO Panel is an open-source SEO control panel for managing search engine optimization of multiple websites. It's a PHP-based web application using MySQL for data storage and includes a plugin architecture for extensibility.
 
-Version: 7.0.0
+Version: 7.2.0
 
 ## Core Architecture
 
@@ -51,11 +51,15 @@ Plugins are self-contained modules in `plugins/{PluginName}/`:
 - Views: `themes/{theme_name}/views/`
 - Assets: `js/`, `css/`
 
-Active plugins:
-- **ArticleSubmitter**: Article submission and spinning
-- **QuickWebProxy**: Web proxy functionality
-- **SeoDiary**: SEO diary/notes
+Plugins actually tracked in this repo (`git ls-files plugins/`):
 - **MetaTagGenerator**: Meta tag generation tools
+- **TestPlugin**: Minimal reference/template plugin, not a real feature
+
+`ArticleSubmitter`, `QuickWebProxy`, `SeoDiary`, `CaptchaBypass`,
+`directoryimporter`, and `socialmediaengine` may exist as local
+directories in a dev checkout, but `plugins/*` is gitignored except for
+the two above - a fresh clone of this repo does NOT include them. Verify
+with `git check-ignore -v plugins/<Name>` before assuming one ships.
 
 ### Controller Naming Convention
 
@@ -68,36 +72,41 @@ Controllers follow a strict naming pattern:
 
 ### Running the Application
 
-Start XAMPP/LAMP stack:
+This repo's dev environment runs via Docker (`docker-compose.yml`):
 ```bash
-sudo /opt/lampp/lampp start
+docker compose up -d
 ```
+Services: `seopanel` (app, plain HTTP only - no TLS/443 listener in dev),
+`db` (MySQL, container `seopanel_db`), `seopanel_phpmyadmin`, `spapi`
+(the separate spAPI product, reverse-proxied at `/spAPI` - no published
+host port of its own).
 
 Access in browser: `http://localhost/sp`
 
 ### Database Access
 
-Configuration in `config/sp-config.php`:
+Configuration in `config/sp-config.php`. Dev credentials (see
+`docker-compose.yml`/`docker-compose.override.yml`):
 - Database: `seopanel`
-- Default user: `root`
-- Password: (empty)
-- Host: `localhost`
+- User: `seopanel`
+- Password: `seopanelpass`
+- Host: `db` (from inside the `seopanel` container) / `seopanel_db` (container name)
 
 ### Cron Jobs
 
-Execute cron job manually:
+Execute cron job manually (inside the `seopanel` container):
 ```bash
-php /opt/lampp/htdocs/sp/cron.php
+docker exec seopanel php /var/www/html/sp/cron.php
 ```
 
 Execute for specific user:
 ```bash
-php /opt/lampp/htdocs/sp/cron.php [user_id]
+docker exec seopanel php /var/www/html/sp/cron.php [user_id]
 ```
 
 Execute for specific user and SEO tool:
 ```bash
-php /opt/lampp/htdocs/sp/cron.php [user_id] [seo_tool_id]
+docker exec seopanel php /var/www/html/sp/cron.php [user_id] [seo_tool_id]
 ```
 
 Other cron scripts:
@@ -108,7 +117,9 @@ Other cron scripts:
 ### Git Workflow
 
 Main branch: `develop`
-Current branch: `google_search_fix_sp4_12_0`
+
+The current branch varies by session/feature - check with `git branch --show-current`
+rather than trusting a hardcoded name here.
 
 ## Key Configuration
 
@@ -292,13 +303,15 @@ Docker installation available via `docker-compose.yml`
 ## API Integration
 
 API endpoints in `api/` directory:
-- REST-style API for external integrations
-- Managed through `controllers/api.ctrl.php`
-- User tokens in `user_token` table
+- REST-style API (`api/api.php`, categories in `api/*.api.php`) for
+  external integrations - one global `SP_API_KEY`/`API_SECRET` pair per
+  install, not per-user scoped. Managed through `controllers/api.ctrl.php`.
+- MCP (Model Context Protocol) server (`api/mcp.php`, `controllers/mcp.ctrl.php`) -
+  lets a user point their own AI agent at their own SEO Panel data.
+  Per-user Bearer tokens (`mcp_tokens` table), unlike the REST API above -
+  every tool call re-verifies website ownership from the resolved token's
+  user_id.
+- `spAPI` (`/home/poornam/spAPI` in this dev setup) is a SEPARATE product/
+  codebase/repo - a SaaS-style API-key management system for SEO Panel
+  installs - not part of this repo at all.
 
-## Current Work Context
-
-Based on git status, currently working on:
-- Branch: `google_search_fix_sp4_12_0`
-- Modified: `config/sp-config.php`
-- Recent commits focus on search engine configuration and DataForSEO integration

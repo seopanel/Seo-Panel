@@ -43,7 +43,7 @@ if (SP_DEMO) {
 	// not a demonstrated traversal today (nothing else on disk ends in
 	// .api.php), but a missing-input-validation bug on a value used for
 	// file inclusion regardless, and cheap to close outright
-	$validApiCategories = array('user', 'website', 'keyword', 'searchengine');
+	$validApiCategories = array('user', 'website', 'keyword', 'searchengine', 'siteauditor');
 
 	// check for category and action values
 	if (!empty($category) && !empty($action) && in_array($category, $validApiCategories)) {

@@ -405,6 +405,58 @@ class SiteAuditorController extends Controller{
 		$this->db->query($sql);
 	}
 
+	/*
+	 * Lightweight, data-only Site Auditor summary for one website - the
+	 * active project's score plus crawl/issue counts, as one consolidated
+	 * query (the same SUM(CASE WHEN ...) pattern
+	 * DashboardController::showSiteAuditorDashboard() already uses instead
+	 * of ~20 separate getCountcrawledLinks() round trips - pulled out here
+	 * so a non-view caller (MCP tool, REST API) doesn't have to duplicate
+	 * it). Returns null if the website has no active project (not yet set
+	 * up), or an array with 'crawled_links'==0 meaning "project exists,
+	 * never actually crawled yet" (see dashboard's own comment on why that
+	 * must not be confused with a real, awful score).
+	 */
+	function __getProjectSummaryForWebsite($websiteId, $crawledOnly = true) {
+		$websiteId = intval($websiteId);
+		$projectInfo = $this->db->select(
+			"SELECT ap.*, w.url, w.name FROM auditorprojects ap, websites w
+			WHERE w.id = ap.website_id AND ap.website_id = $websiteId AND ap.status = 1 LIMIT 1",
+			true
+		);
+		if (empty($projectInfo)) {
+			return null;
+		}
+
+		$paLevelFirst = defined('SA_PA_CHECK_LEVEL_FIRST') ? SA_PA_CHECK_LEVEL_FIRST : 40;
+		$paLevelSecond = defined('SA_PA_CHECK_LEVEL_SECOND') ? SA_PA_CHECK_LEVEL_SECOND : 75;
+		$filterCrawled = $crawledOnly ? "crawled=1 and " : "";
+		$statsSelect = [
+			"count(*) as total_links",
+			"sum(case when crawled=1 then 1 else 0 end) as crawled_links",
+			"max(updated) as last_updated",
+			"sum(case when {$filterCrawled}brocken=1 then 1 else 0 end) as brocken",
+			"sum(case when {$filterCrawled}google_backlinks=0 then 1 else 0 end) as no_backlinks",
+			"sum(case when mobile_friendly=1 and crawled=1 then 1 else 0 end) as mobile_friendly",
+			"sum(case when https_secure=1 and crawled=1 then 1 else 0 end) as https_secure",
+			"sum(case when {$filterCrawled}page_authority >= $paLevelSecond then 1 else 0 end) as pa_excellent",
+			"sum(case when {$filterCrawled}page_authority >= $paLevelFirst and page_authority < $paLevelSecond then 1 else 0 end) as pa_good",
+			"sum(case when {$filterCrawled}page_authority > 0 and page_authority < $paLevelFirst then 1 else 0 end) as pa_low",
+			"sum(case when {$filterCrawled}page_authority = 0 then 1 else 0 end) as pa_none",
+			"sum(case when {$filterCrawled}google_backlinks>0 then 1 else 0 end) as google_backlinks",
+			"sum(case when {$filterCrawled}google_indexed>0 then 1 else 0 end) as google_indexed",
+			"sum(case when {$filterCrawled}google_indexed=0 then 1 else 0 end) as google_not_indexed",
+		];
+		$statsSql = "select " . implode(", ", $statsSelect) . " from auditorreports where project_id=" . intval($projectInfo['id']);
+		$stats = $this->db->select($statsSql, true);
+		foreach ($stats as $key => $val) {
+			$projectInfo[$key] = ($key === 'last_updated') ? (empty($val) ? null : $val) : intval($val);
+		}
+
+		$projectInfo['max_score'] = $this->createComponent('AuditorComponent')->maxScore;
+		return $projectInfo;
+	}
+
 	// function to get number of links of a project
 	function getCountcrawledLinks($projectId, $statusCheck=false, $statusVal=1, $conditions='') {
 		$sql = "select count(*) count from auditorreports r where r.project_id=$projectId";

@@ -158,15 +158,25 @@ class KeywordController extends Controller{
 	}
 
 	# func to change status
-	function __deleteKeyword($keywordId){
-		if (!$this->__verifyKeywordOwnership($keywordId)) {
+	// bug fix: __verifyKeywordOwnership() is purely session-based
+	// (isAdmin()/isLoggedIn()), which is NEVER true for a REST API request
+	// - api.ctrl.php::verifyAPICredentials() validates the key/secret pair
+	// and never establishes a session. api/keyword.api.php's deleteKeyword()
+	// called this with no way to skip that check, so every API delete
+	// call silently no-op'd (the keyword was never actually removed) while
+	// still reporting "success" back to the caller. $apiCall mirrors the
+	// same escape hatch createKeyword()/updateKeyword() already have - the
+	// REST API is "admin-equivalent by design" for those two, and must be
+	// here too for the same reason.
+	function __deleteKeyword($keywordId, $apiCall = false){
+		if (!$apiCall && !$this->__verifyKeywordOwnership($keywordId)) {
 			return;
 		}
 
 		$keywordId = intval($keywordId);
 		$sql = "delete from keywords where id=$keywordId";
 		$this->db->query($sql);
-		
+
 		// delete related data
 		$sql = "delete sd.*, s.* from searchresults s, searchresultdetails sd where s.id=sd.searchresult_id and s.keyword_id=$keywordId";
 		$this->db->query($sql);
@@ -490,13 +500,26 @@ class KeywordController extends Controller{
 		}
 
 		// Check the user website count for validation
-		if (isAdmin()) {
+		// bug fix: was missing the "|| $apiCall" createKeyword() already
+		// has in this same check - $userId here is isLoggedIn(), always
+		// false for a REST API/MCP call (no session is ever established -
+		// see api.ctrl.php::verifyAPICredentials()), so $webUserId ended
+		// up false too. That false then flowed into
+		// validateSearchEngineCount() -> getUserTypeSpecByUser(false),
+		// which concatenates it straight into "where id=" with no
+		// intval() - producing TWO malformed queries (errno=1064) on
+		// every single API/MCP keyword update, and - worse - silently
+		// skipping the search-engine-count limit check every time (since
+		// the lookup came back empty, isset() on its result was always
+		// false), regardless of whether the real caller was within or
+		// over their limit.
+		if (isAdmin() || $apiCall) {
 			$websiteInfo = $websiteCtrler->__getWebsiteInfo($listInfo['website_id']);
 			$webUserId = $websiteInfo['user_id'];
 		} else {
 			$webUserId = $userId;
 		}
-		
+
 		$errMsg['name'] = formatErrorMsg($this->validate->checkBlank($listInfo['name']));
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];

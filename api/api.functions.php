@@ -57,7 +57,7 @@ function getToTime($info) {
 /**
  * function to remove braces from string
  * @param String $str		The string to be replaced
- * @return mixed $str		The converted string	
+ * @return mixed $str		The converted string
  */
 function removeBraces($str) {
 	$str = str_replace(array('(', ')'), '', $str);

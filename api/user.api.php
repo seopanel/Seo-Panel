@@ -99,7 +99,7 @@ class UserAPI extends Seopanel{
 			$returnInfo['user_id'] = $this->ctrler->db->getMaxId('users');
 		} else {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['error_msg'] = $return[1];
+			$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 		}
 		
 		return 	$returnInfo;
@@ -151,7 +151,7 @@ class UserAPI extends Seopanel{
 				$returnInfo['result'] = $return[1];
 			} else {
 				$returnInfo['response'] = 'Error';
-				$returnInfo['error_msg'] = $return[1];
+				$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 			}
 			
 		} else {

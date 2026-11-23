@@ -102,7 +102,7 @@ class KeywordAPI extends Seopanel{
 		// if position information is not empty
 		if (empty($positionInfo)) {
 			$returnInfo['response'] = 'Error';;
-			$returnInfo['result'] = "No reports found!";
+			$returnInfo['result'] = $returnInfo['error_msg'] = "No reports found!";
 		} else {
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $positionInfo;
@@ -143,7 +143,7 @@ class KeywordAPI extends Seopanel{
 		// if position information is not empty
 		if (empty($keywordList)) {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['result'] = "No reports found!";
+			$returnInfo['result'] = $returnInfo['error_msg'] = "No reports found!";
 		} else {
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $keywordList;
@@ -193,7 +193,7 @@ class KeywordAPI extends Seopanel{
 		// if position information is not empty
 		if (empty($keywordList)) {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['result'] = "No reports found!";
+			$returnInfo['result'] = $returnInfo['error_msg'] = "No reports found!";
 		} else {
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $keywordList;
@@ -272,6 +272,23 @@ class KeywordAPI extends Seopanel{
 			return $returnInfo;
 		}
 
+		// this docblock has always documented name/searchengines as
+		// Mandatory too, but only website_id was ever checked here -
+		// a missing one fell through to KeywordController::createKeyword()'s
+		// own web-form validation, which still catches it but returns
+		// error_msg as an array of per-field messages (see
+		// flattenApiErrorMsg()) instead of failing fast with a plain one
+		if (empty($info['name'])) {
+			$returnInfo['response'] = 'Error';
+			$returnInfo['error_msg'] = "Please provide a keyword name.";
+			return $returnInfo;
+		}
+		if (empty($info['searchengines'])) {
+			$returnInfo['response'] = 'Error';
+			$returnInfo['error_msg'] = "Please provide at least one search engine id.";
+			return $returnInfo;
+		}
+
 		$keywordInfo = $info;
 		$keywordInfo['userid'] = $info['user_id'];
 		$this->ctrler->spTextKeyword = $this->ctrler->getLanguageTexts('keyword', SP_API_LANG_CODE);
@@ -285,7 +302,7 @@ class KeywordAPI extends Seopanel{
 			$returnInfo['keyword_id'] = $this->ctrler->db->getMaxId('keywords');
 		} else {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['error_msg'] = $return[1];
+			$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 		}
 	
 		return 	$returnInfo;
@@ -329,7 +346,7 @@ class KeywordAPI extends Seopanel{
 				$returnInfo['result'] = $return[1];
 			} else {
 				$returnInfo['response'] = 'Error';
-				$returnInfo['error_msg'] = $return[1];
+				$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 			}
 	
 		} else {
@@ -356,7 +373,7 @@ class KeywordAPI extends Seopanel{
 		if ($keywordInfo = $this->ctrler->__getKeywordInfo($keywordId)) {
 			
 			// update keyword call as api call
-			$this->ctrler->__deleteKeyword($keywordId);
+			$this->ctrler->__deleteKeyword($keywordId, true);
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = "Successfully deleted keyword";
 			

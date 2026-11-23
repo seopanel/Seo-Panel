@@ -185,7 +185,7 @@ class WebsiteAPI extends Seopanel{
 		// if position information is not empty
 		if (empty($websiteList)) {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['result'] = "No reports found!";
+			$returnInfo['result'] = $returnInfo['error_msg'] = "No reports found!";
 		} else {
 			$returnInfo['response'] = 'success';
 			$returnInfo['result'] = $websiteList;
@@ -277,7 +277,7 @@ class WebsiteAPI extends Seopanel{
 			$returnInfo['website_id'] = $this->ctrler->db->getMaxId('websites');
 		} else {
 			$returnInfo['response'] = 'Error';
-			$returnInfo['error_msg'] = $return[1];
+			$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 		}
 	
 		return 	$returnInfo;
@@ -319,7 +319,7 @@ class WebsiteAPI extends Seopanel{
 				$returnInfo['result'] = $return[1];
 			} else {
 				$returnInfo['response'] = 'Error';
-				$returnInfo['error_msg'] = $return[1];
+				$returnInfo['error_msg'] = flattenApiErrorMsg($return[1]);
 			}
 				
 		} else {
