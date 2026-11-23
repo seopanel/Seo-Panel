@@ -53,6 +53,12 @@ $custSiteInfo = getCustomizerDetails();
 $brandName = !empty($custSiteInfo['site_name']) ? $custSiteInfo['site_name'] : SP_COMPANY_NAME;
 $brandLogo = !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : SP_IMGPATH . "/logo_red_sm.png";
 
+// 'label' is one of the Controller base class's default sessionCats, so
+// it's already loaded into $_SESSION['text'] by the `new ReportController()`
+// call above; 'website' isn't a default category, so fetch it explicitly -
+// same ?? fallback convention used throughout this page/feature.
+$spTextWeb = $reportCtrler->getLanguageTexts('website', $_SESSION['lang_code']);
+
 ?><!doctype html>
 <html lang="en">
 <head>
@@ -77,7 +83,7 @@ $brandLogo = !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : S
 		<strong><?php echo htmlspecialchars($brandName)?></strong>
 	</div>
 	<div class="client-report-body text-center" style="padding-top:80px;">
-		<h4>This link is no longer available</h4>
+		<h4><?php echo $_SESSION['text']['label']['This link is no longer available'] ?? 'This link is no longer available'?></h4>
 	</div>
 <?php } else {
 	// bump last_viewed_at - best-effort, never block the report on it
@@ -108,7 +114,7 @@ $brandLogo = !empty($custSiteInfo['site_logo']) ? $custSiteInfo['site_logo'] : S
 		);
 		?>
 	</div>
-	<div class="client-report-footer">Powered by <?php echo htmlspecialchars($brandName)?></div>
+	<div class="client-report-footer"><?php echo $spTextWeb['Powered by'] ?? 'Powered by'?> <?php echo htmlspecialchars($brandName)?></div>
 <?php } ?>
 </body>
 </html>

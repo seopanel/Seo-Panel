@@ -139,3 +139,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'siteauditor', 'Good', 'Good'),
 ('en', 'siteauditor', 'Needs Improvement', 'Needs Improvement'),
 ('en', 'siteauditor', 'Poor', 'Poor');
+
+-- fix: client-report.php hardcoded "Powered by" in HTML instead of going
+-- through the texts table, despite the rest of the white-label client
+-- report link feature already being translatable.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'website', 'Powered by', 'Powered by');

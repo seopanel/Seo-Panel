@@ -33462,3 +33462,8 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'siteauditor', 'Good', 'Good'),
 ('en', 'siteauditor', 'Needs Improvement', 'Needs Improvement'),
 ('en', 'siteauditor', 'Poor', 'Poor');
+
+-- 7.2.0 fix: client-report.php hardcoded "Powered by" instead of going
+-- through the texts table.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'website', 'Powered by', 'Powered by');

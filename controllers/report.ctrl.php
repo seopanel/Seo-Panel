@@ -1102,14 +1102,26 @@ class ReportController extends Controller {
 		$time = strtotime($resultDate);
 		$this->checkDBConn();
 
-		// Real-time rank alert: capture the most recent PRIOR rank (any
-		// result_date strictly before this one, so it's unaffected by the
-		// same-day delete-and-reinsert the $remove branch below does)
-		// before this result overwrites it - this is the only place all
-		// three SERP sources (crawl/SP API/DataForSEO) funnel through, so
-		// hooking here covers every one of them. See __notifyRankAlert().
-		$prevRankInfo = $this->db->select("select rank from searchresults where keyword_id={$matchInfo['keyword_id']}
-		and searchengine_id={$matchInfo['se_id']} and result_date<'$resultDate' order by result_date desc limit 1", true);
+		// Real-time rank alerts are opt-in (default off) - resolve whether
+		// this keyword's owner even has them enabled FIRST (memoized per
+		// keyword/user for this process - see __getRankAlertContext()), so
+		// the extra prevRank query below, and __notifyRankAlert()'s own
+		// queries + webhook call, are skipped entirely for the common case
+		// instead of running on every single save regardless. A single
+		// cron run calls this once per keyword per search engine per day,
+		// often hundreds of times for the same handful of users, so without
+		// the memoization each of those calls re-queries the same rows.
+		$rankAlertCtx = $this->__getRankAlertContext($matchInfo['keyword_id']);
+		$rankAlertsEnabled = !empty($rankAlertCtx['repSetInfo']['rank_alert_notification']) && !empty($rankAlertCtx['repSetInfo']['webhook_url']);
+
+		// Capture the most recent PRIOR rank (any result_date strictly
+		// before this one, so it's unaffected by the same-day delete-and-
+		// reinsert the $remove branch below does) before this result
+		// overwrites it - this is the only place all three SERP sources
+		// (crawl/SP API/DataForSEO) funnel through, so hooking here covers
+		// every one of them. See __notifyRankAlert().
+		$prevRankInfo = $rankAlertsEnabled ? $this->db->select("select rank from searchresults where keyword_id={$matchInfo['keyword_id']}
+		and searchengine_id={$matchInfo['se_id']} and result_date<'$resultDate' order by result_date desc limit 1", true) : null;
 
 		if($remove){
 			$sql = "select id from searchresults where keyword_id={$matchInfo['keyword_id']}
@@ -1138,9 +1150,41 @@ class ReportController extends Controller {
 				values($recordId,'{$matchInfo['url']}','".addslashes($matchInfo['title'])."','".addslashes($matchInfo['description'])."')";
 		$this->db->query($sql);
 
-		if (!empty($prevRankInfo)) {
-			$this->__notifyRankAlert($matchInfo, intval($prevRankInfo['rank']), intval($matchInfo['rank']));
+		if ($rankAlertsEnabled && !empty($prevRankInfo)) {
+			$this->__notifyRankAlert($matchInfo, $rankAlertCtx, intval($prevRankInfo['rank']), intval($matchInfo['rank']));
 		}
+	}
+
+	// func to resolve a keyword's owning user + that user's rank-alert
+	// settings, memoized per keyword_id/user_id for the lifetime of this
+	// process - deliberately a SEPARATE cache from getUserReportSettings()
+	// itself (not touching that method's own freshness guarantee for its
+	// other callers). A single cron run can process the same handful of
+	// users' keywords hundreds of times over, so without this every save
+	// re-fetches the same keyword-owner join and the same user's
+	// reports_settings row from scratch - the actual perf cost that made
+	// real-time alerts measurably slower than the save they're attached to,
+	// even for users who have alerts turned off entirely (the common case,
+	// since this is opt-in/default-off).
+	static $__rankAlertKeywordOwnerCache = array();
+	static $__rankAlertSettingsCache = array();
+	function __getRankAlertContext($keywordId) {
+		$keywordId = intval($keywordId);
+		if (!array_key_exists($keywordId, self::$__rankAlertKeywordOwnerCache)) {
+			self::$__rankAlertKeywordOwnerCache[$keywordId] = $this->db->select("select k.name as keyword_name, k.website_id, w.user_id, w.name as website_name
+				from keywords k, websites w where k.id=$keywordId and k.website_id=w.id", true);
+		}
+		$keywordInfo = self::$__rankAlertKeywordOwnerCache[$keywordId];
+		if (empty($keywordInfo)) {
+			return array('keywordInfo' => null, 'repSetInfo' => null);
+		}
+
+		$userId = intval($keywordInfo['user_id']);
+		if (!array_key_exists($userId, self::$__rankAlertSettingsCache)) {
+			self::$__rankAlertSettingsCache[$userId] = $this->getUserReportSettings($userId);
+		}
+
+		return array('keywordInfo' => $keywordInfo, 'repSetInfo' => self::$__rankAlertSettingsCache[$userId]);
 	}
 
 	// func to send a real-time webhook alert on a significant keyword rank
@@ -1149,21 +1193,29 @@ class ReportController extends Controller {
 	// webhook_url/webhook_platform as the periodic digests. Never thrown -
 	// a failed/skipped alert must not affect the rank save that already
 	// completed in saveMatchedKeywordInfo() above it.
-	function __notifyRankAlert($matchInfo, $prevRank, $newRank) {
-		$keywordInfo = $this->db->select("select k.name as keyword_name, k.website_id, w.user_id, w.name as website_name
-			from keywords k, websites w where k.id={$matchInfo['keyword_id']} and k.website_id=w.id", true);
-		if (empty($keywordInfo)) {
-			return;
-		}
-
-		$repSetInfo = $this->getUserReportSettings($keywordInfo['user_id']);
-		if (empty($repSetInfo['rank_alert_notification']) || empty($repSetInfo['webhook_url'])) {
-			return;
-		}
+	//
+	// RANK_ALERT_MAX_WEBHOOKS_PER_RUN bounds the worst case: each actual
+	// webhook call is a synchronous ~10s-timeout HTTP POST
+	// (sendWebhookNotification()), so with no cap a single cron run with
+	// many genuine swings for one user (e.g. after an algorithm update)
+	// could serialize an unbounded number of 10s stalls into the shared
+	// cron, delaying every other user queued behind it. This still fires
+	// synchronously rather than through a deferred/async queue - a bigger
+	// change than this pass covers - but caps the damage in the meantime.
+	const RANK_ALERT_MAX_WEBHOOKS_PER_RUN = 10;
+	static $__rankAlertWebhooksFiredThisRun = 0;
+	function __notifyRankAlert($matchInfo, $rankAlertCtx, $prevRank, $newRank) {
+		$keywordInfo = $rankAlertCtx['keywordInfo'];
+		$repSetInfo = $rankAlertCtx['repSetInfo'];
 
 		if (!shouldFireRankAlert($prevRank, $newRank, $repSetInfo['rank_alert_threshold'] ?? 5)) {
 			return;
 		}
+
+		if (self::$__rankAlertWebhooksFiredThisRun >= self::RANK_ALERT_MAX_WEBHOOKS_PER_RUN) {
+			return;
+		}
+		self::$__rankAlertWebhooksFiredThisRun++;
 
 		$seInfo = $this->db->select("select domain from searchengines where id={$matchInfo['se_id']}", true);
 		$seName = !empty($seInfo['domain']) ? $seInfo['domain'] : 'search engine';
