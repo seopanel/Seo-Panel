@@ -105,8 +105,54 @@ class PageSpeedController extends Controller{
 		}*/
 		
 		$pageSpeedData['details'] = $detailsInfo;
+		$pageSpeedData['core_web_vitals'] = self::extractCoreWebVitals($pageSpeedInfo);
 		return $pageSpeedData;
-		
+
+	}
+
+	/**
+	 * Core Web Vitals (LCP/CLS/INP) from a raw PSI v5 response - used by
+	 * Site Auditor's new per-page Core Web Vitals check (see
+	 * AuditorComponent::runCwvCheck()), not just the website-level
+	 * PageSpeed tool above.
+	 *
+	 * Prefers real-user field data (loadingExperience - Chrome UX Report,
+	 * scoped to this exact URL), falling back to the origin-wide field
+	 * data (originLoadingExperience) when the page itself doesn't have
+	 * enough traffic for PSI to report on. If NEITHER exists (common for
+	 * low-traffic/new pages), falls back to the synthetic Lighthouse lab
+	 * run for LCP/CLS only - INP deliberately has NO lab fallback here:
+	 * INP replaced FID as the official Core Web Vital in March 2024 and,
+	 * unlike LCP/CLS, has no synthetic lab equivalent at all (it requires
+	 * a real user interaction, which a Lighthouse run never has). Returns
+	 * null when no usable data of any kind is present.
+	 */
+	public static function extractCoreWebVitals($pageSpeedInfo) {
+		$fieldData = !empty($pageSpeedInfo['loadingExperience']['metrics'])
+			? $pageSpeedInfo['loadingExperience']['metrics']
+			: (!empty($pageSpeedInfo['originLoadingExperience']['metrics']) ? $pageSpeedInfo['originLoadingExperience']['metrics'] : null);
+
+		if (!empty($fieldData)) {
+			return array(
+				'source' => 'field',
+				'lcp_ms' => isset($fieldData['LARGEST_CONTENTFUL_PAINT_MS']['percentile']) ? intval($fieldData['LARGEST_CONTENTFUL_PAINT_MS']['percentile']) : null,
+				'cls' => isset($fieldData['CUMULATIVE_LAYOUT_SHIFT_SCORE']['percentile']) ? round($fieldData['CUMULATIVE_LAYOUT_SHIFT_SCORE']['percentile'] / 100, 3) : null,
+				'inp_ms' => isset($fieldData['INTERACTION_TO_NEXT_PAINT']['percentile']) ? intval($fieldData['INTERACTION_TO_NEXT_PAINT']['percentile']) : null,
+			);
+		}
+
+		$audits = !empty($pageSpeedInfo['lighthouseResult']['audits']) ? $pageSpeedInfo['lighthouseResult']['audits'] : array();
+		$hasLabData = isset($audits['largest-contentful-paint']['numericValue']) || isset($audits['cumulative-layout-shift']['numericValue']);
+		if (!$hasLabData) {
+			return null;
+		}
+
+		return array(
+			'source' => 'lab',
+			'lcp_ms' => isset($audits['largest-contentful-paint']['numericValue']) ? intval($audits['largest-contentful-paint']['numericValue']) : null,
+			'cls' => isset($audits['cumulative-layout-shift']['numericValue']) ? round(floatval($audits['cumulative-layout-shift']['numericValue']), 3) : null,
+			'inp_ms' => null,
+		);
 	}
 	
 	public static function formatUrlBlock($urlBlockList) {

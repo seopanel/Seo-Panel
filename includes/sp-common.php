@@ -812,6 +812,46 @@ function diffSiteAuditorCriticalIssues($rInfo, $reportInfo) {
 	return $newIssues;
 }
 
+/**
+ * Core Web Vitals pass/fail classification against Google's official
+ * thresholds - a pure function (no DB/network), same testability reason
+ * shouldFireRankAlert()/diffSiteAuditorCriticalIssues() above were pulled
+ * out as free functions: Site Auditor's new Core Web Vitals check
+ * (AuditorComponent::runCwvCheck()) can be exercised without hitting the
+ * real PageSpeed Insights API.
+ *
+ * $metric is 'lcp'/'cls'/'inp' (lowercase); $value is the raw metric
+ * (ms for lcp/inp, unitless score for cls). Returns 'good', 'needs-
+ * improvement', 'poor', or null for a non-numeric/missing value or an
+ * unrecognized metric - never guesses at a rating it wasn't given data for.
+ */
+function classifyCoreWebVital($metric, $value) {
+	if ($value === null || $value === '' || !is_numeric($value)) {
+		return null;
+	}
+	$value = floatval($value);
+
+	switch ($metric) {
+		case 'lcp':
+			if ($value <= 2500) return 'good';
+			if ($value <= 4000) return 'needs-improvement';
+			return 'poor';
+
+		case 'cls':
+			if ($value <= 0.1) return 'good';
+			if ($value <= 0.25) return 'needs-improvement';
+			return 'poor';
+
+		case 'inp':
+			if ($value <= 200) return 'good';
+			if ($value <= 500) return 'needs-improvement';
+			return 'poor';
+
+		default:
+			return null;
+	}
+}
+
 function sendMailBySendgridAPI($mail, $subscriberEmail, $subscriberName = '') {
 	
 	include_once(SP_LIBPATH . "/sendgrid-php/sendgrid-php.php");

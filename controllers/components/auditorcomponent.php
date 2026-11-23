@@ -277,6 +277,44 @@ class AuditorComponent extends Controller{
         );
     }
 
+    /**
+     * Core Web Vitals check for one page - called from a SEPARATE,
+     * slower-cadence cron lane than runReport() above (see
+     * SiteAuditorController::executeCwvCron()/getProjectUrlDueForCwvCheck()):
+     * LCP/CLS/INP need either a real browser or Google's PageSpeed
+     * Insights API (field+lab Lighthouse data) - the Spider used by
+     * runReport() is a plain cURL fetch, no JS/headless Chrome, so it
+     * can't produce these on its own. Reuses the SAME PageSpeedController/
+     * SP_GOOGLE_API_KEY the website-level PageSpeed tool already uses -
+     * no new credential flow, and __getPageSpeedInfo() already no-ops
+     * (with its own missing-key alert) when the key isn't set.
+     */
+    function runCwvCheck($projectId, $pageUrl) {
+        include_once(SP_CTRLPATH . "/pagespeed.ctrl.php");
+        $pageSpeedCtrler = new PageSpeedController();
+
+        $updateData = array('cwv_checked_at' => 'NOW()');
+        foreach (array('desktop', 'mobile') as $strategy) {
+            $pageSpeedInfo = $pageSpeedCtrler->__getPageSpeedInfo($pageUrl, array('screenshot' => false, 'strategy' => $strategy));
+            $cwv = empty($pageSpeedInfo['core_web_vitals']) ? array() : $pageSpeedInfo['core_web_vitals'];
+
+            // each metric written independently, and only when actually
+            // present - a metric PSI couldn't measure (most commonly INP,
+            // which has no lab fallback - see extractCoreWebVitals())
+            // must stay NULL ("not enough data"), never fall back to
+            // intval(null)=0, which would misread as an excellent score
+            if (isset($cwv['lcp_ms'])) $updateData["cwv_{$strategy}_lcp_ms|int"] = $cwv['lcp_ms'];
+            if (isset($cwv['cls'])) $updateData["cwv_{$strategy}_cls|float"] = $cwv['cls'];
+            if (isset($cwv['inp_ms'])) $updateData["cwv_{$strategy}_inp_ms|int"] = $cwv['inp_ms'];
+        }
+
+        $this->dbHelper->updateRow(
+            'auditorreports',
+            $updateData,
+            "project_id=" . intval($projectId) . " and page_url='" . addslashes($pageUrl) . "'"
+        );
+    }
+
     // function to get report info
     function getReportInfo($where) {	    
 	    $sql = "SELECT * FROM auditorreports where 1=1 $where";

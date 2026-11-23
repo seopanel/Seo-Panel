@@ -115,6 +115,13 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `has_faq_content` tinyint(1) NOT NULL DEFAULT '0',
   `word_count` int(11) NOT NULL DEFAULT '0',
   `fetch_fail_count` tinyint(3) UNSIGNED NOT NULL DEFAULT '0',
+  `cwv_checked_at` datetime DEFAULT NULL,
+  `cwv_desktop_lcp_ms` int(11) DEFAULT NULL,
+  `cwv_desktop_cls` decimal(6,3) DEFAULT NULL,
+  `cwv_desktop_inp_ms` int(11) DEFAULT NULL,
+  `cwv_mobile_lcp_ms` int(11) DEFAULT NULL,
+  `cwv_mobile_cls` decimal(6,3) DEFAULT NULL,
+  `cwv_mobile_inp_ms` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `project_id_2` (`project_id`,`page_url`),
   KEY `project_id` (`project_id`)

@@ -1367,10 +1367,62 @@ class SiteAuditorController extends Controller{
 		}
 
 		if ($urlFound) {
-            echo "\n==='$reportUrl' crawled successfully!===";		    
+            echo "\n==='$reportUrl' crawled successfully!===";
 		} else {
 		    echo "\n===No projects found to execute!===";
 		}
+
+		// Core Web Vitals - a separate, independent lane layered onto the
+		// same one-item-per-tick cron cadence above: its own "due"
+		// condition (time-based re-check, not "uncrawled"), its own round
+		// robin, so a project with lots of pages still being crawled
+		// doesn't dominate the (slower, quota-limited) CWV check queue.
+		// See executeCwvCron()'s own doc comment for why this can't just
+		// be folded into the crawl above.
+		$this->executeCwvCron();
+    }
+
+    /**
+     * Core Web Vitals check - one page per tick, same as the crawl in
+     * executeCron() above, but on its own cadence: LCP/CLS/INP come from
+     * Google's PageSpeed Insights API (see AuditorComponent::runCwvCheck()),
+     * which is slow (often 10-40s per call) and quota-limited, unlike the
+     * fast raw-HTML crawl above - so it deliberately does NOT run on every
+     * tick for every crawled page, only for pages overdue a recheck.
+     */
+    function executeCwvCron() {
+        if (empty(SP_GOOGLE_API_KEY)) {
+            return; // no Google API key configured - nothing to check with
+        }
+
+        $staleDays = defined('SA_CWV_RECHECK_DAYS') ? SA_CWV_RECHECK_DAYS : 7;
+        $sql = "select id from auditorprojects where cron=1 and status=1";
+        $prList = $this->db->select($sql);
+        foreach ($prList as $info) {
+            $pageUrl = $this->getProjectUrlDueForCwvCheck($info['id'], $staleDays);
+            if (!empty($pageUrl)) {
+                $auditorComp = $this->createComponent('AuditorComponent');
+                $auditorComp->runCwvCheck($info['id'], $pageUrl);
+                echo "\n==='$pageUrl' Core Web Vitals checked!===";
+                return;
+            }
+        }
+        echo "\n===No pages due for a Core Web Vitals check!===";
+    }
+
+    // func to pick one page due a Core Web Vitals (re)check, round robin
+    // across projects like getProjectRandomUrl() above - only ever
+    // considers pages Site Auditor has actually crawled (crawled=1); a
+    // page it hasn't confirmed exists yet has nothing to check
+    function getProjectUrlDueForCwvCheck($projectId, $staleDays) {
+        $projectId = intval($projectId);
+        $staleDays = intval($staleDays);
+        $sql = "SELECT page_url FROM auditorreports
+                where project_id=$projectId and crawled=1
+                and (cwv_checked_at is null or cwv_checked_at < DATE_SUB(NOW(), INTERVAL $staleDays DAY))
+                ORDER BY (cwv_checked_at IS NULL) DESC, cwv_checked_at ASC LIMIT 1";
+        $listInfo = $this->db->select($sql, true);
+        return empty($listInfo['page_url']) ? false : $listInfo['page_url'];
     }
     
     // function to show import links to a project

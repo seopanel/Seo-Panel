@@ -33451,3 +33451,14 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'website', 'Link copied', 'Link copied'),
 ('en', 'website', 'Revoke this link? Anyone using it will lose access immediately.', 'Revoke this link? Anyone using it will lose access immediately.'),
 ('en', 'label', 'This link is no longer available', 'This link is no longer available');
+
+-- 7.2.0: Core Web Vitals (LCP/CLS/INP) per Site Auditor page - see
+-- SiteAuditorController::executeCwvCron() and AuditorComponent::runCwvCheck().
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'siteauditor', 'Core Web Vitals', 'Core Web Vitals'),
+('en', 'siteauditor', 'Not yet checked', 'Not yet checked'),
+('en', 'siteauditor', 'Not enough data', 'Not enough data'),
+('en', 'siteauditor', 'Last checked', 'Last checked'),
+('en', 'siteauditor', 'Good', 'Good'),
+('en', 'siteauditor', 'Needs Improvement', 'Needs Improvement'),
+('en', 'siteauditor', 'Poor', 'Poor');

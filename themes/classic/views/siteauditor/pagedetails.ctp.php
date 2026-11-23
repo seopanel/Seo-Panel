@@ -767,6 +767,57 @@ $dofollowCount = $totalLinks - $nofollowCount;
 			</div>
 		</div>
 
+		<!-- Performance (Core Web Vitals) -->
+		<div class="detail-section">
+			<div class="detail-section-title">
+				<i class="fas fa-tachometer-alt"></i> <?php echo $spTextSA['Core Web Vitals'] ?? 'Core Web Vitals'?>
+			</div>
+			<?php if (empty($reportInfo['cwv_checked_at'])) { ?>
+				<div class="detail-grid">
+					<div class="detail-card full-width">
+						<span class="status-badge neutral"><i class="fas fa-clock"></i> <?php echo $spTextSA['Not yet checked'] ?? 'Not yet checked'?></span>
+					</div>
+				</div>
+			<?php } else {
+				$cwvBadgeClass = array('good' => 'success', 'needs-improvement' => 'warning', 'poor' => 'danger');
+				$cwvBadgeLabel = array(
+					'good' => $spTextSA['Good'] ?? 'Good',
+					'needs-improvement' => $spTextSA['Needs Improvement'] ?? 'Needs Improvement',
+					'poor' => $spTextSA['Poor'] ?? 'Poor',
+				);
+				$cwvMetrics = array(
+					array('device' => $_SESSION['text']['label']['Desktop'] ?? 'Desktop', 'icon' => 'fa-desktop', 'metric' => 'lcp', 'label' => 'LCP', 'col' => 'cwv_desktop_lcp_ms'),
+					array('device' => $_SESSION['text']['label']['Desktop'] ?? 'Desktop', 'icon' => 'fa-desktop', 'metric' => 'cls', 'label' => 'CLS', 'col' => 'cwv_desktop_cls'),
+					array('device' => $_SESSION['text']['label']['Desktop'] ?? 'Desktop', 'icon' => 'fa-desktop', 'metric' => 'inp', 'label' => 'INP', 'col' => 'cwv_desktop_inp_ms'),
+					array('device' => $_SESSION['text']['label']['Mobile'] ?? 'Mobile', 'icon' => 'fa-mobile-alt', 'metric' => 'lcp', 'label' => 'LCP', 'col' => 'cwv_mobile_lcp_ms'),
+					array('device' => $_SESSION['text']['label']['Mobile'] ?? 'Mobile', 'icon' => 'fa-mobile-alt', 'metric' => 'cls', 'label' => 'CLS', 'col' => 'cwv_mobile_cls'),
+					array('device' => $_SESSION['text']['label']['Mobile'] ?? 'Mobile', 'icon' => 'fa-mobile-alt', 'metric' => 'inp', 'label' => 'INP', 'col' => 'cwv_mobile_inp_ms'),
+				);
+			?>
+				<div class="detail-grid">
+					<?php foreach ($cwvMetrics as $m) {
+						$val = $reportInfo[$m['col']] ?? null;
+						$rating = classifyCoreWebVital($m['metric'], $val);
+					?>
+						<div class="detail-card">
+							<div class="detail-label"><i class="fas <?php echo $m['icon']?>"></i> <?php echo $m['device']?> <?php echo $m['label']?></div>
+							<div class="detail-value">
+								<?php if ($rating === null) { ?>
+									<span class="status-badge neutral"><i class="fas fa-minus"></i> <?php echo $spTextSA['Not enough data'] ?? 'Not enough data'?></span>
+								<?php } else { ?>
+									<span class="metric-value"><?php echo ($m['metric'] == 'cls') ? number_format($val, 3) : number_format($val) . ' ms'?></span>
+									<span class="status-badge <?php echo $cwvBadgeClass[$rating]?>"><?php echo $cwvBadgeLabel[$rating]?></span>
+								<?php } ?>
+							</div>
+						</div>
+					<?php } ?>
+				</div>
+				<div class="text-muted" style="font-size:11px;padding:4px 2px 0;">
+					<?php echo $spTextSA['Last checked'] ?? 'Last checked'?>: <?php echo htmlspecialchars($reportInfo['cwv_checked_at'])?>
+				</div>
+			<?php } ?>
+		</div>
+
 		<!-- Meta Tags -->
 		<div class="detail-section">
 			<div class="detail-section-title">

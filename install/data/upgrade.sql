@@ -119,3 +119,23 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'website', 'Link copied', 'Link copied'),
 ('en', 'website', 'Revoke this link? Anyone using it will lose access immediately.', 'Revoke this link? Anyone using it will lose access immediately.'),
 ('en', 'label', 'This link is no longer available', 'This link is no longer available');
+
+-- Core Web Vitals (LCP/CLS/INP) per Site Auditor page - a separate,
+-- slower cadence lane than the main crawl (see SiteAuditorController::
+-- executeCwvCron()/getProjectUrlDueForCwvCheck() and AuditorComponent::
+-- runCwvCheck()), reusing the existing PageSpeed Insights API/Google key.
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_checked_at` datetime DEFAULT NULL AFTER `fetch_fail_count`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_desktop_lcp_ms` int(11) DEFAULT NULL AFTER `cwv_checked_at`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_desktop_cls` decimal(6,3) DEFAULT NULL AFTER `cwv_desktop_lcp_ms`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_desktop_inp_ms` int(11) DEFAULT NULL AFTER `cwv_desktop_cls`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_mobile_lcp_ms` int(11) DEFAULT NULL AFTER `cwv_desktop_inp_ms`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_mobile_cls` decimal(6,3) DEFAULT NULL AFTER `cwv_mobile_lcp_ms`;
+ALTER TABLE `auditorreports` ADD COLUMN `cwv_mobile_inp_ms` int(11) DEFAULT NULL AFTER `cwv_mobile_cls`;
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'siteauditor', 'Core Web Vitals', 'Core Web Vitals'),
+('en', 'siteauditor', 'Not yet checked', 'Not yet checked'),
+('en', 'siteauditor', 'Not enough data', 'Not enough data'),
+('en', 'siteauditor', 'Last checked', 'Last checked'),
+('en', 'siteauditor', 'Good', 'Good'),
+('en', 'siteauditor', 'Needs Improvement', 'Needs Improvement'),
+('en', 'siteauditor', 'Poor', 'Poor');
