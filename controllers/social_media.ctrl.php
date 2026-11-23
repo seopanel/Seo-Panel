@@ -409,18 +409,28 @@ class SocialMediaController extends Controller{
 		$this->render('socialmedia/quick_checker');
 	}
 
-	function doQuickChecker($listInfo=[]) {		
+	function doQuickChecker($listInfo=[]) {
 	    if ($listInfo['type'] == 'linkedin') {
 	        $errorMsg = formatErrorMsg($this->validate->checkNumber($listInfo['url']));
 	        $smLink = $listInfo['url'];
 	    } else {
 	        $smLink = addHttpToUrl($listInfo['url']);
-	        if (!stristr($listInfo['url'], $listInfo['type'])) {
+	        // bug fix: SSRF - this still used the old stristr($url, $type)
+	        // check (just "does the platform name appear somewhere in the
+	        // url string"), the exact gap __isUrlForPlatform() was added
+	        // to close elsewhere - a url like
+	        // "http://10.0.0.5/x?y=facebook" passed this check fine. This
+	        // path is actually the MORE exploitable of the two: it's an
+	        // immediate, synchronous getSocialMediaDetails() fetch for any
+	        // logged-in user, with no stored-link row/ownership gate at
+	        // all (unlike the saved-link workflow this check was
+	        // originally fixed for).
+	        if (!$this->__isUrlForPlatform($listInfo['url'], $listInfo['type'])) {
     			$errorMsg = formatErrorMsg($_SESSION['text']['common']["Invalid value"]);
     			$this->validate->flagErr = true;
             }
 	   }
-		
+
 		// if no error occured find social media details
 		if (!$this->validate->flagErr) {			
 			$result = $this->getSocialMediaDetails($listInfo['type'], $smLink);
