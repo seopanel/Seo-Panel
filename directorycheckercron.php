@@ -37,8 +37,23 @@ if(empty($_SERVER['REQUEST_METHOD'])){
 	$dirList = $dirCtrler->getDirectoriesDueForCheck();
 
 	$dirCtrler->checkPR = 1; // check pagerank of directory or not
-	foreach($dirList as $dirInfo){
-		$dirCtrler->checkDirectoryStatus($dirInfo['id']);
+
+	// Moz lookup batched ONCE for every directory due this run, instead of
+	// one API call per directory inside the loop below - the same
+	// data.site.metrics.fetch.multiple batch endpoint MozController already
+	// uses for rank/backlink checks (__getMozRankInfo()/__matchMozResultsToUrls()
+	// keep results aligned 1:1 with $domainList by position regardless of
+	// the API's own response order).
+	$domainList = array();
+	foreach ($dirList as $dirInfo) {
+		$domainList[] = $dirInfo['domain'];
+	}
+	include_once(SP_CTRLPATH."/moz.ctrl.php");
+	$mozCtrler = new MozController();
+	$mozRankList = $mozCtrler->__getMozRankInfo($domainList);
+
+	foreach($dirList as $i => $dirInfo){
+		$dirCtrler->checkDirectoryStatus($dirInfo['id'], 0, $mozRankList[$i] ?? array());
 		echo "sleep for ".SP_CRAWL_DELAY. " seconds";
 		sleep(SP_CRAWL_DELAY);
 	}

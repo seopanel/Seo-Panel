@@ -1583,26 +1583,22 @@ class AiPerceptionController extends Controller {
 
 		// chat (Slack/Discord/generic) webhook, same trigger as the email
 		// above - independent of whether the email itself succeeds
-		$repSetInfo = $this->db->select("select webhook_url, webhook_platform from reports_settings where user_id=" . intval($userInfo['id']), true);
-		if (!empty($repSetInfo['webhook_url'])) {
-			$shareTotal = 0;
-			$siteCount = count($summaryByWebsite);
-			foreach ($summaryByWebsite as $s) {
-				$shareTotal += intval($s['share']);
-			}
-			$avgShare = $siteCount ? round($shareTotal / $siteCount) : 0;
-			sendWebhookNotification(
-				$repSetInfo['webhook_url'],
-				$repSetInfo['webhook_platform'],
-				!empty($aivTexts['AI Perception digest']) ? $aivTexts['AI Perception digest'] : 'AI Perception digest',
-				[
-					'Websites' => $siteCount,
-					($aivTexts['Share of Voice'] ?? 'Share of Voice') => $avgShare . '%',
-				],
-				SP_WEBPATH . "/ai-perception.php",
-				$loginTexts['Login'] ?? 'View full report'
-			);
+		$shareTotal = 0;
+		$siteCount = count($summaryByWebsite);
+		foreach ($summaryByWebsite as $s) {
+			$shareTotal += intval($s['share']);
 		}
+		$avgShare = $siteCount ? round($shareTotal / $siteCount) : 0;
+		$this->sendDigestWebhookIfConfigured(
+			$userInfo['id'],
+			!empty($aivTexts['AI Perception digest']) ? $aivTexts['AI Perception digest'] : 'AI Perception digest',
+			[
+				'Websites' => $siteCount,
+				($aivTexts['Share of Voice'] ?? 'Share of Voice') => $avgShare . '%',
+			],
+			SP_WEBPATH . "/ai-perception.php",
+			$loginTexts['Login'] ?? 'View full report'
+		);
 
 		return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
 	}

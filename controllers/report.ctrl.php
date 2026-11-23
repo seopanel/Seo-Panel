@@ -2107,18 +2107,14 @@ class ReportController extends Controller {
 		// chat (Slack/Discord/generic) webhook, same trigger as the email
 		// above - independent of whether the email itself succeeds, so a
 		// bad SMTP config never silently takes the webhook down with it
-		$repSetInfo = $this->getUserReportSettings($userInfo['id']);
-		if (!empty($repSetInfo['webhook_url'])) {
-			$reportLink = SP_WEBPATH."/admin-panel.php?menu_selected=report-manager&start_script=archive&website_id=0";
-			sendWebhookNotification(
-				$repSetInfo['webhook_url'],
-				$repSetInfo['webhook_platform'],
-				!empty($reportTexts['Your scheduled report']) ? $reportTexts['Your scheduled report'] : 'Your scheduled report',
-				['Period' => $searchInfo['from_time'] . ' - ' . $searchInfo['to_time']],
-				$reportLink,
-				$loginTexts['Login'] ?? 'View full report'
-			);
-		}
+		$reportLink = SP_WEBPATH."/admin-panel.php?menu_selected=report-manager&start_script=archive&website_id=0";
+		$this->sendDigestWebhookIfConfigured(
+			$userInfo['id'],
+			!empty($reportTexts['Your scheduled report']) ? $reportTexts['Your scheduled report'] : 'Your scheduled report',
+			['Period' => $searchInfo['from_time'] . ' - ' . $searchInfo['to_time']],
+			$reportLink,
+			$loginTexts['Login'] ?? 'View full report'
+		);
 
 		if (!sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content)) {
 			echo 'An internal error occured while sending mail!';

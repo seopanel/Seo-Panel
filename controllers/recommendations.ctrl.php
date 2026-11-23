@@ -342,28 +342,24 @@ class RecommendationsController extends Controller {
 
         // chat (Slack/Discord/generic) webhook, same trigger as the email
         // above - independent of whether the email itself succeeds
-        $repSetInfo = $this->db->select("select webhook_url, webhook_platform from reports_settings where user_id=" . intval($userInfo['id']), true);
-        if (!empty($repSetInfo['webhook_url'])) {
-            $counts = ['error' => 0, 'warning' => 0, 'todo' => 0];
-            foreach ($newInsightsByWebsite as $websiteInfo) {
-                foreach ($websiteInfo['rows'] as $rec) {
-                    if (isset($counts[$rec['type']])) $counts[$rec['type']]++;
-                }
+        $counts = ['error' => 0, 'warning' => 0, 'todo' => 0];
+        foreach ($newInsightsByWebsite as $websiteInfo) {
+            foreach ($websiteInfo['rows'] as $rec) {
+                if (isset($counts[$rec['type']])) $counts[$rec['type']]++;
             }
-            sendWebhookNotification(
-                $repSetInfo['webhook_url'],
-                $repSetInfo['webhook_platform'],
-                !empty($aiTexts['AI Insights digest']) ? $aiTexts['AI Insights digest'] : 'AI Insights digest',
-                [
-                    'Websites' => count($newInsightsByWebsite),
-                    'Errors' => $counts['error'],
-                    'Warnings' => $counts['warning'],
-                    'To-Do' => $counts['todo'],
-                ],
-                SP_WEBPATH . "/recommendations_dashboard.php",
-                $loginTexts['Login'] ?? 'View full report'
-            );
         }
+        $this->sendDigestWebhookIfConfigured(
+            $userInfo['id'],
+            !empty($aiTexts['AI Insights digest']) ? $aiTexts['AI Insights digest'] : 'AI Insights digest',
+            [
+                'Websites' => count($newInsightsByWebsite),
+                'Errors' => $counts['error'],
+                'Warnings' => $counts['warning'],
+                'To-Do' => $counts['todo'],
+            ],
+            SP_WEBPATH . "/recommendations_dashboard.php",
+            $loginTexts['Login'] ?? 'View full report'
+        );
 
         return sendMail($adminInfo['email'], $adminName, $userInfo['email'], $subject, $content);
     }

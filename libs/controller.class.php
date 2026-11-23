@@ -286,6 +286,24 @@ class Controller extends Seopanel{
 		$this->db->query($sql);
 	}
 
+	/*
+	 * Shared by every periodic-digest sender (ReportController's own
+	 * scheduled report email, plus AI Insights/Visibility/Perception's
+	 * digest emails) - fetches the user's configured webhook_url/platform
+	 * and fires sendWebhookNotification() if one is set, mirroring the
+	 * periodic email's own trigger (independent of whether the email
+	 * itself succeeds). No-op (returns false) if no webhook is configured.
+	 * Previously the same raw SELECT + empty-check + call was copy-pasted
+	 * verbatim across all 4 controllers.
+	 */
+	function sendDigestWebhookIfConfigured($userId, $title, $stats, $link = '', $linkLabel = '') {
+		$repSetInfo = $this->db->select("select webhook_url, webhook_platform from reports_settings where user_id=" . intval($userId), true);
+		if (empty($repSetInfo['webhook_url'])) {
+			return false;
+		}
+		return sendWebhookNotification($repSetInfo['webhook_url'], $repSetInfo['webhook_platform'], $title, $stats, $link, $linkLabel);
+	}
+
 	// shared by every "Summary" report page's own __get*DateAvailability()
 	// helper (report/webmaster/analytics/social_media/review_manager
 	// controllers) - each builds its own min/max(report_date) SQL (table

@@ -1006,8 +1006,14 @@ class DirectoryController extends Controller{
 		$this->render('directory/dirstatusgenerator');
 	}
 	
-	# func to check directories active or not 
-	function checkDirectoryStatus($dirId, $nodebug=0) {
+	# func to check directories active or not
+	// $mozMetrics: optional pre-fetched Moz result for this directory's
+	// domain (one element of a batched __getMozRankInfo() call made by the
+	// caller across several directories at once - see
+	// directorycheckercron.php). When omitted, falls back to this
+	// function's own single-domain Moz call, so the manual one-at-a-time
+	// "re-check this directory" path (directories.php) is unaffected.
+	function checkDirectoryStatus($dirId, $nodebug=0, $mozMetrics=null) {
 
 		$dirId = intval($dirId);
 		$dirInfo = $this->getDirectoryInfo($dirId);
@@ -1041,12 +1047,17 @@ class DirectoryController extends Controller{
 			}
 			
 			if ($this->checkPR) {
-				include_once(SP_CTRLPATH."/moz.ctrl.php");
-				$mozCtrler = new MozController();
-				$mozRankList = $mozCtrler->__getMozRankInfo(array($dirInfo['domain']));
-				$spamScore = !empty($mozRankList[0]['spam_score']) ? $mozRankList[0]['spam_score'] : 0;
-				$domainAuthority = !empty($mozRankList[0]['domain_authority']) ? $mozRankList[0]['domain_authority'] : 0;
-				$pageAuthority = !empty($mozRankList[0]['page_authority']) ? $mozRankList[0]['page_authority'] : 0;
+				if ($mozMetrics !== null) {
+					$mozInfo = $mozMetrics;
+				} else {
+					include_once(SP_CTRLPATH."/moz.ctrl.php");
+					$mozCtrler = new MozController();
+					$mozRankList = $mozCtrler->__getMozRankInfo(array($dirInfo['domain']));
+					$mozInfo = !empty($mozRankList[0]) ? $mozRankList[0] : array();
+				}
+				$spamScore = !empty($mozInfo['spam_score']) ? $mozInfo['spam_score'] : 0;
+				$domainAuthority = !empty($mozInfo['domain_authority']) ? $mozInfo['domain_authority'] : 0;
+				$pageAuthority = !empty($mozInfo['page_authority']) ? $mozInfo['page_authority'] : 0;
 				$prUpdate = ",spam_score=$spamScore,domain_authority=$domainAuthority,page_authority=$pageAuthority";
 			}
 			
