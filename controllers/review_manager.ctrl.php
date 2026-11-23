@@ -679,15 +679,35 @@ class ReviewManagerController extends ReviewBase{
 		
 	}
 	
-	function saveReviewLinkResults($linkId, $linkInfo) {		
+	function saveReviewLinkResults($linkId, $linkInfo, $reportDate = null) {
+		$linkId = intval($linkId);
+		// use the caller's own resolved report date, not today's real
+		// wall-clock date - a cron chunk run crosses midnight on a long
+		// link list (each crawl is followed by a sleep(SP_CRAWL_DELAY+5)),
+		// so a link processed after midnight was saving under tomorrow's
+		// date while the "needs report" queries (getAllLinksWithOutReports()
+		// etc.) were still resolving/looking for the run's actual
+		// $reportDate - silently splitting one run's results across two
+		// dates. Defaults to today only for a caller that genuinely has
+		// no better date to pass.
+		$reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
+		$reportDate = addslashes($reportDate);
+
+		// no unique key on (review_link_id, report_date) lets re-saving
+		// the same link/date accumulate duplicate rows (e.g. a retried
+		// queue chunk) - clear any existing row for this exact link/date
+		// first, same delete-then-insert pattern already used by
+		// AnalyticsController::insertWebsiteAnalytics() etc.
+		$this->dbHelper->deleteRows($this->linkReportTable, "review_link_id=$linkId and report_date='$reportDate'");
+
 		$dataList = [
 			'review_link_id|int' => $linkId,
 			'reviews|int' => $linkInfo['reviews'],
 			'rating|float' => $linkInfo['rating'],
-			'report_date' => date('Y-m-d'),
+			'report_date' => $reportDate,
 		];
-		
-		$this->dbHelper->insertRow($this->linkReportTable, $dataList);		
+
+		$this->dbHelper->insertRow($this->linkReportTable, $dataList);
 	}
 	
 	/*

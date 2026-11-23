@@ -92,6 +92,29 @@ class MozController extends Controller {
         return $returnLog ? array($usageData, $crawlInfo) : $usageData;
     }
     
+    // match each result_by_site entry back to the url it belongs to by
+    // the query Moz echoes back in site_query.query, not by array
+    // position - the batch endpoint's response order isn't guaranteed to
+    // match site_queries' request order, so trusting position could
+    // silently attribute one site's authority/spam score to a different
+    // site in $urlList. Returns metrics aligned 1:1 with $urlList by
+    // position (the contract every caller already expects), with an
+    // empty array for any url Moz didn't return a result for.
+    public static function __matchMozResultsToUrls($rankList, $urlList) {
+        $metricsByQuery = array();
+        foreach ($rankList as $rankInfo) {
+            $query = $rankInfo['site_query']['query'] ?? null;
+            if ($query !== null) {
+                $metricsByQuery[$query] = $rankInfo['site_metrics'];
+            }
+        }
+        $mozUrlMetrics = array();
+        foreach ($urlList as $url) {
+            $mozUrlMetrics[] = $metricsByQuery[$url] ?? array();
+        }
+        return $mozUrlMetrics;
+    }
+
     // function to get moz url metrics using JSON-RPC API
     function __getMozRankInfo($urlList, $returnLog=false, $scope='url') {
         $mozUrlMetrics = array();
@@ -161,10 +184,8 @@ class MozController extends Controller {
             // Check for JSON-RPC success response
             if (isset($response['result']['results_by_site'])) {
                 $rankList = !empty($response['result']['results_by_site']) ? $response['result']['results_by_site'] : [];
-                foreach ($rankList as $rankInfo) {
-                    $mozUrlMetrics[] = $rankInfo['site_metrics'];
-                }
-                
+                $mozUrlMetrics = self::__matchMozResultsToUrls($rankList, $urlList);
+
                 $crawlInfo['crawl_status'] = 1;
                 $crawlInfo['log_message'] = "moz url_metrics api call success via JSON-RPC.";
             } elseif (isset($response['error'])) {

@@ -1296,7 +1296,12 @@ class WebMasterController extends GoogleAPIController {
 					$websiteReport = array(
 						'clicks' => !empty($reportInfo->clicks) ? $reportInfo->clicks : 0,
 						'impressions' => !empty($reportInfo->impressions) ? $reportInfo->impressions : 0,
-						'ctr' => !empty($reportInfo->ctr) ? $reportInfo->ctr * 100 : 0,
+						// raw fraction, NOT pre-converted to percent here -
+						// the view (quick_checker_results.ctp.php) already
+						// does `* 100` for display, same contract the
+						// keyword-level rows below already use. Converting
+						// here too double-converted a real 2.8% into "280".
+						'ctr' => !empty($reportInfo->ctr) ? $reportInfo->ctr : 0,
 						'average_position' => !empty($reportInfo->position) ? $reportInfo->position : 0,
 						'source' => $source,
 					);

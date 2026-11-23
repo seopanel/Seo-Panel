@@ -761,7 +761,7 @@ class CronController extends Controller {
 		$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
 
 		if ($desktopOk || $mobileOk) {
-			$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
+			$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true, $desktopOk, $mobileOk);
 			echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
 		} else {
 			echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
@@ -855,7 +855,7 @@ class CronController extends Controller {
 					// fetch (confirmed live as the actual cause of
 					// previously-active links' review data dropping to a
 					// flat, implausible 0 - not a real loss).
-					$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
+					$reviewController->saveReviewLinkResults($linkInfo['id'], $result, $reportDate);
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b> (Yelp).....</br>\n";
 					echo $result['msg'];
@@ -878,7 +878,7 @@ class CronController extends Controller {
 				if ($result['status']) {
 					echo "Crawled review results of <b>{$linkInfo['name']}</b>.....</br>\n";
 					// see the Yelp branch's matching comment above
-					$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
+					$reviewController->saveReviewLinkResults($linkInfo['id'], $result, $reportDate);
 				} else {
 					echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>.....</br>\n";
 					echo $result['msg'];
@@ -1570,7 +1570,7 @@ class CronController extends Controller {
 			$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
 
 			if ($desktopOk || $mobileOk) {
-				$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true);
+				$pageSpeedCtrler->savePageSpeedResults($websiteInfo, true, $desktopOk, $mobileOk);
 				echo "Saved page speed results of <b>$websiteUrl</b>.....</br>\n";
 			} else {
 				echo "Skipped saving page speed results of <b>$websiteUrl</b> - both desktop and mobile checks failed.....</br>\n";
@@ -1767,7 +1767,7 @@ class CronController extends Controller {
 			if ($result['status']) {
 				echo "Crawled review results of <b>{$linkInfo['name']}</b>$label.....</br>\n";
 				// see the non-queued reviewCheckerCron()'s matching comment
-				$reviewController->saveReviewLinkResults($linkInfo['id'], $result);
+				$reviewController->saveReviewLinkResults($linkInfo['id'], $result, $reportDate);
 			} else {
 				echo "Failed Crawling of review results of <b>{$linkInfo['name']}</b>$label.....</br>\n";
 				echo $result['msg'];

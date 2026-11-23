@@ -481,7 +481,7 @@ class PageSpeedController extends Controller{
 			$mobileOk = !empty($mobileCrawlInfo['crawl_status']);
 
 			if ($desktopOk || $mobileOk) {
-				$this->savePageSpeedResults($websiteInfo, true);
+				$this->savePageSpeedResults($websiteInfo, true, $desktopOk, $mobileOk);
 				echo "<p class='note notesuccess'>".$this->spTextPS['Saved page speed results of']." <b>$websiteUrl</b>.....</p>";
 			} else {
 				echo "<p class='note error'>Page speed results of <b>$websiteUrl</b> NOT saved - both desktop and mobile checks failed (avoiding a false 0).....</p>";
@@ -490,33 +490,71 @@ class PageSpeedController extends Controller{
 
 	}
 
+	# fetch the most recent saved result for a website, used to carry a
+	# failed side's score/details forward instead of overwriting it with 0
+	function __getLastPageSpeedResult($websiteId) {
+		$websiteId = intval($websiteId);
+		$result = $this->db->select("select desktop_speed_score, mobile_speed_score, mobile_usability_score
+			from pagespeedresults where website_id=$websiteId order by result_date desc limit 1", true);
+		$details = $this->db->select("select desktop_score_details, mobile_score_details
+			from pagespeeddetails where website_id=$websiteId order by result_date desc limit 1", true);
+		return array(
+			'desktop_speed_score' => $result['desktop_speed_score'] ?? 0,
+			'mobile_speed_score' => $result['mobile_speed_score'] ?? 0,
+			'mobile_usability_score' => $result['mobile_usability_score'] ?? 0,
+			'desktop_details' => !empty($details['desktop_score_details']) ? unserialize($details['desktop_score_details']) : array(),
+			'mobile_details' => !empty($details['mobile_score_details']) ? unserialize($details['mobile_score_details']) : array(),
+		);
+	}
+
 	# function to save rank details
-	function savePageSpeedResults($matchInfo, $remove=false) {
+	function savePageSpeedResults($matchInfo, $remove=false, $desktopOk=true, $mobileOk=true) {
 		$resultDate = date('Y-m-d');
-	
+
+		// a failed side's score/details are empty - intval()ing them
+		// straight to 0 would silently overwrite a real previous score
+		// with a false one. Carry the last known value forward instead,
+		// same per-column carry-forward already applied to Search Engine
+		// Saturation's analogous partial-failure case
+		// (CronController::saturationCheckerCron()). Fetched BEFORE the
+		// $remove delete below, since that wipes pagespeeddetails
+		// unconditionally (not just today's row).
+		$lastResult = (!$desktopOk || !$mobileOk) ? $this->__getLastPageSpeedResult($matchInfo['id']) : null;
+
 		if($remove){
 			$sql = "delete from pagespeedresults where website_id={$matchInfo['id']} and result_date='$resultDate'";
 			$this->db->query($sql);
 			$sql = "delete from pagespeeddetails where website_id={$matchInfo['id']}";
 			$this->db->query($sql);
 		}
-	
+
 		$matchInfo['id'] = intval($matchInfo['id']);
-		$matchInfo['desktop']['speed_score'] = intval($matchInfo['desktop']['speed_score']);
-		$matchInfo['mobile']['speed_score'] = intval($matchInfo['mobile']['speed_score']);
-		$matchInfo['mobile']['usability_score'] = intval($matchInfo['mobile']['usability_score']);
-		
+		if ($desktopOk) {
+			$matchInfo['desktop']['speed_score'] = intval($matchInfo['desktop']['speed_score']);
+		} else {
+			$matchInfo['desktop']['speed_score'] = intval($lastResult['desktop_speed_score']);
+			$matchInfo['desktop']['details'] = $lastResult['desktop_details'];
+		}
+		if ($mobileOk) {
+			$matchInfo['mobile']['speed_score'] = intval($matchInfo['mobile']['speed_score']);
+			$matchInfo['mobile']['usability_score'] = intval($matchInfo['mobile']['usability_score']);
+		} else {
+			$matchInfo['mobile']['speed_score'] = intval($lastResult['mobile_speed_score']);
+			$matchInfo['mobile']['usability_score'] = intval($lastResult['mobile_usability_score']);
+			$matchInfo['mobile']['details'] = $lastResult['mobile_details'];
+		}
+
 		$sql = "insert into pagespeedresults(website_id, desktop_speed_score, mobile_speed_score, mobile_usability_score, result_date)
 		values({$matchInfo['id']},{$matchInfo['desktop']['speed_score']},{$matchInfo['mobile']['speed_score']},{$matchInfo['mobile']['usability_score']}, '$resultDate')";
 		$this->db->query($sql);
-		
+
 		$sql = "insert into pagespeeddetails(website_id, desktop_score_details, mobile_score_details, result_date)
 		values({$matchInfo['id']},'" . addslashes(serialize($matchInfo['desktop']['details'])) . "',
 		'" . addslashes(serialize($matchInfo['mobile']['details'])) . "', '$resultDate')";
 		$this->db->query($sql);
-	
+
 	}
-	
+
 	# function check whether reports already saved
 	function isReportsExists($websiteId, $time) {
 		$resultDate = date('Y-m-d', $time);

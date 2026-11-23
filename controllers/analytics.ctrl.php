@@ -379,7 +379,13 @@ class AnalyticsController extends Controller {
 				
 				// if status is success
 				if ($result['status']) {
-					$websiteReport = array_shift($result['resultList']);
+					// "Total" row must be a real aggregate across every
+					// source/medium GA4 returned, not whichever one
+					// happened to come back first - array_shift() kept
+					// only that row and silently discarded every other
+					// source's traffic, under-reporting real totals
+					// whenever a site had more than one sourceMedium.
+					$websiteReport = $this->__aggregateAnalyticsTotals($result['resultList']);
 					$sourceReport = $result['resultList'];
 					$this->set('websiteReport', $websiteReport);
 					$this->set('sourceReport', $sourceReport);
@@ -393,6 +399,32 @@ class AnalyticsController extends Controller {
 		
 		$errorMsg = !empty($result['msg']) ? $result['msg'] : "Internal error occured while accessing webmaster tools."; 
 		showErrorMsg($errorMsg);		
+	}
+
+	// sums the count metrics and takes a sessions-weighted average of the
+	// rate metrics across every sourceMedium row GA4 returned, for the
+	// Quick Checker's "Total" row. Note: users/newUsers aren't truly
+	// deduplicated across sources this way (the same visitor can appear
+	// under more than one sourceMedium) - a fully accurate figure would
+	// need a separate, non-dimensioned API call - but this is still a
+	// real aggregate rather than one arbitrary row's numbers, which is
+	// what the Total row is actually labeled as.
+	function __aggregateAnalyticsTotals($resultList) {
+		$totals = array_fill_keys($this->metricList, 0);
+		$totalSessions = 0;
+		foreach ($resultList as $reportInfo) {
+			foreach (['users', 'newUsers', 'sessions', 'goalCompletionsAll'] as $metricName) {
+				$totals[$metricName] += $reportInfo[$metricName] ?? 0;
+			}
+			$sessions = $reportInfo['sessions'] ?? 0;
+			$totals['bounceRate'] += ($reportInfo['bounceRate'] ?? 0) * $sessions;
+			$totals['avgSessionDuration'] += ($reportInfo['avgSessionDuration'] ?? 0) * $sessions;
+			$totalSessions += $sessions;
+		}
+		$totals['bounceRate'] = $totalSessions > 0 ? round($totals['bounceRate'] / $totalSessions, 2) : 0;
+		$totals['avgSessionDuration'] = $totalSessions > 0 ? round($totals['avgSessionDuration'] / $totalSessions, 2) : 0;
+		$totals['goalCompletionsAll'] = round($totals['goalCompletionsAll'], 2);
+		return $totals;
 	}
 
 	// function check whether analytics reports already saved

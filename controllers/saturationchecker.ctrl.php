@@ -203,16 +203,35 @@ class SaturationCheckerController extends Controller{
 			exit;
 		}
 		
-		# loop through each websites			
+		# loop through each websites
 		foreach ( $websiteList as $websiteInfo ) {
-			$this->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);			
+			$this->url = $websiteUrl = addHttpToUrl($websiteInfo['url']);
+			// $returnLog=true - this manual "Generate Reports Now" path
+			// was missing the false-0 protection already applied to both
+			// cron paths (CronController::saturationCheckerCron()): a
+			// captcha/regex miss on a manual click overwrote valid data
+			// with 0 unconditionally. Same "save if at least one engine
+			// succeeded" + "carry the last known value forward for a
+			// failed engine" fix as the cron path.
+			$saturationOk = false;
 			foreach ($this->colList as $col => $dbCol) {
-				$websiteInfo[$col] = $this->__getSaturationRank($col);
+				list($rank, $crawlInfo) = $this->__getSaturationRank($col, false, true);
+				if (!empty($crawlInfo['crawl_status'])) {
+					$websiteInfo[$col] = $rank;
+					$saturationOk = true;
+				} else {
+					error_log("SaturationChecker::generateReports(): $col check failed for website {$websiteInfo['id']} ($websiteUrl) - " . ($crawlInfo['log_message'] ?? 'unknown error'));
+					$websiteInfo[$col] = $this->__getLastSaturationValue($websiteInfo['id'], $col);
+				}
 			}
-			
-			$this->saveRankResults($websiteInfo, true);			
-			echo "<p class='note notesuccess'>".$this->spTextSat['Saved Search Engine Saturation results of']." <b>$websiteUrl</b>.....</p>";
-		}	
+
+			if ($saturationOk) {
+				$this->saveRankResults($websiteInfo, true);
+				echo "<p class='note notesuccess'>".$this->spTextSat['Saved Search Engine Saturation results of']." <b>$websiteUrl</b>.....</p>";
+			} else {
+				echo "<p class='note error'>Search Engine Saturation check failed for every engine - <b>$websiteUrl</b> results NOT saved (avoiding a false 0).....</p>";
+			}
+		}
 	}
 	
 	# function to save rank details
