@@ -38,6 +38,9 @@ $(document).ready(function() {
 		</tr>
 	</thead>
 	<tbody>
+		<?php if (!empty($keywordReportError)) { ?>
+			<tr><td colspan="6" class="note error"><?php echo htmlspecialchars($keywordReportError, ENT_QUOTES)?></td></tr>
+		<?php } ?>
 		<?php
 		$i = 1;
 		foreach($keywordAnalytics as $keyword => $listInfo){

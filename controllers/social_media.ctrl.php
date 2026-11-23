@@ -570,15 +570,73 @@ class SocialMediaController extends Controller{
 		
 	}
 	
-	function saveSocialMediaLinkResults($linkId, $linkInfo) {		
+	function saveSocialMediaLinkResults($linkId, $linkInfo) {
 		$dataList = [
 			'sm_link_id|int' => $linkId,
 			'likes|int' => $linkInfo['likes'],
 			'followers|int' => $linkInfo['followers'],
 			'report_date' => date('Y-m-d'),
 		];
-		
-		$this->dbHelper->insertRow($this->linkReportTable, $dataList);		
+
+		$this->dbHelper->insertRow($this->linkReportTable, $dataList);
+	}
+
+	# func to show generate reports interface - Social Media was the only
+	# SEO tool with no manual "Generate Reports Now" at all (every sibling
+	# tool - Rank, Backlink, PageSpeed, Saturation - has one), leaving an
+	# admin 100% dependent on the next cron run with no way to refresh a
+	# link on demand. Same website-select + Proceed pattern as those.
+	function showGenerateReports($searchInfo = []) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
+		$this->render('socialmedia/generatereport');
+	}
+
+	# func to generate reports - reuses the exact same crawl/save calls
+	# (and the already-fixed "only save on a successful crawl" guard) as
+	# CronController::socialMediaCheckerCron()
+	function generateReports($searchInfo = []) {
+		$userId = isLoggedIn();
+		$websiteId = empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+
+		$sql = "select id,name,url from websites where status=1";
+		if (!empty($userId) && !isAdmin()) $sql .= " and user_id=$userId";
+		if (!empty($websiteId)) $sql .= " and id=$websiteId";
+		$sql .= " order by name";
+		$websiteList = $this->db->select($sql);
+
+		if (count($websiteList) <= 0) {
+			echo "<p class='note'>" . $_SESSION['text']['common']['nowebsites'] . "!</p>";
+			exit;
+		}
+
+		$today = date('Y-m-d');
+		foreach ($websiteList as $websiteInfo) {
+			$linkList = $this->getAllLinksWithOutReports($websiteInfo['id'], $today);
+
+			if (empty($linkList)) {
+				echo "<p class='note'>" . $this->spTextSMC['No social media links left to generate report for'] . " <b>{$websiteInfo['name']}</b>.....</p>";
+				continue;
+			}
+
+			foreach ($linkList as $linkInfo) {
+				$result = $this->getSocialMediaDetails($linkInfo['type'], $linkInfo['url']);
+
+				// only save on a successful crawl - same false-0
+				// protection as the cron path
+				if ($result['status']) {
+					$this->saveSocialMediaLinkResults($linkInfo['id'], $result);
+					echo "<p class='note notesuccess'>" . $this->spTextSMC['Saved social media results of'] . " <b>{$linkInfo['name']}</b>.....</p>";
+				} else {
+					echo "<p class='note error'>" . $this->spTextSMC['Failed crawling social media results of'] . " <b>{$linkInfo['name']}</b>.....</p>";
+					error_log("SocialMediaController::generateReports(): crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website {$websiteInfo['id']}) - " . ($result['msg'] ?? 'unknown error'));
+				}
+				sleep(SP_CRAWL_DELAY);
+			}
+		}
 	}
 	
 	/*

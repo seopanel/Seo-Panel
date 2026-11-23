@@ -33467,3 +33467,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- through the texts table.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'website', 'Powered by', 'Powered by');
+
+-- 7.2.0 feature: Social Media's new manual "Generate Reports Now" -
+-- previously the only SEO tool with no on-demand trigger at all.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', 'Saved social media results of', 'Saved social media results of'),
+('en', 'socialmedia', 'No social media links left to generate report for', 'No social media links left to generate report for'),
+('en', 'socialmedia', 'Failed crawling social media results of', 'Failed crawling social media results of');

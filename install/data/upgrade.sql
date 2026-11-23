@@ -145,3 +145,18 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- report link feature already being translatable.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'website', 'Powered by', 'Powered by');
+
+-- fix: Directory Submission's directorycheckercron.php only ever queried
+-- checked=0 (never-yet-checked) directories, and checkDirectoryStatus()
+-- set checked=1 unconditionally with no timestamp recorded anywhere - so
+-- a directory's working-status/DA/PA/captcha state got checked exactly
+-- ONCE, ever, then went stale forever with no way to tell how stale.
+-- last_checked lets the cron re-check directories periodically instead.
+ALTER TABLE `directories` ADD COLUMN `last_checked` datetime DEFAULT NULL AFTER `checked`;
+
+-- feature: Social Media's new manual "Generate Reports Now" - previously
+-- the only SEO tool with no on-demand trigger at all.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', 'Saved social media results of', 'Saved social media results of'),
+('en', 'socialmedia', 'No social media links left to generate report for', 'No social media links left to generate report for'),
+('en', 'socialmedia', 'Failed crawling social media results of', 'Failed crawling social media results of');

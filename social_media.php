@@ -41,7 +41,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		case "doQuickChecker":
 			$controller->doQuickChecker($_POST);
 			break;
-        
+
+		case "generate":
+			if (SP_USER_GEN_REPORT || isAdmin()) {
+				$controller->generateReports($_POST);
+			} else {
+				showErrorMsg($_SESSION['text']['label']["Access denied"]);
+			}
+			break;
+
         case "updateSocialMediaLink":
             $controller->verifyActionAllowed($_POST['id']);
             $controller->updateSocialMediaLink($_POST);
@@ -93,6 +101,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 		case "quickChecker":
 			$controller->viewQuickChecker($_GET);
+			break;
+
+		case "generate":
+			$controller->showGenerateReports($_GET);
 			break;
 
         case "edit":

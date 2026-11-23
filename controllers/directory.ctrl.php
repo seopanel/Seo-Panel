@@ -878,10 +878,29 @@ class DirectoryController extends Controller{
 			$and = ($i++) ? "and" : "where";
 			$sql .= " $and $col='$value'";
 		}
-		$sql .= "order by id";		
+		$sql .= "order by id";
 		$dirList = $this->db->select($sql);
-		
+
 		return $dirList;
+	}
+
+	// func to get directories due a (re-)check - never checked at all, OR
+	// last checked more than $staleDays ago. Fixes directorycheckercron.php
+	// previously only ever querying checked=0 (never-yet-checked) and
+	// checkDirectoryStatus() setting checked=1 unconditionally forever
+	// after - a directory's working-status/DA/PA/captcha-script state got
+	// checked exactly once, ever, then silently went stale with no way to
+	// refresh it. Same defaulted-constant pattern as Site Auditor's
+	// SA_CWV_RECHECK_DAYS.
+	function getDirectoriesDueForCheck($staleDays = null) {
+		if ($staleDays === null) {
+			$staleDays = defined('DIR_RECHECK_DAYS') ? DIR_RECHECK_DAYS : 30;
+		}
+		$staleDays = intval($staleDays);
+		$sql = "SELECT * FROM directories
+			WHERE checked=0 OR last_checked IS NULL OR last_checked < DATE_SUB(NOW(), INTERVAL $staleDays DAY)
+			ORDER BY id";
+		return $this->db->select($sql);
 	}
 	
 	# func to get dir info
@@ -1033,7 +1052,7 @@ class DirectoryController extends Controller{
 			
 		}
 		
-		$sql = "update directories set working=$active,is_captcha=$captcha,checked=1 $prUpdate $searchUpdate $extraValUpdate where id=$dirId";
+		$sql = "update directories set working=$active,is_captcha=$captcha,checked=1,last_checked=NOW() $prUpdate $searchUpdate $extraValUpdate where id=$dirId";
 		$this->db->query($sql);
 		
 		if($nodebug){			
@@ -1046,11 +1065,21 @@ class DirectoryController extends Controller{
 			if ($this->checkPR) {
 				?>
 				<script type="text/javascript">
-					document.getElementById('pr_<?php echo $dirId?>').innerHTML = '<?php echo $pagerank?>';
 					document.getElementById('da_<?php echo $dirId?>').innerHTML = '<?php echo $domainAuthority?>';
 					document.getElementById('pa_<?php echo $dirId?>').innerHTML = '<?php echo $pageAuthority?>';
 				</script>
 				<?php
+				// bug fix: $pagerank was never assigned anywhere in this
+				// function (Google discontinued PageRank in 2016 - nothing
+				// here computes it, and the update query above never
+				// touches the stored legacy `pagerank` column either), so
+				// this used to echo an undefined variable into the page's
+				// JS, which blanked out the list's existing "PR (legacy)"
+				// cell on every status check even though the real stored
+				// value in the DB was untouched. Removed rather than
+				// "fixed" - there is no live source left to refresh it
+				// from, so leaving the pre-existing legacy value on screen
+				// is more correct than overwriting it with nothing.
 			}
 			echo $this->getStatusLink($dirId, $active);
 		}else{

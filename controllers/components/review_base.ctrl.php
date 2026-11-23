@@ -36,7 +36,12 @@ class ReviewBase extends Controller {
     			],
     		    "url_part" => '?hl=en',
     		    'example' => ['https://www.google.com/search?q=kfc+Damrak'],
-    		    'icon' => 'fab fa-google',
+    		    // bare icon name - the views already build the full class by
+    		    // prepending "fab fa-" themselves, so storing it here WITH
+    		    // that prefix already on it produced the invalid,
+    		    // never-matching class "fab fa-fab fa-google" and the icon
+    		    // never rendered.
+    		    'icon' => 'google',
     		],
     	    /*"glassdoor" => [
     	        "label" => "Glassdoor",
@@ -53,7 +58,7 @@ class ReviewBase extends Controller {
     	            "rating" => $engineList['yelp']['regex2'],
     	        ],
     	        'example' => ['https://www.yelp.com/biz/intercontinental-singapore-singapore-2'],
-    	        'icon' => 'fab fa-yelp',
+    	        'icon' => 'yelp',
     	    ],
     	    "trustpilot" => [
     	        "label" => "Trustpilot",
@@ -62,7 +67,7 @@ class ReviewBase extends Controller {
     	            "rating" => $engineList['trustpilot']['regex2'],
     	        ],
     	        'example' => ['https://www.trustpilot.com/review/xohotels.com'],
-    	        'icon' => 'fab fa-buffer',
+    	        'icon' => 'buffer',
     	    ],
     	    "tripadvisor" => [
     	        "label" => "Tripadvisor",
@@ -71,7 +76,7 @@ class ReviewBase extends Controller {
     	            "rating" => $engineList['tripadvisor']['regex2'],
     	        ],
     	        'example' => ['https://www.tripadvisor.com/Hotel_Review-g188098-d236186-Reviews-Hotel_Julen-Zermatt_Canton_of_Valais_Swiss_Alps.html'],
-    	        'icon' => 'fab fa-tripadvisor',
+    	        'icon' => 'tripadvisor',
     	    ],
     	];
     	

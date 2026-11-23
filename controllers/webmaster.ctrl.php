@@ -1318,15 +1318,26 @@ class WebMasterController extends GoogleAPIController {
 					// query results from api and verify no error occured
 					$result = $this->getQueryResults($websiteInfo['user_id'], $websiteInfo['url'], $paramList);
 					if ($result['status']) {
-					
+
 						$keywordAnalytics = array();
 						foreach ($result['resultList'] as $resInfo) {
 							$keywordAnalytics[$resInfo['keys'][0]] = $resInfo;
 						}
-						
+
 						$this->set('keywordAnalytics', $keywordAnalytics);
+					} else {
+						// bug fix: this 2nd API call's failure was never
+						// checked at all - the website-level summary above
+						// had already rendered successfully by this point,
+						// so the page just showed a silently-empty keyword
+						// table with zero indication (to the admin or in
+						// any log) that this call failed, indistinguishable
+						// from the site genuinely having no keyword data.
+						error_log("SEO Panel: WebMasterController::doQuickChecker() keyword-level query failed for website {$websiteInfo['id']}: " . ($result['msg'] ?? 'unknown error'));
+						$this->set('keywordAnalytics', array());
+						$this->set('keywordReportError', !empty($result['msg']) ? $result['msg'] : $_SESSION['text']['common']['Internal error occured']);
 					}
-					
+
 					$this->set('searchInfo', $searchInfo);
 					$this->render('webmaster/quick_checker_results');
 					return true;

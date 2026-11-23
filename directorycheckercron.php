@@ -29,14 +29,13 @@ if(empty($_SERVER['REQUEST_METHOD'])){
 		
 	include_once(SP_CTRLPATH."/directory.ctrl.php");
 	$dirCtrler = New DirectoryController();
-		
-	$searchInfo = array(
-		//'working' => 1,   # to check active directories
-		//'working' => 0,	# to check inactive directories
-		'checked' => 0,   # to check unchecked directories
-	);	
-	$dirList = $dirCtrler->getAllDirectories($searchInfo);
-	
+
+	// was getAllDirectories(['checked' => 0]) - only ever checked a
+	// directory ONCE, ever, then excluded it from this query forever
+	// after (checkDirectoryStatus() sets checked=1 unconditionally).
+	// Now also re-checks anything stale, via the new last_checked column.
+	$dirList = $dirCtrler->getDirectoriesDueForCheck();
+
 	$dirCtrler->checkPR = 1; // check pagerank of directory or not
 	foreach($dirList as $dirInfo){
 		$dirCtrler->checkDirectoryStatus($dirInfo['id']);

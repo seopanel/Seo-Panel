@@ -534,6 +534,7 @@ CREATE TABLE IF NOT EXISTS `directories` (
   `alexa_rank` int(11) NOT NULL DEFAULT '-1',
   `lang_code` varchar(8) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'en',
   `checked` tinyint(1) NOT NULL DEFAULT '0',
+  `last_checked` datetime DEFAULT NULL,
   `script_type_id` int(11) NOT NULL DEFAULT '1',
   `rank` int(11) NOT NULL DEFAULT '0',
   `is_reciprocal` tinyint(1) NOT NULL DEFAULT '0',
