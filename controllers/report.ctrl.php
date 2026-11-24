@@ -546,8 +546,6 @@ class ReportController extends Controller {
 			return $ranksByKeyword;
 		}
 
-		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
-
 		$idList = implode(',', array_map('intval', $keywordIds));
 		$seId = intval($seId);
 		$resultDate = addslashes($resultDate);
@@ -561,19 +559,31 @@ class ReportController extends Controller {
 
 			$competitorRanks = array();
 			foreach ($competitors as $competitor) {
-				$rank = null;
-				foreach ($serp as $entry) {
-					if (AIOverviewController::isDomainCited($entry['url'] ?? '', $competitor['domain'])) {
-						$rank = intval($entry['rank'] ?? 0);
-						break; // serp entries are already rank-ordered - first match wins
-					}
-				}
-				$competitorRanks[$competitor['id']] = $rank;
+				$competitorRanks[$competitor['id']] = $this->__findDomainRankInSerp($serp, $competitor['domain']);
 			}
 			$ranksByKeyword[$row['keyword_id']] = $competitorRanks;
 		}
 
 		return $ranksByKeyword;
+	}
+
+	// func to find a domain's rank within one already-decoded serp_results
+	// array (a {url,title,description,rank} list, already rank-ordered) -
+	// pulled out of __getCompetitorRanksBatch() above so the real-time
+	// competitor rank-alert path (__notifyCompetitorRankAlerts() below)
+	// doesn't duplicate this same matching loop. Returns null if the
+	// domain isn't found anywhere in the given SERP.
+	function __findDomainRankInSerp($serp, $domain) {
+		if (!is_array($serp)) {
+			return null;
+		}
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+		foreach ($serp as $entry) {
+			if (AIOverviewController::isDomainCited($entry['url'] ?? '', $domain)) {
+				return intval($entry['rank'] ?? 0); // first match wins - already rank-ordered
+			}
+		}
+		return null;
 	}
 
 	# func to show reports
@@ -1263,13 +1273,26 @@ class ReportController extends Controller {
 		$rankAlertCtx = $this->__getRankAlertContext($matchInfo['keyword_id']);
 		$rankAlertsEnabled = !empty($rankAlertCtx['repSetInfo']['rank_alert_notification']) && !empty($rankAlertCtx['repSetInfo']['webhook_url']);
 
-		// Capture the most recent PRIOR rank (any result_date strictly
-		// before this one, so it's unaffected by the same-day delete-and-
-		// reinsert the $remove branch below does) before this result
-		// overwrites it - this is the only place all three SERP sources
-		// (crawl/SP API/DataForSEO) funnel through, so hooking here covers
-		// every one of them. See __notifyRankAlert().
-		$prevRankInfo = $rankAlertsEnabled ? $this->db->select("select rank from searchresults where keyword_id={$matchInfo['keyword_id']}
+		// Competitor rank-change alerts - same opt-in/webhook gating as
+		// the site's-own-rank alert above, plus: nothing to compare
+		// against if this website has no tracked competitors at all
+		// (rank_competitors - see idea #1, competitor rank tracking).
+		$competitorAlertsEnabled = !empty($rankAlertCtx['repSetInfo']['competitor_rank_alert_notification']) && !empty($rankAlertCtx['repSetInfo']['webhook_url']);
+		$competitors = array();
+		if ($competitorAlertsEnabled && !empty($rankAlertCtx['keywordInfo'])) {
+			$competitors = $this->__getCompetitorsForRankAlert($rankAlertCtx['keywordInfo']['website_id']);
+			$competitorAlertsEnabled = !empty($competitors);
+		}
+
+		// Capture the most recent PRIOR rank + SERP (any result_date
+		// strictly before this one, so it's unaffected by the same-day
+		// delete-and-reinsert the $remove branch below does) before this
+		// result overwrites it - this is the only place all three SERP
+		// sources (crawl/SP API/DataForSEO) funnel through, so hooking
+		// here covers every one of them. serp_results is only needed for
+		// the competitor comparison, but it's the same single row/query
+		// either way. See __notifyRankAlert()/__notifyCompetitorRankAlerts().
+		$prevRankInfo = ($rankAlertsEnabled || $competitorAlertsEnabled) ? $this->db->select("select `rank`, serp_results from searchresults where keyword_id={$matchInfo['keyword_id']}
 		and searchengine_id={$matchInfo['se_id']} and result_date<'$resultDate' order by result_date desc limit 1", true) : null;
 
 		if($remove){
@@ -1301,6 +1324,11 @@ class ReportController extends Controller {
 
 		if ($rankAlertsEnabled && !empty($prevRankInfo)) {
 			$this->__notifyRankAlert($matchInfo, $rankAlertCtx, intval($prevRankInfo['rank']), intval($matchInfo['rank']));
+		}
+
+		if ($competitorAlertsEnabled && !empty($prevRankInfo) && !empty($serpResults)) {
+			$prevSerp = !empty($prevRankInfo['serp_results']) ? json_decode($prevRankInfo['serp_results'], true) : array();
+			$this->__notifyCompetitorRankAlerts($matchInfo, $rankAlertCtx, $prevSerp, $serpResults, $competitors);
 		}
 	}
 
@@ -1334,6 +1362,21 @@ class ReportController extends Controller {
 		}
 
 		return array('keywordInfo' => $keywordInfo, 'repSetInfo' => self::$__rankAlertSettingsCache[$userId]);
+	}
+
+	// func to get a website's tracked competitors for the real-time
+	// competitor rank-alert path, memoized per website_id for the
+	// lifetime of this process - same reasoning as
+	// $__rankAlertKeywordOwnerCache/$__rankAlertSettingsCache above, just
+	// wrapping __getCompetitors() (see idea #1, competitor rank tracking)
+	// instead of re-querying rank_competitors on every save.
+	static $__rankAlertCompetitorsCache = array();
+	function __getCompetitorsForRankAlert($websiteId) {
+		$websiteId = intval($websiteId);
+		if (!array_key_exists($websiteId, self::$__rankAlertCompetitorsCache)) {
+			self::$__rankAlertCompetitorsCache[$websiteId] = $this->__getCompetitors($websiteId);
+		}
+		return self::$__rankAlertCompetitorsCache[$websiteId];
 	}
 
 	// func to send a real-time webhook alert on a significant keyword rank
@@ -1382,6 +1425,61 @@ class ReportController extends Controller {
 			],
 			SP_WEBPATH . "/rank.php?website_id=" . $keywordInfo['website_id']
 		);
+	}
+
+	// func to send a real-time webhook alert per tracked competitor whose
+	// rank swung significantly for this keyword - the exact same
+	// shouldFireRankAlert() swing/enter/leave logic __notifyRankAlert()
+	// above uses for the site's OWN rank, just applied once per
+	// competitor domain instead (it's pure and domain-agnostic, so
+	// nothing about it needed to change). Shares
+	// RANK_ALERT_MAX_WEBHOOKS_PER_RUN/$__rankAlertWebhooksFiredThisRun
+	// with the own-rank path above - one combined cap on total webhook
+	// calls per run, not a separate budget per alert type.
+	function __notifyCompetitorRankAlerts($matchInfo, $rankAlertCtx, $prevSerp, $newSerp, $competitors) {
+		$keywordInfo = $rankAlertCtx['keywordInfo'];
+		$repSetInfo = $rankAlertCtx['repSetInfo'];
+		$threshold = $repSetInfo['rank_alert_threshold'] ?? 5;
+
+		$seInfo = $this->db->select("select domain from searchengines where id={$matchInfo['se_id']}", true);
+		$seName = !empty($seInfo['domain']) ? $seInfo['domain'] : 'search engine';
+		$spTextReport = $this->getLanguageTexts('report', $_SESSION['lang_code'] ?? 'en');
+
+		foreach ($competitors as $competitor) {
+			if (self::$__rankAlertWebhooksFiredThisRun >= self::RANK_ALERT_MAX_WEBHOOKS_PER_RUN) {
+				return;
+			}
+
+			// a domain absent from the SERP is "not ranked" (0), same
+			// sentinel the own-rank searchresults.rank column already
+			// uses - shouldFireRankAlert() treats this as entering/
+			// leaving the ranked results, exactly like the own-rank path
+			$prevRank = $this->__findDomainRankInSerp($prevSerp, $competitor['domain']) ?? 0;
+			$newRank = $this->__findDomainRankInSerp($newSerp, $competitor['domain']) ?? 0;
+
+			if (!shouldFireRankAlert($prevRank, $newRank, $threshold)) {
+				continue;
+			}
+			self::$__rankAlertWebhooksFiredThisRun++;
+
+			sendWebhookNotification(
+				$repSetInfo['webhook_url'], $repSetInfo['webhook_platform'],
+				!empty($spTextReport['Competitor rank alert']) ? $spTextReport['Competitor rank alert'] : 'Competitor rank alert',
+				[
+					'Competitor' => $competitor['name'],
+					'Keyword' => $keywordInfo['keyword_name'],
+					'Website' => $keywordInfo['website_name'],
+					'Search Engine' => $seName,
+					'Previous rank' => $prevRank > 0 ? $prevRank : 'Not ranked',
+					'New rank' => $newRank > 0 ? $newRank : 'Not ranked',
+				],
+				// the actual page that shows this comparison - NOT
+				// __notifyRankAlert()'s own rank.php link above, which
+				// points at the unrelated Moz tool (pre-existing, left
+				// alone - out of scope here)
+				SP_WEBPATH . "/reports.php?sec=reportsum&website_id=" . $keywordInfo['website_id']
+			);
+		}
 	}
 
 	# func to copy yesterday's result into today when no results found
@@ -2165,6 +2263,9 @@ class ReportController extends Controller {
 	    }
 	    if (isset($info['site_issue_alert_notification'])) {
 	        $this->updateUserReportSetting($userId, 'site_issue_alert_notification', $info['site_issue_alert_notification'] ? 1 : 0);
+	    }
+	    if (isset($info['competitor_rank_alert_notification'])) {
+	        $this->updateUserReportSetting($userId, 'competitor_rank_alert_notification', $info['competitor_rank_alert_notification'] ? 1 : 0);
 	    }
 	    $this->showReportsScheduler(true, $info);
 	}

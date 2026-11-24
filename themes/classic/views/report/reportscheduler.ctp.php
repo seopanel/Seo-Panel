@@ -174,6 +174,19 @@ if (!empty($success)) {
 	</div>
 	<div class="sp-settings-row">
 		<div class="sp-settings-row-label">
+			<?php echo $spTextReport['Alert on competitor rank changes'] ?? 'Alert on competitor rank changes'?>:
+			<small><?php echo $spTextReport['Alert on competitor rank changes note'] ?? 'Sends an immediate webhook alert whenever a tracked competitor\'s rank moves by at least the position threshold above, or enters/drops out of the ranked results, for one of your keywords.'?></small>
+		</div>
+		<div class="sp-settings-row-control">
+			<?php $competitorRankAlertSelected = !empty($repSetInfo['competitor_rank_alert_notification']) ? 'selected' : ''; ?>
+			<select name="competitor_rank_alert_notification" class="custom-select">
+				<option value="0"><?php echo $spText['common']['No']?></option>
+				<option value="1" <?php echo $competitorRankAlertSelected?>><?php echo $spText['common']['Yes']?></option>
+			</select>
+		</div>
+	</div>
+	<div class="sp-settings-row">
+		<div class="sp-settings-row-label">
 			<?php echo $spTextReport['Alert on new critical issues'] ?? 'Alert on new critical issues'?>:
 			<small><?php echo $spTextReport['Alert on new critical issues note'] ?? 'Sends an immediate webhook alert when Site Auditor finds a page newly broken, deindexed, not mobile-friendly, not secure, or blocked by robots.'?></small>
 		</div>

@@ -182,3 +182,13 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'Add Competitor', 'Add Competitor'),
 ('en', 'keyword', 'Competitor name', 'Competitor name'),
 ('en', 'keyword', 'Domain', 'Domain');
+
+-- feature: Competitor rank-change alerts - extends the existing real-time
+-- rank-alert webhook (own site's rank) to also fire when a tracked
+-- competitor's rank swings, reusing the same threshold/webhook settings.
+ALTER TABLE `reports_settings` ADD COLUMN `competitor_rank_alert_notification` tinyint(1) NOT NULL DEFAULT 0 AFTER `site_issue_alert_notification`;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'report', 'Alert on competitor rank changes', 'Alert on competitor rank changes'),
+('en', 'report', 'Alert on competitor rank changes note', 'Sends an immediate webhook alert whenever a tracked competitor''s rank moves by at least the position threshold above, or enters/drops out of the ranked results, for one of your keywords.'),
+('en', 'report', 'Competitor rank alert', 'Competitor rank alert');

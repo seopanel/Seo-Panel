@@ -33482,3 +33482,10 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'Add Competitor', 'Add Competitor'),
 ('en', 'keyword', 'Competitor name', 'Competitor name'),
 ('en', 'keyword', 'Domain', 'Domain');
+
+-- 7.2.0 feature: Competitor rank-change alerts (extends the existing
+-- real-time rank-alert webhook to also cover tracked competitors).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'report', 'Alert on competitor rank changes', 'Alert on competitor rank changes'),
+('en', 'report', 'Alert on competitor rank changes note', 'Sends an immediate webhook alert whenever a tracked competitor''s rank moves by at least the position threshold above, or enters/drops out of the ranked results, for one of your keywords.'),
+('en', 'report', 'Competitor rank alert', 'Competitor rank alert');
