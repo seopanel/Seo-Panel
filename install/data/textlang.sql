@@ -33474,3 +33474,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', 'Saved social media results of', 'Saved social media results of'),
 ('en', 'socialmedia', 'No social media links left to generate report for', 'No social media links left to generate report for'),
 ('en', 'socialmedia', 'Failed crawling social media results of', 'Failed crawling social media results of');
+
+-- 7.2.0 feature: Competitor rank tracking on the Keyword Position Summary page.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'Competitors', 'Competitors'),
+('en', 'keyword', 'Tracked Competitors', 'Tracked Competitors'),
+('en', 'keyword', 'Add Competitor', 'Add Competitor'),
+('en', 'keyword', 'Competitor name', 'Competitor name'),
+('en', 'keyword', 'Domain', 'Domain');

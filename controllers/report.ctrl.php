@@ -26,6 +26,9 @@ class ReportController extends Controller {
 	var $showAll = false;
 	var $proxyCheckCount = 1;
 	var $sessionCats = array('common', 'login', 'button', 'label', 'keyword');
+	// competitor rank tracking - same cap value AiPerceptionController
+	// uses for its own (unrelated) competitor tracking
+	const MAX_COMPETITORS_PER_WEBSITE = 5;
 
 	# func to get keyword report summary
 	function __getKeywordSearchReport($keywordId, $fromTime, $toTime, $apiCall = false){
@@ -342,6 +345,33 @@ class ReportController extends Controller {
 
 		$positionInfoBatch = $this->__getKeywordSearchReportBatch(array_column($list, 'id'), $fromTime, $toTime);
 		$aioBatch = $this->__getLatestAIOverviewBatch(array_column($list, 'id'));
+
+		// Competitor rank tracking - only meaningful when one specific
+		// website is in view (0 means "-- All --" was picked). $competitors
+		// is always set (even empty) so the management card below can
+		// still render its add-competitor form; $showCompetitors only
+		// gates whether the extra rank columns themselves are shown.
+		$competitors = !empty($websiteId) ? $this->__getCompetitors($websiteId) : [];
+		$this->set('competitors', $competitors);
+		$this->set('competitorCap', self::MAX_COMPETITORS_PER_WEBSITE);
+		$showCompetitors = false;
+		$competitorRanksBatch = [];
+		if (!empty($competitors)) {
+			$googleSeId = null;
+			foreach ($this->seLIst as $seInfo) {
+				if (stristr($seInfo['domain'], 'google')) {
+					$googleSeId = $seInfo['id'];
+					break;
+				}
+			}
+			// no Google search engine tracked at all - nothing to compare against
+			if (!empty($googleSeId)) {
+				$competitorRanksBatch = $this->__getCompetitorRanksBatch(array_column($list, 'id'), $googleSeId, $toTimeTxt, $competitors);
+				$showCompetitors = true;
+			}
+		}
+		$this->set('showCompetitors', $showCompetitors);
+
 		$indexList = array();
 		foreach($list as $keywordInfo){
 			$positionInfo = $positionInfoBatch[$keywordInfo['id']] ?? [];
@@ -352,6 +382,7 @@ class ReportController extends Controller {
 			$keywordInfo['position_info'] = $positionInfo;
 			// one entry per search engine that has AI Overview data for this keyword
 			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? [];
+			$keywordInfo['competitor_ranks'] = $competitorRanksBatch[$keywordInfo['id']] ?? [];
 
 			if ($showSearchVolume) {
 				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
@@ -427,6 +458,124 @@ class ReportController extends Controller {
 		}		
 	}
 	
+	/*
+	 * Competitor rank tracking (Keyword Position Checker) - addCompetitor()/
+	 * removeCompetitor()/__getCompetitors() follow the exact same ownership-
+	 * check/cap/insert/delete shape as AiPerceptionController's own (unrelated)
+	 * competitor tracking (addCompetitor()/removeCompetitor()/__getCompetitors()
+	 * in aiperception.ctrl.php) - just targeting rank_competitors instead of
+	 * llm_perception_competitors. No companion results table to clean up on
+	 * remove - nothing is persisted, ranks are always recomputed live from
+	 * searchresults.serp_results (see __getCompetitorRanksBatch() below).
+	 */
+	function addCompetitor($info) {
+		$userId = isLoggedIn();
+		$websiteId = intval($info['website_id'] ?? 0);
+		$name = trim($info['name'] ?? '');
+		$domain = trim($info['domain'] ?? '');
+
+		$websiteController = new WebsiteController();
+		$ownedIds = array_column($websiteController->__getAllWebsites($userId, true), 'id');
+		if (empty($websiteId) || $name === '' || $domain === '' || (!isAdmin() && !in_array($websiteId, $ownedIds))) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$activeCount = intval($this->db->select("SELECT COUNT(*) AS c FROM rank_competitors WHERE website_id=$websiteId AND status=1", true)['c'] ?? 0);
+		if ($activeCount >= self::MAX_COMPETITORS_PER_WEBSITE) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$this->dbHelper->insertRow('rank_competitors', [
+			'website_id|int' => $websiteId,
+			'name'           => mb_substr($name, 0, 150),
+			'domain'         => mb_substr($domain, 0, 255),
+			'status|int'     => 1,
+			'created_at'     => 'NOW()',
+		]);
+
+		$this->showKeywordReportSummary(['website_id' => $websiteId]);
+	}
+
+	// func to remove a tracked competitor - ownership verified via a join
+	// back to websites, same shape as AiPerceptionController::removeCompetitor()
+	function removeCompetitor($info) {
+		$userId = isLoggedIn();
+		$competitorId = intval($info['competitor_id'] ?? 0);
+
+		$competitor = $this->db->select("SELECT c.id, c.website_id FROM rank_competitors c
+			JOIN websites w ON w.id = c.website_id
+			WHERE c.id=$competitorId AND (w.user_id=$userId OR " . (isAdmin() ? '1=1' : '1=0') . ")", true);
+		if (empty($competitor['id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$websiteId = intval($competitor['website_id']);
+		$this->db->query("DELETE FROM rank_competitors WHERE id=$competitorId");
+
+		$this->showKeywordReportSummary(['website_id' => $websiteId]);
+	}
+
+	// func to list a website's active tracked competitors
+	function __getCompetitors($websiteId) {
+		$websiteId = intval($websiteId);
+		return $this->db->select("SELECT id, name, domain FROM rank_competitors WHERE website_id=$websiteId AND status=1 ORDER BY id");
+	}
+
+	/*
+	 * For each keyword, find each tracked competitor's rank within the
+	 * SAME saved SERP snapshot the tracked site's own rank for that
+	 * keyword/search engine/date already comes from
+	 * (searchresults.serp_results - a JSON array of {url,title,
+	 * description,rank}, already ordered by rank). No new crawling or API
+	 * calls - this is pure aggregation over data already stored. Domain
+	 * matching reuses AIOverviewController::isDomainCited() (registrable-
+	 * domain policy) rather than a fresh implementation.
+	 *
+	 * One batched query for every keyword on the current page, same shape
+	 * as __getKeywordSearchReportBatch()/__getLatestAIOverviewBatch() just
+	 * above - not one query per keyword per competitor.
+	 *
+	 * @return array [keywordId => [competitorId => rank|null]]
+	 */
+	function __getCompetitorRanksBatch($keywordIds, $seId, $resultDate, $competitors) {
+		$ranksByKeyword = array();
+		if (empty($keywordIds) || empty($competitors) || empty($seId)) {
+			return $ranksByKeyword;
+		}
+
+		include_once(SP_CTRLPATH . "/aioverview.ctrl.php");
+
+		$idList = implode(',', array_map('intval', $keywordIds));
+		$seId = intval($seId);
+		$resultDate = addslashes($resultDate);
+		$rows = $this->db->select("SELECT keyword_id, serp_results FROM searchresults
+			WHERE keyword_id IN ($idList) AND searchengine_id=$seId AND result_date='$resultDate'
+			AND serp_results IS NOT NULL AND serp_results != ''");
+
+		foreach ($rows as $row) {
+			$serp = json_decode($row['serp_results'], true);
+			if (!is_array($serp)) continue;
+
+			$competitorRanks = array();
+			foreach ($competitors as $competitor) {
+				$rank = null;
+				foreach ($serp as $entry) {
+					if (AIOverviewController::isDomainCited($entry['url'] ?? '', $competitor['domain'])) {
+						$rank = intval($entry['rank'] ?? 0);
+						break; // serp entries are already rank-ordered - first match wins
+					}
+				}
+				$competitorRanks[$competitor['id']] = $rank;
+			}
+			$ranksByKeyword[$row['keyword_id']] = $competitorRanks;
+		}
+
+		return $ranksByKeyword;
+	}
+
 	# func to show reports
 	function showReports($searchInfo = '') {
 		

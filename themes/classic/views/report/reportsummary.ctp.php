@@ -45,6 +45,10 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
                         <i class="fas fa-info-circle"></i>
                         <span>Day/Week/Month/Year is anchored to the latest date that actually has saved data, not today's date, and Month is selected by default. If less history exists than the period you picked, it just shows everything available instead of an empty tail. A keyword with no result on a given date shows as rank 1000 (not found), not blank. You can export the same list as CSV or PDF instead of viewing it on screen.</span>
                     </div>
+                    <div class="aiv-note">
+                        <i class="fas fa-users"></i>
+                        <span>When one specific website is selected, you can track up to <?php echo ReportController::MAX_COMPETITORS_PER_WEBSITE?> competitor domains - their Google rank for each keyword is computed from the same saved search results your own rank comes from, no extra checks. A dash means that competitor wasn't found within the saved results, not necessarily unranked entirely.</span>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" data-dismiss="modal">Got it</button>
@@ -117,6 +121,59 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 
 	</table>
 	</form>
+
+	<?php if (empty($printVersion) && empty($pdfVersion) && !empty($websiteId)): ?>
+	<!--
+	 Competitor rank tracking - domain matching happens live against
+	 searchresults.serp_results (the already-saved full SERP), no new
+	 crawling/API calls. Only meaningful for one specific website, so
+	 this whole card is hidden when "-- All --" is selected above.
+	-->
+	<div class="aiv-card" style="margin-bottom:15px;">
+		<div class="aiv-card-header">
+			<div class="aiv-card-icon"><i class="fas fa-users"></i></div>
+			<div class="aiv-card-title"><?php echo $spTextKeyword['Tracked Competitors'] ?? 'Tracked Competitors'?></div>
+		</div>
+			<?php if (empty($competitors)) { ?>
+				<p><?php echo $_SESSION['text']['common']['No Records Found']?></p>
+			<?php } else { ?>
+				<table class="aiv-table">
+					<tr>
+						<th><?php echo $spText['common']['Name']?></th>
+						<th><?php echo $spTextKeyword['Domain'] ?? 'Domain'?></th>
+						<th><?php echo $spText['common']['Action']?></th>
+					</tr>
+					<?php foreach ($competitors as $competitor) { ?>
+					<tr>
+						<td><?php echo htmlspecialchars($competitor['name'])?></td>
+						<td><?php echo htmlspecialchars($competitor['domain'])?></td>
+						<td>
+							<form id="rc_remove_competitor_form_<?php echo $competitor['id']?>" onsubmit="return false;">
+								<input type="hidden" name="sec" value="remove-competitor">
+								<input type="hidden" name="competitor_id" value="<?php echo $competitor['id']?>">
+							</form>
+							<a onclick="confirmSubmit('reports.php', 'rc_remove_competitor_form_<?php echo $competitor['id']?>', 'content')" href="javascript:void(0);" class="btn btn-danger btn-sm">
+								<?php echo $spText['button']['Delete']?>
+							</a>
+						</td>
+					</tr>
+					<?php } ?>
+				</table>
+			<?php } ?>
+			<?php if (count($competitors) < $competitorCap) { ?>
+				<form id="rc_add_competitor_form" onsubmit="return false;" style="margin-top:15px;">
+					<input type="hidden" name="sec" value="add-competitor">
+					<input type="hidden" name="website_id" value="<?php echo intval($websiteId)?>">
+					<input type="text" name="name" class="form-control" style="max-width:220px;display:inline-block;" maxlength="150" placeholder="<?php echo $spTextKeyword['Competitor name'] ?? 'Competitor name'?>">
+					<input type="text" name="domain" class="form-control" style="max-width:220px;display:inline-block;" maxlength="255" placeholder="<?php echo $spTextKeyword['Domain'] ?? 'Domain'?>">
+					<a href="javascript:void(0);" onclick="scriptDoLoadPost('reports.php', 'rc_add_competitor_form', 'content')" class="btn btn-primary">
+						<?php echo $spTextKeyword['Add Competitor'] ?? 'Add Competitor'?>
+					</a>
+				</form>
+			<?php } ?>
+	</div>
+	<?php endif; ?>
+
 	<?php
 	if(empty($list)){
 		?>
@@ -185,6 +242,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		<?php if (!empty($showSearchVolume)): ?>
 		<th id="head" rowspan="2" class="text-center"><?php echo $spTextKeyword['Search Volume']?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
 		<?php endif; ?>
+		<?php if (!empty($showCompetitors)): foreach ($competitors as $competitor): ?>
+		<th id="head" rowspan="2" class="text-center"><?php echo htmlspecialchars($competitor['name'])?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
+		<?php endforeach; endif; ?>
 	</tr>
 	<tr>
 		<?php
@@ -309,6 +369,12 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<?php endif; ?>
 				</td>
 				<?php endif; ?>
+				<?php if (!empty($showCompetitors)): foreach ($competitors as $competitor): ?>
+				<td class="text-center">
+					<?php $compRank = $listInfo['competitor_ranks'][$competitor['id']] ?? null; ?>
+					<?php echo !empty($compRank) ? intval($compRank) : '&mdash;'?>
+				</td>
+				<?php endforeach; endif; ?>
 			</tr>
 			<?php
 		}

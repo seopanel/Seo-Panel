@@ -1254,6 +1254,27 @@ CREATE TABLE IF NOT EXISTS `llm_perception_competitor_results` (
   KEY `prompt_id` (`prompt_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Competitor rank tracking (Keyword Position Checker) - named competitor
+-- domains per website, compared against each keyword's own already-saved
+-- searchresults.serp_results JSON (the full organic SERP captured on every
+-- rank check) - see ReportController::__getCompetitorRanksBatch(). No
+-- results table: ranks are recomputed live from serp_results on every
+-- page view, never persisted, so there's nothing to backfill/clean up
+-- here beyond this one row. domain is mandatory (unlike
+-- llm_perception_competitors' optional one) - there is no text-mention
+-- fallback, domain matching against serp_results is the only way this
+-- feature can ever find a competitor.
+CREATE TABLE IF NOT EXISTS `rank_competitors` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Per-website-per-platform desired robots.txt state - absence of a row
 -- means "allowed" (not additionally blocked by SEO Panel). Written into the
 -- website's own robots.txt only inside a clearly delimited managed block

@@ -160,3 +160,25 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', 'Saved social media results of', 'Saved social media results of'),
 ('en', 'socialmedia', 'No social media links left to generate report for', 'No social media links left to generate report for'),
 ('en', 'socialmedia', 'Failed crawling social media results of', 'Failed crawling social media results of');
+
+-- feature: Competitor rank tracking on the Keyword Position Summary page -
+-- compares each keyword's rank against named competitor domains, computed
+-- live from the already-saved searchresults.serp_results JSON (no new
+-- crawling/API calls). See ReportController::__getCompetitorRanksBatch().
+CREATE TABLE IF NOT EXISTS `rank_competitors` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int unsigned NOT NULL,
+  `name` varchar(150) NOT NULL,
+  `domain` varchar(255) NOT NULL,
+  `status` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `website_id` (`website_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'Competitors', 'Competitors'),
+('en', 'keyword', 'Tracked Competitors', 'Tracked Competitors'),
+('en', 'keyword', 'Add Competitor', 'Add Competitor'),
+('en', 'keyword', 'Competitor name', 'Competitor name'),
+('en', 'keyword', 'Domain', 'Domain');

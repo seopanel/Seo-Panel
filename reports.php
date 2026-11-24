@@ -65,6 +65,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showKeywordReportSummary($_POST);
 			break;
 
+		case "add-competitor":
+			$controller->addCompetitor($_POST);
+			break;
+
+		case "remove-competitor":
+			$controller->removeCompetitor($_POST);
+			break;
+
 		case "schedule":
 			$controller->saveReportSchedule($_POST);
 			break;
