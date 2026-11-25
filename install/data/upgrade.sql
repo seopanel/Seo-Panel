@@ -192,3 +192,13 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'Alert on competitor rank changes', 'Alert on competitor rank changes'),
 ('en', 'report', 'Alert on competitor rank changes note', 'Sends an immediate webhook alert whenever a tracked competitor''s rank moves by at least the position threshold above, or enters/drops out of the ranked results, for one of your keywords.'),
 ('en', 'report', 'Competitor rank alert', 'Competitor rank alert');
+
+-- feature: Internal Link Graph / Orphan Page report (Site Auditor) - pure
+-- aggregation on auditorreports/auditorpagelinks, no schema change needed.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'siteauditor', 'Internal Link Graph', 'Internal Link Graph'),
+('en', 'siteauditor', 'Orphan Pages', 'Orphan Pages'),
+('en', 'siteauditor', 'Inbound Internal Links', 'Inbound Internal Links'),
+('en', 'siteauditor', 'Outbound Internal Links', 'Outbound Internal Links'),
+('en', 'siteauditor', 'Orphan', 'Orphan'),
+('en', 'siteauditor', 'Store links in page is required for this report', 'This report needs "Store links in page" enabled on the project - edit the project and turn it on, then re-run the crawl.');

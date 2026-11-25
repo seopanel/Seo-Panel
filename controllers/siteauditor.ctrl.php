@@ -681,6 +681,7 @@ class SiteAuditorController extends Controller{
 	    $reportTypes = array(
 			'rp_summary' => $this->spTextSA["Report Summary"],
 			'rp_links' => $this->spTextSA["Link Reports"],
+			'link_graph' => $this->spTextSA["Internal Link Graph"] ?? 'Internal Link Graph',
 			'page_title' => $this->spTextSA["Duplicate Title"],
 			'page_description' => $this->spTextSA["Duplicate Description"],
 			'page_keywords' => $this->spTextSA["Duplicate Keywords"],
@@ -731,6 +732,10 @@ class SiteAuditorController extends Controller{
 			case "page_description":
 			case "page_keywords":
 				$this->showDuplicateMetaInfo($data, $exportVersion, $projectInfo);
+				break;
+
+			case "link_graph":
+				$this->showInternalLinkGraph($data, $exportVersion, $projectInfo);
 				break;
 
 			case "rp_links":
@@ -1284,6 +1289,174 @@ class SiteAuditorController extends Controller{
 		}
     }
     
+    /*
+     * Internal link graph / orphan page report - for each crawled page in
+     * a project, how many OTHER crawled pages in the same project link to
+     * it (internal inbound links) and how many internal links it makes
+     * outward. Pure aggregation on data already collected when the
+     * project has "Store links in page" enabled (see
+     * AuditorComponent::runReport()/storePagelLinks()) - no new crawling.
+     * Returns auditorreports rows (id, page_url) plus inbound_links/
+     * outbound_links. Does NOT flag orphans itself - that needs the
+     * project's homepage URL, which the caller (showInternalLinkGraph())
+     * already has as $projectInfo['url'] without an extra query here.
+     */
+    function __getInternalLinkGraph($projectId) {
+        $projectId = intval($projectId);
+        $pages = $this->db->select("select id, page_url from auditorreports where project_id=$projectId");
+        if (empty($pages)) {
+            return array();
+        }
+
+        $reportIds = array_column($pages, 'id');
+        $idList = implode(',', array_map('intval', $reportIds));
+
+        // destination URL -> report id, normalized the same way
+        // auditorreports.page_url itself is normalized at crawl time
+        // (see Spider::formatUrl() usage in AuditorComponent::runReport())
+        // - a stored auditorpagelinks.link_url is NOT guaranteed to be
+        // normalized the same way, so matching needs this on both sides
+        $pageIdByUrl = array();
+        foreach ($pages as $page) {
+            $pageIdByUrl[Spider::formatUrl($page['page_url'])] = intval($page['id']);
+        }
+
+        $inboundCount = array_fill_keys($reportIds, 0);
+        $outboundCount = array_fill_keys($reportIds, 0);
+
+        $links = $this->db->select("select report_id, link_url from auditorpagelinks where report_id in ($idList) and extrenal=0");
+        foreach ($links as $link) {
+            $sourceId = intval($link['report_id']);
+            if (isset($outboundCount[$sourceId])) {
+                $outboundCount[$sourceId]++;
+            }
+            $destId = $pageIdByUrl[Spider::formatUrl($link['link_url'])] ?? null;
+            if ($destId !== null) {
+                $inboundCount[$destId]++;
+            }
+        }
+
+        foreach ($pages as &$page) {
+            $page['inbound_links'] = $inboundCount[intval($page['id'])];
+            $page['outbound_links'] = $outboundCount[intval($page['id'])];
+        }
+
+        return $pages;
+    }
+
+    // func to show the internal link graph / orphan page report tab -
+    // see showProjectReport()'s single ownership check point above this
+    // dispatch, and __getInternalLinkGraph() above for the actual
+    // aggregation. Paginates/sorts in PHP (not SQL) since inbound_links/
+    // outbound_links/is_orphan are computed, not real columns - the
+    // dataset is bounded by the project's own max_links, same size every
+    // other per-project report here already handles.
+    function showInternalLinkGraph($data, $exportVersion, $projectInfo) {
+        $projectId = intval($projectInfo['id']);
+
+        // meaningless without link data - show an empty state explaining
+        // why instead of a blank/zero'd-out table
+        if (empty($projectInfo['store_links_in_page'])) {
+            $this->set('linkGraphNotEnabled', true);
+            $this->set('projectId', $projectId);
+            $this->render('siteauditor/linkgraph');
+            return;
+        }
+
+        $pages = $this->__getInternalLinkGraph($projectId);
+        $homepageUrl = Spider::formatUrl($projectInfo['url']);
+        $orphanCount = 0;
+        foreach ($pages as &$page) {
+            // the homepage is the crawl's entry point by definition, not
+            // a page that "fell out of" the internal link structure, so
+            // it's never flagged even with 0 measured inbound links
+            $page['is_orphan'] = ($page['inbound_links'] == 0 && Spider::formatUrl($page['page_url']) !== $homepageUrl);
+            if ($page['is_orphan']) {
+                $orphanCount++;
+            }
+        }
+        unset($page);
+
+        $filter = "";
+        if (!empty($data['page_url'])) {
+            $needle = urldecode($data['page_url']);
+            $filter .= "&page_url=" . urlencode($needle);
+            $pages = array_values(array_filter($pages, function($p) use ($needle) {
+                return stripos($p['page_url'], $needle) !== false;
+            }));
+        }
+
+        $validOrderCols = array('page_url', 'inbound_links', 'outbound_links');
+        if (!empty($data['order_col']) && in_array($data['order_col'], $validOrderCols)) {
+            $orderCol = $data['order_col'];
+            $orderVal = (strtoupper($data['order_val'] ?? '') === 'DESC') ? 'DESC' : 'ASC';
+        } else {
+            // orphans (0 inbound) surface first by default - the whole
+            // point of this report
+            $orderCol = 'inbound_links';
+            $orderVal = 'ASC';
+        }
+        usort($pages, function($a, $b) use ($orderCol, $orderVal) {
+            $cmp = is_numeric($a[$orderCol]) ? ($a[$orderCol] <=> $b[$orderCol]) : strcasecmp($a[$orderCol], $b[$orderCol]);
+            return $orderVal === 'DESC' ? -$cmp : $cmp;
+        });
+        $filter .= "&order_col=$orderCol&order_val=$orderVal";
+
+        $totalResults = count($pages);
+        $pgScriptPath = SP_WEBPATH."/siteauditor.php?sec=showreport&report_type=link_graph&project_id=$projectId".$filter;
+        $this->paging->setDivClass('pagingdiv');
+        $this->paging->loadPaging($totalResults, SP_PAGINGNO);
+        $pagingDiv = $this->paging->printPages($pgScriptPath, '', 'scriptDoLoad', 'subcontent', 'layout=ajax');
+        $this->set('pagingDiv', $pagingDiv);
+
+        if (!in_array($data['doc_type'] ?? '', array('pdf', 'print', 'export'))) {
+            $pages = array_slice($pages, $this->paging->start, $this->paging->per_page);
+        }
+
+        if ($exportVersion) {
+            $exportContent = createExportContent(array('', $this->spTextSA['Internal Link Graph'] ?? 'Internal Link Graph', ''));
+            $exportContent .= createExportContent(array());
+            $exportContent .= createExportContent(array());
+            $exportContent .= createExportContent(array($this->spTextSA['Project Url'], $projectInfo['url']));
+            $exportContent .= createExportContent(array($_SESSION['text']['label']['Updated'], $projectInfo['last_updated']));
+            $exportContent .= createExportContent(array($_SESSION['text']['label']['Total Results'], $totalResults));
+            $exportContent .= createExportContent(array());
+            $exportContent .= createExportContent(array(
+                $_SESSION['text']['common']['No'],
+                $this->spTextSA['Page Link'],
+                $this->spTextSA['Inbound Internal Links'] ?? 'Inbound Internal Links',
+                $this->spTextSA['Outbound Internal Links'] ?? 'Outbound Internal Links',
+                $this->spTextSA['Orphan'] ?? 'Orphan',
+            ));
+            foreach ($pages as $i => $page) {
+                $exportContent .= createExportContent(array(
+                    $i + 1,
+                    neutralizeCsvFormula($page['page_url']),
+                    $page['inbound_links'],
+                    $page['outbound_links'],
+                    $page['is_orphan'] ? $_SESSION['text']['common']['Yes'] : $_SESSION['text']['common']['No'],
+                ));
+            }
+            exportToCsv('siteauditor_internal_link_graph', $exportContent);
+        } else {
+            $this->set('projectId', $projectId);
+            $this->set('orderCol', $orderCol);
+            $this->set('orderVal', $orderVal);
+            $this->set('filter', $filter);
+            $this->set('pageNo', $_GET['pageno'] ?? 1);
+            $this->set('totalResults', $totalResults);
+            $this->set('orphanCount', $orphanCount);
+            $this->set('list', $pages);
+
+            if (($data['doc_type'] ?? '') == 'pdf') {
+                exportToPdf($this->getViewContent('siteauditor/linkgraph'), "site_auditor_internal_link_graph.pdf");
+            } else {
+                $this->render('siteauditor/linkgraph');
+            }
+        }
+    }
+
+
     // function to show reports summary of a project
     function showDuplicateMetaInfo($data, $exportVersion, $projectInfo) {
         $repType = addslashes($data['report_type']);
