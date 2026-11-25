@@ -841,6 +841,14 @@ class WebsiteController extends Controller{
 			preg_match_all('/<h2[^>]*>.*?<\/h2>/si', $ret['page'], $h2Matches);
 			$metaInfo['heading_structure_ok'] = (count($h1Matches[0]) === 1 && count($h2Matches[0]) >= 1) ? 1 : 0;
 
+			// Capture the first H1's text (not just whether one exists) -
+			// needed for the per-keyword On-Page Score's "H1 contains
+			// keyword" check. Reuses the SAME match already run above,
+			// not a new parse pass.
+			if (!empty($h1Matches[0][0])) {
+				$metaInfo['h1_text'] = mb_substr(trim(html_entity_decode(strip_tags($h1Matches[0][0]), ENT_QUOTES)), 0, 255);
+			}
+
 			// Check for FAQ-style content - headings phrased as questions
 			// are a strong, explainable signal that a page has directly-
 			// answerable content AI answer engines can lift verbatim,

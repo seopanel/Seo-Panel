@@ -109,6 +109,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->showAIOverviewSources($_GET);
 			break;
 
+		case "onpagescore":
+			$controller->showOnPageScore($_GET);
+			break;
+
 		case "aiocompetitorkeywords":
 			$controller->showAIOverviewCompetitorKeywords($_GET);
 			break;

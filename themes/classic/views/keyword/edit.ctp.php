@@ -59,6 +59,14 @@
 			<input type="checkbox" id="clear_all" onclick="selectAllOptions('searchengines', false); $('select_all').checked=false;"> <label for="clear_all"><?php echo $spText['label']['Clear All']?></label>
 		</td>
 	</tr>
+	<tr class="white_row">
+		<td class="td_left_col"><label for="target_url"><?php echo $spTextKeyword['Target URL'] ?? 'Target URL'?>:</label></td>
+		<td class="td_right_col">
+			<input type="text" id="target_url" name="target_url" value="<?php echo htmlspecialchars($post['target_url'] ?? '', ENT_QUOTES)?>" class="form-control" placeholder="https://example.com/page-to-optimize">
+			<small class="text-muted"><?php echo $spTextKeyword['Target URL note'] ?? 'Optional - the page on your site that should rank for this keyword. Once that page has been crawled by Site Auditor, its On-Page Score appears on the Keyword Position Summary page.'?></small>
+			<?php echo $errMsg['target_url'] ?? ''?>
+		</td>
+	</tr>
 </table>
 <table class="actionSec float-right mt-2">
 	<tr>

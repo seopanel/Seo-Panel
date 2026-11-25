@@ -318,10 +318,13 @@ class ReportController extends Controller {
 		group by k.id";
 
 		$unionOrderCol = ($orderCol == "keyword") ? "name" : "`rank`";
-		$sql = "(". str_replace("[col]", "k.id,k.name,min(`rank`) `rank`,w.name website,w.url weburl,w.name webname", $subSql) .") 
-		UNION 
-		(select k.id,k.name,1000,w.name website,w.url weburl,w.name webname 
-		from keywords k, websites w  
+		// k.target_url/k.website_id added for the On-Page Score column
+		// (see __getOnPageScoresBatch()) - both UNION branches need the
+		// SAME column list/order
+		$sql = "(". str_replace("[col]", "k.id,k.name,min(`rank`) `rank`,w.name website,w.url weburl,w.name webname,k.target_url,k.website_id", $subSql) .")
+		UNION
+		(select k.id,k.name,1000,w.name website,w.url weburl,w.name webname,k.target_url,k.website_id
+		from keywords k, websites w
 		where w.id=k.website_id $conditions and k.id not in
 		(". str_replace("[col]", "distinct(k.id)", $subSql) ."))
 		order by $unionOrderCol $orderVal";
@@ -372,6 +375,12 @@ class ReportController extends Controller {
 		}
 		$this->set('showCompetitors', $showCompetitors);
 
+		// On-Page Score - shown only when at least one keyword on this
+		// page actually has a target_url set (see idea #3, content/
+		// on-page optimization score per keyword)
+		$onPageScoresBatch = $this->__getOnPageScoresBatch($list);
+		$this->set('showOnPageScore', !empty($onPageScoresBatch));
+
 		$indexList = array();
 		foreach($list as $keywordInfo){
 			$positionInfo = $positionInfoBatch[$keywordInfo['id']] ?? [];
@@ -383,6 +392,7 @@ class ReportController extends Controller {
 			// one entry per search engine that has AI Overview data for this keyword
 			$keywordInfo['aio_info'] = $aioBatch[$keywordInfo['id']] ?? [];
 			$keywordInfo['competitor_ranks'] = $competitorRanksBatch[$keywordInfo['id']] ?? [];
+			$keywordInfo['onpage_score'] = $onPageScoresBatch[$keywordInfo['id']] ?? null;
 
 			if ($showSearchVolume) {
 				$svRow = $this->dbHelper->getRow('keyword_search_volume', "keyword_id={$keywordInfo['id']} AND source='google'", 'search_volume, last_crawl_status');
@@ -584,6 +594,134 @@ class ReportController extends Controller {
 			}
 		}
 		return null;
+	}
+
+	// default minimum word count for the "Content length is adequate"
+	// on-page check, same "defined('X') ? X : default" fallback shape
+	// already used for DIR_RECHECK_DAYS/SA_CWV_RECHECK_DAYS this session -
+	// no new Settings UI row for this in v1
+	const SA_ONPAGE_MIN_WORD_COUNT_DEFAULT = 300;
+
+	/*
+	 * Content/on-page optimization score for one keyword - resolves its
+	 * target_url against that website's already-crawled Site Auditor
+	 * pages (auditorreports, matched via Spider::formatUrl() on both
+	 * sides, same normalization idea #2's link graph uses) and scores
+	 * title/description/H1/URL/word-count against the keyword. A thin
+	 * wrapper around __getOnPageScoresBatch() so the single-keyword path
+	 * (the detail popup) and the summary page's batched path share the
+	 * exact same matching/scoring logic.
+	 *
+	 * @return null (no target_url set), ['status'=>'not_crawled']
+	 * (target_url set but no matching crawled page yet), or
+	 * ['status'=>'scored', 'checks'=>[...], 'passed'=>N, 'total'=>N, 'page'=>[...]]
+	 */
+	function __scoreKeywordOnPage($keywordInfo) {
+		if (empty($keywordInfo['target_url'])) {
+			return null;
+		}
+		$batch = $this->__getOnPageScoresBatch(array($keywordInfo));
+		return $batch[$keywordInfo['id']] ?? array('status' => 'not_crawled');
+	}
+
+	// func to score a batch of keywords at once - one query for every
+	// distinct website involved (not one per keyword), same shape as
+	// __getCompetitorRanksBatch(). Keywords with no target_url are
+	// skipped entirely (not even present in the returned array).
+	function __getOnPageScoresBatch($keywordRows) {
+		$scores = array();
+		$withTarget = array_values(array_filter($keywordRows, function($k) {
+			return !empty($k['target_url']);
+		}));
+		if (empty($withTarget)) {
+			return $scores;
+		}
+
+		$websiteIds = array_unique(array_map(function($k) { return intval($k['website_id']); }, $withTarget));
+		$idList = implode(',', $websiteIds);
+		$pages = $this->db->select("select ar.*, ap.website_id as _website_id
+			from auditorreports ar, auditorprojects ap
+			where ar.project_id=ap.id and ap.website_id in ($idList)");
+
+		// website_id -> [normalized page_url => page row] - lets every
+		// keyword on that website resolve its target_url with no further
+		// queries, regardless of how many keywords share the same website
+		$pagesByWebsite = array();
+		foreach ($pages as $page) {
+			$wid = intval($page['_website_id']);
+			$pagesByWebsite[$wid][Spider::formatUrl($page['page_url'])] = $page;
+		}
+
+		foreach ($withTarget as $keywordInfo) {
+			$wid = intval($keywordInfo['website_id']);
+			$targetNormalized = Spider::formatUrl($keywordInfo['target_url']);
+			$page = $pagesByWebsite[$wid][$targetNormalized] ?? null;
+			$scores[$keywordInfo['id']] = empty($page)
+				? array('status' => 'not_crawled')
+				: $this->__buildOnPageChecklist($keywordInfo['name'], $page);
+		}
+
+		return $scores;
+	}
+
+	// pure-ish scoring (one DB-independent read of $page's already-
+	// fetched columns) - the actual title/description/H1/URL/word-count
+	// checklist, kept as its own method so it's directly testable without
+	// needing a real database match first
+	function __buildOnPageChecklist($keywordName, $page) {
+		$keywordName = trim((string) $keywordName);
+		$checks = array();
+
+		$checks['title'] = array(
+			'label' => 'Title contains keyword',
+			'pass' => $keywordName !== '' && mb_stripos((string) ($page['page_title'] ?? ''), $keywordName) !== false,
+		);
+		$checks['description'] = array(
+			'label' => 'Description contains keyword',
+			'pass' => $keywordName !== '' && mb_stripos((string) ($page['page_description'] ?? ''), $keywordName) !== false,
+		);
+		$checks['h1'] = array(
+			'label' => 'H1 contains keyword',
+			'pass' => $keywordName !== '' && !empty($page['h1_text']) && mb_stripos($page['h1_text'], $keywordName) !== false,
+		);
+		// the overwhelmingly common URL slug convention - spaces become
+		// dashes - checked against the raw, unmodified page_url
+		$keywordSlug = str_replace(' ', '-', mb_strtolower($keywordName));
+		$checks['url'] = array(
+			'label' => 'URL contains keyword',
+			'pass' => $keywordSlug !== '' && mb_stripos((string) ($page['page_url'] ?? ''), $keywordSlug) !== false,
+		);
+		$minWordCount = defined('SA_ONPAGE_MIN_WORD_COUNT') ? intval(SA_ONPAGE_MIN_WORD_COUNT) : self::SA_ONPAGE_MIN_WORD_COUNT_DEFAULT;
+		$checks['word_count'] = array(
+			'label' => 'Content length is adequate',
+			'pass' => intval($page['word_count'] ?? 0) >= $minWordCount,
+		);
+
+		$passed = count(array_filter($checks, function($c) { return $c['pass']; }));
+		return array(
+			'status' => 'scored',
+			'checks' => $checks,
+			'passed' => $passed,
+			'total' => count($checks),
+			'page' => $page,
+		);
+	}
+
+	// func to show the On-Page Score detail popup - same ownership-check
+	// shape as showAIOverviewSources()
+	function showOnPageScore($info) {
+		$keywordId = intval($info['keyword_id']);
+
+		$keyword = $this->__verifyKeywordOwnership($keywordId);
+		if (empty($keyword)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
+		$score = $this->__scoreKeywordOnPage($keyword);
+		$this->set('keyword', $keyword);
+		$this->set('score', $score);
+		$this->render('report/onpagescore_popup', '');
 	}
 
 	# func to show reports

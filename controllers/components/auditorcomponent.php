@@ -116,6 +116,14 @@ class AuditorComponent extends Controller{
             if (!empty($pageInfo['canonical_url'])) {
                 $reportInfo['canonical_url'] = addslashes($pageInfo['canonical_url']);
             }
+            // the first H1's text - feeds the per-keyword On-Page Score's
+            // "H1 contains keyword" check (see ReportController::
+            // __scoreKeywordOnPage()). Same "only set when present"
+            // shape as canonical_url just above - a page genuinely
+            // without an H1 leaves this at its real SQL default.
+            if (!empty($pageInfo['h1_text'])) {
+                $reportInfo['h1_text'] = addslashes($pageInfo['h1_text']);
+            }
             
             $reportInfo['total_links'] = intval($pageInfo['total_links']);
             $reportInfo['external_links'] = intval($pageInfo['external']);

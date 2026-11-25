@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS `auditorreports` (
   `canonical_url` varchar(2000) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
   `discovered_via` ENUM('crawl','sitemap','robots','canonical','import') DEFAULT 'crawl',
   `page_title` varchar(180) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `h1_text` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `page_description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `page_keywords` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `pagerank` float NOT NULL DEFAULT '0',
@@ -773,6 +774,7 @@ CREATE TABLE IF NOT EXISTS `keywords` (
   `country_code` varchar(8) COLLATE utf8_unicode_ci DEFAULT NULL,
   `website_id` int(11) DEFAULT NULL,
   `searchengines` varchar(120) CHARACTER SET latin1 DEFAULT NULL,
+  `target_url` varchar(500) DEFAULT NULL,
   `status` tinyint(1) DEFAULT '0',
   `crawled` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)

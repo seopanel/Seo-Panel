@@ -225,8 +225,15 @@ class KeywordController extends Controller{
 		if (!is_array($listInfo['searchengines'])) $listInfo['searchengines'] = array();
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$statusVal = isset($listInfo['status']) ? intval($listInfo['status']) : 1;
-		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];		
-		
+		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];
+		// Target URL - optional, feeds the On-Page Score column on the
+		// Keyword Position Summary page (see ReportController::
+		// __scoreKeywordOnPage()). Only validated when actually supplied.
+		$targetUrl = trim($listInfo['target_url'] ?? '');
+		if ($targetUrl !== '') {
+			$errMsg['target_url'] = formatErrorMsg($this->validate->checkUrl($targetUrl));
+		}
+
 		// verify the limit count for the user
 		if (!$this->validate->flagErr) {
 			
@@ -261,9 +268,9 @@ class KeywordController extends Controller{
 			$keyword = addslashes(trim($listInfo['name']));
 			if (!$this->__checkName($keyword, $listInfo['website_id'])) {
 				
-				$sql = "insert into keywords(name,lang_code,country_code,website_id,searchengines,status)
+				$sql = "insert into keywords(name,lang_code,country_code,website_id,searchengines,target_url,status)
 				values('$keyword', '".addslashes($listInfo['lang_code'])."', '".addslashes($listInfo['country_code'])."',
-				".intval($listInfo['website_id']).", '".addslashes($seStr)."', $statusVal)";
+				".intval($listInfo['website_id']).", '".addslashes($seStr)."', ".($targetUrl !== '' ? "'".addslashes($targetUrl)."'" : "NULL").", $statusVal)";
 				$this->db->query($sql);
 				
 				// if api call
@@ -524,7 +531,12 @@ class KeywordController extends Controller{
 		$errMsg['searchengines'] = formatErrorMsg($this->validate->checkBlank(implode('', $listInfo['searchengines'])));
 		$seStr = is_array($listInfo['searchengines']) ? implode(':', $listInfo['searchengines']) : $listInfo['searchengines'];
 		$statusVal = isset($listInfo['status']) ? "status = " . intval($listInfo['status']) ."," : "";
-		
+		// Target URL - optional, same validation as createKeyword()
+		$targetUrl = trim($listInfo['target_url'] ?? '');
+		if ($targetUrl !== '') {
+			$errMsg['target_url'] = formatErrorMsg($this->validate->checkUrl($targetUrl));
+		}
+
 		// Validate search engine count
 		$seValdInfo = SearchEngineController::validateSearchEngineCount($webUserId, count($listInfo['searchengines']));
 		if ($seValdInfo['error']) {
@@ -552,6 +564,7 @@ class KeywordController extends Controller{
 						lang_code = '".addslashes($listInfo['lang_code'])."',
 						country_code = '".addslashes($listInfo['country_code'])."',
 						website_id = {$listInfo['website_id']},
+						target_url = ".($targetUrl !== '' ? "'".addslashes($targetUrl)."'" : "NULL").",
 						$statusVal
 						searchengines = '".addslashes($seStr)."'
 						where id={$listInfo['id']}";

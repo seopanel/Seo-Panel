@@ -202,3 +202,23 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'siteauditor', 'Outbound Internal Links', 'Outbound Internal Links'),
 ('en', 'siteauditor', 'Orphan', 'Orphan'),
 ('en', 'siteauditor', 'Store links in page is required for this report', 'This report needs "Store links in page" enabled on the project - edit the project and turn it on, then re-run the crawl.');
+
+-- feature: Content/on-page optimization score per keyword - links a
+-- keyword to a target page and scores title/description/H1/URL/word
+-- count against it. h1_text is a new capture (reuses the existing H1
+-- regex match crawlMetaData() already runs for heading_structure_ok,
+-- just also keeping the text this time).
+ALTER TABLE `keywords` ADD COLUMN `target_url` varchar(500) DEFAULT NULL AFTER `searchengines`;
+ALTER TABLE `auditorreports` ADD COLUMN `h1_text` varchar(255) DEFAULT NULL AFTER `page_title`;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'Target URL', 'Target URL'),
+('en', 'keyword', 'Target URL note', 'Optional - the page on your site that should rank for this keyword. Once that page has been crawled by Site Auditor, its On-Page Score appears on the Keyword Position Summary page.'),
+('en', 'report', 'On-Page Score', 'On-Page Score'),
+('en', 'report', 'Title contains keyword', 'Title contains keyword'),
+('en', 'report', 'Description contains keyword', 'Description contains keyword'),
+('en', 'report', 'H1 contains keyword', 'H1 contains keyword'),
+('en', 'report', 'URL contains keyword', 'URL contains keyword'),
+('en', 'report', 'Content length is adequate', 'Content length is adequate'),
+('en', 'report', 'No target URL set', 'No target URL set'),
+('en', 'report', 'Target page not crawled yet', 'Target page not crawled yet');

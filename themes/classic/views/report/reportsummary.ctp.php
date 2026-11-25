@@ -245,6 +245,9 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 		<?php if (!empty($showCompetitors)): foreach ($competitors as $competitor): ?>
 		<th id="head" rowspan="2" class="text-center"><?php echo htmlspecialchars($competitor['name'])?><br><small style="font-weight:normal;font-size:0.75em;">Google</small></th>
 		<?php endforeach; endif; ?>
+		<?php if (!empty($showOnPageScore)): ?>
+		<th id="head" rowspan="2" class="text-center"><?php echo $spTextReport['On-Page Score'] ?? 'On-Page Score'?></th>
+		<?php endif; ?>
 	</tr>
 	<tr>
 		<?php
@@ -375,6 +378,24 @@ if(!empty($printVersion) || !empty($pdfVersion)) {
 					<?php echo !empty($compRank) ? intval($compRank) : '&mdash;'?>
 				</td>
 				<?php endforeach; endif; ?>
+				<?php if (!empty($showOnPageScore)): ?>
+				<td class="text-center">
+					<?php
+					$onPageScore = $listInfo['onpage_score'] ?? null;
+					if (empty($listInfo['target_url'])) {
+						echo '&mdash;';
+					} elseif (($onPageScore['status'] ?? '') === 'not_crawled') {
+						echo '<span class="badge bg-secondary" title="' . htmlspecialchars($spTextReport['Target page not crawled yet'] ?? 'Target page not crawled yet', ENT_QUOTES) . '">?</span>';
+					} else {
+						$opColor = $onPageScore['passed'] >= 4 ? 'bg-success' : ($onPageScore['passed'] >= 2 ? 'bg-warning' : 'bg-danger');
+						$opUrl = SP_WEBPATH . "/reports.php?sec=onpagescore&keyword_id={$listInfo['id']}";
+						echo '<a href="javascript:void(0);" onclick="openAjaxModalSP(\'' . addslashes($opUrl) . '\', \'<i class=&quot;fas fa-bullseye&quot;></i> ' . htmlspecialchars($spTextReport['On-Page Score'] ?? 'On-Page Score', ENT_QUOTES) . '\')" style="text-decoration:none;">';
+						echo '<span class="badge ' . $opColor . '">' . intval($onPageScore['passed']) . '/' . intval($onPageScore['total']) . '</span>';
+						echo '</a>';
+					}
+					?>
+				</td>
+				<?php endif; ?>
 			</tr>
 			<?php
 		}
