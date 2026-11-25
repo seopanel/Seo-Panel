@@ -33511,3 +33511,12 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'report', 'Content length is adequate', 'Content length is adequate'),
 ('en', 'report', 'No target URL set', 'No target URL set'),
 ('en', 'report', 'Target page not crawled yet', 'Target page not crawled yet');
+
+-- 7.2.0 feature: Keyword research / discovery tool (seed keyword -> related suggestions, live DataForSEO lookup, not persisted).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'keyword', 'Keyword Research', 'Keyword Research'),
+('en', 'keyword', 'Seed Keyword', 'Seed Keyword'),
+('en', 'keyword', 'Competition', 'Competition'),
+('en', 'keyword', 'Add as Keyword', 'Add as Keyword'),
+('en', 'keyword', 'DataForSEO must be configured to use Keyword Research', 'DataForSEO must be configured to use Keyword Research'),
+('en', 'keyword', 'Enter a seed keyword and click Proceed to get keyword suggestions', 'Enter a seed keyword and click Proceed to get keyword suggestions');

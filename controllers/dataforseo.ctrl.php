@@ -1698,5 +1698,103 @@ class DataForSEOController extends Controller {
 
         return [$matchInfo, $status];
     }
+
+    /**
+     * Fetch related keyword suggestions for a seed keyword from DataForSEO
+     * Google Ads "Keywords For Keywords" API (live mode)
+     *
+     * @param string $seedKeyword Seed keyword to find suggestions for
+     * @param string $countryCode Optional country code for location targeting
+     * @return array ['status' => bool, 'message' => string, 'data' => array]
+     */
+    function getKeywordIdeasFromDFS($seedKeyword, $countryCode = null) {
+        $result = ['status' => false, 'message' => 'Internal error occurred', 'data' => []];
+
+        $seedKeyword = trim($seedKeyword);
+        if (empty($seedKeyword)) {
+            $result['message'] = 'Seed keyword is required';
+            return $result;
+        }
+
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            for ($i = 1; $i <= 5; $i++) {
+                $result['data'][] = array(
+                    'keyword'            => $seedKeyword . ' idea ' . $i,
+                    'search_volume'      => rand(10, 100000),
+                    'competition'        => ['LOW', 'MEDIUM', 'HIGH'][rand(0, 2)],
+                    'competition_index'  => rand(0, 100),
+                    'cpc'                => round(rand(10, 500) / 100, 2),
+                );
+            }
+            return $result;
+        }
+
+        $postData = ['keywords' => [mb_convert_encoding($seedKeyword, 'UTF-8')]];
+        $locationName = $this->__getLocationName($countryCode, false);
+        if (!empty($locationName)) {
+            $postData['location_name'] = $locationName;
+        }
+
+        try {
+            $apiResult = $this->restClient->post('/v3/keywords_data/google_ads/keywords_for_keywords/live', [$postData]);
+        } catch (RestClientException $e) {
+            $result['message'] = "HTTP {$e->getHttpCode()}: {$e->getMessage()}";
+            return $result;
+        }
+
+        if (empty($apiResult) || $apiResult['status_code'] != 20000) {
+            $result['message'] = !empty($apiResult['status_message']) ? $apiResult['status_message'] : 'DataForSEO API error';
+            return $result;
+        }
+
+        $ideasData = self::__parseKeywordIdeasResults($apiResult, $seedKeyword);
+        if (!empty($ideasData)) {
+            $result['status'] = true;
+            $result['message'] = 'Keyword ideas fetched successfully';
+            $result['data']    = $ideasData;
+        } else {
+            $result['message'] = 'No keyword ideas returned';
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse keyword suggestion results from DataForSEO Google Ads
+     * "Keywords For Keywords" API response
+     *
+     * @param array $result Raw API response
+     * @param string $seedKeyword The seed keyword, excluded if echoed back as its own suggestion
+     * @return array List of suggested keywords with volume/competition/cpc
+     */
+    public static function __parseKeywordIdeasResults($result, $seedKeyword = '') {
+        $ideas = [];
+        $seedKeywordLower = mb_strtolower(trim($seedKeyword));
+
+        if (!empty($result['tasks'][0]['result'])) {
+            foreach ($result['tasks'][0]['result'] as $item) {
+                if (empty($item['keyword'])) {
+                    continue;
+                }
+                if (mb_strtolower(trim($item['keyword'])) === $seedKeywordLower) {
+                    continue;
+                }
+
+                $ideas[] = [
+                    'keyword'           => $item['keyword'],
+                    'search_volume'     => $item['search_volume'] ?? null,
+                    'competition'       => $item['competition'] ?? null,
+                    'competition_index' => $item['competition_index'] ?? null,
+                    'cpc'               => isset($item['low_top_of_page_bid']) ? round($item['low_top_of_page_bid'], 2) : null,
+                ];
+            }
+        }
+
+        return $ideas;
+    }
 }
 ?>

@@ -43,6 +43,7 @@ foreach($menuList as $i => $menuInfo){
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content')"><?php echo $spTextTools['Keywords Manager']?></a></li>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content', 'sec=new')"><?php echo $spTextKeyword['New Keyword']?></a></li>
 		         	<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content', 'sec=import')"><?php echo $spTextKeyword['Import Keywords']?></a></li>
+		         	<li><a href="javascript:void(0);" onclick="scriptDoLoad('keywords.php', 'content', 'sec=ideas')"><?php echo $spTextKeyword['Keyword Research'] ?? 'Keyword Research'?></a></li>
 		         	<li><a href="javascript:void(0);" onclick="scriptDoLoad('reports.php', 'content', 'sec=serparchive')"><?php echo $spTextTools['SERP Results Archive'] ?? 'SERP Results Archive'?></a></li>
 
     			    <?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>

@@ -654,8 +654,42 @@ class KeywordController extends Controller{
 		}
 		
 		return $seDisplayList;
-		
+
 	}
-	
+
+	# func to show keyword research / discovery tool form
+	function showKeywordIdeas() {
+		$this->set('dfsEnabled', SettingsController::isDFSEnabled('search_volume'));
+		$countryController = New CountryController();
+		$this->set('countryList', $countryController->__getAllCountries());
+		$this->set('langNull', true);
+		$this->set('post', array());
+		$this->render('keyword/ideas');
+	}
+
+	# func to find related keyword suggestions for a seed keyword (live lookup, not persisted)
+	function findKeywordIdeas($info) {
+		$seedKeyword = sanitizeData(trim($info['seed_keyword'] ?? ''));
+		$countryCode = $info['country_code'] ?? '';
+
+		$result = ['status' => false, 'message' => '', 'data' => []];
+
+		if (empty($seedKeyword)) {
+			$result['message'] = 'Seed keyword is required';
+		} else if (!SettingsController::isDFSEnabled('search_volume')) {
+			$result['message'] = 'DataForSEO is not configured';
+		} else {
+			$dfsCtrler = new DataForSEOController();
+			$result = $dfsCtrler->getKeywordIdeasFromDFS($seedKeyword, $countryCode);
+			if (SP_DEMO && !empty($result['data'])) {
+				$result['data'] = array_slice($result['data'], 0, 10);
+			}
+		}
+
+		$this->set('seedKeyword', $seedKeyword);
+		$this->set('result', $result);
+		$this->render('keyword/findideas');
+	}
+
 }
 ?>

@@ -30,6 +30,7 @@ include_once(SP_CTRLPATH."/keyword.ctrl.php");
 include_once(SP_CTRLPATH."/website.ctrl.php");
 include_once(SP_CTRLPATH."/user-type.ctrl.php");
 include_once(SP_CTRLPATH."/searchengine.ctrl.php");
+include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 $controller = New KeywordController();
 $controller->view->menu = 'seotools';
 $controller->layout = 'ajax';
@@ -99,6 +100,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 			$controller->listKeywords($_POST);
 			break;
 
+		case "ideas":
+			$controller->findKeywordIdeas($_POST);
+			break;
+
 		default:
 			$controller->listKeywords($_POST);
 			break;
@@ -106,6 +111,10 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
 }else{
 	switch($_GET['sec']){
+
+		case "ideas":
+			$controller->showKeywordIdeas();
+			break;
 
 		case "reports":
 			$controller->showKeywordReports($_GET['keywordId']);
