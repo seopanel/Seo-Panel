@@ -33520,3 +33520,19 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'Add as Keyword', 'Add as Keyword'),
 ('en', 'keyword', 'DataForSEO must be configured to use Keyword Research', 'DataForSEO must be configured to use Keyword Research'),
 ('en', 'keyword', 'Enter a seed keyword and click Proceed to get keyword suggestions', 'Enter a seed keyword and click Proceed to get keyword suggestions');
+
+-- 7.2.0 feature: Backlink detail/monitoring (per-link rows).
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'backlink', 'Backlink Details', 'Backlink Details'),
+('en', 'backlink', 'Referring Domain', 'Referring Domain'),
+('en', 'backlink', 'Source Page', 'Source Page'),
+('en', 'backlink', 'Anchor Text', 'Anchor Text'),
+('en', 'backlink', 'Dofollow', 'Dofollow'),
+('en', 'backlink', 'Nofollow', 'Nofollow'),
+('en', 'backlink', 'Domain Rank', 'Domain Rank'),
+('en', 'backlink', 'First Seen', 'First Seen'),
+('en', 'backlink', 'Last Seen', 'Last Seen'),
+('en', 'backlink', 'Live', 'Live'),
+('en', 'backlink', 'Lost', 'Lost'),
+('en', 'backlink', 'DataForSEO must be configured to use Backlink Details', 'DataForSEO must be configured to use Backlink Details'),
+('en', 'backlink', 'No backlink detail data yet - check back after the next scheduled crawl', 'No backlink detail data yet - check back after the next scheduled crawl');

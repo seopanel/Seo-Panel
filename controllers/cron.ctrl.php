@@ -932,6 +932,7 @@ class CronController extends Controller {
 				$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
 				$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
 			}
+			$this->__runBacklinkDetailCrawl($backlinkCtrler, $dfsCtrler, $websiteInfo, $websiteUrl);
 		}
 
 		// only save a backlink row at all if at least one real data
@@ -965,6 +966,28 @@ class CronController extends Controller {
 		} else {
 			$this->debugMsg("Skipped saving rank results of <b>$websiteUrl</b> - Moz call failed.....<br>\n");
 			error_log("backlinkCheckerCron: Moz call failed for website {$websiteInfo['id']} ($websiteUrl) - rank-side save skipped");
+		}
+	}
+
+	/**
+	 * Per-link backlink detail crawl (backlinkdetails table) - shared by
+	 * backlinkCheckerCron() and backlinkCheckerCronQueued(), called only
+	 * from inside their existing isDFSEnabled('backlink') block. Gated on
+	 * its own staleness check (BacklinkController::isBacklinkDetailDue())
+	 * so this real-money DFS call doesn't fire on every backlink-checker
+	 * cron pass just because the website's own schedule is frequent -
+	 * same spirit as Site Auditor's Core Web Vitals re-check cadence.
+	 */
+	function __runBacklinkDetailCrawl($backlinkCtrler, $dfsCtrler, $websiteInfo, $websiteUrl) {
+		if (!$backlinkCtrler->isBacklinkDetailDue($websiteInfo)) {
+			return;
+		}
+		$detailResult = $dfsCtrler->getBacklinkDetails($websiteUrl);
+		if (!empty($detailResult['status'])) {
+			$backlinkCtrler->__saveBacklinkDetails($websiteInfo['id'], $detailResult['data']);
+			$this->debugMsg("Saved backlink detail rows of <b>$websiteUrl</b>.....<br>\n");
+		} else {
+			$this->debugMsg("Skipped saving backlink detail rows of <b>$websiteUrl</b> - DFS call failed.....<br>\n");
 		}
 	}
 
@@ -1614,6 +1637,7 @@ class CronController extends Controller {
 					$websiteInfo['external_pages_to_root_domain'] = $dfsSummary['referring_domains'];
 					$websiteInfo['broken_backlinks'] = $dfsSummary['broken_backlinks'];
 				}
+				$this->__runBacklinkDetailCrawl($backlinkCtrler, $dfsCtrler, $websiteInfo, $websiteUrl);
 			}
 
 			if ($mozOk || $dfsOk) {

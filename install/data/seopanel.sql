@@ -156,6 +156,26 @@ CREATE TABLE IF NOT EXISTS `backlinkresults` (
   KEY `website_id_result_date` (`website_id`,`result_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;
 
+CREATE TABLE IF NOT EXISTS `backlinkdetails` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int(11) unsigned NOT NULL,
+  `url_from` varchar(767) NOT NULL,
+  `url_from_hash` binary(16) NOT NULL,
+  `domain_from` varchar(255) DEFAULT NULL,
+  `domain_from_rank` int(11) DEFAULT NULL,
+  `url_to` varchar(767) DEFAULT NULL,
+  `anchor` varchar(500) DEFAULT NULL,
+  `dofollow` tinyint(1) DEFAULT NULL,
+  `first_seen` date DEFAULT NULL,
+  `last_seen` date DEFAULT NULL,
+  `is_lost` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_link` (`website_id`,`url_from_hash`),
+  KEY `website_id_is_lost` (`website_id`,`is_lost`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1 ;
+
 CREATE TABLE IF NOT EXISTS `country` (
   `country_code` char(2) COLLATE utf8_unicode_ci NOT NULL,
   `country_name` varchar(50) COLLATE utf8_unicode_ci NOT NULL,
@@ -1944,6 +1964,7 @@ CREATE TABLE IF NOT EXISTS `websites` (
   `twitter_card` varchar(30) COLLATE utf8_unicode_ci DEFAULT NULL,
   `meta_charset` varchar(20) COLLATE utf8_unicode_ci DEFAULT NULL,
   `lang_code` varchar(10) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `backlink_detail_checked_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `url` (`url`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci AUTO_INCREMENT=1 ;

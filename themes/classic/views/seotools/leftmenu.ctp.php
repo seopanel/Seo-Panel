@@ -165,6 +165,7 @@ foreach($menuList as $i => $menuInfo){
 				<?php if (isQuickCheckerEnabled() && !SP_CUSTOM_DEV) {?>
 					<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php', 'content')"><?php echo $spTextTools['Quick Backlinks Checker']?></a></li>
 				<?php }?>
+				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=details', 'content')"><?php echo $spTextBack['Backlink Details'] ?? 'Backlink Details'?></a></li>
 				<li><a href="javascript:void(0);" onclick="scriptDoLoad('backlinks.php?sec=graphical-reports', 'content')"><?php echo $spTextTools['Graphical Reports']?></a></li>
 				<?php if (!SP_CUSTOM_DEV) {?>
     				<?php if(SP_USER_GEN_REPORT || isAdmin()){ ?>

@@ -51,7 +51,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "reports":
 			$controller->showReports($_POST);
 			break;
-			
+
+		case "details":
+			$controller->showBacklinkDetails($_POST);
+			break;
+
 		case "graphical-reports":
 			$controller->showGraphicalReports($_POST);
 			break;
@@ -75,7 +79,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		case "reports":
 			$controller->showReports($_GET);
 			break;
-			
+
+		case "details":
+			$controller->showBacklinkDetails($_GET);
+			break;
+
 		case "graphical-reports":
 			$controller->showGraphicalReports($_GET);
 			break;

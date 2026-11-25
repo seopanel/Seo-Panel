@@ -405,6 +405,137 @@ class BacklinkController extends Controller{
 		$this->set('graphContent', $graphContent);
 		$this->render('backlink/graphicalreport');
 	}
-	
+
+	/**
+	 * Staleness gate for the per-link backlink detail crawl (a real DFS
+	 * API cost), decoupled from the backlink-checker tool's own
+	 * (possibly daily) cron cadence - same spirit as Site Auditor's
+	 * Core Web Vitals re-check (SA_CWV_RECHECK_DAYS), just at per-website
+	 * granularity instead of a round-robin pick, since this already
+	 * only runs once per website per cron pass.
+	 */
+	function isBacklinkDetailDue($websiteInfo) {
+		if (empty($websiteInfo['backlink_detail_checked_at'])) {
+			return true;
+		}
+		$recheckDays = defined('BACKLINK_DETAIL_RECHECK_DAYS') ? BACKLINK_DETAIL_RECHECK_DAYS : 14;
+		return strtotime($websiteInfo['backlink_detail_checked_at']) < strtotime("-$recheckDays days");
+	}
+
+	/**
+	 * Upsert per-link backlink detail rows for a website - dedup key is
+	 * (website_id, url_from_hash), same md5-hash-for-indexing pattern as
+	 * ai_bot_hits/ai_referrals (long URLs don't fit a plain unique index).
+	 * DFS's own is_lost flag is written through as-is on every crawl -
+	 * no diffing against a previous snapshot, DFS already tracks lifecycle.
+	 */
+	function __saveBacklinkDetails($websiteId, $items) {
+		$websiteId = intval($websiteId);
+		foreach ($items as $item) {
+			$urlFrom = addslashes(mb_substr($item['url_from'], 0, 767));
+			$urlFromHash = bin2hex(md5($item['url_from'], true));
+			$domainFrom = isset($item['domain_from']) ? "'".addslashes(mb_substr($item['domain_from'], 0, 255))."'" : "NULL";
+			$domainFromRank = isset($item['domain_from_rank']) ? intval($item['domain_from_rank']) : "NULL";
+			$urlTo = !empty($item['url_to']) ? "'".addslashes(mb_substr($item['url_to'], 0, 767))."'" : "NULL";
+			$anchor = isset($item['anchor']) ? "'".addslashes(mb_substr((string)$item['anchor'], 0, 500))."'" : "NULL";
+			$dofollow = isset($item['dofollow']) ? (int)(bool)$item['dofollow'] : "NULL";
+			$firstSeen = !empty($item['first_seen']) ? "'".addslashes($item['first_seen'])."'" : "NULL";
+			$lastSeen = !empty($item['last_seen']) ? "'".addslashes($item['last_seen'])."'" : "NULL";
+			$isLost = !empty($item['is_lost']) ? 1 : 0;
+
+			$sql = "INSERT INTO backlinkdetails
+				(website_id, url_from, url_from_hash, domain_from, domain_from_rank, url_to, anchor, dofollow, first_seen, last_seen, is_lost, created_at, updated_at)
+				VALUES ($websiteId, '$urlFrom', UNHEX('$urlFromHash'), $domainFrom, $domainFromRank, $urlTo, $anchor, $dofollow, $firstSeen, $lastSeen, $isLost, NOW(), NOW())
+				ON DUPLICATE KEY UPDATE domain_from=$domainFrom, domain_from_rank=$domainFromRank, url_to=$urlTo, anchor=$anchor, dofollow=$dofollow, first_seen=$firstSeen, last_seen=$lastSeen, is_lost=$isLost, updated_at=NOW()";
+			$this->db->query($sql);
+		}
+
+		$this->db->query("UPDATE websites SET backlink_detail_checked_at=NOW() WHERE id=$websiteId");
+	}
+
+	/**
+	 * Backlink Details report - paginated per-link rows for one website,
+	 * live/lost filter. Ownership-scoping copied from showReports() above.
+	 */
+	function showBacklinkDetails($info=[]) {
+		$userId = isLoggedIn();
+		$websiteController = New WebsiteController();
+		$websiteList = $websiteController->__getAllWebsites($userId, true);
+		$this->set('websiteList', $websiteList);
+
+		$websiteId = empty($info['website_id']) ? '' : intval($info['website_id']);
+		if (!empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = '';
+		}
+		if (empty($websiteId)) {
+			$websiteId = $websiteList[0]['id'] ?? '';
+		}
+		$this->set('websiteId', $websiteId);
+
+		$status = (!empty($info['status']) && in_array($info['status'], array('live', 'lost'))) ? $info['status'] : '';
+		$this->set('status', $status);
+		$urlParams = "website_id=$websiteId" . (!empty($status) ? "&status=$status" : "");
+
+		include_once(SP_CTRLPATH . '/settings.ctrl.php');
+		$dfsEnabled = SettingsController::isDFSEnabled('backlink');
+		$this->set('dfsEnabled', $dfsEnabled);
+
+		if (empty($websiteId) || !$dfsEnabled) {
+			$this->set('list', array());
+			$this->set('pagingDiv', '');
+			$this->render('backlink/backlinkdetails');
+			return;
+		}
+
+		$conditions = " and website_id=$websiteId";
+		if ($status === 'live') {
+			$conditions .= " and is_lost=0";
+		} else if ($status === 'lost') {
+			$conditions .= " and is_lost=1";
+		}
+
+		if (!empty($info['export'])) {
+			$exportList = $this->db->select("select * from backlinkdetails where 1=1 $conditions order by domain_from_rank desc, last_seen desc");
+			$exportContent = createExportContent(array($this->spTextBack['Backlink Details'] ?? 'Backlink Details'));
+			$exportContent .= createExportContent(array());
+			$exportContent .= createExportContent(array(
+				$this->spTextBack['Referring Domain'] ?? 'Referring Domain',
+				$this->spTextBack['Source Page'] ?? 'Source Page',
+				$this->spTextBack['Anchor Text'] ?? 'Anchor Text',
+				$_SESSION['text']['common']['Status'] ?? 'Status',
+				$this->spTextBack['Domain Rank'] ?? 'Domain Rank',
+				$this->spTextBack['First Seen'] ?? 'First Seen',
+				$this->spTextBack['Last Seen'] ?? 'Last Seen',
+			));
+			foreach ($exportList as $row) {
+				$exportContent .= createExportContent(array(
+					neutralizeCsvFormula($row['domain_from']),
+					neutralizeCsvFormula($row['url_from']),
+					neutralizeCsvFormula($row['anchor']),
+					$row['is_lost'] ? ($this->spTextBack['Lost'] ?? 'Lost') : ($this->spTextBack['Live'] ?? 'Live'),
+					$row['domain_from_rank'],
+					$row['first_seen'],
+					$row['last_seen'],
+				));
+			}
+			exportToCsv('backlink_details', $exportContent);
+			return;
+		}
+
+		$sql = "select * from backlinkdetails where 1=1 $conditions";
+		$countSql = "select count(*) cnt from backlinkdetails where 1=1 $conditions";
+		$totalRow = $this->db->select($countSql, true);
+		$totalResults = intval($totalRow['cnt'] ?? 0);
+
+		$this->paging->setDivClass('pagingdiv');
+		$this->paging->loadPaging($totalResults, SP_PAGINGNO);
+		$pagingDiv = $this->paging->printPages('backlinks.php', '', 'scriptDoLoad', 'content', '&sec=details&'.$urlParams);
+		$this->set('pagingDiv', $pagingDiv);
+
+		$sql .= " order by domain_from_rank desc, last_seen desc limit ".$this->paging->start.",".$this->paging->per_page;
+		$this->set('list', $this->db->select($sql));
+		$this->render('backlink/backlinkdetails');
+	}
+
 }
 ?>

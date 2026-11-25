@@ -234,3 +234,46 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'keyword', 'Add as Keyword', 'Add as Keyword'),
 ('en', 'keyword', 'DataForSEO must be configured to use Keyword Research', 'DataForSEO must be configured to use Keyword Research'),
 ('en', 'keyword', 'Enter a seed keyword and click Proceed to get keyword suggestions', 'Enter a seed keyword and click Proceed to get keyword suggestions');
+
+-- feature: Backlink detail/monitoring - per-link rows (referring domain,
+-- source page, anchor text, dofollow, domain rank, first/last seen,
+-- live/lost status) via DataForSEO's backlinks/backlinks/live endpoint.
+-- DFS's own crawler already tracks lost/live status - no diffing logic
+-- needed, just an upsert-by-link-hash on each (slow-cadence, staleness-
+-- gated) crawl. Same url_hash dedup pattern as ai_bot_hits/ai_referrals.
+CREATE TABLE IF NOT EXISTS `backlinkdetails` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `website_id` int(11) unsigned NOT NULL,
+  `url_from` varchar(767) NOT NULL,
+  `url_from_hash` binary(16) NOT NULL,
+  `domain_from` varchar(255) DEFAULT NULL,
+  `domain_from_rank` int(11) DEFAULT NULL,
+  `url_to` varchar(767) DEFAULT NULL,
+  `anchor` varchar(500) DEFAULT NULL,
+  `dofollow` tinyint(1) DEFAULT NULL,
+  `first_seen` date DEFAULT NULL,
+  `last_seen` date DEFAULT NULL,
+  `is_lost` tinyint(1) NOT NULL DEFAULT '0',
+  `created_at` datetime NOT NULL,
+  `updated_at` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `website_link` (`website_id`,`url_from_hash`),
+  KEY `website_id_is_lost` (`website_id`,`is_lost`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE `websites` ADD COLUMN `backlink_detail_checked_at` datetime DEFAULT NULL;
+
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'backlink', 'Backlink Details', 'Backlink Details'),
+('en', 'backlink', 'Referring Domain', 'Referring Domain'),
+('en', 'backlink', 'Source Page', 'Source Page'),
+('en', 'backlink', 'Anchor Text', 'Anchor Text'),
+('en', 'backlink', 'Dofollow', 'Dofollow'),
+('en', 'backlink', 'Nofollow', 'Nofollow'),
+('en', 'backlink', 'Domain Rank', 'Domain Rank'),
+('en', 'backlink', 'First Seen', 'First Seen'),
+('en', 'backlink', 'Last Seen', 'Last Seen'),
+('en', 'backlink', 'Live', 'Live'),
+('en', 'backlink', 'Lost', 'Lost'),
+('en', 'backlink', 'DataForSEO must be configured to use Backlink Details', 'DataForSEO must be configured to use Backlink Details'),
+('en', 'backlink', 'No backlink detail data yet - check back after the next scheduled crawl', 'No backlink detail data yet - check back after the next scheduled crawl');

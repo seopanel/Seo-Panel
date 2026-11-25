@@ -503,6 +503,138 @@ class DataForSEOController extends Controller {
         $crawlLogCtrl->createCrawlLog($crawlInfo);
     }
 
+    /**
+     * Per-link backlink detail rows for a website via DataForSEO's
+     * Backlinks API (POST /v3/backlinks/backlinks/live) - sibling of
+     * __getBacklinkSummary() above, but returns the actual list of
+     * backlinks instead of just aggregate counts. mode=one_per_domain
+     * caps rows to one per referring domain (bounds storage/cost
+     * regardless of a site's raw backlink count); backlinks_status_type
+     * =all returns both live and lost links, with DFS's own is_lost
+     * flag per item - no diffing against a previous snapshot needed.
+     *
+     * @param string $url Website URL (host is extracted, same as __getBacklinkSummary())
+     * @param int $limit Max rows to fetch (endpoint max is 1000)
+     * @return array ['status' => bool, 'message' => string, 'data' => array]
+     */
+    function getBacklinkDetails($url, $limit = 1000) {
+        $result = ['status' => false, 'message' => 'Internal error occurred', 'data' => []];
+
+        $target = parse_url($url, PHP_URL_HOST);
+        if (empty($target)) {
+            $result['message'] = 'Invalid website URL';
+            return $result;
+        }
+
+        // Use sample API data if enabled (saves API credits, also the
+        // billing-safe path for the TestCronController harness)
+        if (defined('SP_USE_SAMPLE_API_DATA') && SP_USE_SAMPLE_API_DATA) {
+            $this->__logBacklinkDetailCrawl($target, true, "Sample data returned (SP_USE_SAMPLE_API_DATA enabled)");
+            $result['status'] = true;
+            $result['message'] = 'Sample data returned (SP_USE_SAMPLE_API_DATA enabled)';
+            for ($i = 1; $i <= 5; $i++) {
+                $result['data'][] = array(
+                    'url_from'         => "https://sample-referrer-$i.example.com/page",
+                    'domain_from'      => "sample-referrer-$i.example.com",
+                    'domain_from_rank' => rand(0, 1000),
+                    'url_to'           => $url,
+                    'anchor'           => "sample anchor text $i",
+                    'dofollow'         => ($i % 2) == 0,
+                    'first_seen'       => date('Y-m-d', strtotime('-'.($i * 30).' days')),
+                    'last_seen'        => date('Y-m-d'),
+                    'is_lost'          => false,
+                );
+            }
+            return $result;
+        }
+
+        $payload = array(
+            "target" => $target,
+            "mode" => "one_per_domain",
+            "backlinks_status_type" => "all",
+            "include_subdomains" => true,
+            "limit" => intval($limit),
+        );
+
+        try {
+            $apiResult = $this->restClient->post("/v3/backlinks/backlinks/live", [$payload]);
+        } catch (RestClientException $e) {
+            $msg = "HTTP code: {$e->getHttpCode()}\n";
+            $msg .= "Error code: {$e->getCode()}\n";
+            $msg .= "Message: {$e->getMessage()}\n";
+            $this->__logBacklinkDetailCrawl($target, false, $msg);
+            $result['message'] = $msg;
+            return $result;
+        }
+
+        $parsed = DataForSEOController::parseBacklinkDetailsResponse($apiResult);
+        $this->__logBacklinkDetailCrawl($target, $parsed !== false, $parsed !== false ? "Success" : "Unknown error or empty result");
+
+        if ($parsed === false) {
+            $result['message'] = 'DataForSEO API error';
+            return $result;
+        }
+
+        $result['status'] = true;
+        $result['message'] = 'Backlink details fetched successfully';
+        $result['data'] = $parsed;
+
+        return $result;
+    }
+
+    /**
+     * Pure parser for a decoded /v3/backlinks/backlinks/live response - no
+     * network I/O, so it's directly unit-testable against a fixture.
+     * Mirrors parseBacklinkSummaryResponse()'s shape/error handling.
+     *
+     * @param array $result Raw API response
+     * @return array|false List of normalized backlink rows, or false on error/empty
+     */
+    public static function parseBacklinkDetailsResponse($result) {
+        if (empty($result['status_code']) || $result['status_code'] != 20000 || empty($result['tasks'][0])) {
+            return false;
+        }
+
+        $taskInfo = $result['tasks'][0];
+        if (empty($taskInfo['status_code']) || $taskInfo['status_code'] != 20000 || empty($taskInfo['result'][0])) {
+            return false;
+        }
+
+        $items = $taskInfo['result'][0]['items'] ?? [];
+        $rows = [];
+        foreach ($items as $item) {
+            if (empty($item['url_from'])) {
+                continue;
+            }
+            $rows[] = array(
+                'url_from'         => $item['url_from'],
+                'domain_from'      => $item['domain_from'] ?? null,
+                'domain_from_rank' => isset($item['domain_from_rank']) ? intval($item['domain_from_rank']) : null,
+                'url_to'           => $item['url_to'] ?? null,
+                'anchor'           => $item['anchor'] ?? null,
+                'dofollow'         => isset($item['dofollow']) ? (bool) $item['dofollow'] : null,
+                'first_seen'       => !empty($item['first_seen']) ? date('Y-m-d', strtotime($item['first_seen'])) : null,
+                'last_seen'        => !empty($item['last_seen']) ? date('Y-m-d', strtotime($item['last_seen'])) : null,
+                'is_lost'          => !empty($item['is_lost']),
+            );
+        }
+
+        return $rows;
+    }
+
+    private function __logBacklinkDetailCrawl($target, $status, $message) {
+        $crawlLogCtrl = new CrawlLogController();
+        $crawlInfo = [];
+        $crawlInfo['crawl_type'] = 'backlink_detail';
+        $crawlInfo['crawl_status'] = $status ? 1 : 0;
+        $crawlInfo['ref_id'] = $target;
+        $crawlInfo['subject'] = 'dataforseo';
+        $crawlInfo['crawl_referer'] = $this->apiUrl;
+        $crawlInfo['log_message'] = $message; // escaped once, inside createCrawlLog()
+        $crawlInfo['crawl_link'] = "";
+        $crawlLogCtrl->createCrawlLog($crawlInfo);
+    }
+
     // ==================== DFS Tasks Table Methods ====================
 
     var $dfsTasksTable = 'dfs_tasks';
