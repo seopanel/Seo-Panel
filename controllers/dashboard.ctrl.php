@@ -143,11 +143,12 @@ class DashboardController extends Controller {
         $this->set('keywordDistribution', $keywordDistribution);
 
         // Get keyword statistics
-        $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $kwResultLastDate);
+        $keywordCountStats = $this->__getKeywordCountStats($websiteId);
+        $keywordStats = $this->getKeywordStats($websiteId, $fromTime, $kwResultLastDate, $keywordCountStats);
         $this->set('keywordStats', $keywordStats);
 
         // Get previous period keyword statistics for comparison
-        $prevKeywordStats = $this->getKeywordStats($websiteId, $prevFromTime, $kwResultPreLastDate);
+        $prevKeywordStats = $this->getKeywordStats($websiteId, $prevFromTime, $kwResultPreLastDate, $keywordCountStats);
         $this->set('prevKeywordStats', $prevKeywordStats);
 
         // Calculate keyword stats comparison
@@ -410,13 +411,28 @@ class DashboardController extends Controller {
     }
 
     // Get keyword statistics
-    private function getKeywordStats($websiteId, $fromTime, $toTime) {
-        $stats = [];
+    // Keyword counts that don't depend on any date range (total ever
+    // created, never checked at all) - computed once and shared between
+    // the current- and previous-period getKeywordStats() calls below,
+    // which previously each re-ran these same two queries and got
+    // byte-identical results back both times.
+    function __getKeywordCountStats($websiteId) {
+        $websiteId = intval($websiteId);
+        $sql = "SELECT
+                    (SELECT COUNT(*) FROM keywords WHERE website_id=$websiteId) as total,
+                    (SELECT COUNT(*) FROM keywords k WHERE k.website_id=$websiteId
+                        AND NOT EXISTS (SELECT 1 FROM searchresults sr WHERE sr.keyword_id = k.id)) as never_checked";
+        return $this->db->select($sql, true);
+    }
 
-        // Total keywords
-        $sql = "SELECT COUNT(*) as total FROM keywords WHERE website_id=" . intval($websiteId);
-        $result = $this->db->select($sql, true);
-        $stats['total'] = $result['total'];
+    // $countStats is the website-wide total/never_checked pair from
+    // __getKeywordCountStats() - shared across both the current- and
+    // previous-period calls since neither value depends on fromTime/toTime.
+    private function getKeywordStats($websiteId, $fromTime, $toTime, $countStats) {
+        $stats = [
+            'total' => $countStats['total'],
+            'never_checked' => $countStats['never_checked'],
+        ];
 
         // Keywords with results in period
         $sql = "SELECT COUNT(DISTINCT k.id) as tracked
@@ -426,17 +442,6 @@ class DashboardController extends Controller {
                     AND sr.result_date BETWEEN '$fromTime' AND '$toTime'";
         $result = $this->db->select($sql, true);
         $stats['tracked'] = $result['tracked'];
-
-        // Keywords with NO result ever, any date - was wrongly computed
-        // as total - tracked (period-scoped), which counted a keyword
-        // last checked before the selected period as "never checked"
-        // even though it has real history, just not in this window.
-        $sql = "SELECT COUNT(*) as never_checked
-                FROM keywords k
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND NOT EXISTS (SELECT 1 FROM searchresults sr WHERE sr.keyword_id = k.id)";
-        $result = $this->db->select($sql, true);
-        $stats['never_checked'] = $result['never_checked'];
 
         // Rank-bucket counts for $toTime - previously 5 separate COUNT
         // queries hitting the identical FROM/JOIN/date condition, just
@@ -696,69 +701,57 @@ class DashboardController extends Controller {
         return $volatilityData;
     }
     
-    function __generateKeywordDistributionResult($websiteId, $date, $dstType="top10", $limit=10) {
-        $dstResults = [
-            "count" => 0,
-            "rows" => [],
-        ];
-        switch ($dstType) {            
-            case "top10":
-            default:
-                $rankCond = "sr.rank BETWEEN 1 AND 10";
-                break;
-                
-            case "top20":
-                $rankCond = "sr.rank BETWEEN 11 AND 20";
-                break;
-                
-            case "top50":
-                $rankCond = "sr.rank BETWEEN 21 AND 50";
-                break;
-            
-            case "top100":
-                $rankCond = "sr.rank BETWEEN 51 AND 100";
-                break;
-                
-            case "not_ranked":
-                $rankCond = "(sr.rank IS NULL OR sr.rank <= 0 OR sr.rank > 100)";
-                break;
-        }
-        
-        // Get Top 10 keywords
-        $countSel = "count(*) as count";
-        $rowSel = "k.name, sr.rank, se.domain as search_engine";
-        $sql = "SELECT [SELECT_COLS]
-                FROM keywords k
-                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
-                    INNER JOIN searchengines se ON sr.searchengine_id = se.id
-                WHERE k.website_id=" . intval($websiteId) . "
-                    AND sr.result_date='$date'
-                    AND $rankCond
-                ORDER BY sr.rank ASC
-                LIMIT $limit";
-        
-        $countRes = $this->db->select(str_replace("[SELECT_COLS]", $countSel, $sql), true);
-        if ($countRes['count'] > 0) {
-            $dstResults['count'] = $countRes['count'];
-            $results = $this->db->select(str_replace("[SELECT_COLS]", $rowSel, $sql));
-            $dstResults['rows'] = $results;
-        }        
-        
-        return $dstResults;
-    }
-
-    // Get detailed keyword distribution by rank ranges
+    // Get detailed keyword distribution by rank ranges - previously 5
+    // separate per-bucket COUNT queries (plus a detail-rows query for each
+    // non-empty bucket) hitting the identical FROM/JOIN/date condition,
+    // just with a different rank range each time; collapsed the 5 COUNTs
+    // into one pass, same shape as getKeywordStats()'s own top10/top3/...
+    // bucket consolidation above.
     private function getKeywordDistributionDetails($websiteId, $date) {
         $distribution = [
-            'top10' => [],
-            'top20' => [],
-            'top50' => [],
-            'top100' => [],
-            'not_ranked' => []
+            'top10' => ['count' => 0, 'rows' => []],
+            'top20' => ['count' => 0, 'rows' => []],
+            'top50' => ['count' => 0, 'rows' => []],
+            'top100' => ['count' => 0, 'rows' => []],
+            'not_ranked' => ['count' => 0, 'rows' => []],
         ];
-        
-        foreach (array_keys($distribution) as $distCol) {
-            $distribution[$distCol] = $this->__generateKeywordDistributionResult($websiteId, $date, $distCol, 5);
+
+        $sql = "SELECT
+                    COUNT(CASE WHEN sr.rank BETWEEN 1 AND 10 THEN 1 END) as top10,
+                    COUNT(CASE WHEN sr.rank BETWEEN 11 AND 20 THEN 1 END) as top20,
+                    COUNT(CASE WHEN sr.rank BETWEEN 21 AND 50 THEN 1 END) as top50,
+                    COUNT(CASE WHEN sr.rank BETWEEN 51 AND 100 THEN 1 END) as top100,
+                    COUNT(CASE WHEN sr.rank IS NULL OR sr.rank <= 0 OR sr.rank > 100 THEN 1 END) as not_ranked
+                FROM keywords k
+                    INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                WHERE k.website_id=" . intval($websiteId) . "
+                    AND sr.result_date='" . addslashes($date) . "'";
+        $counts = $this->db->select($sql, true);
+
+        $rankConditions = [
+            'top10'      => "sr.rank BETWEEN 1 AND 10",
+            'top20'      => "sr.rank BETWEEN 11 AND 20",
+            'top50'      => "sr.rank BETWEEN 21 AND 50",
+            'top100'     => "sr.rank BETWEEN 51 AND 100",
+            'not_ranked' => "(sr.rank IS NULL OR sr.rank <= 0 OR sr.rank > 100)",
+        ];
+
+        foreach ($rankConditions as $distCol => $rankCond) {
+            $count = intval($counts[$distCol] ?? 0);
+            $distribution[$distCol]['count'] = $count;
+            if ($count > 0) {
+                $sql = "SELECT k.name, sr.rank, se.domain as search_engine
+                        FROM keywords k
+                            INNER JOIN searchresults sr ON k.id = sr.keyword_id
+                            INNER JOIN searchengines se ON sr.searchengine_id = se.id
+                        WHERE k.website_id=" . intval($websiteId) . "
+                            AND sr.result_date='" . addslashes($date) . "'
+                            AND $rankCond
+                        ORDER BY sr.rank ASC
+                        LIMIT 5";
+                $results = $this->db->select($sql);
+                $distribution[$distCol]['rows'] = $results ? $results : [];
+            }
         }
 
         return $distribution;
