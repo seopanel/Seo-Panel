@@ -66,6 +66,20 @@ class SaturationCheckerController extends Controller{
 	 * numeric - defensive, not because a real payload was found there.
 	 */
 	function printSearchEngineSaturation($saturationInfo){
+		// bug fix: this had zero rate limiting of any kind - reachable
+		// by any logged-in user (isQuickCheckerEnabled() defaults open
+		// to everyone, not just admins, since SP_HOSTED_VERSION defaults
+		// to '0') with no throttle on how many live Google/Bing (or
+		// DataForSEO, if configured for the backsatu tier) fetches they
+		// can trigger. Same fix as SocialMediaController::doQuickChecker(),
+		// reusing the same fail-open rate limiter login already uses.
+		include_once(SP_CTRLPATH . '/aivisibility.ctrl.php');
+		$aivCtrler = new AIVisibilityController();
+		if (!$aivCtrler->__checkRateLimit('saturation-quickcheck-user:' . intval(isLoggedIn()), 10)) {
+			echo '<span class="note error">Too many checks - please wait a moment and try again.</span>';
+			return;
+		}
+
 		$this->url = $saturationInfo['url'];
 		$saturationCount = $this->__getSaturationRank($saturationInfo['engine']);
 		$websiteUrl = urldecode($this->url);
@@ -163,6 +177,15 @@ class SaturationCheckerController extends Controller{
 			default:
 				$crawlInfo['crawl_status'] = 0;
 				$crawlInfo['log_message'] = 'Unknown search engine';
+				// bug fix: $v and $saturationCount were never set in this
+				// branch (only the google/msn cases set them), so an
+				// unrecognized $engine fell through to
+				// updateCrawlLog($v['log_id'], ...) and the return
+				// statement below with both undefined - no real crawl
+				// happened here, so there's no log_id to update and no
+				// count to report.
+				$v = ['log_id' => null];
+				$saturationCount = 0;
 				break;
 		}
 
@@ -182,7 +205,12 @@ class SaturationCheckerController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-						
+		// bug fix: missing versus the otherwise-identical
+		// showGenerateReports() in Rank/Backlink Checker - without this,
+		// generatereport.ctp.php's website dropdown never pre-selected
+		// the requested site, even when reached via ?sec=generate&website_id=N.
+		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
+
 		$this->render('saturationchecker/generatereport');
 	}
 	

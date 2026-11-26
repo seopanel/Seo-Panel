@@ -30,7 +30,14 @@
             $debugVar .= !empty($_POST['debug_format']) ? "&debug_format=" . urlencode($_POST['debug_format']) : "" ;
 			?>
 			<tr class="<?php echo $class?>">
-				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo $url?></td>
+				<?php
+				// bug fix: defense-in-depth - findSearchEngineSaturation()
+				// already sanitizeData()s $url (strip_tags, so no bare
+				// </td> etc. can reach here today), but every other
+				// value in this file gets an explicit escape of its own
+				// rather than relying solely on an upstream filter.
+				?>
+				<td class="<?php echo $leftBotClass?>" style="text-align:left;padding-left:10px;"><?php echo htmlspecialchars($url)?></td>
 				<td class="td_br_right" width="<?php echo $tdWidth?>" id='googlerank<?php echo $i?>'>
 					<script type="text/javascript">
 						scriptDoLoadPost('saturationchecker.php', 'tmp', 'googlerank<?php echo $i?>', 'sec=saturation&engine=google&url=<?php echo urlencode($url); ?><?php echo $debugVar?>');
