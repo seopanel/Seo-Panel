@@ -370,3 +370,13 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'recommendations', 'cross_tool_rank_drop_other', '[rank_drop_count] keywords dropped'),
 ('en', 'recommendations', 'cross_tool_issue_one', '1 issue'),
 ('en', 'recommendations', 'cross_tool_issue_other', '[auditor_issue_count] issues');
+
+-- bug fix: Facebook/Twitter/Instagram/Reddit's social-media follower
+-- scrapers are confirmed dead (live-tested with this app's own Spider -
+-- login walls, a decommissioned API, and fully client-side-rendered
+-- pages with no embeddable data) and not fixable without each
+-- platform's own paid/OAuth-gated API - this note tells a user BEFORE
+-- they save a link that automated checks for it won't work, instead of
+-- only finding out after every check silently returns nothing.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', 'Automated checks currently unavailable for this platform', 'Automated checks for this platform currently don''t work due to login/API restrictions on its side. You can still add this link, but stats won''t be collected until this is fixed.');

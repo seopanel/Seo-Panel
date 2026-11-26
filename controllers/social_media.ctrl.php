@@ -29,6 +29,18 @@ class SocialMediaController extends Controller{
     var $pageScriptPath = 'social_media.php';
     var $serviceList;
     var $colList;
+    // Confirmed dead by live-testing each one with this app's own Spider
+    // (not a generic fetch tool) against real public profiles: Facebook
+    // and Instagram now redirect unauthenticated requests to a login
+    // wall / render zero follower data server-side; Twitter's old
+    // follow-button widget endpoint returns HTTP 200 with an empty body
+    // (the API was decommissioned); Reddit's modern page no longer has
+    // the static subscribers="N" HTML attribute this app's regex looks
+    // for. None of these are fixable without each platform's own
+    // official, paid/OAuth-gated API - used only to give a clearer
+    // failure message (getSocialMediaDetails()), not to disable the
+    // platform entirely, in case a future maintainer finds another way.
+    var $knownBrokenPlatforms = array('facebook', 'twitter', 'instagram', 'reddit');
     
     function __construct() {
         $engineList = Spider::getCrawlEngineCategoryList("social_media");
@@ -551,7 +563,20 @@ class SocialMediaController extends Controller{
 				$result['msg'] = $smContentInfo['errmsg'];
 			}
 		}
-		
+
+		// bug fix: on a failed check, this always showed the same generic
+		// "details not found" (or, for a platform whose request itself
+		// comes back empty - e.g. Twitter's decommissioned widget API -
+		// an outright BLANK message), indistinguishable from the user
+		// having simply typed the wrong link. For the platforms confirmed
+		// dead (live-tested with this app's own Spider, not just assumed -
+		// see $knownBrokenPlatforms' own comment), replace whatever
+		// message resulted with one naming the real cause.
+		if (!$result['status'] && in_array($smType, $this->knownBrokenPlatforms, true)) {
+			$label = !empty($this->serviceList[$smType]['label']) ? $this->serviceList[$smType]['label'] : ucfirst($smType);
+			$result['msg'] = "Automated checks for this platform currently don't work due to login/API restrictions on {$label}'s side - this is a known platform limitation, not an issue with your link.";
+		}
+
 		return $result;
 	}
 	

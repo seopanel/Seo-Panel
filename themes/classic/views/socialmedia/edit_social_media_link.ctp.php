@@ -71,6 +71,24 @@ if(!empty($validationMsg)){
 					<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
 				</a>
 			</div>
+			<?php
+			// bug fix: let a user know BEFORE saving a link that this
+			// platform's automated checks are currently broken (confirmed
+			// via live testing, not assumed - see SocialMediaController::
+			// $knownBrokenPlatforms' own comment), instead of only finding
+			// out later when every check silently returns nothing. Initial
+			// visibility is set server-side from $post['type'] here (not
+			// left to only fire on the #sm_type change handler below), so
+			// it's correct on first render too - the exact "wrong on load,
+			// only right after you touch the dropdown" bug this same
+			// research pass already found and fixed elsewhere.
+			$knownBrokenPlatforms = array('facebook', 'twitter', 'instagram', 'reddit');
+			$smSelectedType = $post['type'] ?? '';
+			?>
+			<div class="alert alert-warning" style="padding: 10px 6px; margin-top: 8px; <?php echo in_array($smSelectedType, $knownBrokenPlatforms, true) ? '' : 'display: none;'?>" id="sm_unsupported_note">
+				<i class="fas fa-exclamation-triangle me-1"></i>
+				<?php echo $spTextSMC['Automated checks currently unavailable for this platform']?>
+			</div>
 		</td>
 	</tr>
 </table>
@@ -96,19 +114,27 @@ var typeList = [];
 	typeList["<?php echo $serviceName?>"] = "<?php echo $serviceInfo['example']?>";
 <?php }?>
 
-$(function() {	
+var knownBrokenPlatforms = ['facebook', 'twitter', 'instagram', 'reddit'];
+
+$(function() {
 	$('#sm_type').change(function() {
 		smType = $(this).val();
 		$('#ex_review_link').html(typeList[smType]);
-		
+
 		if (smType == 'linkedin') {
 			$('#sm_url_label').html("<?php echo $spTextSMC['Company Id']?>:");
 			$('#sm_url_note').show();
 		} else {
 			$('#sm_url_label').html("<?php echo $spText['common']['Link']?>:");
 			$('#sm_url_note').hide();
-		}		
+		}
+
+		if (knownBrokenPlatforms.indexOf(smType) !== -1) {
+			$('#sm_unsupported_note').show();
+		} else {
+			$('#sm_unsupported_note').hide();
+		}
 	});
-	
+
 });
 </script>
