@@ -319,7 +319,15 @@ class Install {
 				<tr><th colspan="2" class="header" style="margin-top: 15px;">Administrator Settings</th></tr>
 				<tr>
 					<th>Admin Email <span class="required">*</span></th>
-					<td><input type="email" name="email" id="email" value="<?php echo isset($info['email']) ? $info['email'] : '';?>" placeholder="admin@example.com" required></td>
+					<td>
+						<input type="email" name="email" id="email" value="<?php echo isset($info['email']) ? $info['email'] : '';?>" placeholder="admin@example.com" required>
+						<div style="margin-top: 6px;">
+							<label style="font-weight: normal;">
+								<input type="checkbox" name="newsletter" id="newsletter" value="1" <?php echo (!isset($info['newsletter']) || $info['newsletter']) ? 'checked' : '';?>>
+								Receive monthly newsletters
+							</label>
+						</div>
+					</td>
 				</tr>
 			</table>
 		</div>
@@ -647,7 +655,14 @@ class Install {
 		// falling back to anything that blocks.
 		include(SP_INSTALL_CONFIG_FILE);
 		include_once(SP_INSTALL_CONFIG_FILE_EXTRA);
-		$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR']."&email=".urlencode($info['email']);
+		$installUpdateUrl = "https://www.seopanel.org/installupdate.php?url=".urlencode($info['web_path'])."&ip=".$_SERVER['SERVER_ADDR'];
+		// only include the admin's email if they left the "Receive
+		// monthly newsletters" checkbox checked (checked by default) -
+		// a plain checkbox sends no value at all when unchecked, so its
+		// absence from $info is the opt-out signal.
+		if (!empty($info['newsletter'])) {
+			$installUpdateUrl .= "&email=".urlencode($info['email']);
+		}
 		$installUpdateUrl .= "&version=".SP_INSTALLED;
 		if (function_exists('shell_exec')) {
 			@shell_exec('curl -s -m 5 ' . escapeshellarg($installUpdateUrl) . ' > /dev/null 2>&1 &');
