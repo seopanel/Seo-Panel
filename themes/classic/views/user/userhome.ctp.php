@@ -137,7 +137,7 @@
         			<option value="<?php echo intval($spSharedWs['id'])?>" <?php echo (intval($spSharedWs['id']) == $spSharedCurrentWebsiteId) ? 'selected' : ''?>><?php echo htmlspecialchars($spSharedWs['name'])?></option>
         		<?php } ?>
         	</select>
-        	<?php if ($spSharedPeriodMode == "preset") { ?>
+        	<span id="sp_shared_period_group" style="display:<?php echo ($spSharedPeriodMode == "preset") ? '' : 'none'?>;align-items:center;gap:16px;">
         	<label style="font-weight:600;color:#444;font-size:13px;margin:0;"><?php echo $spText['common']['Period']?>:</label>
         	<select id="sp_shared_period" class="custom-select" style="width:auto;max-width:180px;">
         		<option value="day" <?php echo $spSharedCurrentPeriod == 'day' ? 'selected' : ''?>><?php echo $spText['label']['Day']?></option>
@@ -145,7 +145,7 @@
         		<option value="month" <?php echo $spSharedCurrentPeriod == 'month' ? 'selected' : ''?>><?php echo $spText['label']['Month']?></option>
         		<option value="year" <?php echo $spSharedCurrentPeriod == 'year' ? 'selected' : ''?>><?php echo $spText['label']['Year']?></option>
         	</select>
-        	<?php } ?>
+        	</span>
         </div>
         <script>
         $(function() {
@@ -154,17 +154,17 @@
         </script>
 		<ul class="nav nav-tabs" id="main_dashboard_nav">
             <li class="nav-item">
-            	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/" onclick="return navigateDashboardTab(this, '');">
+            	<a class="nav-link <?php echo $mainTabClass?>" href="<?php echo SP_WEBPATH?>/" data-tab-type="" data-script="dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, '');">
             		<i class="fas fa-tachometer-alt"></i> <span class="nav-label"><?php echo $spText['label']['Overview']?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" onclick="return navigateDashboardTab(this, 'recommendations');">
+            	<a class="nav-link <?php echo $rcTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=recommendations" data-tab-type="recommendations" data-script="recommendations_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'recommendations');">
             		<i class="fas fa-eye"></i> <span class="nav-label">AI Visibility</span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $waTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=website_analytics" onclick="return navigateDashboardTab(this, 'website_analytics');">
+            	<a class="nav-link <?php echo $waTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=website_analytics" data-tab-type="website_analytics" data-script="website_analytics_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'website_analytics');">
             		<i class="fas fa-globe"></i> <span class="nav-label"><?php echo $spText['label']['Website'] ?? 'Website'?></span>
             	</a>
             </li>
@@ -174,32 +174,32 @@
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $anTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=analytics" onclick="return navigateDashboardTab(this, 'analytics');">
+            	<a class="nav-link <?php echo $anTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=analytics" data-tab-type="analytics" data-script="analytics_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'analytics');">
             		<i class="fas fa-chart-area"></i> <span class="nav-label"><?php echo $spText['label']['Analytics'] ?? 'Analytics'?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $scTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=search_console" onclick="return navigateDashboardTab(this, 'search_console');">
+            	<a class="nav-link <?php echo $scTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=search_console" data-tab-type="search_console" data-script="search_console_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'search_console');">
             		<i class="fas fa-search-plus"></i> <span class="nav-label"><?php echo $spText['label']['Search Console'] ?? 'Search Console'?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $saTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=site_auditor" onclick="return navigateDashboardTab(this, 'site_auditor');">
+            	<a class="nav-link <?php echo $saTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=site_auditor" data-tab-type="site_auditor" data-script="siteauditor_dashboard.php" data-period-mode="none" onclick="return navigateDashboardTab(this, 'site_auditor');">
             		<i class="fas fa-search"></i> <span class="nav-label"><?php echo $spTextTools['Site Auditor'] ?? 'Site Auditor'?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $smTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=social_media" onclick="return navigateDashboardTab(this, 'social_media');">
+            	<a class="nav-link <?php echo $smTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=social_media" data-tab-type="social_media" data-script="social_media_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'social_media');">
             		<i class="fas fa-share-alt"></i> <span class="nav-label"><?php echo $spText['label']['Social Media']?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $rvTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=reviews" onclick="return navigateDashboardTab(this, 'reviews');">
+            	<a class="nav-link <?php echo $rvTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=reviews" data-tab-type="reviews" data-script="review_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'reviews');">
             		<i class="fas fa-star"></i> <span class="nav-label"><?php echo $spText['label']['Reviews']?></span>
             	</a>
             </li>
             <li class="nav-item">
-            	<a class="nav-link <?php echo $dsTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=directory_submission" onclick="return navigateDashboardTab(this, 'directory_submission');">
+            	<a class="nav-link <?php echo $dsTabView?>" href="<?php echo SP_WEBPATH?>/?dashboard=directory_submission" data-tab-type="directory_submission" data-script="directory_submission_dashboard.php" data-period-mode="preset" onclick="return navigateDashboardTab(this, 'directory_submission');">
             		<i class="fas fa-folder-open"></i> <span class="nav-label"><?php echo $spTextTools['Directory Submission'] ?? 'Directory Submission'?></span>
             	</a>
             </li>
@@ -314,39 +314,116 @@ function getCurrentWebsiteId() {
     return websiteId;
 }
 
+// Switches to a non-Keywords dashboard tab in place: swaps #content via
+// scriptDoLoad() (the same AJAX fragment load every tab's own content
+// already goes through, see userhome.ctp.php's dispatch <script> for the
+// first page load) instead of a full window.location.href reload, which
+// previously caused a visible blank flash on every tab click.
+function spActivateDashboardTab(tabLink, tabType, pushState) {
+    // $custSubMenu's embedded Keywords sub-view (see userhome.ctp.php)
+    // renders with no #content div at all - fall back to a real
+    // navigation rather than throwing on a null getElementById('content').
+    if (!document.getElementById('content')) {
+        window.location.href = tabLink.href;
+        return;
+    }
+
+    var websiteId = getCurrentWebsiteId();
+    if (!websiteId) return;
+
+    var script = tabLink.dataset.script;
+    var periodMode = tabLink.dataset.periodMode;
+    var period = sessionStorage.getItem('sp_selected_period');
+
+    document.querySelectorAll('#main_dashboard_nav .nav-link').forEach(function(a) {
+        a.classList.remove('active');
+    });
+    tabLink.classList.add('active');
+
+    var periodGroup = document.getElementById('sp_shared_period_group');
+    if (periodGroup) {
+        periodGroup.style.display = (periodMode === 'preset') ? '' : 'none';
+    }
+
+    var args = '&website_id=' + websiteId;
+    if (periodMode === 'preset' && period) {
+        args += '&period=' + period;
+    }
+    scriptDoLoad(script, 'content', args);
+
+    // Re-point the shared filter bar's own website/period-change reload
+    // (spInitSharedFilterBar()'s doReload(), unrelated to this tab-switch
+    // itself) at the newly active tab - it was wired to whichever tab was
+    // active at the last full page render, via the same function call this
+    // re-invokes (js/common.js).
+    spInitSharedFilterBar(script, periodMode, 'ajax');
+
+    if (pushState) {
+        var newUrl = tabLink.href;
+        var separator = newUrl.indexOf('?') !== -1 ? '&' : '?';
+        newUrl += separator + 'website_id=' + websiteId;
+        if (periodMode === 'preset' && period) {
+            newUrl += '&period=' + period;
+        }
+        history.pushState({tabType: tabType}, '', newUrl);
+    }
+}
+
 // Function to navigate dashboard tabs with website persistence
 function navigateDashboardTab(linkElement, tabType) {
-    var websiteId = getCurrentWebsiteId();
-    var baseUrl = linkElement.href;
-    var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
-    var newUrl = baseUrl;
-    var addedParam = false;
+    // Keywords (overview.php) renders as a full standalone page, never as
+    // an ajax fragment into #content (see the $spSharedNavMode comment
+    // above) - it keeps doing a real navigation, carrying website_id/period
+    // forward exactly as before.
+    if (tabType === 'overview') {
+        var websiteId = getCurrentWebsiteId();
+        var baseUrl = linkElement.href;
+        var separator = baseUrl.indexOf('?') !== -1 ? '&' : '?';
+        var newUrl = baseUrl;
+        var addedParam = false;
 
-    // Add website_id parameter to URL if it exists
-    if (websiteId) {
-        newUrl += separator + 'website_id=' + websiteId;
-        separator = '&';
-        addedParam = true;
+        if (websiteId) {
+            newUrl += separator + 'website_id=' + websiteId;
+            separator = '&';
+            addedParam = true;
+        }
+
+        // Carry the period preset forward too, same as website_id - read
+        // from sessionStorage (kept in sync by spInitSharedFilterBar() on
+        // every change) rather than the live #sp_shared_period select,
+        // since that select only exists in the DOM on tabs that actually
+        // show a period control; sessionStorage still has the last-chosen
+        // value regardless of which tab you're navigating away from.
+        // Harmless to pass along even though Keywords itself ignores it.
+        var period = sessionStorage.getItem('sp_selected_period');
+        if (period) {
+            newUrl += separator + 'period=' + period;
+            addedParam = true;
+        }
+
+        window.location.href = addedParam ? newUrl : baseUrl;
+        return false;
     }
 
-    // Carry the period preset forward too, same as website_id - read from
-    // sessionStorage (kept in sync by spInitSharedFilterBar() on every
-    // change) rather than the live #sp_shared_period select, since that
-    // select only exists in the DOM on tabs that actually show a period
-    // control; sessionStorage still has the last-chosen value regardless
-    // of which tab you're navigating away from. Harmless to pass along
-    // even to a tab that ignores it (Site Auditor, AI Visibility,
-    // Keywords) - those controllers simply never read it.
-    var period = sessionStorage.getItem('sp_selected_period');
-    if (period) {
-        newUrl += separator + 'period=' + period;
-        addedParam = true;
-    }
-
-    window.location.href = addedParam ? newUrl : baseUrl;
-
+    spActivateDashboardTab(linkElement, tabType, true);
     return false; // Prevent default link behavior
 }
+
+// Browser back/forward across tab switches pushed via spActivateDashboardTab()
+window.addEventListener('popstate', function() {
+    var params = new URLSearchParams(window.location.search);
+    var tabType = params.get('dashboard') || '';
+    var tabLink = document.querySelector('#main_dashboard_nav .nav-link[data-tab-type="' + tabType + '"]');
+    if (!tabLink) {
+        // Keywords (no data-tab-type) or an unrecognized state - this
+        // in-place path can't safely handle it, so fall back to a real
+        // reload, which re-renders correctly via the existing server-side
+        // $_GET['dashboard'] switch above.
+        window.location.reload();
+        return;
+    }
+    spActivateDashboardTab(tabLink, tabType, false);
+});
 
 // Store website ID whenever it's changed in any form
 $(document).ready(function() {
