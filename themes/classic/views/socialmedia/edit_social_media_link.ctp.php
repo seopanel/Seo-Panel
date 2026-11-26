@@ -48,7 +48,7 @@ if(!empty($validationMsg)){
 					<?php }?>
 				<?php }?>
 			</select>
-			<?php echo $errMsg['service_name']?>
+			<?php echo $errMsg['type']?>
 		</td>
 	</tr>
 	<tr class="white_row">

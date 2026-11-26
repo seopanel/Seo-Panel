@@ -435,10 +435,8 @@ class ReviewManagerController extends ReviewBase{
 	 */
 	function checkQuickCheckerStatus($listInfo = '') {
 		$taskId = !empty($listInfo['task_id']) ? $listInfo['task_id'] : '';
-		$smType = !empty($listInfo['type']) ? $listInfo['type'] : '';
-		$smLink = !empty($listInfo['url']) ? $listInfo['url'] : '';
 
-		if (empty($taskId) || empty($smType)) {
+		if (empty($taskId)) {
 			showErrorMsg($_SESSION['text']['common']['Internal error occured']);
 			return;
 		}
@@ -461,6 +459,15 @@ class ReviewManagerController extends ReviewBase{
 			showErrorMsg("Task not found");
 			return;
 		}
+
+		// bug fix: reflected XSS + spoofable platform/URL - $smType/$smLink
+		// used to come straight from $_POST (type/url) with no cross-check
+		// against the actual task row, and quick_checker_pending.ctp.php
+		// echoes the platform via ucfirst() with no escaping. Always use
+		// the DB-stored values (written at task-creation time from an
+		// already-validated platform/URL) instead of trusting the request.
+		$smType = $taskInfo['platform'];
+		$smLink = $taskInfo['ref_url'];
 
 		if ($taskInfo['status'] == 'failed') {
 			$errorMsg = !empty($taskInfo['error_message']) ? $taskInfo['error_message'] : "Task failed";
@@ -502,7 +509,9 @@ class ReviewManagerController extends ReviewBase{
 		if (!empty($smInfo) && !empty($smLink)) {
 
 			// Web scraping method - used for quick checker and when DFS is disabled
-			// For async DFS processing, use postReviewTaskToDFS() and fetchPendingDFSReviewResults() via cron
+			// For async DFS processing, use postReviewTaskToDFS() to post the task;
+			// completed results are picked up by DataForSEOController::processReviewTask()
+			// via its own processPendingDFSTasks() cron dispatch, not by this controller.
 			// if params needs to be added with url
 			if (!empty($smInfo['url_part'])) {
 				$smLink .= stristr($smLink, '?') ? str_replace("?", "&", $smInfo['url_part']) : $smInfo['url_part'];
@@ -588,35 +597,6 @@ class ReviewManagerController extends ReviewBase{
 		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
 		$dfsCtrler = new DataForSEOController();
 		return $dfsCtrler->postReviewTask($smType, $linkId, $smLink, $reportDate);
-	}
-
-	/**
-	 * Fetch results for pending DFS review tasks
-	 *
-	 * @param string $reportDate Report date
-	 * @return array List of completed results with link info
-	 */
-	function fetchPendingDFSReviewResults($reportDate = '') {
-		include_once(SP_CTRLPATH."/dataforseo.ctrl.php");
-		$dfsCtrler = new DataForSEOController();
-
-		$reportDate = !empty($reportDate) ? $reportDate : date('Y-m-d');
-		$pendingTasks = $dfsCtrler->getPendingDFSTasks('review', $reportDate);
-		$completedResults = [];
-
-		foreach ($pendingTasks as $taskInfo) {
-			$result = $dfsCtrler->fetchReviewTaskResult($taskInfo);
-
-			if ($result['completed']) {
-				$completedResults[] = [
-					'link_id' => $taskInfo['ref_id'],
-					'platform' => $taskInfo['platform'],
-					'result' => $result,
-				];
-			}
-		}
-
-		return $completedResults;
 	}
 
 	/**

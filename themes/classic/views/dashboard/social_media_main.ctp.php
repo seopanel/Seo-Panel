@@ -214,8 +214,18 @@ if (!empty($noWebsites)) {
 											<td><?php echo number_format($link['followers'] ?? 0)?></td>
 											<td><?php echo number_format($link['likes'] ?? 0)?></td>
 											<td><?php echo !empty($link['report_date']) ? date('M d, Y', strtotime($link['report_date'])) : '-'?></td>
+											<?php
+											// bug fix: for LinkedIn, the 'url' column stores a bare
+											// numeric company id, not a URL (see createSocialMediaLink())
+											// - every other display spot already special-cases this
+											// (show_social_media_links.ctp.php, the CSV export), this one
+											// was missed, so "View" linked to a nonsensical relative path.
+											$linkHref = ($link['type'] == 'linkedin')
+												? 'https://www.linkedin.com/company/' . $link['url']
+												: $link['url'];
+											?>
 											<td>
-												<a href="<?php echo htmlspecialchars($link['url'])?>" target="_blank" class="btn btn-sm btn-info">
+												<a href="<?php echo htmlspecialchars($linkHref)?>" target="_blank" class="btn btn-sm btn-info">
 													<i class="fas fa-external-link-alt"></i> View
 												</a>
 											</td>

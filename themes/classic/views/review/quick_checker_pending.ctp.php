@@ -2,7 +2,7 @@
 	<h5><i class="fas fa-spinner fa-spin"></i> Task Submitted to DataForSEO</h5>
 	<p>Your review check request has been submitted and is being processed.</p>
 	<p><strong>URL:</strong> <?php echo htmlentities($smLink, ENT_QUOTES)?></p>
-	<p><strong>Platform:</strong> <?php echo ucfirst($smType)?></p>
+	<p><strong>Platform:</strong> <?php echo htmlspecialchars(ucfirst($smType), ENT_QUOTES)?></p>
 	<?php if (!empty($statusMessage)) {?>
 		<p><strong>Status:</strong> <?php echo $statusMessage?></p>
 	<?php }?>

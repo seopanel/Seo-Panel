@@ -456,11 +456,18 @@ class DirectoryController extends Controller{
 		$websiteInfo = $websiteController->__getWebsiteInfo($submitInfo['website_id']);		
 		$websiteInfo = $this->__getSubmitTitleDes($websiteInfo);
 		
-		$postData = $dirInfo['title_col']."=".$websiteInfo['title'];
-		$postData .= "&".$dirInfo['url_col']."=".$websiteInfo['url'];
-		$postData .= "&".$dirInfo['description_col']."=".$websiteInfo['description'];
-		$postData .= "&".$dirInfo['name_col']."=".$websiteInfo['owner_name'];
-		$postData .= "&".$dirInfo['email_col']."=".$websiteInfo['owner_email'];
+		// bug fix: these values (website title/url/description/owner name/
+		// email) are free-form text that can contain &, =, %, or + - this
+		// string is handed to Spider as a raw CURLOPT_POSTFIELDS string,
+		// which curl sends byte-for-byte with NO auto-encoding (curl only
+		// url-encodes POST fields when given an array, not a string) - an
+		// unencoded value here silently corrupts the real request sent to
+		// the third-party directory by breaking its field boundaries.
+		$postData = $dirInfo['title_col']."=".rawurlencode($websiteInfo['title']);
+		$postData .= "&".$dirInfo['url_col']."=".rawurlencode($websiteInfo['url']);
+		$postData .= "&".$dirInfo['description_col']."=".rawurlencode($websiteInfo['description']);
+		$postData .= "&".$dirInfo['name_col']."=".rawurlencode($websiteInfo['owner_name']);
+		$postData .= "&".$dirInfo['email_col']."=".rawurlencode($websiteInfo['owner_email']);
 		$postData .= "&".$dirInfo['category_col']."=".$submitInfo[$dirInfo['category_col']];
 		$postData .= "&".$dirInfo['cptcha_col']."=".$submitInfo[$dirInfo['cptcha_col']];
 		$postData .= $submitInfo['add_params'];
@@ -488,8 +495,11 @@ class DirectoryController extends Controller{
 		
 		// check phpLD directory. Then add extra values
 		if ($scriptInfo['name'] == 'phpLD') {
-			$postData .= "&OWNER_NEWSLETTER_ALLOW=on&META_KEYWORDS={$websiteInfo['keywords']}
-			&META_DESCRIPTION=" . substr($websiteInfo['description'], 0, 249) . "&META_DESCRIPTION_limit=250&formSubmitted=1";
+			// bug fix: this used to span two source lines inside a double-
+			// quoted string, embedding a literal newline+tabs into the
+			// actual POST body right after META_KEYWORDS - corrupting that
+			// field's value on every submission to a phpLD-type directory.
+			$postData .= "&OWNER_NEWSLETTER_ALLOW=on&META_KEYWORDS=" . rawurlencode($websiteInfo['keywords']) . "&META_DESCRIPTION=" . rawurlencode(substr($websiteInfo['description'], 0, 249)) . "&META_DESCRIPTION_limit=250&formSubmitted=1";
 		}
 		
 		$spider = new Spider(); 
@@ -527,12 +537,18 @@ class DirectoryController extends Controller{
 				$this->db->query($sql);				
 			}			
 			
+			// bug fix: $subInfo[id] used a bare, unquoted `id` - on PHP 8+
+			// that's always a fatal "Undefined constant" Error (not
+			// suppressed by empty() - that only suppresses undefined
+			// array-index/variable notices, not an undefined constant),
+			// so this fataled out of submitSite() entirely on every call,
+			// before ever reaching the dedupe logic it was meant to run.
 			$sql = "select id from dirsubmitinfo where website_id={$submitInfo['website_id']} and directory_id={$submitInfo['dir_id']}";
-			$subInfo = $this->db->select($sql);
-			if(empty($subInfo) || empty($subInfo[id])){
-				$sql = "insert into dirsubmitinfo(website_id,directory_id,status,submit_time) values({$submitInfo['website_id']}, {$submitInfo['dir_id']}, $status,".time().")";				
+			$subInfo = $this->db->select($sql, true);
+			if(empty($subInfo['id'])){
+				$sql = "insert into dirsubmitinfo(website_id,directory_id,status,submit_time) values({$submitInfo['website_id']}, {$submitInfo['dir_id']}, $status,".time().")";
 			}else{
-				$sql = "update dirsubmitinfo set status=$status,submit_time=".time()." where id={$subInfo[0][id]}";
+				$sql = "update dirsubmitinfo set status=$status,submit_time=".time()." where id={$subInfo['id']}";
 			}
 			$this->db->query($sql);			
 		}		

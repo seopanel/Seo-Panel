@@ -104,7 +104,7 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 							<?php }?>
 						<?php }?>
 					</select>
-					<?php echo $errMsg['service_name']?>
+					<?php echo $errMsg['type']?>
 				</td>
 				<th class="pl-4"><?php echo $spText['common']['Period']?>:</th>
 				<td>
