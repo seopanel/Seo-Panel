@@ -40,6 +40,17 @@ class RecommendationsController extends Controller {
             $refreshedAt = $this->__getLastRefreshedAt($websiteId, $userId);
             $this->set('refreshedAt', $refreshedAt);
             $recommendations = $this->__getStoredRecommendations($websiteId, $userId);
+            // Render each row's title/description in the viewer's own
+            // language (see renderRecommendationText()'s own comment) -
+            // resolved once here, in the controller, so the view and the
+            // "Add to SEO Diary" prefill below both just read $rec['title']/
+            // ['description'] as before, with no view changes needed.
+            foreach ($recommendations as &$rec) {
+                $rendered = $this->renderRecommendationText($rec, $_SESSION['lang_code']);
+                $rec['title'] = $rendered['title'];
+                $rec['description'] = $rendered['description'];
+            }
+            unset($rec);
             $this->set('recommendations', $recommendations);
         } else {
             $this->set('refreshedAt', null);
@@ -311,6 +322,91 @@ class RecommendationsController extends Controller {
     }
 
     /*
+     * Renders a stored recommendation's title/description in the viewer's
+     * language. meta['i18n_key'] (added by every generator below) names
+     * the static message shape - a DIFFERENT thing from meta['rule'],
+     * which is __recommendationIdentity()'s own per-row anti-spam dedup
+     * key and can embed dynamic ids (prompt/provider/link id, etc.) that
+     * would never line up with a reusable texts-table label.
+     *
+     * Looks up '<i18n_key>_title'/'<i18n_key>_desc' from the 'recommendations'
+     * texts category, then substitutes meta's own scalar values as
+     * [placeholder]s - the same str_replace('[x]', $value, $tpl) pattern
+     * already used elsewhere in this app for dynamic-but-translatable text
+     * (e.g. KeywordController::listKeywords()'s '[keywordcount]',
+     * sp-common.php's '[year]'). A row with no i18n_key (a legacy row
+     * generated before this existed) falls back to its own stored
+     * title/description unchanged - never crashes on old data.
+     */
+    function renderRecommendationText($rec, $langCode) {
+        $meta = !empty($rec['meta']) ? json_decode($rec['meta'], true) : array();
+        if (empty($meta['i18n_key'])) {
+            return array('title' => $rec['title'], 'description' => $rec['description']);
+        }
+
+        $texts = $this->getLanguageTexts('recommendations', $langCode);
+        $key   = $meta['i18n_key'];
+
+        $titleTpl = isset($texts[$key . '_title']) ? $texts[$key . '_title'] : $rec['title'];
+        $descTpl  = isset($texts[$key . '_desc'])  ? $texts[$key . '_desc']  : $rec['description'];
+
+        return array(
+            'title'       => $this->__renderRecommendationTemplate($titleTpl, $meta, $texts),
+            'description' => $this->__renderRecommendationTemplate($descTpl, $meta, $texts),
+        );
+    }
+
+    /*
+     * Resolves this fix's 3 small template tokens (checked/replaced in
+     * this order, since a fragment's own body can itself contain a plain
+     * [meta_key] placeholder that still needs the final substitution pass
+     * below) before substituting plain [meta_key] placeholders directly:
+     * - {{plural:metaKey:fragmentLabel}} - fragmentLabel_one/_other by
+     *   intval(meta[metaKey]) == 1, e.g. a "1 page"/"[count] pages" pair.
+     * - {{cond:metaKey:fragmentLabel}} - fragmentLabel included only if
+     *   meta[metaKey] is truthy, else omitted entirely (an optional
+     *   trailing clause, e.g. "with goal completions down from X to Y").
+     * - {{choice:metaKey:labelIfTruthy:labelIfFalsy}} - picks one of two
+     *   unrelated fragments by meta[metaKey]'s truthiness (not a count,
+     *   not simple presence/absence of a clause - a genuine either/or,
+     *   e.g. a boolean flag or a value that is null when the other
+     *   fragment applies).
+     */
+    private function __renderRecommendationTemplate($tpl, $meta, $texts) {
+        $tpl = preg_replace_callback('/\{\{plural:([a-z0-9_]+):([a-z0-9_]+)\}\}/i', function($m) use ($meta, $texts) {
+            $metaKey  = $m[1];
+            $count    = isset($meta[$metaKey]) ? intval($meta[$metaKey]) : 0;
+            $label    = $m[2] . (($count == 1) ? '_one' : '_other');
+            $fragment = isset($texts[$label]) ? $texts[$label] : '';
+            return $this->__substituteRecommendationPlaceholders($fragment, $meta);
+        }, $tpl);
+
+        $tpl = preg_replace_callback('/\{\{cond:([a-z0-9_]+):([a-z0-9_]+)\}\}/i', function($m) use ($meta, $texts) {
+            $metaKey = $m[1];
+            if (empty($meta[$metaKey])) return '';
+            $fragment = isset($texts[$m[2]]) ? $texts[$m[2]] : '';
+            return $this->__substituteRecommendationPlaceholders($fragment, $meta);
+        }, $tpl);
+
+        $tpl = preg_replace_callback('/\{\{choice:([a-z0-9_]+):([a-z0-9_]+):([a-z0-9_]+)\}\}/i', function($m) use ($meta, $texts) {
+            $metaKey = $m[1];
+            $label   = !empty($meta[$metaKey]) ? $m[2] : $m[3];
+            $fragment = isset($texts[$label]) ? $texts[$label] : '';
+            return $this->__substituteRecommendationPlaceholders($fragment, $meta);
+        }, $tpl);
+
+        return $this->__substituteRecommendationPlaceholders($tpl, $meta);
+    }
+
+    private function __substituteRecommendationPlaceholders($str, $meta) {
+        foreach ($meta as $k => $v) {
+            if (is_array($v)) continue;
+            $str = str_replace('[' . $k . ']', $v, $str);
+        }
+        return $str;
+    }
+
+    /*
      * Send one aggregated "what's new" email for a user, covering every
      * website of theirs that has genuinely new insights today. Mirrors
      * ReportController::sentEmailNotificationForReportGen()'s shape.
@@ -327,6 +423,20 @@ class RecommendationsController extends Controller {
         $this->set('commonTexts', $this->getLanguageTexts('common', $userInfo['lang_code']));
         $loginTexts = $this->getLanguageTexts('login', $userInfo['lang_code']);
         $this->set('loginTexts', $loginTexts);
+
+        // Render each row's title/description in the RECIPIENT's own
+        // language (not $_SESSION['lang_code'] - this runs from a
+        // session-less cron context, same reasoning this function already
+        // applies to aiTexts/commonTexts/loginTexts above).
+        foreach ($newInsightsByWebsite as &$websiteInfo) {
+            foreach ($websiteInfo['rows'] as &$rec) {
+                $rendered = $this->renderRecommendationText($rec, $userInfo['lang_code']);
+                $rec['title'] = $rendered['title'];
+                $rec['description'] = $rendered['description'];
+            }
+            unset($rec);
+        }
+        unset($websiteInfo);
 
         $name = trim($userInfo['first_name'] . ' ' . $userInfo['last_name']);
         $this->set('name', $name);
@@ -451,6 +561,7 @@ class RecommendationsController extends Controller {
                 "internal linking, and quality backlinks could push it onto page 1 and significantly increase traffic."
             );
             $meta = addslashes(json_encode(array(
+                'i18n_key'         => 'webmaster_opportunity',
                 'keyword'          => $kw['name'],
                 'average_position' => $pos,
                 'impressions'      => $imp,
@@ -524,6 +635,7 @@ class RecommendationsController extends Controller {
                 "get cited."
             );
             $meta = addslashes(json_encode(array(
+                'i18n_key'   => 'ai_overview_citation',
                 'keyword'    => $keyword,
                 'searchengine' => $row['se_domain'],
                 'rank'       => $rank,
@@ -562,7 +674,7 @@ class RecommendationsController extends Controller {
             "pages to be eligible for citation in AI-generated answers, remove those directives."
         );
 
-        $meta = addslashes(json_encode(array('rule' => 'ai_bot_blocked')));
+        $meta = addslashes(json_encode(array('rule' => 'ai_bot_blocked', 'i18n_key' => 'ai_bot_blocked', 'count' => $count)));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
@@ -593,7 +705,8 @@ class RecommendationsController extends Controller {
             ? addslashes("The last AI crawler visit (GPTBot, ClaudeBot, PerplexityBot, etc.) recorded for this site was on {$site['bot_last_seen_at']}. This may mean AI platforms are indexing your content less often.")
             : "No AI crawler visit has been recorded for this site yet since the bot collector script was installed.";
 
-        $meta = addslashes(json_encode(array('rule' => 'ai_bot_silent')));
+        $i18nKey = !empty($site['bot_last_seen_at']) ? 'ai_bot_silent_with_date' : 'ai_bot_silent_never';
+        $meta = addslashes(json_encode(array('rule' => 'ai_bot_silent', 'i18n_key' => $i18nKey, 'bot_last_seen_at' => $site['bot_last_seen_at'])));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
@@ -702,6 +815,8 @@ class RecommendationsController extends Controller {
                 "and has since dropped to position {$f['latest_rank']} (as of {$f['latest_date']}). Check for recent " .
                 "content, technical, or backlink changes that might explain the drop."
             );
+            $f['i18n_key'] = 'rank_drop';
+            $f['keyword'] = $keyword;
             $meta = addslashes(json_encode($f));
 
             $this->db->query(
@@ -763,7 +878,7 @@ class RecommendationsController extends Controller {
 
             $title = addslashes($check['title']($count));
             $desc  = addslashes($check['desc']($count));
-            $meta  = addslashes(json_encode(array('rule' => $check['rule'])));
+            $meta  = addslashes(json_encode(array('rule' => $check['rule'], 'i18n_key' => $check['rule'], 'count' => $count)));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
@@ -862,6 +977,7 @@ class RecommendationsController extends Controller {
                     "As of {$f['latest_date']}, it's no longer mentioned."
                 );
                 $rule = "ai_perception:{$f['prompt_id']}:{$f['provider']}:mention_lost";
+                $i18nKey = 'ai_perception_mention_lost';
             } else {
                 $type  = 'warning';
                 $title = addslashes("{$providerLabel}'s sentiment turned negative for \"{$promptText}\"");
@@ -870,6 +986,7 @@ class RecommendationsController extends Controller {
                     "{$f['latest_date']}. Open the AI Perception check to review the response."
                 );
                 $rule = "ai_perception:{$f['prompt_id']}:{$f['provider']}:sentiment_negative";
+                $i18nKey = 'ai_perception_sentiment_negative';
             }
             // 'rule' keyed by (prompt_id, provider, which condition fired) -
             // stable across refreshes even as prev_date/latest_date/title
@@ -879,6 +996,13 @@ class RecommendationsController extends Controller {
             // a dedicated review pass) and re-triggers the daily digest
             // email every day instead of just once.
             $f['rule'] = $rule;
+            $f['i18n_key'] = $i18nKey;
+            // overwrite the raw provider enum with its display label (same
+            // resolution __aiPerceptionProviderLabels() already does here)
+            // so renderRecommendationText() can substitute [provider]
+            // directly without needing its own copy of this mapping.
+            $f['provider'] = $providerLabel;
+            $f['prompt_text'] = $promptText;
             $meta = addslashes(json_encode($f));
 
             $this->db->query(
@@ -943,6 +1067,10 @@ class RecommendationsController extends Controller {
             // __generateAiPerceptionDropRecommendations() for why this
             // matters (anti-spam diffing, not just dedup on this one run).
             $r['rule'] = "ai_perception_competitor:{$r['prompt_id']}:{$r['provider']}:{$r['competitor_id']}";
+            $r['i18n_key'] = 'ai_perception_competitor';
+            $r['provider'] = $providerLabel;
+            $r['prompt_text'] = $promptText;
+            $r['competitor_name'] = $competitorName;
             $meta = addslashes(json_encode($r));
 
             $this->db->query(
@@ -1001,7 +1129,7 @@ class RecommendationsController extends Controller {
             "now at {$latestCount} as of {$latest['result_date']}. Review recently lost or removed backlinks."
         );
         $meta = addslashes(json_encode(array(
-            'rule' => 'backlink_drop',
+            'rule' => 'backlink_drop', 'i18n_key' => 'backlink_drop',
             'baseline_count' => $baselineCount, 'latest_count' => $latestCount,
             'baseline_date'  => $baseline['result_date'], 'latest_date' => $latest['result_date'],
             'drop_pct'       => $dropPct,
@@ -1064,8 +1192,9 @@ class RecommendationsController extends Controller {
                 "({$baseline['report_date']} to {$latest['report_date']}). New negative reviews may need a response."
             );
             $meta = addslashes(json_encode(array(
-                'rule' => "review_drop:{$link['id']}",
-                'link_id' => $link['id'], 'baseline_rating' => $baselineRating, 'latest_rating' => $latestRating,
+                'rule' => "review_drop:{$link['id']}", 'i18n_key' => 'review_drop',
+                'link_id' => $link['id'], 'link_name' => $link['name'],
+                'baseline_rating' => $baselineRating, 'latest_rating' => $latestRating,
                 'baseline_date' => $baseline['report_date'], 'latest_date' => $latest['report_date'],
             )));
 
@@ -1122,7 +1251,7 @@ class RecommendationsController extends Controller {
             ($priorGoals > 0 ? ", with goal completions down from {$priorGoals} to {$recentGoals}" : "") . "."
         );
         $meta = addslashes(json_encode(array(
-            'rule' => 'ga_sessions_drop',
+            'rule' => 'ga_sessions_drop', 'i18n_key' => 'ga_sessions_drop',
             'recent_sessions' => $recentSessions, 'prior_sessions' => $priorSessions,
             'recent_goals' => $recentGoals, 'prior_goals' => $priorGoals, 'drop_pct' => $dropPct,
         )));
@@ -1187,8 +1316,8 @@ class RecommendationsController extends Controller {
                 "7 days compared to the week before. This can signal a ranking drop, a de-indexing issue, or reduced search interest."
             );
             $meta = addslashes(json_encode(array(
-                'rule' => "search_console_drop:{$source}",
-                'source' => $source, 'recent_impressions' => $recentImpressions,
+                'rule' => "search_console_drop:{$source}", 'i18n_key' => 'search_console_drop',
+                'source' => $source, 'source_label' => $sourceLabel, 'recent_impressions' => $recentImpressions,
                 'prior_impressions' => $priorImpressions, 'drop_pct' => $dropPct,
             )));
 
@@ -1238,8 +1367,9 @@ class RecommendationsController extends Controller {
                 "{$latest['result_date']}). Check Core Web Vitals in the PageSpeed Insights tool for details."
             );
             $meta = addslashes(json_encode(array(
-                'rule' => "pagespeed_regression:{$c['field']}",
-                'metric' => $c['field'], 'prev_score' => $prevScore, 'latest_score' => $latestScore,
+                'rule' => "pagespeed_regression:{$c['field']}", 'i18n_key' => 'pagespeed_regression',
+                'metric' => $c['field'], 'is_mobile' => ($c['field'] === 'mobile_speed_score'),
+                'prev_score' => $prevScore, 'latest_score' => $latestScore,
                 'prev_date' => $prev['result_date'], 'latest_date' => $latest['result_date'],
             )));
 
@@ -1298,9 +1428,10 @@ class RecommendationsController extends Controller {
                 "now at {$latestFollowers} as of {$latest['report_date']}."
             );
             $meta = addslashes(json_encode(array(
-                'rule' => "social_follower_drop:{$link['id']}",
-                'link_id' => $link['id'], 'platform' => $link['type'],
+                'rule' => "social_follower_drop:{$link['id']}", 'i18n_key' => 'social_follower_drop',
+                'link_id' => $link['id'], 'platform' => $platform, 'link_name' => $link['name'],
                 'baseline_followers' => $baselineFollowers, 'latest_followers' => $latestFollowers, 'lost' => $lost,
+                'baseline_date' => $baseline['report_date'], 'latest_date' => $latest['report_date'],
             )));
 
             $this->db->query(
@@ -1358,7 +1489,7 @@ class RecommendationsController extends Controller {
                 "This tool's scheduled runs are failing repeatedly" . (!empty($lastError) ? ". Last error: {$lastError}" : "") .
                 ". Its data may be stale until this is fixed."
             );
-            $meta = addslashes(json_encode(array('rule' => "cron_reliability:{$section}", 'url_section' => $section, 'failures' => $failures, 'last_error' => $lastError)));
+            $meta = addslashes(json_encode(array('rule' => "cron_reliability:{$section}", 'i18n_key' => 'cron_reliability', 'url_section' => $section, 'section_label' => $sectionLabel, 'failures' => $failures, 'last_error' => $lastError)));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
@@ -1396,7 +1527,7 @@ class RecommendationsController extends Controller {
                 (!empty($r['last_error']) ? ". Last error: {$r['last_error']}" : "") .
                 ". This part of the data will remain incomplete until resolved."
             );
-            $meta = addslashes(json_encode(array('rule' => "job_queue_failure:{$r['url_section']}", 'url_section' => $r['url_section'], 'count' => $count, 'last_error' => $r['last_error'])));
+            $meta = addslashes(json_encode(array('rule' => "job_queue_failure:{$r['url_section']}", 'i18n_key' => 'job_queue_failure', 'url_section' => $r['url_section'], 'section_label' => $sectionLabel, 'count' => $count, 'last_error' => $r['last_error'])));
 
             $this->db->query(
                 "INSERT INTO sp_recommendations
@@ -1434,7 +1565,7 @@ class RecommendationsController extends Controller {
         $now = date('Y-m-d H:i:s');
         $title = addslashes("{$inactive} of your {$total} directory submissions are no longer active");
         $desc  = addslashes("These backlinks may have been lost. Consider re-submitting or replacing them with active directories.");
-        $meta  = addslashes(json_encode(array('rule' => 'directory_decay', 'total' => $total, 'inactive' => $inactive, 'pct' => $pct)));
+        $meta  = addslashes(json_encode(array('rule' => 'directory_decay', 'i18n_key' => 'directory_decay', 'total' => $total, 'inactive' => $inactive, 'pct' => $pct)));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
@@ -1512,6 +1643,9 @@ class RecommendationsController extends Controller {
             ? "is only ranking at position {$bestCandidate['rank']}"
             : "isn't being tracked for rank yet";
 
+        $bestCandidate['difficulty'] = $difficulty;
+        $bestCandidate['candidate_name'] = $candidateName;
+
         if ($provenKeywordId !== null) {
             $provenName = $nameMap[$provenKeywordId];
             $provenRank = $rankMap[$provenKeywordId];
@@ -1520,12 +1654,16 @@ class RecommendationsController extends Controller {
                 "You already rank #{$provenRank} for \"{$provenName}\", proving you can compete in this space. " .
                 "\"{$candidateName}\" gets an estimated {$volume} searches/month with low difficulty ({$difficulty}/100) but {$rankClause}. Worth targeting."
             );
+            $bestCandidate['i18n_key'] = 'keyword_opportunity_proven';
+            $bestCandidate['proven_name'] = $provenName;
+            $bestCandidate['proven_rank'] = $provenRank;
         } else {
             $title = addslashes("Untapped keyword opportunity: \"{$candidateName}\"");
             $desc  = addslashes(
                 "\"{$candidateName}\" gets an estimated {$volume} searches/month with low difficulty ({$difficulty}/100), " .
                 "but {$rankClause}. Worth targeting with dedicated content."
             );
+            $bestCandidate['i18n_key'] = 'keyword_opportunity_plain';
         }
         $bestCandidate['rule'] = "keyword_opportunity:{$bestCandidate['keyword_id']}";
         $meta = addslashes(json_encode($bestCandidate));
@@ -1578,7 +1716,7 @@ class RecommendationsController extends Controller {
             "({$issueTitles}" . ($issueCount > 3 ? ', ...' : '') . "). Technical issues can suppress rankings even when " .
             "content hasn't changed - worth checking whether these are connected."
         );
-        $meta = addslashes(json_encode(array('rule' => 'cross_tool', 'rank_drop_count' => $rankDropN, 'auditor_issue_count' => $issueCount)));
+        $meta = addslashes(json_encode(array('rule' => 'cross_tool', 'i18n_key' => 'cross_tool', 'rank_drop_count' => $rankDropN, 'auditor_issue_count' => $issueCount)));
 
         $this->db->query(
             "INSERT INTO sp_recommendations
