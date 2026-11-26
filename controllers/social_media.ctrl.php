@@ -234,12 +234,19 @@ class SocialMediaController extends Controller{
             }
         }
         
-        // Validate link count
-        if(!$this->validate->flagErr){
+        // Validate link count - only on CREATE. Same fix as
+        // ReviewManagerController::validateReviewLink()'s sibling check:
+        // an edit (id already set) never increases the count, but
+        // validateSocialMediaLinkCount() checks the account's TOTAL
+        // current count against its limit regardless - so if the admin
+        // had since LOWERED the plan's social_media_link_count below how
+        // many links this account already had saved, editing one of
+        // those pre-existing links got blocked by the same check meant
+        // to gate adding a NEW one.
+        if(!$this->validate->flagErr && empty($listInfo['id'])){
             $websiteCtrl = new WebsiteController();
             $websiteInfo = $websiteCtrl->__getWebsiteInfo($listInfo['website_id']);
-            $newCount = !empty($listInfo['id']) ? 0 : 1;
-            if (! $this->validateSocialMediaLinkCount($websiteInfo['user_id'], $newCount)) {
+            if (! $this->validateSocialMediaLinkCount($websiteInfo['user_id'], 1)) {
                 $this->set('validationMsg', $this->spTextSMC['Your social media link count already reached the limit']);
                 $this->validate->flagErr = true;
             }
@@ -971,6 +978,16 @@ class SocialMediaController extends Controller{
 
 		$linkList = $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name");
 		$this->set('linkList', $linkList);
+		// bug fix: social_media_link_select_box.ctp.php references
+		// $linkNull but it was never set anywhere, so a website with 0
+		// social media links rendered a completely empty, unusable
+		// <select> (zero <option>s) instead of a "-- Select --"
+		// placeholder. Only needed for the empty-list case - when real
+		// links exist, the dropdown always auto-selects one (below) and
+		// there's no "select nothing" state to offer. Same bug,
+		// independently present in ReviewManagerController's sibling
+		// select box too.
+		$this->set('linkNull', empty($linkList));
 		$linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
 		// same check one level down: a non-admin's link_id must belong to
 		// the just-resolved (already-scoped) linkList - previously
@@ -1056,7 +1073,10 @@ class SocialMediaController extends Controller{
 	    if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($websiteId)) {
 	        return;
 	    }
-	    $this->set('linkList', $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name"));
+	    $linkList = $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name");
+	    $this->set('linkList', $linkList);
+	    // bug fix: same $linkNull fix as viewDetailedReports()/viewGraphReports()
+	    $this->set('linkNull', empty($linkList));
 	    $this->set('linkId', $linkId);
 	    $this->render('socialmedia/social_media_link_select_box');
 	}
@@ -1100,6 +1120,8 @@ class SocialMediaController extends Controller{
 
 	    $linkList = $this->__getSocialMediaLinks("website_id=$websiteId and status=1 order by name");
 	    $this->set('linkList', $linkList);
+	    // bug fix: same $linkNull fix as viewDetailedReports() above
+	    $this->set('linkNull', empty($linkList));
 	    $linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
 	    if (!empty($linkId) && !isAdmin() && !in_array($linkId, array_column($linkList, 'id'))) {
 	        $linkId = $linkList[0]['id'] ?? '';

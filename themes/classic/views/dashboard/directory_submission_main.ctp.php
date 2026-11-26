@@ -57,6 +57,24 @@ if (!empty($noWebsites)) {
 </table>
 </form>
 
+<?php
+// bug fix: every period-bound number/chart below (Overview tiles,
+// Submission Trends, Top Directories, Detailed Statistics) is bucketed
+// by dirsubmitinfo.submit_time - the ORIGINAL submission date, the only
+// timestamp this table has (no separate "last checked"/approved-at
+// column exists to bucket by instead). An approval that happens today
+// on a submission from outside the selected period is invisible under
+// every period filter and stays permanently attributed to its original
+// submit date - so these numbers answer "how many directories were
+// SUBMITTED TO in this period and what's their status as of now", not
+// "how many were APPROVED in this period". All Time Overview below is
+// unaffected (not period-filtered at all).
+?>
+<div class="alert alert-info mt-3" style="font-size: 0.85rem;">
+	<i class="fas fa-info-circle"></i>
+	<?php echo $spTextDashboard['Directory submission period caveat'] ?? "The stats and charts below are grouped by each submission's original date, not by when it was last checked - a directory submitted long ago that just got approved today still counts under its original submission period, not this one. All Time Overview always reflects the current real status."?>
+</div>
+
 <div class="dashboard-container" style="margin-top: 40px;">
 
 	<!-- Directory Submission Overview Stats -->

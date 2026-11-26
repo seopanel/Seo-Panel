@@ -386,3 +386,14 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- ownership gate, unlike the saved-link workflow's own quota check.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', 'Too many checks - please wait a moment and try again', 'Too many checks - please wait a moment and try again.');
+
+-- bug fix: the Feature Tour's "Add a review link" hint described the
+-- OLD, removed stristr() substring check ("must contain the platform's
+-- name") - the real check (ReviewManagerController::__isUrlForPlatform())
+-- requires the URL's actual host to match a domain allowlist, so a user
+-- following the hint literally got rejected with a contradicting error.
+-- Only the 'en' row is corrected here - the other 10 languages' existing
+-- translations of this same stale claim are left for a future i18n pass,
+-- same as any other English-copy fix that outpaces its translations.
+UPDATE `texts` SET `content` = 'The URL must be a real page on the platform''s own website - not just any URL that happens to mention its name.' WHERE `lang_code` = 'en' AND `category` = 'featuretour' AND `label` = 'tour_review_hint';
+UPDATE `texts` SET `content` = 'The URL must be a real page on %s - not just any URL that mentions its name.' WHERE `lang_code` = 'en' AND `category` = 'featuretour' AND `label` = 'tour_review_hint_dynamic';

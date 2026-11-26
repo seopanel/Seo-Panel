@@ -168,12 +168,19 @@ class ReviewManagerController extends ReviewBase{
             }
         }
 
-        // Validate link count
-        if(!$this->validate->flagErr){
+        // Validate link count - only on CREATE. An edit (id already set)
+        // never increases the count, but validateReviewLinkCount() still
+        // checks the account's TOTAL current count against its limit
+        // (newCount=0 just means "don't add one more" to that total) -
+        // so if the admin had since LOWERED the plan's review_link_count
+        // below how many links this account already had saved, editing
+        // one of those pre-existing links got blocked by the same check
+        // meant to gate adding a NEW one, even though the edit itself
+        // doesn't change the count at all.
+        if(!$this->validate->flagErr && empty($listInfo['id'])){
             $websiteCtrl = new WebsiteController();
             $websiteInfo = $websiteCtrl->__getWebsiteInfo($listInfo['website_id']);
-            $newCount = !empty($listInfo['id']) ? 0 : 1;
-            if (! $this->validateReviewLinkCount($websiteInfo['user_id'], $newCount)) {
+            if (! $this->validateReviewLinkCount($websiteInfo['user_id'], 1)) {
                 $this->set('validationMsg', 'Your review link count already reached the limit');
                 $this->validate->flagErr = true;
             }
@@ -977,6 +984,14 @@ class ReviewManagerController extends ReviewBase{
 
 		$linkList = $this->__getReviewLinks("website_id=$websiteId and status=1 order by name");
 		$this->set('linkList', $linkList);
+		// bug fix: review_link_select_box.ctp.php references $linkNull but
+		// it was never set anywhere, so a website with 0 review links
+		// rendered a completely empty, unusable <select> (zero <option>s)
+		// instead of a "-- Select --" placeholder. Only needed for the
+		// empty-list case - when real links exist, the dropdown always
+		// auto-selects one (below) and there's no "select nothing" state
+		// to offer.
+		$this->set('linkNull', empty($linkList));
 		$linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
 		// same check one level down: a non-admin's link_id must belong to
 		// the just-resolved (already-scoped) linkList - previously
@@ -1062,7 +1077,10 @@ class ReviewManagerController extends ReviewBase{
 	    if (!isAdmin() && !(new WebsiteController())->__verifyWebsiteOwnership($websiteId)) {
 	        return;
 	    }
-	    $this->set('linkList', $this->__getReviewLinks("website_id=$websiteId and status=1 order by name"));
+	    $linkList = $this->__getReviewLinks("website_id=$websiteId and status=1 order by name");
+	    $this->set('linkList', $linkList);
+	    // bug fix: same $linkNull fix as viewDetailedReports()/viewGraphReports()
+	    $this->set('linkNull', empty($linkList));
 	    $this->set('linkId', $linkId);
 	    $this->render('review/review_link_select_box');
 	}
@@ -1107,6 +1125,8 @@ class ReviewManagerController extends ReviewBase{
 
 	    $linkList = $this->__getReviewLinks("website_id=$websiteId and status=1 order by name");
 	    $this->set('linkList', $linkList);
+	    // bug fix: same $linkNull fix as viewDetailedReports() above
+	    $this->set('linkNull', empty($linkList));
 	    $linkId = empty($searchInfo['link_id']) ? $linkList[0]['id'] : intval($searchInfo['link_id']);
 	    if (!empty($linkId) && !isAdmin() && !in_array($linkId, array_column($linkList, 'id'))) {
 	        $linkId = $linkList[0]['id'] ?? '';

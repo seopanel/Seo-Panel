@@ -382,7 +382,22 @@ function tourText($key, $default) {
                             <input type="text" id="tour_web_review_url" class="form-control" placeholder="<?php echo htmlspecialchars(tourText('tour_placeholder_review_url', 'Review page URL')) ?>">
                         </div>
                     </div>
-                    <div class="sp-tour-form-hint" id="tour_web_review_hint"><?php echo tourText('tour_review_hint', 'The URL must contain the platform\'s name, e.g. a Yelp link should include "yelp".') ?></div>
+                    <?php
+                    // bug fix: this hint described the OLD, removed
+                    // stristr() substring check ("must contain the
+                    // platform's name") - the real check
+                    // (ReviewManagerController::__isUrlForPlatform())
+                    // now requires the URL's actual HOST to match a
+                    // domain allowlist (google.com/yelp.com/
+                    // trustpilot.com/tripadvisor.*), so a user following
+                    // this hint literally (e.g. "mysite.com/yelp-reviews")
+                    // got rejected with a generic error that contradicted
+                    // what they were just told. This default/fallback
+                    // text (shown before a type is picked, or if the
+                    // dynamic per-type text below never runs) is now
+                    // accurate without naming a specific domain.
+                    ?>
+                    <div class="sp-tour-form-hint" id="tour_web_review_hint"><?php echo tourText('tour_review_hint', 'The URL must be a real page on the platform\'s own website - not just any URL that happens to mention its name.') ?></div>
                     <div class="sp-tour-field-err" id="tour_web_err_review"></div>
                 <?php } ?>
             </div>
@@ -763,7 +778,7 @@ function tourText($key, $default) {
         cronTestBusy: <?php echo json_encode(tourText('tour_cron_test_busy', 'A cron run is already in progress - try again shortly.')) ?>,
         cronTestDone: <?php echo json_encode(tourText('tour_cron_test_done', 'Test run completed - see the status above.')) ?>,
         refreshChecked: <?php echo json_encode(tourText('tour_refresh_checked', 'Checked latest status')) ?>,
-        reviewHintDynamic: <?php echo json_encode(tourText('tour_review_hint_dynamic', 'The URL must contain "%s" (e.g. a %s link should include that word).')) ?>,
+        reviewHintDynamic: <?php echo json_encode(tourText('tour_review_hint_dynamic', 'The URL must be a real page on %s - not just any URL that mentions its name.')) ?>,
         addWebsiteHeading: <?php echo json_encode(tourText('tour_step2_heading', 'Add Your First Website')) ?>,
         addWebsiteBtn: <?php echo json_encode(tourText('tour_add_website_btn', 'Add Website')) ?>
     };
@@ -976,13 +991,23 @@ function tourText($key, $default) {
         });
     }
 
+    // bug fix: kept in sync with ReviewManagerController::
+    // __isUrlForPlatform()'s real allowlist - tripadvisor shows its most
+    // common domain here, not every country TLD that function also
+    // accepts, since this is just a hint, not the actual check.
+    var TOUR_REVIEW_DOMAINS = {
+        google: 'google.com',
+        yelp: 'yelp.com',
+        trustpilot: 'trustpilot.com',
+        tripadvisor: 'tripadvisor.com'
+    };
     window._tourUpdateReviewHint = function() {
         var type = $('#tour_web_review_type').val();
         var $hint = $('#tour_web_review_hint');
         if (!type) {
             $hint.hide();
         } else {
-            $hint.show().text(TOUR_I18N.reviewHintDynamic.replace('%s', type).replace('%s', type));
+            $hint.show().text(TOUR_I18N.reviewHintDynamic.replace('%s', TOUR_REVIEW_DOMAINS[type] || type));
         }
     };
 
