@@ -380,3 +380,9 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- only finding out after every check silently returns nothing.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', 'Automated checks currently unavailable for this platform', 'Automated checks for this platform currently don''t work due to login/API restrictions on its side. You can still add this link, but stats won''t be collected until this is fixed.');
+
+-- bug fix: doQuickChecker() had no rate limiting at all - a logged-in
+-- user could Quick-Check unlimited arbitrary URLs with no stored-link
+-- ownership gate, unlike the saved-link workflow's own quota check.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', 'Too many checks - please wait a moment and try again', 'Too many checks - please wait a moment and try again.');

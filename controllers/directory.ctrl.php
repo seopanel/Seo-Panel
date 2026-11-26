@@ -451,9 +451,21 @@ class DirectoryController extends Controller{
 		}
 
 		$dirInfo = $this->__getDirectoryInfo($submitInfo['dir_id']);
-		
+
 		$websiteController = New WebsiteController();
-		$websiteInfo = $websiteController->__getWebsiteInfo($submitInfo['website_id']);		
+		$websiteInfo = $websiteController->__getWebsiteInfo($submitInfo['website_id']);
+
+		// bug fix: the plan's submission quota (directory_submit_limit/
+		// directory_submit_daily_limit) was only ever checked in
+		// startSubmission() - which gates whether the "submit to the next
+		// directory" FORM is shown, not whether an actual submission is
+		// accepted - so a direct/repeated POST straight to sec=submitsite
+		// (bypassing that form entirely) could exceed the plan's limit with
+		// no enforcement at all. Re-checked here too, right before the real
+		// outbound submission + dirsubmitinfo write, same call/exit
+		// behavior startSubmission() already uses for this exact check.
+		$this->validateDirectorySubmissionCount($websiteInfo['user_id']);
+
 		$websiteInfo = $this->__getSubmitTitleDes($websiteInfo);
 		
 		// bug fix: these values (website title/url/description/owner name/

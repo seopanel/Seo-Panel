@@ -2,6 +2,15 @@
 $headText = ($editAction == 'updateSocialMediaLink') ? $spTextSMC['Edit Social Media Link'] : $spTextSMC['New Social Media Link'];
 echo showSectionHead($headText);
 
+// bug fix: the #sm_type change handler below (which sets the Link/Company
+// Id label and shows/hides the LinkedIn help note) only fires once the
+// user actually touches the Type dropdown - opening Edit on an EXISTING
+// LinkedIn link showed "Link:" (should be "Company Id:") and hid the help
+// note until then. Computed once, up front, so every place that needs the
+// initially-selected type (this, and the known-broken-platform note
+// below) agrees and is correct on first render, not just after interaction.
+$smSelectedType = $post['type'] ?? '';
+
 // if error occured
 if(!empty($validationMsg)){
 	?>
@@ -56,7 +65,7 @@ if(!empty($validationMsg)){
 		<td class="td_right_col"><input type="text" name="name" value="<?php echo htmlspecialchars($post['name'] ?? '')?>" class="form-control"><?php echo $errMsg['name']?></td>
 	</tr>
 	<tr class="blue_row">
-		<td class="td_left_col" id='sm_url_label'><?php echo $spText['common']['Link']?>:</td>
+		<td class="td_left_col" id='sm_url_label'><?php echo ($smSelectedType == 'linkedin') ? $spTextSMC['Company Id'] : $spText['common']['Link']?>:</td>
 		<td class="td_right_col">
 			<input type="text" name="url" value="<?php echo htmlspecialchars($post['url'] ?? '')?>" class="form-control"><?php echo $errMsg['url']?>
 			<?php
@@ -66,7 +75,7 @@ if(!empty($validationMsg)){
 				<p><b>Eg:</b> <span id="ex_review_link"><?php echo $serviceList[$serviceSelName]['example']?></span></p>
 				<?php
 			}?>
-			<div style="padding: 10px 6px; display: none;" id="sm_url_note">
+			<div style="padding: 10px 6px; <?php echo ($smSelectedType == 'linkedin') ? '' : 'display: none;'?>" id="sm_url_note">
 				<a target="_blank" href="<?php echo SP_MAIN_SITE?>/blog/2020/07/how-do-i-find-the-linkedin-company-id/">
 					<?php echo $spTextSMC['Click here to get LinkedIn Company Id']; ?> &gt;&gt;
 				</a>
@@ -81,9 +90,9 @@ if(!empty($validationMsg)){
 			// left to only fire on the #sm_type change handler below), so
 			// it's correct on first render too - the exact "wrong on load,
 			// only right after you touch the dropdown" bug this same
-			// research pass already found and fixed elsewhere.
+			// research pass already found and fixed elsewhere (and just
+			// above, for this same Link/Company Id label + help note).
 			$knownBrokenPlatforms = array('facebook', 'twitter', 'instagram', 'reddit');
-			$smSelectedType = $post['type'] ?? '';
 			?>
 			<div class="alert alert-warning" style="padding: 10px 6px; margin-top: 8px; <?php echo in_array($smSelectedType, $knownBrokenPlatforms, true) ? '' : 'display: none;'?>" id="sm_unsupported_note">
 				<i class="fas fa-exclamation-triangle me-1"></i>

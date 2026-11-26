@@ -422,6 +422,25 @@ class SocialMediaController extends Controller{
 	}
 
 	function doQuickChecker($listInfo=[]) {
+	    // bug fix: this had zero rate limiting of any kind, unlike the
+	    // saved-link workflow (quota-checked via validateSocialMediaLinkCount()).
+	    // A user blocked from adding a 4th saved link could still Quick-
+	    // Check unlimited arbitrary URLs - this is the more exploitable
+	    // SSRF surface in this controller (see __isUrlForPlatform()'s own
+	    // comment below), since it's a synchronous live fetch with no
+	    // stored-link ownership gate at all. Reuses the same generic,
+	    // fail-open rate limiter UserController::__checkLoginRateLimit()
+	    // already uses for login attempts (AIVisibilityController::
+	    // __checkRateLimit() - not AI-Visibility-specific, just where the
+	    // shared ai_visibility_rate_limit table happens to live).
+	    $userId = isLoggedIn();
+	    include_once(SP_CTRLPATH . "/aivisibility.ctrl.php");
+	    $aivCtrler = new AIVisibilityController();
+	    if (!$aivCtrler->__checkRateLimit('social-quickcheck-user:' . intval($userId), 10)) {
+	        showErrorMsg($this->spTextSMC['Too many checks - please wait a moment and try again']);
+	        return;
+	    }
+
 	    if ($listInfo['type'] == 'linkedin') {
 	        $errorMsg = formatErrorMsg($this->validate->checkNumber($listInfo['url']));
 	        $smLink = $listInfo['url'];
