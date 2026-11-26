@@ -58,7 +58,7 @@ if(empty($websiteId)){
     <tr class="listHead">
         <td class="text-center" style="width:5%"><?php echo $spText['common']['Id']?></td>
         <td><?php echo $spText['common']['Directory']?></td>
-        <td class="text-center">PR</td>
+        <td class="text-center" title="Google discontinued PageRank in 2016 - shown for legacy data only">PR <small class="text-muted">(legacy)</small></td>
         <td class="text-center" width="18%"><?php echo $spText['common']['Action']?></td>
     </tr>
     <?php

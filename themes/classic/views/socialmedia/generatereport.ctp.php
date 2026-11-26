@@ -32,7 +32,7 @@
 	<tr>
 		<th width="30%"><?php echo $spText['common']['Website']?>: </th>
 		<td>
-			<select name="website_id" id="website_id" class="custom-select">
+			<select name="website_id" id="website_id" class="custom-select" onchange="doLoad('website_id', 'social_media.php', 'generate_estimate', 'sec=estimateGenerateReports')">
 				<option value="">-- <?php echo $spText['common']['Select']?> --</option>
 				<?php foreach($websiteList as $websiteInfo){?>
 					<?php if($websiteInfo['id'] == $websiteId){?>
@@ -53,8 +53,8 @@
 </table>
 </form>
 
-<div id='subcontent'>
-	<div class="alert alert-info">
-		<i class="fas fa-info-circle me-2"></i><?php echo $spTextTools['clickgeneratereports']?>
-	</div>
+<div id='generate_estimate'>
+	<?php echo $this->render('socialmedia/generatereport_estimate', 'ajax'); ?>
 </div>
+
+<div id='subcontent'></div>

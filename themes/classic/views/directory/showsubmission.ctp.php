@@ -38,7 +38,16 @@
                     <label class="font-weight-bold" title="Google discontinued PageRank in 2016 - kept only for filtering legacy directory data"><?php echo $spText['common']['Pagerank']?> <small class="text-muted">(legacy)</small>:</label>
                     <select name="pagerank" class="custom-select">
                         <option value="">-- <?php echo $spText['common']['Select']?> --</option>
-                        <?php for ($i=0; $i<=10; $i++) { ?>
+                        <?php for ($i=0; $i<=10; $i++) {
+                            // bug fix: $selected was never assigned here
+                            // (unlike the lang_code loop right below,
+                            // which already does this correctly) - the
+                            // filter itself works (showWebsiteSubmissionPage()
+                            // persists it to $_SESSION['dirsub_pr'] and the
+                            // query applies it), but the dropdown always
+                            // reset to "-- Select --" after a page reload,
+                            // never reflecting the filter actually in effect.
+                            $selected = (($_SESSION['dirsub_pr'] ?? '') !== '' && $i == $_SESSION['dirsub_pr']) ? "selected" : ""; ?>
                             <option value="<?php echo $i?>" <?php echo $selected?>><?php echo "PR $i"?></option>
                         <?php } ?>
                     </select>

@@ -397,3 +397,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- same as any other English-copy fix that outpaces its translations.
 UPDATE `texts` SET `content` = 'The URL must be a real page on the platform''s own website - not just any URL that happens to mention its name.' WHERE `lang_code` = 'en' AND `category` = 'featuretour' AND `label` = 'tour_review_hint';
 UPDATE `texts` SET `content` = 'The URL must be a real page on %s - not just any URL that mentions its name.' WHERE `lang_code` = 'en' AND `category` = 'featuretour' AND `label` = 'tour_review_hint_dynamic';
+
+-- bug fix: "Generate Reports Now" gave zero upfront indication of how
+-- long a run would take - each link costs a real HTTP fetch plus a
+-- sleep(), so a website with many pending links could take minutes with
+-- no warning at all.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]'),
+('en', 'socialmedia', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]');

@@ -1,3 +1,4 @@
+<?php echo $pagingDiv ?? ''?>
 <table class="list">
     <tr class="listHead">
         <td><?php echo $spText['common']['Directory']?></td>

@@ -29,7 +29,14 @@ class DirectoryController extends Controller{
 	function showSubmissionPage( ) {
 
 		$userId = isLoggedIn();
-		$this->session->setSession('dirsub_pr', '');
+
+		// bug fix: this unconditionally reset the PageRank filter back
+		// to blank on every single load of this page, unlike dirsub_lang
+		// (the language filter right next to it in showsubmission.ctp.php),
+		// which has no such reset at all - the dropdown's own $selected
+		// logic (showsubmission.ctp.php) could never have a real filter
+		// to reflect, since this ran moments before it rendered. Dropped
+		// the reset entirely, matching dirsub_lang's own treatment.
 
 		// default new sessions to excluding reciprocal-link directories -
 		// reciprocal linking is a link scheme Google's own guidelines have
@@ -82,7 +89,18 @@ class DirectoryController extends Controller{
 			$websiteInfo = $websiteController->__getWebsiteInfo($submitInfo['website_id']);
 			$websiteInfo['website_id'] = $submitInfo['website_id'];
 		}else{
-			$websiteInfo = $submitInfo;
+			// bug fix: showsitesubmission.ctp.php unconditionally
+			// stripslashes()s every field, correct for the OTHER branch
+			// above (fetched straight from the DB, where every string
+			// column was addslashes()'d on write) - but $submitInfo here
+			// is raw, unescaped $_POST (SP_PREVENT_SQL_INJECTION above
+			// only strips suspicious patterns, it doesn't addslashes()
+			// anything), so a real literal backslash the user just typed
+			// (e.g. in a company name) got silently eaten on this
+			// validation-error redisplay. Matched to the same "slashed"
+			// convention the view already assumes, instead of changing
+			// the view itself.
+			$websiteInfo = sanitizeData($submitInfo, false, true);
 		}
 		
 		$this->set('websiteInfo', $websiteInfo);
@@ -211,7 +229,12 @@ class DirectoryController extends Controller{
 			$captchaUrl = SP_WEBPATH. "/tmp/" .$captchaFile ."?rand=".time();	
 			$captchaUrlInfo['url'] = $captchaUrl;
 			
-			// check for captcha bypass plugin enabled or not
+			// check for captcha bypass plugin enabled or not - optional,
+			// not shipped by default (plugins/CaptchaBypass is gitignored
+			// in a fresh clone); isPluginActivated() is a pure DB lookup
+			// (seoplugins.installed=1 and status=1), so this safely
+			// stays false/no-op on any install that doesn't have it, no
+			// missing-plugin-directory crash risk.
 			if (isPluginActivated("CaptchaBypass")) {
 				$seopluginCtrler = new SeoPluginsController();
 				$pluginCtrler = $seopluginCtrler->createPluginObject("CaptchaBypass");
@@ -370,13 +393,8 @@ class DirectoryController extends Controller{
 					$addParams = "&DO_MATH=$sumMath&Anti_Spam_Field=$sumMath";
 				}
 				
-				if (isPluginActivated("CaptchaBypass")) {
-					$seopluginCtrler = new SeoPluginsController();
-					$pluginCtrler = $seopluginCtrler->createPluginObject("CaptchaBypass");
-				}
-				
-			}			
-			
+			}
+
 			$this->set('captchaCode', !empty($captchaUrlInfo['code']) ? $captchaUrlInfo['code'] : "");
 			$this->set('captchaUrl', $captchaUrl);
 			$this->set('addParams', $addParams);
@@ -586,8 +604,14 @@ class DirectoryController extends Controller{
 			return;
 		}
 
-		$sql = "Insert into skipdirectories(website_id,directory_id) values({$info['website_id']}, {$info['dir_id']})";
-		$this->db->query($sql);		
+		// bug fix: skipdirectories has a UNIQUE KEY on
+		// (website_id, directory_id) - a double-click or retried skip
+		// request (same website+directory) threw an uncaught duplicate-
+		// key error here, crashing the request before it ever reached
+		// startSubmission() below. INSERT IGNORE makes a repeat skip of
+		// the same directory a harmless no-op instead.
+		$sql = "Insert ignore into skipdirectories(website_id,directory_id) values({$info['website_id']}, {$info['dir_id']})";
+		$this->db->query($sql);
 		$this->startSubmission($info['website_id']);
 	}
 	
@@ -848,11 +872,28 @@ class DirectoryController extends Controller{
 		}
 
 		$sql = "select ds.* ,d.domain
-								from dirsubmitinfo ds,directories d 
-								where ds.directory_id=d.id  
-								and ds.website_id={$searchInfo['website_id']} and ds.active=0   
+								from dirsubmitinfo ds,directories d
+								where ds.directory_id=d.id
+								and ds.website_id={$searchInfo['website_id']} and ds.active=0
 								order by submit_time";
-		$reportList = $this->db->select($sql);		
+
+		// bug fix: this was unpaginated, unlike its near-identical
+		// sibling showSubmissionReports() - a website with a large
+		// number of pending submissions rendered the entire list at
+		// once. Paged the same way: scriptDoLoadPost (not scriptDoLoad,
+		// since this is only reachable via POST - GET sec=checksub is a
+		// DIFFERENT method, checkSubmissionReports(), the initial
+		// website-picker form) re-submitting the existing search_form
+		// (still in the DOM around this view's own 'subcontent' target,
+		// from checksubmission.ctp.php) with &pageno=N appended.
+		$this->db->query($sql, true);
+		$this->paging->setDivClass('pagingdiv');
+		$this->paging->loadPaging($this->db->noRows, SP_PAGINGNO);
+		$pagingDiv = $this->paging->printPages('directories.php', 'search_form', 'scriptDoLoadPost', 'subcontent', '&sec=checksub');
+		$this->set('pagingDiv', $pagingDiv);
+		$sql .= " limit ".$this->paging->start .",". $this->paging->per_page;
+
+		$reportList = $this->db->select($sql);
 		$this->set('list', $reportList);
 		$this->render('directory/generatesubmission');
 	}

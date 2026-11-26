@@ -71,7 +71,7 @@ if(empty($websiteId)){
     <tr class="listHead">
         <td class="left"><?php echo $spText['common']['Directory']?></td>
         <td><?php echo $spText['common']['Date']?></td>
-        <td class="text-center">PR</td>
+        <td class="text-center" title="Google discontinued PageRank in 2016 - shown for legacy data only">PR <small class="text-muted">(legacy)</small></td>
         <td class="text-center"><?php echo $spTextDir['Confirmation']?></td>
         <td class="text-center"><?php echo $spText['common']['Status']?></td>
         <td width="10%"><?php echo $spText['common']['Action']?></td>
@@ -80,6 +80,14 @@ if(empty($websiteId)){
     $colCount = 6;
     if(count($list) > 0) {
         foreach($list as $i => $listInfo) {
+            // not a mismatch: dirsubmitinfo's `status` column drives the
+            // "Confirmation" column below, and its `active` column
+            // drives "Status" - the labels are correct from a USER's
+            // perspective (status = did we confirm the listing exists,
+            // active = is it actually approved/live) even though they
+            // look swapped against the raw DB column NAMES. Don't
+            // "fix" this by renaming the labels to match the columns -
+            // that would invert what each one actually means on screen.
             $confirm = empty($listInfo['status']) ? $spText['common']["No"] : $spText['common']["Yes"];
             $confirmClass = empty($listInfo['status']) ? "btn btn-warning btn-sm" : "btn btn-success btn-sm";
             $confirmId = "confirm_".$listInfo['id'];

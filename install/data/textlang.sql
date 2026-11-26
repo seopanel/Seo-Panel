@@ -33645,3 +33645,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 -- ownership gate, unlike the saved-link workflow's own quota check.
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', 'Too many checks - please wait a moment and try again', 'Too many checks - please wait a moment and try again.');
+
+-- bug fix: "Generate Reports Now" gave zero upfront indication of how
+-- long a run would take - each link costs a real HTTP fetch plus a
+-- sleep(), so a website with many pending links could take minutes with
+-- no warning at all.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'socialmedia', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]'),
+('en', 'socialmedia', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]');

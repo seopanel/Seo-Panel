@@ -107,6 +107,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			$controller->showGenerateReports($_GET);
 			break;
 
+		case "estimateGenerateReports":
+			$controller->estimateGenerateReports($_GET);
+			break;
+
         case "edit":
             // previously the only single-target social-media-link action
             // with no ownership check at all - a non-admin could view

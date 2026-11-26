@@ -1020,22 +1020,37 @@ class ReviewManagerController extends ReviewBase{
     			
     			// if not the first row, find differences in rank
     			if ($key)  {
-    				
+
     				foreach ($colList as $col) $rankDiff[$col] = '';
-    					
+
     				foreach ($colList as $col) {
+    					// bug fix: $reportList[$key]['rank_diff_'.$col] was
+    					// only ever set INSIDE this loop body, which a zero
+    					// diff (no change since the previous day) skipped
+    					// entirely via the continue below - leaving the key
+    					// completely unset instead of ''. review_reports.ctp.php's
+    					// rank_diff_reviews/rank_diff_rating echo it
+    					// directly, no isset check, so every zero-change day
+    					// threw an undefined array key warning. Set once, up
+    					// front, for every column, regardless of whether the
+    					// diff turns out to be zero.
+    					$reportList[$key]['rank_diff_'.$col] = '';
     					$rankDiff[$col] = round($repInfo[$col] - $prevRank[$col], 2);
     					if (empty($rankDiff[$col])) continue;
-    					
-    					if ($col == "average_position" ) $rankDiff[$col] = $rankDiff[$col] * -1;
+
+    					// bug fix: dead branch, copy-pasted from Rank
+    					// Checker's own report-diff code - $colList here is
+    					// always name/reviews/rating (see $this->colList
+    					// above), average_position is a Rank Checker
+    					// column that can never appear in this loop.
     					$rankClass = ($rankDiff[$col] > 0) ? 'green' : 'red';
-    					
+
     					$rankDiff[$col] = "<font class='$rankClass'>($rankDiff[$col])</font>";
-    					$reportList[$key]['rank_diff_'.$col] = empty($rankDiff[$col]) ? '' : $rankDiff[$col];			
+    					$reportList[$key]['rank_diff_'.$col] = $rankDiff[$col];
     				}
-    				
+
     			}
-    				
+
     			foreach ($colList as $col) $prevRank[$col] = $repInfo[$col];
     		
     		}

@@ -96,7 +96,6 @@ class SocialMediaController extends Controller{
     		],
     	    "reddit" => [
     	        "label" => "reddit",
-    	        "data_from" => "crawl",
     	        "regex" => [
     	            "follower" => $engineList['reddit']['regex1'],
     	        ],
@@ -529,6 +528,20 @@ class SocialMediaController extends Controller{
 	            $smLink = strtok($smLink, '?');
 	            $smLink = preg_replace('/\/$/', '', $smLink);
 	            break;
+
+	        // bug fix: pinterest/reddit fell through this switch with no
+	        // case at all, unlike every other plain profile-url type
+	        // (youtube/instagram) - currently harmless only because both
+	        // platforms' DB-configured url_part happens to be empty right
+	        // now, but a saved URL with a trailing slash or query string
+	        // (e.g. copied from a browser with UTM params) would silently
+	        // skip the same cleanup every other type gets. Same treatment
+	        // as youtube/instagram above.
+	        case "pinterest":
+	        case "reddit":
+	            $smLink = strtok($smLink, '?');
+	            $smLink = preg_replace('/\/$/', '', $smLink);
+	            break;
 	    }
 	    
 	    // if params needs to be added with url
@@ -642,8 +655,58 @@ class SocialMediaController extends Controller{
 		$websiteController = New WebsiteController();
 		$websiteList = $websiteController->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
-		$this->set('websiteId', empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']));
+		$websiteId = empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		$this->set('websiteId', $websiteId);
+
+		// bug fix: see __setGenerateReportsEstimate()'s own comment -
+		// computed here too (not just on the AJAX refresh below) so the
+		// very first render already shows the real estimate, instead of
+		// the generic "click to generate" text until the website_id
+		// dropdown is touched (the same "wrong until you interact" bug
+		// class this research pass already fixed elsewhere).
+		$this->__setGenerateReportsEstimate($websiteId);
+
 		$this->render('socialmedia/generatereport');
+	}
+
+	/*
+	 * bug fix: generateReports() below gives the admin zero upfront
+	 * indication of how long a run will take before they click Proceed -
+	 * each link costs a real HTTP fetch plus sleep(SP_CRAWL_DELAY + 5)
+	 * (there's no way to batch N different platforms' URLs into one
+	 * call, unlike Rank/Backlink Checker's single Moz API call for an
+	 * entire site list), so a website - or "all websites" - with many
+	 * pending links can take minutes with no warning at all. Pure count,
+	 * no crawling - mirrors generateReports()'s own website-scoping and
+	 * per-website getAllLinksWithOutReports() call exactly, so the
+	 * estimate always matches what a real run would actually do.
+	 */
+	function __setGenerateReportsEstimate($websiteId) {
+		$userId = isLoggedIn();
+		$websiteId = empty($websiteId) ? '' : intval($websiteId);
+
+		$sql = "select id from websites where status=1";
+		if (!empty($userId) && !isAdmin()) $sql .= " and user_id=$userId";
+		if (!empty($websiteId)) $sql .= " and id=$websiteId";
+		$websiteList = $this->db->select($sql);
+
+		$today = date('Y-m-d');
+		$linkCount = 0;
+		foreach ($websiteList as $websiteInfo) {
+			$linkCount += count($this->getAllLinksWithOutReports($websiteInfo['id'], $today));
+		}
+
+		$this->set('linkCount', $linkCount);
+		$this->set('websiteCount', count($websiteList));
+		$this->set('estimatedSeconds', $linkCount * (intval(SP_CRAWL_DELAY) + 5));
+	}
+
+	# AJAX refresh of the estimate above, fired when the website_id
+	# dropdown changes
+	function estimateGenerateReports($searchInfo = []) {
+		$websiteId = empty($searchInfo['website_id']) ? '' : intval($searchInfo['website_id']);
+		$this->__setGenerateReportsEstimate($websiteId);
+		$this->render('socialmedia/generatereport_estimate');
 	}
 
 	# func to generate reports - reuses the exact same crawl/save calls
@@ -685,7 +748,12 @@ class SocialMediaController extends Controller{
 					echo "<p class='note error'>" . $this->spTextSMC['Failed crawling social media results of'] . " <b>{$linkInfo['name']}</b>.....</p>";
 					error_log("SocialMediaController::generateReports(): crawl failed for link {$linkInfo['id']} ({$linkInfo['name']}, website {$websiteInfo['id']}) - " . ($result['msg'] ?? 'unknown error'));
 				}
-				sleep(SP_CRAWL_DELAY);
+				// bug fix: this slept SP_CRAWL_DELAY alone, while
+				// CronController::socialMediaCheckerCron() sleeps
+				// SP_CRAWL_DELAY + 5 for the exact same per-link crawl -
+				// an unexplained inconsistency between the two paths
+				// doing identical work. Matched to the cron's spacing.
+				sleep(SP_CRAWL_DELAY + 5);
 			}
 		}
 	}
@@ -1016,20 +1084,35 @@ class SocialMediaController extends Controller{
     			
     			// if not the first row, find differences in rank
     			if ($key)  {
-    				
+
     				foreach ($colList as $col) $rankDiff[$col] = '';
-    					
+
     				foreach ($colList as $col) {
+    					// bug fix: $reportList[$key]['rank_diff_'.$col] was
+    					// only ever set INSIDE this loop body, which a zero
+    					// diff (no change since the previous day) skipped
+    					// entirely via the continue below - leaving the key
+    					// completely unset instead of ''. Both
+    					// social_media_reports.ctp.php's rank_diff_followers/
+    					// rank_diff_likes echo it directly, no isset check,
+    					// so every zero-change day threw an undefined array
+    					// key warning. Set once, up front, for every column,
+    					// regardless of whether the diff turns out to be zero.
+    					$reportList[$key]['rank_diff_'.$col] = '';
     					$rankDiff[$col] = round($repInfo[$col] - $prevRank[$col], 2);
     					if (empty($rankDiff[$col])) continue;
-    					
-    					if ($col == "average_position" ) $rankDiff[$col] = $rankDiff[$col] * -1;
+
+    					// bug fix: dead branch, copy-pasted from Rank
+    					// Checker's own report-diff code - $colList here is
+    					// always name/followers/likes (see $this->colList
+    					// above), average_position is a Rank Checker
+    					// column that can never appear in this loop.
     					$rankClass = ($rankDiff[$col] > 0) ? 'green' : 'red';
-    					
+
     					$rankDiff[$col] = "<font class='$rankClass'>($rankDiff[$col])</font>";
-    					$reportList[$key]['rank_diff_'.$col] = empty($rankDiff[$col]) ? '' : $rankDiff[$col];			
+    					$reportList[$key]['rank_diff_'.$col] = $rankDiff[$col];
     				}
-    				
+
     			}
     				
     			foreach ($colList as $col) $prevRank[$col] = $repInfo[$col];
