@@ -205,8 +205,14 @@ $colCount = ($baseColCount * 3) + (empty($websiteId) ? 2 : 1);
 			$sourceId = $listInfo['id'];
 			$rangeFromTime = date('Y-m-d', strtotime('-14 days', strtotime($fromTime)));
 			$scriptLink = "website_id={$listInfo['website_id']}&source_id={$listInfo['id']}&rep=1&from_time=$rangeFromTime&to_time=$toTime";
-			$trClass = ($listInfo['source_name'] == 'total') ? "table-secondary" : "";
-			$sourceName = ($listInfo['source_name'] == 'total') ? "<b>".$spText['common']['Total']."</b>" : htmlspecialchars($listInfo['source_name']);
+			// bug fix: dead code - source_name is never literally "total"
+			// (that's a Quick Checker-only concept, computed on the fly
+			// by __aggregateAnalyticsTotals() and never written to
+			// analytic_sources/website_analytics), so this branch never
+			// fired. Confirmed no "total" row exists in analytic_sources
+			// and nothing in this controller ever writes one.
+			$trClass = "";
+			$sourceName = htmlspecialchars($listInfo['source_name']);
 			?>
 			<tr class="<?php echo $trClass?>">
 				<?php if (empty($websiteId)) {?>

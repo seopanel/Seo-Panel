@@ -1352,9 +1352,22 @@ class WebsiteController extends Controller{
 		}
 		
 		$info['sitemap_url'] = addHttpToUrl($info['sitemap_url']);
-		
-		// if website url not correct
-		if (!preg_match("/". preg_quote($webisteInfo['url'], '/') ."/i", $info['sitemap_url'])) {
+
+		// bug fix: this only checked that the website's URL appeared
+		// SOMEWHERE in sitemap_url as a plain substring - a sitemap_url
+		// like "https://evil.com/?x=https://realsite.com" or
+		// "https://realsite.com.evil.com/sitemap.xml" passed this check
+		// fine. Defense-in-depth only now that submitSitemap() has a
+		// real ownership check (above) and Google's own Search Console
+		// API separately enforces that a submitted sitemap belongs to a
+		// verified property - but checking the actual host (same
+		// domain, or a subdomain of it) instead of a substring anywhere
+		// in the URL is just as cheap and closes the gap for real.
+		$siteHost = strtolower((string) parse_url($webisteInfo['url'], PHP_URL_HOST));
+		$sitemapHost = strtolower((string) parse_url($info['sitemap_url'], PHP_URL_HOST));
+		$hostMatches = !empty($siteHost) && !empty($sitemapHost) &&
+			($sitemapHost === $siteHost || substr($sitemapHost, -strlen('.' . $siteHost)) === '.' . $siteHost);
+		if (!$hostMatches) {
 			showErrorMsg($spTextWebproxy["Please enter a valid url"]);
 		}
 		

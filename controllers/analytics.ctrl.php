@@ -37,9 +37,6 @@ class AnalyticsController extends Controller {
 	var $metricList;
 	var $defaultMetricName = "users";
 	var $dimensionName = "sourceMedium";
-	var $sourceTypeList = ['referral', 'direct', 'organic', 'cpc', 'social'];
-	var $socialNetworkList;
-	var $totalLabel = "total";
 	var $tokenCtrler;
 	var $sourceName = 'google';
 	
@@ -609,8 +606,7 @@ class AnalyticsController extends Controller {
 	    # set report list
 	    $baseReportList = $this->db->select($sql);
 	    $this->set('baseReportList', $baseReportList);
-	    $this->set('colList', $this->colList);
-	    
+
 	    // if keywords existing
 	    if (!empty($baseReportList)) {
 	        
