@@ -83,9 +83,16 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 		    break;
 		    
 		default:
-		    $controller->viewAnalyticsSummary($_POST);
+		    // bug fix: this is the GET branch (inside switch($_GET['sec'])) -
+		    // $_POST is empty on a plain GET request, so any query-string
+		    // filters (website_id, from_time, etc.) silently got dropped
+		    // whenever sec was missing/mistyped/unrecognized, unlike every
+		    // sibling entry point's own GET-branch default
+		    // (webmaster-tools.php/social_media.php/review.php all use $_GET
+		    // here).
+		    $controller->viewAnalyticsSummary($_GET);
 		    break;
-		    
+
 	}
 	
 }

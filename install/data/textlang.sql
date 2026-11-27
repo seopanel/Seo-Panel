@@ -33653,3 +33653,11 @@ INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
 ('en', 'socialmedia', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]'),
 ('en', 'socialmedia', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]', '[count] links across [website_count] websites will be checked - this makes a real HTTP request per link, so it will take roughly [estimate]');
+
+-- bug fix: a failed Google OAuth token REFRESH (vs. no token at all)
+-- returned a raw exception string with no reconnect link and no alert,
+-- unlike the "no token" branch right above it in getAuthClient() - a
+-- user whose authorization lapsed saw a cryptic technical string with
+-- no actionable next step.
+INSERT IGNORE INTO `texts` (`lang_code`, `category`, `label`, `content`) VALUES
+('en', 'webmaster', 'Your Google connection has expired or was revoked', 'Your Google connection has expired or was revoked');

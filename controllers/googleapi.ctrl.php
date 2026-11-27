@@ -129,8 +129,30 @@ class GoogleAPIController extends Controller{
 
 					$this->tokenCtrler->updateUserToken($tokenInfo['id'], $newTokenInfo);
 				} catch (Exception $e) {
-					$err = $e->getMessage();
-					return "Error: Refresh token - $err";
+					// bug fix: this used to return the raw exception
+					// message with no link and no alert, unlike the
+					// "no token at all" branch above - a user whose
+					// Google authorization lapsed (revoked access on
+					// Google's side, or a blank refresh_token from a
+					// reconnect without consent - see
+					// createUserAuthToken()'s own comment on that) saw a
+					// cryptic technical string on every affected screen
+					// and cron run, with no actionable next step. Same
+					// reconnect-link + alert treatment as the missing-
+					// token case now.
+					$spTextWebmaster = $this->getLanguageTexts('webmaster', $_SESSION['lang_code']);
+					$errorText = $spTextWebmaster["Your Google connection has expired or was revoked"] . ". ";
+					$errorText .= "<a href='".SP_WEBPATH ."/admin-panel.php?sec=connections' target='_blank'>{$spTextWebmaster['Click here to connect to your google account']}.</a>";
+					$alertCtler = new AlertController();
+					$alertInfo = array(
+						'alert_subject' => $spTextWebmaster['Click here to connect to your google account'],
+						'alert_message' => $spTextWebmaster["Your Google connection has expired or was revoked"],
+						'alert_url' => SP_WEBPATH ."/admin-panel.php?sec=connections",
+						'alert_type' => "danger",
+						'alert_category' => "reports",
+					);
+					$alertCtler->createAlert($alertInfo, $userId);
+					return $errorText;
 				}
 				
 			}

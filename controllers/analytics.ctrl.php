@@ -349,7 +349,18 @@ class AnalyticsController extends Controller {
 
 	// func to do quick report
 	function doQuickChecker($searchInfo=[]) {
-	    
+	    // bug fix: this had zero rate limiting - reachable by any
+	    // logged-in user to trigger a live GA4 API call with no throttle
+	    // at all. Same fix as SocialMediaController::doQuickChecker()/
+	    // SaturationCheckerController::printSearchEngineSaturation(),
+	    // reusing the same fail-open rate limiter login already uses.
+	    include_once(SP_CTRLPATH . '/aivisibility.ctrl.php');
+	    $aivCtrler = new AIVisibilityController();
+	    if (!$aivCtrler->__checkRateLimit('analytics-quickcheck-user:' . intval(isLoggedIn()), 10)) {
+	        showErrorMsg('Too many checks - please wait a moment and try again.');
+	        return;
+	    }
+
 		if (!empty($searchInfo['website_id'])) {
 			$websiteId = intval($searchInfo['website_id']);
 			$websiteController = New WebsiteController();
