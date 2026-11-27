@@ -568,7 +568,12 @@ class AnalyticsController extends Controller {
 
 	    $scriptName = $summaryPage ? "archive.php" : "analytics.php";
 	    $scriptPath = SP_WEBPATH . "/$scriptName?sec=viewAnalyticsSummary&website_id=$websiteId";
-	    $scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
+	    // bug fix: reflected XSS - search_name was concatenated raw into
+	    // $scriptPath, which feeds Paging::printPages()'s own
+	    // onclick="scriptDoLoad('$scriptPath...', ...)" pagination links.
+	    // urlencode() both builds a safe query-string fragment and
+	    // closes the hole.
+	    $scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name']);
 	    $scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=analytics-reports";
 
 	    $analyticsCols = implode(",", array_keys($this->metrics));

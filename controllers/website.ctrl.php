@@ -1185,6 +1185,16 @@ class WebsiteController extends Controller{
 	}
 	
 	function addToWebmasterTools($websiteId) {
+		// bug fix: previously unchecked - any logged-in non-admin could
+		// add an ARBITRARY website to Google Webmaster Tools using
+		// another user's own connected Google account (addWebsite()
+		// below authenticates as $webisteInfo['user_id'], the TARGET
+		// website's owner, not the caller) - a real write against that
+		// other user's actual Google Search Console property.
+		if (!isAdmin() && !$this->__verifyWebsiteOwnership($websiteId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 		$webisteInfo = $this->__getWebsiteInfo($websiteId);
 		$gapiCtrler = new WebMasterController();
 		$result = $gapiCtrler->addWebsite($webisteInfo['url'], $webisteInfo['user_id']);
@@ -1212,8 +1222,18 @@ class WebsiteController extends Controller{
 		$websiteList = $this->__getAllWebsites($userId, true);
 		$this->set('websiteList', $websiteList);
 		$websiteId = isset($info['website_id']) ? intval($info['website_id']) : $websiteList[0]['id'];
+		// bug fix: previously unchecked - a caller-supplied website_id
+		// was used directly in the query below with no check that it
+		// actually belonged to $userId's own (already-scoped)
+		// $websiteList, leaking another user's cached webmaster_sitemaps
+		// rows (paths, submit/index counts, pending/error flags). Not
+		// gated for a $cronUserId call - $websiteList there is already
+		// scoped to that trusted report-owning user, not an attacker.
+		if (empty($cronUserId) && !empty($websiteId) && !isAdmin() && !in_array($websiteId, array_column($websiteList, 'id'))) {
+			$websiteId = $websiteList[0]['id'] ?? 0;
+		}
 		$this->set('websiteId', $websiteId);
-		
+
 		$whereCond = "status=1";
 		
 		// check for wbsite id
@@ -1242,6 +1262,17 @@ class WebsiteController extends Controller{
 	// func to import webmaster tools sitemaps
 	function importWebmasterToolsSitemaps($websiteId, $cronJob = false) {
 		$websiteId = intval($websiteId);
+
+		// bug fix: previously unchecked for a live user request (GET
+		// sec=syncSitemaps) - same class as the other Webmaster-Tools
+		// glue functions above. $cronJob calls (the real cron, and
+		// submitSitemap()'s own internal call right after its own
+		// ownership check already passed) aren't gated here - there's
+		// no live caller session to check in the cron case.
+		if (!$cronJob && !isAdmin() && !$this->__verifyWebsiteOwnership($websiteId)) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 		$webisteInfo = $this->__getWebsiteInfo($websiteId);
 
 		// call webmaster api
@@ -1302,7 +1333,17 @@ class WebsiteController extends Controller{
 	}
 	
 	// func to submit sitemap
-	function submitSitemap($info) {		
+	function submitSitemap($info) {
+		// bug fix: previously unchecked - same class as
+		// addToWebmasterTools() above. submitSitemap() below
+		// authenticates to Google as $webisteInfo['user_id'] (the
+		// TARGET website's owner), so without this a non-admin could
+		// submit an arbitrary sitemap URL to another user's real
+		// connected Search Console property.
+		if (!isAdmin() && !$this->__verifyWebsiteOwnership($info['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
 		$webisteInfo = $this->__getWebsiteInfo($info['website_id']);
 		$spTextWebproxy = $this->getLanguageTexts('QuickWebProxy', $_SESSION['lang_code']);		
 		
@@ -1341,9 +1382,18 @@ class WebsiteController extends Controller{
 		if (empty($sitemapInfo['id'])) {
 			showErrorMsg("Please provide a valid sitemap id");
 		}
-		
+
+		// bug fix: previously unchecked - same class as
+		// addToWebmasterTools()/submitSitemap() above. Resolved from the
+		// sitemap row's own website_id, since the caller only supplies a
+		// bare sitemap id.
+		if (!isAdmin() && !$this->__verifyWebsiteOwnership($sitemapInfo['website_id'])) {
+			showErrorMsg($_SESSION['text']['label']['Access denied']);
+			return;
+		}
+
 		$webisteInfo = $this->__getWebsiteInfo($sitemapInfo['website_id']);
-		$gapiCtrler = new WebMasterController();		
+		$gapiCtrler = new WebMasterController();
 		$result = $gapiCtrler->deleteWebsiteSitemap($webisteInfo['url'], $sitemapInfo['path'], $webisteInfo['user_id']);
 	
 		// check whether error occured while api call

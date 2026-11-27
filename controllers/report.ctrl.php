@@ -304,7 +304,12 @@ class ReportController extends Controller {
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
 		$scriptPath = SP_WEBPATH."/reports.php?sec=reportsum&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTimeTxt&to_time=$toTimeTxt&search_name=" . ($searchInfo['search_name'] ?? '');
+		// bug fix: reflected XSS - search_name was concatenated raw into
+		// $scriptPath, which feeds Paging::printPages()'s own
+		// onclick="scriptDoLoad('$scriptPath...', ...)" pagination
+		// links. urlencode() both builds a safe query-string fragment
+		// and closes the hole.
+		$scriptPath .= "&from_time=$fromTimeTxt&to_time=$toTimeTxt&search_name=" . urlencode($searchInfo['search_name'] ?? '');
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal";
 			
 		$conditions = " and w.status=1 and k.status=1";
@@ -1867,7 +1872,13 @@ class ReportController extends Controller {
 		$this->set('fromTime', $fromTimeShort);
 		$toTimeShort = date('Y-m-d', $toTime);
 		$this->set('toTime', $toTimeShort);		
-		$urlarg .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];	
+		// bug fix: reflected XSS - search_name was concatenated raw
+		// (only htmlentities()'d above, which this query-string context
+		// doesn't reliably neutralize - urlencode() both builds a safe
+		// query-string fragment and closes the hole regardless of sink)
+		// into $urlarg/$scriptPath below, which feed onclick="scriptDoLoad(...)"
+		// sort/pagination links in the view.
+		$urlarg .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . urlencode($searchInfo['search_name']);
 		
 		$seSearchUserId = isAdmin() ? "" : $userId;
 		$this->seLIst = $keywordController->getUserKeywordSearchEngineList($seSearchUserId);
@@ -1877,7 +1888,7 @@ class ReportController extends Controller {
 		$this->set('urlarg', $urlarg);
 		
 		$scriptPath = SP_WEBPATH."/archive.php?website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . $searchInfo['search_name'];
+		$scriptPath .= "&from_time=$fromTimeShort&to_time=$toTimeShort&search_name=" . urlencode($searchInfo['search_name']);
 		
 		# keyword position report section
 		if ($shouldShowSection('keyword-position')) {

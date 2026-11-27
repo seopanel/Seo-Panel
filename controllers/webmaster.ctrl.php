@@ -556,7 +556,12 @@ class WebMasterController extends GoogleAPIController {
 
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewKeywordReports&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
+		// bug fix: reflected XSS - search_name was concatenated raw into
+		// $scriptPath, which feeds Paging::printPages()'s own
+		// onclick="scriptDoLoad('$scriptPath...', ...)" pagination
+		// links. urlencode() both builds a safe query-string fragment
+		// and closes the hole.
+		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name']);
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=keyword-search-reports";
 
 		$subSql = "select [cols] from webmaster_keywords k, keyword_analytics r where k.id=r.keyword_id
@@ -736,7 +741,12 @@ class WebMasterController extends GoogleAPIController {
 		$this->set('orderVal', $orderVal);
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewWebsiteSearchSummary&website_id=$websiteId";
-		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . $searchInfo['search_name'];
+		// bug fix: reflected XSS - search_name was concatenated raw into
+		// $scriptPath, which feeds Paging::printPages()'s own
+		// onclick="scriptDoLoad('$scriptPath...', ...)" pagination
+		// links. urlencode() both builds a safe query-string fragment
+		// and closes the hole.
+		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name']);
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=website-search-reports";
 
 		$conditions = !empty($websiteId) ? " and w.id=$websiteId" : "";

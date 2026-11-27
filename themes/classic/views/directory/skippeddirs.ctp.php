@@ -65,7 +65,13 @@ if(empty($websiteId)){
     $colCount = 4;
     if(count($list) > 0) {
         foreach($list as $i => $listInfo) {
-            $argStr = "sec=unskip&id={$listInfo['id']}&pageno=$pageNo&website_id=$websiteId&search_name=".$searchInfo['search_name'];
+            // bug fix: reflected XSS - search_name was concatenated raw
+            // into $argStr, which feeds straight into an
+            // onclick="scriptDoLoad('directories.php', 'content', '$argStr')"
+            // attribute below - a value containing a quote broke out of
+            // it. urlencode() both builds a safe query-string fragment
+            // and closes the hole.
+            $argStr = "sec=unskip&id={$listInfo['id']}&pageno=$pageNo&website_id=$websiteId&search_name=".urlencode($searchInfo['search_name']);
             $includeLink = "<a href='javascript:void(0);' onclick=\"scriptDoLoad('directories.php', 'content', '$argStr')\" class='btn btn-primary btn-sm'>".$spTextDir['Add back to directory list']."</a>";
             ?>
             <tr>

@@ -676,7 +676,14 @@ class DirectoryController extends Controller{
 		// search for name
 		if (!empty($searchInfo['search_name'])) {
 			$conditions .= " and d.submit_url like '%".addslashes($searchInfo['search_name'])."%'";
-			$pageScriptPath .= "&search_name=" . $searchInfo['search_name'];
+			// bug fix: reflected XSS - search_name was concatenated raw
+			// into $pageScriptPath, which the view embeds straight into
+			// an onclick="scriptDoLoad('...', ...)" attribute. A value
+			// containing a quote broke out of that attribute (same bug
+			// class already fixed for other fields in this file/session,
+			// just missed here). urlencode() both builds a safe
+			// query-string fragment and closes the hole.
+			$pageScriptPath .= "&search_name=" . urlencode($searchInfo['search_name']);
 		}
 				
 		$sql = "select ds.* ,d.domain,d.pagerank, d.submit_url
@@ -724,7 +731,14 @@ class DirectoryController extends Controller{
 		// search for name
 		if (!empty($searchInfo['search_name'])) {
 			$conditions .= " and d.submit_url like '%".addslashes($searchInfo['search_name'])."%'";
-			$pageScriptPath .= "&search_name=" . $searchInfo['search_name'];
+			// bug fix: reflected XSS - search_name was concatenated raw
+			// into $pageScriptPath, which the view embeds straight into
+			// an onclick="scriptDoLoad('...', ...)" attribute. A value
+			// containing a quote broke out of that attribute (same bug
+			// class already fixed for other fields in this file/session,
+			// just missed here). urlencode() both builds a safe
+			// query-string fragment and closes the hole.
+			$pageScriptPath .= "&search_name=" . urlencode($searchInfo['search_name']);
 		}
 		
 		$sql = "select ds.* ,d.domain,d.pagerank, d.submit_url from dirsubmitinfo ds,directories d 

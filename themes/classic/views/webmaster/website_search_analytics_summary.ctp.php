@@ -98,7 +98,12 @@ if(!$summaryPage && (!empty($printVersion) || !empty($pdfVersion))) {
 
 	// url parameters
 	$mainLink = SP_WEBPATH."/$scriptName?sec=viewWebsiteSearchSummary&website_id=$websiteId&from_time=$fromTime&to_time=$toTime";
-	$mainLink .= "&search_name=" . $searchInfo['search_name'] . "&report_type=website-search-reports";
+	// bug fix: reflected XSS - search_name was concatenated raw into
+	// $mainLink, which feeds into onclick="scriptDoLoad('$mainLink...', ...)"
+	// sort-link attributes below - a value containing a quote broke out
+	// of them. urlencode() both builds a safe query-string fragment and
+	// closes the hole.
+	$mainLink .= "&search_name=" . urlencode($searchInfo['search_name']) . "&report_type=website-search-reports";
 	
 	// if not summary page show the filters
 	if(!$summaryPage) {
