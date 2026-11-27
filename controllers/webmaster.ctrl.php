@@ -441,6 +441,17 @@ class WebMasterController extends GoogleAPIController {
 		return $this->__getMinMaxDate($sql);
 	}
 
+	// same as __getKeywordAnalyticsDateAvailability() above, for Website
+	// Search Summary's own website_search_analytics table. $conditions is
+	// the same "and w.id=...[and w.url like ...]" fragment
+	// viewWebsiteSearchSummary() already builds for its own query.
+	function __getWebsiteAnalyticsDateAvailability($conditions, $source) {
+		$sql = "select min(r.report_date) as min_date, max(r.report_date) as max_date
+		        from websites w, website_search_analytics r
+		        where w.id = r.website_id and w.status=1 $conditions and r.source='" . addslashes($source) . "'";
+		return $this->__getMinMaxDate($sql);
+	}
+
 	# func to show webmasterkeyword report summary
 	function viewKeywordSearchSummary($searchInfo = '', $summaryPage = false, $cronUserId=false) {
 		// bug fix: from_time/to_time whitelisted to plain-date format -
@@ -714,11 +725,6 @@ class WebMasterController extends GoogleAPIController {
 				break;
 		}
 
-		$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
-		$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
-		$this->set('fromTime', $fromTime);
-		$this->set('toTime', $toTime);
-	
 		// to find order col - same SQLi-via-ORDER-BY risk and fix as
 		// viewKeywordSearchSummary() above; $this->colList is the same
 		// shared metric set both reports render (name/clicks/impressions/
@@ -735,10 +741,47 @@ class WebMasterController extends GoogleAPIController {
 		// assigned AFTER being read into that string below, so
 		// website_id was always empty there and paging to page 2+ of a
 		// website-filtered summary silently dropped the filter
-		$websiteId = intval($searchInfo['website_id']);
+		$websiteId = isset($searchInfo['website_id']) ? intval($searchInfo['website_id']) : null;
+		// bug fix: resolve to a real website (first one) only when
+		// nothing was submitted at all, same treatment
+		// viewKeywordSearchSummary() already gets - previously this
+		// always fell through to 0 ("all websites combined") on first
+		// load, unlike the keyword summary's own always-one-real-website
+		// default. An explicit 0 (ReportController's "Overall Report
+		// Summary" email) is left alone.
+		if ($websiteId === null) {
+			$wList = $websiteController->__getAllWebsites($userId, true);
+			$websiteId = !empty($wList) ? $wList[0]['id'] : 0;
+		}
 
 		$this->set('orderCol', $orderCol);
 		$this->set('orderVal', $orderVal);
+		$this->set('websiteId', $websiteId);
+
+		$conditions = !empty($websiteId) ? " and w.id=$websiteId" : "";
+		$conditions .= isAdmin() ? "" : $websiteController->getWebsiteUserAccessCondition($userId);
+		$conditions .= !empty($searchInfo['search_name']) ? " and w.url like '%".addslashes($searchInfo['search_name'])."%'" : "";
+
+		// bug fix: Period resolution - same Day/Week/Month/Year preset
+		// treatment viewKeywordSearchSummary() already has, previously
+		// missing here entirely (always used plain from_time/to_time,
+		// defaulting to a fixed -3/-2 days window regardless of whether
+		// this website/scope actually has data that recent).
+		$period = $this->__resolvePeriodValue($searchInfo);
+
+		if (!empty($period)) {
+			list($minAvailDate, $maxAvailDate) = $this->__getWebsiteAnalyticsDateAvailability($conditions, $source);
+			list($fromTimeStamp, $toTimeStamp) = $this->__resolvePeriodPreset($period, $minAvailDate, $maxAvailDate, '-2 days');
+			$fromTime = date('Y-m-d', $fromTimeStamp);
+			$toTime = date('Y-m-d', $toTimeStamp);
+		} else {
+			$fromTime = !empty($searchInfo['from_time']) ? addslashes($searchInfo['from_time']) : date('Y-m-d', strtotime('-3 days'));
+			$toTime = !empty($searchInfo['to_time']) ? addslashes($searchInfo['to_time']) : date('Y-m-d', strtotime('-2 days'));
+		}
+		$this->set('fromTime', $fromTime);
+		$this->set('toTime', $toTime);
+		$this->set('period', $period);
+
 		$scriptName = $summaryPage ? "archive.php" : "webmaster-tools.php";
 		$scriptPath = SP_WEBPATH . "/$scriptName?sec=viewWebsiteSearchSummary&website_id=$websiteId";
 		// bug fix: reflected XSS - search_name was concatenated raw into
@@ -748,11 +791,6 @@ class WebMasterController extends GoogleAPIController {
 		// and closes the hole.
 		$scriptPath .= "&from_time=$fromTime&to_time=$toTime&search_name=" . urlencode($searchInfo['search_name']);
 		$scriptPath .= "&order_col=$orderCol&order_val=$orderVal&report_type=website-search-reports";
-
-		$conditions = !empty($websiteId) ? " and w.id=$websiteId" : "";
-		$conditions .= isAdmin() ? "" : $websiteController->getWebsiteUserAccessCondition($userId);
-		$conditions .= !empty($searchInfo['search_name']) ? " and w.url like '%".addslashes($searchInfo['search_name'])."%'" : "";
-		$this->set('websiteId', $websiteId);
 		
 		$subSql = "select [cols] from websites w, website_search_analytics r where w.id=r.website_id
 		and w.status=1 $conditions and r.source='$source' and r.report_date='$fromTime'";
